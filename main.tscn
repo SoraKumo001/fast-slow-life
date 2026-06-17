@@ -1,0 +1,334 @@
+[gd_scene load_steps=3 format=3 uid="uid://c1p88j8m7y4l6"]
+
+[ext_resource type="Script" path="res://scripts/ui/main_ui.gd" id="1_main"]
+[ext_resource type="Theme" uid="uid://d3ux2b8vjh4p0" path="res://scripts/ui/ui_theme.tres" id="2_theme"]
+
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_main")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0980392, 0.0980392, 0.121569, 1)
+
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 8
+
+[node name="BodySection" type="HSplitContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+split_offset = 600
+
+[node name="TabContainer" type="TabContainer" parent="MainVBox/BodySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+current_tab = 0
+
+[node name="概要" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+layout_mode = 2
+
+[node name="OverviewVBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="Welcome" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
+layout_mode = 2
+text = "
+【Fast Slow Life】
+村人たちに指示を与え、時間（日数）を進めることで自動的に資源を採取し、施設を強化し、
+ダンジョンを探索して期限内のボス撃破を目指す街経営RPGシミュレーションです。
+"
+horizontal_alignment = 1
+
+[node name="StatusHBox" type="HBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+theme_override_constants/separation = 20
+
+[node name="VillageStatusPanel" type="PanelContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin/VBox"]
+layout_mode = 2
+text = "【村の概況】"
+horizontal_alignment = 1
+
+[node name="VillageStatusLabel" type="RichTextLabel" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+
+[node name="ExplorationPanel" type="PanelContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin/VBox"]
+layout_mode = 2
+text = "【ダンジョン探索状況】"
+horizontal_alignment = 1
+
+[node name="ExplorationLabel" type="RichTextLabel" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+
+[node name="Instructions" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
+layout_mode = 2
+text = "
+■ 基本的な流れ
+1. 「村人」タブで、各村人に指示（採取または討伐）と派遣先のダンジョンを設定。
+2. 必要に応じて職業（ジョブ）への転職を行って適性を強化。
+3. 下部バーの「1日経過」または「オートプレイ」でターンを進行。
+4. 集まった素材で「施設と加工」タブから宿屋の拡張や装備品のクラフトを実行。
+5. 探索度が100%に達したら「探索」タブからボスに挑戦。
+6. 撃破に成功すると、期限が延長され新たな施設やマップが解放。
+7. 制限日数を超えたり全滅した場合はゲームオーバーとなり、SPを獲得して「転生」バフを購入して再挑戦。
+"
+horizontal_alignment = 1
+
+[node name="村人管理" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="VillagerContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/村人管理"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="施設と加工" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="FacilityContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/施設と加工"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="倉庫" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="InventoryContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/倉庫"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="探索・討伐" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="AreaContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/探索・討伐"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="周回ショップ" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+visible = false
+layout_mode = 2
+
+[node name="RebirthContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/周回ショップ"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 15
+
+[node name="LogPanel" type="PanelContainer" parent="MainVBox/BodySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/LogPanel"]
+layout_mode = 2
+
+[node name="LogTitle" type="Label" parent="MainVBox/BodySection/LogPanel/VBox"]
+layout_mode = 2
+text = "開拓日誌（ログ）"
+horizontal_alignment = 1
+
+[node name="LogText" type="RichTextLabel" parent="MainVBox/BodySection/LogPanel/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+scroll_following = true
+selection_enabled = true
+
+[node name="BottomBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 55)
+layout_mode = 2
+
+[node name="BottomMargin" type="MarginContainer" parent="MainVBox/BottomBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 5
+
+[node name="BottomHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="StatusHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin/BottomHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="DayLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "経過日数: 1 日"
+horizontal_alignment = 1
+
+[node name="GoldLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ゴールド: 1000 G"
+horizontal_alignment = 1
+
+[node name="FoodLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "食料: 200"
+horizontal_alignment = 1
+
+[node name="SoulPointsLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ソウルポイント: 0 SP"
+horizontal_alignment = 1
+
+[node name="TargetLabel" type="Button" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "期限: 30 日目まで (クリックで目標表示)"
+flat = true
+
+[node name="ControlHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin/BottomHBox"]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 15
+
+[node name="AutoPlayCheck" type="CheckBox" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "オートプレイ (自動進行)"
+
+[node name="AdvanceDayButton" type="Button" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "1日経過させる"
+
+[node name="RebirthPanel" type="Panel" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="RebirthPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0784314, 0.0784314, 0.0784314, 0.862745)
+
+[node name="RebirthCenterBox" type="VBoxContainer" parent="RebirthPanel"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -100.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="GameOverLabel" type="Label" parent="RebirthPanel/RebirthCenterBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "GAME OVER"
+horizontal_alignment = 1
+
+[node name="GameOverSub" type="Label" parent="RebirthPanel/RebirthCenterBox"]
+layout_mode = 2
+text = "期限内に目標ボスを撃破できなかったか、
+村人が全滅してしまいました。"
+horizontal_alignment = 1
+
+[node name="RestartLoopButton" type="Button" parent="RebirthPanel/RebirthCenterBox"]
+custom_minimum_size = Vector2(200, 55)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "獲得したSPを手に転生する"
+
+[node name="AutoPlayTimer" type="Timer" parent="."]
+unique_name_in_owner = true
+
+[connection signal="pressed" from="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox/TargetLabel" to="." method="_on_target_button_pressed"]
+[connection signal="pressed" from="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox/AdvanceDayButton" to="." method="_on_advance_day_pressed"]
+[connection signal="toggled" from="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox/AutoPlayCheck" to="." method="_on_auto_play_toggled"]
+[connection signal="pressed" from="RebirthPanel/RebirthCenterBox/RestartLoopButton" to="." method="_on_restart_loop_pressed"]
