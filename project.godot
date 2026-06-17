@@ -16,12 +16,12 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 config/name="Fast Slow Life"
 run/main_scene="res://main.tscn"
-config/features=PackedStringArray("4.6")
+config/features=PackedStringArray("4.6", "C#")
 
 [autoload]
 
-Database="*res://scripts/singletons/database.gd"
-GameState="*res://scripts/singletons/game_state.gd"
+Database="*res://scripts/singletons/Database.cs"
+GameState="*res://scripts/singletons/GameState.cs"
 
 [display]
 
@@ -32,7 +32,7 @@ window/stretch/aspect="expand"
 
 [dotnet]
 
-project/assembly_name="Fast Slow Life"
+project/assembly_name="fast-slow-life"
 
 [rendering]
 
