@@ -242,8 +242,8 @@ public partial class Database : Node
         var forest = new AreaData { Id = "forest", Name = "始まりの森", Difficulty = 1.0 };
         forest.Gathers.AddRange(new List<GatherData>{ new(){Id="wild_grain",Rate=0.7}, new(){Id="herb",Rate=0.2}, new(){Id="wood",Rate=0.1} });
         forest.Monsters.AddRange(new List<MonsterData>{
-            new() { Name = "スライム", Level = 1, Hp = 20, Str = 4, Int = 1, Vit = 2, Exp = 10, Drop = "wild_grain" },
-            new() { Name = "ゴブリン", Level = 3, Hp = 40, Str = 8, Int = 2, Vit = 4, Exp = 25, Drop = "raw_meat" }
+            new() { Name = "スライム", Level = 1, Hp = 30, Str = 8, Int = 1, Vit = 2, Exp = 10, Drop = "wild_grain" },
+            new() { Name = "ゴブリン", Level = 3, Hp = 50, Str = 12, Int = 2, Vit = 4, Exp = 25, Drop = "raw_meat" }
         });
         forest.Boss = new() { Name = "ゴブリンロード", Level = 5, Hp = 150, Str = 15, Int = 5, Vit = 8, Exp = 100 };
         Areas[forest.Id] = forest;
