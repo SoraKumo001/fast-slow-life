@@ -6,9 +6,11 @@ signal log_added(message: String)
 # --- ゲームの状態変数 ---
 var gold: int = 0
 var food: int = 0
+var food_fraction: float = 0.0 # 食料の端数管理用
 var soul_points: int = 0
 
 var current_day: int = 1
+var current_hour: int = 8      # 0 ~ 23 (初期値8時)
 var target_day: int = 30
 var current_tier: int = 1
 var target_boss_id: String = "goblin_lord" # 実装上はエリア名と紐づく
@@ -53,6 +55,10 @@ var auto_trade_settings: Dictionary = {}
 # {"recipe_id": work_progress}
 var active_crafts: Dictionary = {}
 
+# --- 施設アップグレード中の進行時間 (時間単位) ---
+# {"facility_id": remaining_hours}
+var active_upgrades: Dictionary = {}
+
 func _ready():
 	# ゲームの初期セットアップ
 	start_new_game(true)
@@ -68,7 +74,9 @@ func start_new_game(reset_all: bool = false):
 		
 	gold = 1000 + perma_buffs["heritage"] * 500
 	food = 200 + perma_buffs["stock"] * 100
+	food_fraction = 0.0
 	current_day = 1
+	current_hour = 8
 	target_day = 30
 	current_tier = 1
 	is_game_over = false
@@ -92,6 +100,7 @@ func start_new_game(reset_all: bool = false):
 	}
 	defeated_bosses.clear()
 	active_crafts.clear()
+	active_upgrades.clear()
 	auto_trade_settings.clear()
 	
 	# 初期村人の生成 (3人)
@@ -126,6 +135,7 @@ func _create_villager(v_name: String, job_id: String):
 	
 	v.order = "gather"
 	v.assigned_area = "forest"
+	v.travel_time = 2 # 始まりの森(difficulty 1.0)への初期移動時間 (difficulty * 2)
 	v.is_dead = false
 	
 	villagers.append(v)
@@ -138,73 +148,239 @@ func advance_day():
 	if is_game_over: return
 	
 	add_log("\n--- Day %d ---" % current_day)
+	for i in range(24):
+		if is_game_over: break
+		advance_hour()
+
+# 1時間進める
+func advance_hour():
+	if is_game_over: return
 	
-	# 1. 食料消費
-	var alive_count = get_alive_villagers_count()
-	var food_consumed = alive_count * 1
-	var starvation = false
-	if food >= food_consumed:
-		food -= food_consumed
-		add_log("食料を %d 消費しました (残り食料: %d)" % [food_consumed, food])
-	else:
-		starvation = true
-		food = 0
-		add_log("[警告] 食料が不足しています！村人が飢え始めました。")
+	current_hour += 1
+	if current_hour >= 24:
+		current_hour = 0
+		current_day += 1
+		add_log("\n--- Day %d ---" % current_day)
 		
-	# 2. クラフト（職人の仕事）の進行
-	_process_crafting()
-		
+		# 期限チェック
+		if current_day > target_day:
+			trigger_game_over()
+			emit_signal("game_state_updated")
+			return
+			
+	# 1. 食料消費と飢餓判定
+	_process_food_hourly()
+
+	# 2. 施設のクラフト・アップグレード進行
+	_process_crafting_hourly()
+	_process_upgrades_hourly()
+
 	# 3. 村人の行動処理
+	_process_villagers_hourly()
+
+	# 4. 施設の自動取引処理 (交易所) - 毎日午前0時に実行
+	if current_hour == 0 and facility_levels["trading_post"] >= 1:
+		_process_auto_trading()
+
+	emit_signal("game_state_updated")
+
+# 1時間ごとの食料消費
+func _process_food_hourly():
+	var alive_count = get_alive_villagers_count()
+	var food_consumed_hourly = alive_count * (1.0 / 24.0)
+	food_fraction += food_consumed_hourly
+	
+	var consumed_int = int(food_fraction)
+	if consumed_int > 0:
+		food_fraction -= consumed_int
+		if food >= consumed_int:
+			food -= consumed_int
+		else:
+			food = 0
+
+# 1時間ごとのクラフト処理
+func _process_crafting_hourly():
+	var craft_power = 0
+	for v in villagers:
+		if v.is_dead: continue
+		if v.current_job == "crafter" and v.order == "inn":
+			craft_power += v.get_dex()
+			
+	var hourly_power = (craft_power + 10) / 24.0
+	
+	var completed = []
+	for recipe_id in active_crafts.keys():
+		active_crafts[recipe_id] -= hourly_power
+		if active_crafts[recipe_id] <= 0:
+			var recipe = Database.recipes[recipe_id]
+			var result = recipe.result
+			var success_msg = ""
+			var amount = result.amount
+			if randf() < (craft_power * 0.001):
+				amount += 1
+				success_msg = " (大成功！)"
+				
+			_add_to_inventory(result.id, amount)
+			add_log("[%02d:00][クラフト完成] %s を %d 個作成しました。%s" % [current_hour, Database.items[result.id].name, amount, success_msg])
+			completed.append(recipe_id)
+			
+	for r in completed:
+		active_crafts.erase(r)
+
+# 1時間ごとの施設アップグレード処理
+func _process_upgrades_hourly():
+	var completed = []
+	for fac_id in active_upgrades.keys():
+		active_upgrades[fac_id] -= 1
+		if active_upgrades[fac_id] <= 0:
+			var next_lv = facility_levels[fac_id] + 1
+			facility_levels[fac_id] = next_lv
+			add_log("[%02d:00][施設アップグレード完了] 施設「%s」がレベル %d になりました！" % [current_hour, _get_facility_name(fac_id), next_lv])
+			
+			if fac_id == "forge" and next_lv == 1:
+				add_log("鍛冶屋が村に建設されました！装備を加工・強化できます。")
+			elif fac_id == "alchemy_lab" and next_lv == 1:
+				add_log("錬金工房が村に建設されました！薬品をクラフトできます。")
+			elif fac_id == "trading_post" and next_lv == 1:
+				add_log("交易所が村に建設されました！自動売買機能が有効です。")
+				
+			completed.append(fac_id)
+			
+	for f in completed:
+		active_upgrades.erase(f)
+
+func _get_facility_name(fac_id: String) -> String:
+	match fac_id:
+		"inn": return "宿屋"
+		"workshop": return "工房"
+		"forge": return "鍛冶屋"
+		"alchemy_lab": return "錬金工房"
+		"trading_post": return "交易所"
+	return fac_id
+
+# 1時間ごとの村人処理
+func _process_villagers_hourly():
+	var starvation = (food <= 0)
+	if starvation and get_alive_villagers_count() > 0 and current_hour % 4 == 0:
+		add_log("[%02d:00][警告] 食料が不足しています！村人が飢えています。" % current_hour)
+	
 	for v in villagers:
 		if v.is_dead: continue
 		
-		# 飢餓ペナルティの適用
+		# 飢餓ダメージ（毎時間 0.4%）
+		if starvation:
+			var dmg = max(1, int(v.get_max_hp() * 0.004))
+			var dead = v.take_damage(dmg)
+			if dead:
+				add_log("[%02d:00][悲報] %s は飢えにより死亡した。" % [current_hour, v.name])
+				continue
+				
+		if v.order == "inn":
+			_process_villager_inn_hourly(v)
+		elif v.order in ["gather", "hunt"]:
+			_process_villager_expedition_hourly(v, starvation)
+
+# 宿屋滞在者の1時間処理
+func _process_villager_inn_hourly(v: Villager):
+	var inn_lv = facility_levels["inn"]
+	
+	# HP回復
+	var heal_percent = 0.3 / 24.0
+	if inn_lv == 2: heal_percent = 0.5 / 24.0
+	elif inn_lv == 3: heal_percent = 0.7 / 24.0
+	elif inn_lv >= 4: heal_percent = 1.0 / 24.0
+	
+	var heal_amount = max(1, int(v.get_max_hp() * heal_percent))
+	v.heal(heal_amount)
+	
+	# スタミナ回復
+	var stamina_heal = 10
+	if inn_lv == 2: stamina_heal = 15
+	elif inn_lv == 3: stamina_heal = 20
+	elif inn_lv >= 4: stamina_heal = 25
+	v.heal_stamina(stamina_heal)
+	
+	# 職人(crafter)以外の村人で、HPとスタミナが全回復した場合は自動的に元の行動を再開
+	if v.current_job != "crafter" and v.current_hp >= v.get_max_hp() and v.current_stamina >= v.get_max_stamina():
+		var next_order = v.last_active_order
+		var next_area = v.last_active_area
+		
+		# 無限ループ防止用のデフォルトフォールバック
+		if next_order == "inn" or next_order == "":
+			next_order = "gather"
+			next_area = "forest"
+			
+		v.order = next_order
+		v.assigned_area = next_area
+		
+		var area = Database.areas.get(next_area)
+		if area:
+			var req_travel = area.difficulty * 2
+			v.travel_time = req_travel
+			v.is_returning = false
+			add_log("[%02d:00][休息完了] %s は全回復し、「%s」へ再出発しました。(所要時間: %d時間)" % [current_hour, v.name, area.name, req_travel])
+		else:
+			v.travel_time = 0
+			add_log("[%02d:00][休息完了] %s は全回復しました。" % [current_hour, v.name])
+
+# 派遣メンバーの1時間処理
+func _process_villager_expedition_hourly(v: Villager, starvation: bool):
+	# スタミナ消費
+	var exhausted = v.consume_stamina(5)
+	if exhausted:
+		add_log("[%02d:00][疲労] %s はスタミナ切れのため、宿屋で休養を開始しました。" % [current_hour, v.name])
+		v.order = "inn"
+		v.travel_time = 0
+		v.is_returning = false
+		return
+		
+	var area = Database.areas.get(v.assigned_area)
+	if not area: return
+	
+	var required_travel_time = area.difficulty * 2
+	
+	
+		
+	# 移動中の処理
+	if v.travel_time > 0:
+		v.travel_time -= 1
+		if v.travel_time == 0:
+			if v.is_returning:
+				add_log("[%02d:00] %s は村に帰還し、宿屋で休養を開始しました。" % [current_hour, v.name])
+				v.order = "inn"
+				v.is_returning = false
+			else:
+				add_log("[%02d:00] %s が「%s」に到着し、活動を開始しました。" % [current_hour, v.name, area.name])
+		return
+		
+	# 現地活動（遭遇率 30%）
+	if randf() < 0.30:
 		var str_val = v.get_str()
 		var int_val = v.get_int()
 		var dex_val = v.get_dex()
 		var agi_val = v.get_agi()
 		if starvation:
-			v.take_damage(v.get_max_hp() / 10)
-			add_log("%s は飢えによりダメージを受けた。(HP: %d/%d)" % [v.name, v.current_hp, v.get_max_hp()])
 			str_val /= 2
 			int_val /= 2
 			dex_val /= 2
 			agi_val /= 2
-			if v.is_dead:
-				add_log("[悲報] %s は飢えにより死亡した。" % v.name)
-				continue
-				
-		if v.order == "inn":
-			# 宿屋での療養
-			var heal_percent = 0.3
-			if facility_levels["inn"] == 2: heal_percent = 0.5
-			elif facility_levels["inn"] == 3: heal_percent = 0.7
-			elif facility_levels["inn"] >= 4: heal_percent = 1.0
 			
-			var heal_amount = int(v.get_max_hp() * heal_percent)
-			v.heal(heal_amount)
-			add_log("%s は宿屋で休養し、HPが %d 回復した。(HP: %d/%d)" % [v.name, heal_amount, v.current_hp, v.get_max_hp()])
-			
-		elif v.order == "gather":
-			# 採取
-			_process_villager_gather(v, str_val, int_val, dex_val, agi_val)
-			
+		if v.order == "gather":
+			_process_villager_gather_hourly(v, area, str_val, int_val, dex_val, agi_val)
 		elif v.order == "hunt":
-			# 討伐（通常戦闘）
-			_process_villager_hunt(v, str_val, int_val, dex_val, agi_val)
-			
-	# 4. 施設の自動取引処理 (交易所)
-	if facility_levels["trading_post"] >= 1:
-		_process_auto_trading()
-		
-	# 日数の増加
-	current_day += 1
+			_process_villager_hunt_hourly(v, area, str_val, int_val, dex_val, agi_val)
+
+# 派遣先の変更
+func change_villager_area(v: Villager, area_id: String):
+	if not Database.areas.has(area_id): return
+	var old_area = v.assigned_area
+	v.assigned_area = area_id
 	
-	# 5. 期限チェック
-	if current_day > target_day:
-		trigger_game_over()
-		
-	emit_signal("game_state_updated")
+	# 現在すでに現地にいるか移動中の場合、移動時間をリセットして再出発
+	var area = Database.areas[area_id]
+	v.travel_time = area.difficulty * 2
+	v.is_returning = false
+	add_log("%s の派遣先を「%s」に変更しました。移動を開始します。(所要時間: %d時間)" % [v.name, area.name, v.travel_time])
 
 # 生存村人数
 func get_alive_villagers_count() -> int:
@@ -213,25 +389,22 @@ func get_alive_villagers_count() -> int:
 		if not v.is_dead: c += 1
 	return c
 
-# 採取のシミュレーション
-func _process_villager_gather(v: Villager, str_val: int, int_val: int, dex_val: int, agi_val: int):
-	var area = Database.areas.get(v.assigned_area)
-	if not area: return
-	
-	# 探索度の進行
-	var explore_gain = (dex_val * 0.2 + agi_val * 0.2) / area.difficulty
+# 採取のシミュレーション（1時間単位）
+func _process_villager_gather_hourly(v: Villager, area: Dictionary, str_val: int, int_val: int, dex_val: int, agi_val: int):
+	var explore_gain = ((dex_val * 0.2 + agi_val * 0.2) / area.difficulty) * 0.1
 	explore_rates[v.assigned_area] = min(100.0, explore_rates[v.assigned_area] + explore_gain)
 	
-	# 採取ターゲット決定AI (docsより)
-	var best_item_id = ""
-	var max_score = -1.0
 	var job = Database.jobs.get(v.current_job)
+	
+	# 各アイテムの採取スコア（重み）を計算
+	var gather_scores = []
+	var total_score = 0.0
 	
 	for g in area.gathers:
 		var item = Database.items.get(g.id)
-		var base_mult = 1.0 / area.difficulty
+		if not item: continue
 		
-		# カテゴリ倍率
+		var base_mult = 1.0 / area.difficulty
 		var job_mod = 1.0
 		if job:
 			var category = item.category
@@ -249,25 +422,54 @@ func _process_villager_gather(v: Villager, str_val: int, int_val: int, dex_val: 
 			stat_val = int_val * 0.7 + dex_val * 0.3
 			
 		var score = base_mult * job_mod * stat_val * (1.0 + agi_val * 0.01) * g.rate
-		if score > max_score:
-			max_score = score
-			best_item_id = g.id
-			
+		score = max(0.001, score) # スコアが0以下になるのを防ぐ
+		
+		gather_scores.append({"id": g.id, "score": score})
+		total_score += score
+		
+	# 重み付きランダム抽選
+	var best_item_id = ""
+	if total_score > 0.0:
+		var r = randf() * total_score
+		var cumulative = 0.0
+		for entry in gather_scores:
+			cumulative += entry.score
+			if r <= cumulative:
+				best_item_id = entry.id
+				break
+				
 	if best_item_id != "":
-		# 採取成功判定
 		var amount = 1
-		# 職業が農民/鉱夫/薬師の場合の追加ボーナス
-		if randf() < 0.3:
+		if randf() < 0.2:
 			amount += 1
 			
 		_add_to_inventory(best_item_id, amount)
-		add_log("%s は %s で %s を %d 個採取した。(エリア探索率: %.1f%%)" % [v.name, area.name, Database.items[best_item_id].name, amount, explore_rates[v.assigned_area]])
+		add_log("[%02d:00] %s は「%s」で %s を %d 個採取した。(探索率: %.1f%%)" % [current_hour, v.name, area.name, Database.items[best_item_id].name, amount, explore_rates[v.assigned_area]])
 		
-		# 経験値獲得
-		var exp_gain = int(5 * area.difficulty)
+		var exp_gain = int(2 * area.difficulty)
 		var exp_log = v.add_exp(_calc_exp_with_buff(exp_gain))
 		if exp_log != "":
 			add_log(exp_log)
+
+# 討伐のシミュレーション（1時間単位）
+func _process_villager_hunt_hourly(v: Villager, area: Dictionary, str_val: int, int_val: int, dex_val: int, agi_val: int):
+	if float(v.current_hp) / v.get_max_hp() < 0.3:
+		add_log("[%02d:00] %s はHPが低下しているため、討伐をやめ宿屋へ戻りました。" % [current_hour, v.name])
+		v.order = "inn"
+		return
+		
+	var best_monster = null
+	var min_lv_diff = 999
+	for m in area.monsters:
+		var diff = abs(v.level - m.level)
+		if diff < min_lv_diff:
+			min_lv_diff = diff
+			best_monster = m
+			
+	if best_monster:
+		var enemy = best_monster.duplicate()
+		var battle_log = _simulate_battle(v, enemy, str_val, int_val, dex_val, agi_val)
+		add_log("[%02d:00] %s" % [current_hour, battle_log.replace("\n", "\n[%02d:00] " % current_hour)])
 
 # 経験値補正計算
 func _calc_exp_with_buff(base_exp: int) -> int:
@@ -290,30 +492,7 @@ func _consume_from_inventory(item_id: String, amount: int) -> bool:
 		return true
 	return false
 
-# 討伐（通常戦闘）のシミュレーション
-func _process_villager_hunt(v: Villager, str_val: int, int_val: int, dex_val: int, agi_val: int):
-	var area = Database.areas.get(v.assigned_area)
-	if not area: return
-	
-	# 安全第一ルール
-	if float(v.current_hp) / v.get_max_hp() < 0.3:
-		add_log("%s はHPが低下しているため、討伐をやめ宿屋で休養した。" % v.name)
-		v.order = "inn"
-		return
-		
-	# 敵の自動選択
-	var best_monster = null
-	var min_lv_diff = 999
-	for m in area.monsters:
-		var diff = abs(v.level - m.level)
-		if diff < min_lv_diff:
-			min_lv_diff = diff
-			best_monster = m
-			
-	if best_monster:
-		var enemy = best_monster.duplicate() # ダメージ処理用に複製
-		var battle_log = _simulate_battle(v, enemy, str_val, int_val, dex_val, agi_val)
-		add_log(battle_log)
+
 
 # 戦闘シミュレーション (1 vs 1)
 func _simulate_battle(v: Villager, enemy: Dictionary, str_val: int, int_val: int, dex_val: int, agi_val: int) -> String:
@@ -383,38 +562,7 @@ func _simulate_battle(v: Villager, enemy: Dictionary, str_val: int, int_val: int
 			
 	return log_msg
 
-# クラフトの進行
-func _process_crafting():
-	# 職人(crafter)の数を探す
-	var craft_power = 0
-	for v in villagers:
-		if v.is_dead: continue
-		if v.current_job == "crafter" and v.order == "inn": # 宿屋で待機しながらクラフトする設定
-			craft_power += v.get_dex()
-			
-	# もし職人がいなくても、自動で進む力（ベース10）
-	craft_power += 10
-	
-	var completed = []
-	for recipe_id in active_crafts.keys():
-		var recipe = Database.recipes[recipe_id]
-		active_crafts[recipe_id] -= craft_power
-		if active_crafts[recipe_id] <= 0:
-			# 完成
-			var result = recipe.result
-			# 大成功判定（職人のDEXに依存）
-			var success_msg = ""
-			var amount = result.amount
-			if randf() < (craft_power * 0.001):
-				amount += 1
-				success_msg = " (大成功！)"
-				
-			_add_to_inventory(result.id, amount)
-			add_log("[クラフト完成] %s を %d 個作成しました。%s" % [Database.items[result.id].name, amount, success_msg])
-			completed.append(recipe_id)
-			
-	for r in completed:
-		active_crafts.erase(r)
+
 
 # クラフトの開始
 func start_craft(recipe_id: String) -> bool:
@@ -507,12 +655,16 @@ func get_facility_upgrade_cost(fac_id: String) -> Dictionary:
 		
 	return {"gold": cost_gold, "items": cost_items}
 
-# 施設アップグレード
+# 施設アップグレード（開始）
 func upgrade_facility(fac_id: String) -> bool:
 	if not facility_levels.has(fac_id): return false
 	var next_lv = facility_levels[fac_id] + 1
 	if next_lv > 4: return false # 最大Lv4
 	
+	if active_upgrades.has(fac_id):
+		add_log("すでにアップグレード中です。")
+		return false
+		
 	var cost = get_facility_upgrade_cost(fac_id)
 	var cost_gold = cost.gold
 	var cost_items = cost.items
@@ -532,8 +684,10 @@ func upgrade_facility(fac_id: String) -> bool:
 	for m in cost_items:
 		_consume_from_inventory(m.id, m.amount)
 		
-	facility_levels[fac_id] = next_lv
-	add_log("施設 %s がレベル %d にアップグレードされました！" % [fac_id, next_lv])
+	# 必要時間（例: 施設レベルアップごとに 4時間 * next_lv）
+	var req_hours = next_lv * 4
+	active_upgrades[fac_id] = req_hours
+	add_log("施設「%s」のアップグレード（Lv.%dへ）を開始しました。(所要時間: %d時間)" % [_get_facility_name(fac_id), next_lv, req_hours])
 	
 	emit_signal("game_state_updated")
 	return true

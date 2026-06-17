@@ -20,9 +20,25 @@ extends Resource
 @export var weapon_id: String = ""
 @export var armor_id: String = ""
 
+# 元の活動を記録する変数 (休息完了後の自動復帰用)
+@export var last_active_order: String = "gather"
+@export var last_active_area: String = "forest"
+
 # 現在の指示方針: "gather" (採取), "hunt" (討伐), "inn" (宿屋待機・自動回復)
-@export var order: String = "gather"
+@export var order: String = "gather":
+	set(val):
+		if val == "inn" and order != "inn":
+			last_active_order = order
+			last_active_area = assigned_area
+		order = val
+
 @export var assigned_area: String = "forest"
+
+# スタミナと移動状態
+@export var current_stamina: int = 100
+@export var base_max_stamina: int = 100
+@export var travel_time: int = 0
+@export var is_returning: bool = false
 
 # 状態
 @export var is_dead: bool = false
@@ -128,3 +144,15 @@ func take_damage(amount: int) -> bool:
 func heal(amount: int):
 	if is_dead: return
 	current_hp = min(get_max_hp(), current_hp + amount)
+
+func get_max_stamina() -> int:
+	return base_max_stamina
+
+func heal_stamina(amount: int):
+	if is_dead: return
+	current_stamina = min(get_max_stamina(), current_stamina + amount)
+
+func consume_stamina(amount: int) -> bool:
+	if is_dead: return false
+	current_stamina = max(0, current_stamina - amount)
+	return current_stamina <= 0

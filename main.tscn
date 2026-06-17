@@ -20,7 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.0980392, 0.0980392, 0.121569, 1)
+color = Color(0.0784314, 0.0784314, 0.0980392, 1)
 
 [node name="MainVBox" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -31,246 +31,267 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 8
 
-[node name="BodySection" type="HSplitContainer" parent="MainVBox"]
-layout_mode = 2
-size_flags_vertical = 3
-split_offset = 600
-
-[node name="TabContainer" type="TabContainer" parent="MainVBox/BodySection"]
-layout_mode = 2
-size_flags_horizontal = 3
-current_tab = 0
-
-[node name="概要" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
+[node name="HeaderBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 
-[node name="OverviewVBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-theme_override_constants/separation = 20
-
-[node name="Welcome" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
-layout_mode = 2
-text = "
-【Fast Slow Life】
-村人たちに指示を与え、時間（日数）を進めることで自動的に資源を採取し、施設を強化し、
-ダンジョンを探索して期限内のボス撃破を目指す街経営RPGシミュレーションです。
-"
-horizontal_alignment = 1
-
-[node name="StatusHBox" type="HBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 1
-theme_override_constants/separation = 20
-
-[node name="VillageStatusPanel" type="PanelContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Margin" type="MarginContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 12
-
-[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin/VBox"]
-layout_mode = 2
-text = "【村の概況】"
-horizontal_alignment = 1
-
-[node name="VillageStatusLabel" type="RichTextLabel" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/VillageStatusPanel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-fit_content = true
-
-[node name="ExplorationPanel" type="PanelContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Margin" type="MarginContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 12
-
-[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin"]
-layout_mode = 2
-
-[node name="Title" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin/VBox"]
-layout_mode = 2
-text = "【ダンジョン探索状況】"
-horizontal_alignment = 1
-
-[node name="ExplorationLabel" type="RichTextLabel" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox/StatusHBox/ExplorationPanel/Margin/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-bbcode_enabled = true
-fit_content = true
-
-[node name="Instructions" type="Label" parent="MainVBox/BodySection/TabContainer/概要/OverviewVBox"]
-layout_mode = 2
-text = "
-■ 基本的な流れ
-1. 「村人」タブで、各村人に指示（採取または討伐）と派遣先のダンジョンを設定。
-2. 必要に応じて職業（ジョブ）への転職を行って適性を強化。
-3. 下部バーの「1日経過」または「オートプレイ」でターンを進行。
-4. 集まった素材で「施設と加工」タブから宿屋の拡張や装備品のクラフトを実行。
-5. 探索度が100%に達したら「探索」タブからボスに挑戦。
-6. 撃破に成功すると、期限が延長され新たな施設やマップが解放。
-7. 制限日数を超えたり全滅した場合はゲームオーバーとなり、SPを獲得して「転生」バフを購入して再挑戦。
-"
-horizontal_alignment = 1
-
-[node name="村人管理" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="VillagerContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/村人管理"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="施設と加工" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="FacilityContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/施設と加工"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="倉庫" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="InventoryContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/倉庫"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="探索・討伐" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="AreaContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/探索・討伐"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="周回ショップ" type="ScrollContainer" parent="MainVBox/BodySection/TabContainer"]
-visible = false
-layout_mode = 2
-
-[node name="RebirthContainer" type="VBoxContainer" parent="MainVBox/BodySection/TabContainer/周回ショップ"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 15
-
-[node name="LogPanel" type="PanelContainer" parent="MainVBox/BodySection"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/LogPanel"]
-layout_mode = 2
-
-[node name="LogTitle" type="Label" parent="MainVBox/BodySection/LogPanel/VBox"]
-layout_mode = 2
-text = "開拓日誌（ログ）"
-horizontal_alignment = 1
-
-[node name="LogText" type="RichTextLabel" parent="MainVBox/BodySection/LogPanel/VBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-focus_mode = 2
-bbcode_enabled = true
-scroll_following = true
-selection_enabled = true
-
-[node name="BottomBar" type="PanelContainer" parent="MainVBox"]
-custom_minimum_size = Vector2(0, 55)
-layout_mode = 2
-
-[node name="BottomMargin" type="MarginContainer" parent="MainVBox/BottomBar"]
+[node name="Margin" type="MarginContainer" parent="MainVBox/HeaderBar"]
 layout_mode = 2
 theme_override_constants/margin_left = 15
 theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 15
 theme_override_constants/margin_bottom = 5
 
-[node name="BottomHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin"]
+[node name="HBox" type="HBoxContainer" parent="MainVBox/HeaderBar/Margin"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="StatusHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin/BottomHBox"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 1
-
-[node name="DayLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+[node name="DayLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 text = "経過日数: 1 日"
-horizontal_alignment = 1
 
-[node name="GoldLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+[node name="HourLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
+text = "08:00"
+
+[node name="GoldLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
 text = "ゴールド: 1000 G"
-horizontal_alignment = 1
 
-[node name="FoodLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+[node name="FoodLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 3
 text = "食料: 200"
-horizontal_alignment = 1
 
-[node name="SoulPointsLabel" type="Label" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
+[node name="SoulPointsLabel" type="Label" parent="MainVBox/HeaderBar/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "ソウル: 0 SP"
+
+[node name="TargetLabel" type="Button" parent="MainVBox/HeaderBar/Margin/HBox"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "ソウルポイント: 0 SP"
-horizontal_alignment = 1
-
-[node name="TargetLabel" type="Button" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox"]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "期限: 30 日目まで (クリックで目標表示)"
+text = "目標: 30 日目までにゴブリンロードを討伐！"
 flat = true
+alignment = 0
 
-[node name="ControlHBox" type="HBoxContainer" parent="MainVBox/BottomBar/BottomMargin/BottomHBox"]
+[node name="TimeControls" type="HBoxContainer" parent="MainVBox/HeaderBar/Margin/HBox"]
 layout_mode = 2
 alignment = 2
-theme_override_constants/separation = 15
+theme_override_constants/separation = 8
 
-[node name="AutoPlayCheck" type="CheckBox" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox"]
+[node name="BtnPause" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/TimeControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "||"
+
+[node name="BtnPlay" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/TimeControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = ">"
+
+[node name="BtnDouble" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/TimeControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = ">>"
+
+[node name="BtnSkip" type="Button" parent="MainVBox/HeaderBar/Margin/HBox/TimeControls"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "+24h"
+
+[node name="BodySection" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Column1_Inventory" type="PanelContainer" parent="MainVBox/BodySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/Column1_Inventory"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/Column1_Inventory/VBox"]
+layout_mode = 2
+text = "倉庫・アイテム"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="MainVBox/BodySection/Column1_Inventory/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="InventoryContainer" type="VBoxContainer" parent="MainVBox/BodySection/Column1_Inventory/VBox/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "オートプレイ (自動進行)"
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
-[node name="AdvanceDayButton" type="Button" parent="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox"]
-custom_minimum_size = Vector2(150, 40)
+[node name="Column2_Villagers" type="PanelContainer" parent="MainVBox/BodySection"]
 layout_mode = 2
-text = "1日経過させる"
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/Column2_Villagers"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/Column2_Villagers/VBox"]
+layout_mode = 2
+text = "キャラクター"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="MainVBox/BodySection/Column2_Villagers/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VillagerContainer" type="VBoxContainer" parent="MainVBox/BodySection/Column2_Villagers/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Column3_Facilities" type="PanelContainer" parent="MainVBox/BodySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/Column3_Facilities"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/Column3_Facilities/VBox"]
+layout_mode = 2
+text = "施設・クラフト"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="MainVBox/BodySection/Column3_Facilities/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="FacilityContainer" type="VBoxContainer" parent="MainVBox/BodySection/Column3_Facilities/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Column4_Areas" type="PanelContainer" parent="MainVBox/BodySection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/BodySection/Column4_Areas"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MainVBox/BodySection/Column4_Areas/VBox"]
+layout_mode = 2
+text = "フィールド・ダンジョン"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="MainVBox/BodySection/Column4_Areas/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="AreaContainer" type="VBoxContainer" parent="MainVBox/BodySection/Column4_Areas/VBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="FooterBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 45)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/FooterBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 5
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/FooterBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LogPrefix" type="Label" parent="MainVBox/FooterBar/Margin/HBox"]
+layout_mode = 2
+text = "[LOG]"
+
+[node name="LogTicker" type="RichTextLabel" parent="MainVBox/FooterBar/Margin/HBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+focus_mode = 2
+bbcode_enabled = true
+scroll_active = false
+scroll_following = true
+selection_enabled = true
+
+[node name="BtnHistory" type="Button" parent="MainVBox/FooterBar/Margin/HBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "ログ履歴"
+
+[node name="DetailPopup" type="AcceptDialog" parent="."]
+unique_name_in_owner = true
+title = "詳細情報"
+initial_position = 2
+size = Vector2i(450, 480)
+
+[node name="Scroll" type="ScrollContainer" parent="DetailPopup"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 442.0
+offset_bottom = 431.0
+
+[node name="VBox" type="VBoxContainer" parent="DetailPopup/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="DetailText" type="RichTextLabel" parent="DetailPopup/Scroll/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+bbcode_enabled = true
+fit_content = true
+
+[node name="ActionContainerA" type="VBoxContainer" parent="DetailPopup/Scroll/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ActionContainerB" type="VBoxContainer" parent="DetailPopup/Scroll/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="HistoryPopup" type="AcceptDialog" parent="."]
+unique_name_in_owner = true
+title = "ログ履歴"
+initial_position = 2
+size = Vector2i(600, 450)
+
+[node name="Scroll" type="ScrollContainer" parent="HistoryPopup"]
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 592.0
+offset_bottom = 401.0
+
+[node name="HistoryLogText" type="RichTextLabel" parent="HistoryPopup/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
+scroll_following = true
 
 [node name="RebirthPanel" type="Panel" parent="."]
 unique_name_in_owner = true
@@ -320,6 +341,7 @@ text = "期限内に目標ボスを撃破できなかったか、
 horizontal_alignment = 1
 
 [node name="RestartLoopButton" type="Button" parent="RebirthPanel/RebirthCenterBox"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 55)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -327,8 +349,3 @@ text = "獲得したSPを手に転生する"
 
 [node name="AutoPlayTimer" type="Timer" parent="."]
 unique_name_in_owner = true
-
-[connection signal="pressed" from="MainVBox/BottomBar/BottomMargin/BottomHBox/StatusHBox/TargetLabel" to="." method="_on_target_button_pressed"]
-[connection signal="pressed" from="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox/AdvanceDayButton" to="." method="_on_advance_day_pressed"]
-[connection signal="toggled" from="MainVBox/BottomBar/BottomMargin/BottomHBox/ControlHBox/AutoPlayCheck" to="." method="_on_auto_play_toggled"]
-[connection signal="pressed" from="RebirthPanel/RebirthCenterBox/RestartLoopButton" to="." method="_on_restart_loop_pressed"]
