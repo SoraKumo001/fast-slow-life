@@ -7,6 +7,6 @@
     "editor.defaultFormatter": "oxc-project.oxc-vscode"
   },
   "[typescriptreact]": {
-    "editor.defaultFormatter": "oxc-project.oxc-vscode"
+    "editor.defaultFormatter": "oxc.oxc-vscode"
   }
 }

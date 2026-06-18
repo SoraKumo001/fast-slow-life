@@ -43,12 +43,7 @@ export const VillagerList: React.FC = () => {
         actionStr = targetName ? `討伐 [${targetName}]` : "討伐";
       }
 
-      let statusStr = "";
-      if (v.status === "traveling_to") statusStr = "へ移動中";
-      else if (v.status === "traveling_back") statusStr = "から帰還中";
-      else statusStr = "で活動中";
-
-      return `${areaName} : ${actionStr}${statusStr}`;
+      return `${areaName} : ${actionStr}`;
     }
     return "待機中 (方針なし)";
   };
@@ -91,50 +86,55 @@ export const VillagerList: React.FC = () => {
                   <span className="text-xs text-slate-400 font-mono ml-2">
                     Lv.{v.level}{" "}
                     <span className="text-[10px] text-slate-500 font-normal">
-                      ({v.exp}/{v.level * 100})
+                      <CheckCircle className="w-2.5 h-2.5 text-sky-400 inline" /> {v.exp}/
+                      {v.level * 100}
                     </span>
                   </span>
-                  <div className="mt-1 flex flex-col gap-0.5">
+                  <div className="mt-1 flex gap-0.5 items-center gap-2">
+                    <div>
+                      <span
+                        className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${
+                          v.status === "idle"
+                            ? "bg-slate-800 text-slate-400"
+                            : v.status === "resting"
+                              ? "bg-emerald-950/80 border border-emerald-900 text-emerald-400"
+                              : v.status === "active"
+                                ? "bg-red-950/80 border border-red-900 text-red-400"
+                                : "bg-amber-950/80 border border-amber-900 text-amber-400"
+                        }`}
+                      >
+                        {v.status === "idle"
+                          ? "待機"
+                          : v.status === "resting"
+                            ? "休息中"
+                            : v.status === "active"
+                              ? "活動中"
+                              : v.status === "traveling_to"
+                                ? "移動中"
+                                : "帰還中"}
+                        {v.travelTimeLeft}h
+                      </span>
+                    </div>
                     <span className="text-[10px] text-slate-300 font-medium mt-0.5 block">
                       {getVillagerPurpose(v)}
                     </span>
                   </div>
+                  {/* 縮小時（折りたたみ時）の一行表示 */}
+                  {!isExpanded && (
+                    <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400 font-mono">
+                      <span className="flex items-center gap-0.5">
+                        <Heart className="w-3 h-3 text-red-500 shrink-0" />
+                        HP:{v.currentHp}/{v.maxHp}
+                      </span>
+                      <span className="flex items-center gap-0.5">
+                        <Zap className="w-3 h-3 text-amber-500 shrink-0" />
+                        ST:{v.stamina}/100
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <div className="text-right">
-                    <span
-                      className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${
-                        v.status === "idle"
-                          ? "bg-slate-800 text-slate-400"
-                          : v.status === "resting"
-                            ? "bg-emerald-950/80 border border-emerald-900 text-emerald-400"
-                            : v.status === "active"
-                              ? "bg-red-950/80 border border-red-900 text-red-400"
-                              : "bg-amber-950/80 border border-amber-900 text-amber-400"
-                      }`}
-                    >
-                      {v.status === "idle"
-                        ? "待機"
-                        : v.status === "resting"
-                          ? "休息中"
-                          : v.status === "active"
-                            ? "活動中"
-                            : v.status === "traveling_to"
-                              ? "移動中"
-                              : "帰還中"}
-                    </span>
-                    {v.status === "traveling_to" && (
-                      <p className="text-[8px] text-slate-500 font-mono">
-                        到着まで {v.travelTimeLeft}h
-                      </p>
-                    )}
-                    {v.status === "traveling_back" && (
-                      <p className="text-[8px] text-slate-500 font-mono">
-                        帰還まで {v.travelTimeLeft}h
-                      </p>
-                    )}
-                  </div>
                   <span className="text-xs text-slate-500 font-mono">{isExpanded ? "▲" : "▼"}</span>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export const VillagerList: React.FC = () => {
               {/* 展開された詳細ステータス */}
               {isExpanded && (
                 <div className="mt-3 pt-3 border-t border-slate-900 space-y-3">
-                  {/* HP & スタミナ */}
+                  {/* HP & スタミナ & EXP（展開時の複数行表示） */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs font-mono">
                       <span className="text-slate-400 flex items-center gap-1">
@@ -171,23 +171,7 @@ export const VillagerList: React.FC = () => {
                         style={{ width: `${v.stamina}%` }}
                       />
                     </div>
-
-                    <div className="flex items-center justify-between text-xs font-mono">
-                      <span className="text-slate-400 flex items-center gap-1">
-                        <CheckCircle className="w-3.5 h-3.5 text-sky-400" /> EXP
-                      </span>
-                      <span className="text-slate-200">
-                        {v.exp} / {v.level * 100}
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-900 rounded-full h-1">
-                      <div
-                        className="bg-sky-400 h-1 rounded-full transition-all duration-300"
-                        style={{ width: `${(v.exp / (v.level * 100)) * 100}%` }}
-                      />
-                    </div>
                   </div>
-
                   {/* ステータス & 転職 & 装備 */}
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div className="space-y-1 text-[11px] font-mono text-slate-400">
