@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useGameStore, ITEMS } from '../store/gameStore';
-import { DungeonArea } from '../types/game';
-import { Compass, ShieldAlert, Users, Footprints, AlertCircle } from 'lucide-react';
+import React, { useState } from "react";
+import { useGameStore, ITEMS } from "../store/gameStore";
+import { DungeonArea } from "../types/game";
+import { Compass, ShieldAlert, Users, Footprints, AlertCircle } from "lucide-react";
 
 export const DungeonPanel: React.FC = () => {
   const { dungeons, villagers, currentTier, bossDefeated, setVillagerOrder } = useGameStore();
@@ -9,11 +9,11 @@ export const DungeonPanel: React.FC = () => {
   const [showAssignModal, setShowAssignModal] = useState(false);
 
   const getActiveVillagersInArea = (areaId: string) => {
-    return villagers.filter(v => v.destinationAreaId === areaId);
+    return villagers.filter((v) => v.destinationAreaId === areaId);
   };
 
   const getIdleVillagers = () => {
-    return villagers.filter(v => v.status === 'idle');
+    return villagers.filter((v) => v.status === "idle");
   };
 
   const handleOpenAssign = (area: DungeonArea) => {
@@ -21,7 +21,7 @@ export const DungeonPanel: React.FC = () => {
     setShowAssignModal(true);
   };
 
-  const handleAssign = (vId: string, order: 'gather' | 'hunt') => {
+  const handleAssign = (vId: string, order: "gather" | "hunt") => {
     if (selectedArea) {
       setVillagerOrder(vId, order, selectedArea.id);
       setShowAssignModal(false);
@@ -39,15 +39,15 @@ export const DungeonPanel: React.FC = () => {
         {dungeons.map((area) => {
           const isUnlocked = area.unlockedAtTier <= currentTier;
           const activeInArea = getActiveVillagersInArea(area.id);
-          const boss = area.monsters.find(m => m.isBoss);
+          const boss = area.monsters.find((m) => m.isBoss);
 
           return (
             <div
               key={area.id}
               className={`border rounded-xl p-4 transition-all duration-200 ${
                 isUnlocked
-                  ? 'bg-slate-950/70 border-slate-800'
-                  : 'bg-slate-950/10 border-dashed border-slate-900 opacity-50'
+                  ? "bg-slate-950/70 border-slate-800"
+                  : "bg-slate-950/10 border-dashed border-slate-900 opacity-50"
               }`}
             >
               {/* ダンジョン基本情報 */}
@@ -83,7 +83,9 @@ export const DungeonPanel: React.FC = () => {
                 <div className="mt-2 mb-3">
                   <div className="flex justify-between text-[10px] mb-1">
                     <span className="text-slate-400 font-medium">探索度</span>
-                    <span className="text-sky-400 font-bold font-mono">{Math.floor(area.explorationProgress)}%</span>
+                    <span className="text-sky-400 font-bold font-mono">
+                      {Math.floor(area.explorationProgress)}%
+                    </span>
                   </div>
                   <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
                     <div
@@ -101,15 +103,17 @@ export const DungeonPanel: React.FC = () => {
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
                       <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
-                        {area.gathers.map(g => {
-                          const isItemUnlocked = area.explorationProgress >= (g.unlockedAtProgress || 0);
+                        {area.gathers.map((g) => {
+                          const isItemUnlocked =
+                            area.explorationProgress >= (g.unlockedAtProgress || 0);
                           return (
-                            <li key={g.itemId} className={isItemUnlocked ? '' : 'text-slate-600 font-normal'}>
-                              {isItemUnlocked ? (
-                                `${ITEMS[g.itemId].name} (難度 ${g.difficulty})`
-                              ) : (
-                                `??? (${g.unlockedAtProgress}%で解放)`
-                              )}
+                            <li
+                              key={g.itemId}
+                              className={isItemUnlocked ? "" : "text-slate-600 font-normal"}
+                            >
+                              {isItemUnlocked
+                                ? `${ITEMS[g.itemId].name} (難度 ${g.difficulty})`
+                                : `??? (${g.unlockedAtProgress}%で解放)`}
                             </li>
                           );
                         })}
@@ -118,15 +122,23 @@ export const DungeonPanel: React.FC = () => {
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
                       <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
-                        {area.monsters.map(m => {
-                          const isMonsUnlocked = area.explorationProgress >= (m.unlockedAtProgress || 0);
+                        {area.monsters.map((m) => {
+                          const isMonsUnlocked =
+                            area.explorationProgress >= (m.unlockedAtProgress || 0);
                           return (
-                            <li key={m.id} className={isMonsUnlocked ? (m.isBoss ? 'text-amber-400 font-bold' : '') : 'text-slate-600 font-normal'}>
-                              {isMonsUnlocked ? (
-                                `${m.name} ${m.isBoss ? '(ボス)' : `(Lv.${m.level})`}`
-                              ) : (
-                                `??? (${m.unlockedAtProgress}%で解放)`
-                              )}
+                            <li
+                              key={m.id}
+                              className={
+                                isMonsUnlocked
+                                  ? m.isBoss
+                                    ? "text-amber-400 font-bold"
+                                    : ""
+                                  : "text-slate-600 font-normal"
+                              }
+                            >
+                              {isMonsUnlocked
+                                ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                : `??? (${m.unlockedAtProgress}%で解放)`}
                             </li>
                           );
                         })}
@@ -143,17 +155,17 @@ export const DungeonPanel: React.FC = () => {
                     {activeInArea.length === 0 ? (
                       <span className="text-[10px] text-slate-500 italic">なし</span>
                     ) : (
-                      activeInArea.map(v => (
+                      activeInArea.map((v) => (
                         <span
                           key={v.id}
                           className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
-                            v.status === 'active'
-                              ? 'bg-sky-950/40 border-sky-850 text-sky-400'
-                              : 'bg-amber-955/20 border-amber-900 text-amber-400'
+                            v.status === "active"
+                              ? "bg-sky-950/40 border-sky-850 text-sky-400"
+                              : "bg-amber-955/20 border-amber-900 text-amber-400"
                           }`}
-                          title={`現在方針: ${v.order === 'gather' ? '採取' : '討伐'}`}
+                          title={`現在方針: ${v.order === "gather" ? "採取" : "討伐"}`}
                         >
-                          {v.name} ({v.order === 'gather' ? '採' : '討'})
+                          {v.name} ({v.order === "gather" ? "採" : "討"})
                         </span>
                       ))
                     )}
@@ -163,7 +175,8 @@ export const DungeonPanel: React.FC = () => {
                   {boss && (
                     <div className="flex items-center gap-2 mt-1 text-[10px]">
                       <span className="text-slate-400">エリアボス:</span>
-                      {currentTier > area.unlockedAtTier || (currentTier === area.unlockedAtTier && bossDefeated) ? (
+                      {currentTier > area.unlockedAtTier ||
+                      (currentTier === area.unlockedAtTier && bossDefeated) ? (
                         <span className="text-emerald-400 font-bold">撃破済</span>
                       ) : (
                         <span className="text-amber-500 font-bold flex items-center gap-1">
@@ -184,15 +197,20 @@ export const DungeonPanel: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-100">村人を {selectedArea.name} へ派遣</h3>
+              <h3 className="text-lg font-bold text-slate-100">
+                村人を {selectedArea.name} へ派遣
+              </h3>
               <p className="text-xs text-slate-400 font-mono">
-                推奨レベル: {selectedArea.recommendedLevel} • 必要移動時間: {selectedArea.distance}時間
+                推奨レベル: {selectedArea.recommendedLevel} • 必要移動時間: {selectedArea.distance}
+                時間
               </p>
             </div>
 
             <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
               {getIdleVillagers().length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">派遣できる待機中の村人がいません。</p>
+                <p className="text-xs text-slate-500 text-center py-4">
+                  派遣できる待機中の村人がいません。
+                </p>
               ) : (
                 getIdleVillagers().map((v) => {
                   const isLvOk = v.level >= selectedArea.recommendedLevel;
@@ -216,13 +234,13 @@ export const DungeonPanel: React.FC = () => {
 
                       <div className="flex gap-1.5">
                         <button
-                          onClick={() => handleAssign(v.id, 'gather')}
+                          onClick={() => handleAssign(v.id, "gather")}
                           className="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[10px] transition"
                         >
                           採取派遣
                         </button>
                         <button
-                          onClick={() => handleAssign(v.id, 'hunt')}
+                          onClick={() => handleAssign(v.id, "hunt")}
                           className="px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white font-medium text-[10px] transition"
                         >
                           討伐派遣

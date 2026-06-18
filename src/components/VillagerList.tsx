@@ -1,15 +1,7 @@
 import React, { useState } from "react";
 import { useGameStore, JOBS, ITEMS, MONSTERS } from "../store/gameStore";
 import { JobType, Villager } from "../types/game";
-import {
-  User,
-  Shield,
-  Sword,
-  Heart,
-  Zap,
-  RefreshCw,
-  CheckCircle,
-} from "lucide-react";
+import { User, Shield, Sword, Heart, Zap, RefreshCw, CheckCircle } from "lucide-react";
 
 export const VillagerList: React.FC = () => {
   const {
@@ -24,9 +16,7 @@ export const VillagerList: React.FC = () => {
     setVillagerOrder,
     soulUpgrades,
   } = useGameStore();
-  const [selectedVillager, setSelectedVillager] = useState<Villager | null>(
-    null,
-  );
+  const [selectedVillager, setSelectedVillager] = useState<Villager | null>(null);
   const [activeModal, setActiveModal] = useState<"job" | "equip" | null>(null);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
@@ -57,9 +47,7 @@ export const VillagerList: React.FC = () => {
           : v.autoTargetName;
         actionStr = targetName ? `採取 [${targetName}]` : "採取";
       } else if (v.order === "hunt") {
-        const targetName = v.targetMonsterId
-          ? MONSTERS[v.targetMonsterId]?.name
-          : v.autoTargetName;
+        const targetName = v.targetMonsterId ? MONSTERS[v.targetMonsterId]?.name : v.autoTargetName;
         actionStr = targetName ? `討伐 [${targetName}]` : "討伐";
       }
 
@@ -131,9 +119,7 @@ export const VillagerList: React.FC = () => {
                   <span className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-sky-400 font-medium">
                     {v.currentJob}
                   </span>
-                  <span className="font-bold text-slate-100 text-sm">
-                    {v.name}
-                  </span>
+                  <span className="font-bold text-slate-100 text-sm">{v.name}</span>
                   <span className="text-xs text-slate-400 font-mono ml-2">
                     Lv.{v.level}{" "}
                     <span className="text-[10px] text-slate-500 font-normal">
@@ -181,9 +167,7 @@ export const VillagerList: React.FC = () => {
                       </p>
                     )}
                   </div>
-                  <span className="text-xs text-slate-500 font-mono">
-                    {isExpanded ? "▲" : "▼"}
-                  </span>
+                  <span className="text-xs text-slate-500 font-mono">{isExpanded ? "▲" : "▼"}</span>
                 </div>
               </div>
 
@@ -253,28 +237,16 @@ export const VillagerList: React.FC = () => {
                         </button>
                       </div>
                       <p>
-                        STR (腕力):{" "}
-                        <span className="text-slate-200 font-bold">
-                          {v.str}
-                        </span>
+                        STR (腕力): <span className="text-slate-200 font-bold">{v.str}</span>
                       </p>
                       <p>
-                        INT (魔力):{" "}
-                        <span className="text-slate-200 font-bold">
-                          {v.int}
-                        </span>
+                        INT (魔力): <span className="text-slate-200 font-bold">{v.int}</span>
                       </p>
                       <p>
-                        DEX (器用):{" "}
-                        <span className="text-slate-200 font-bold">
-                          {v.dex}
-                        </span>
+                        DEX (器用): <span className="text-slate-200 font-bold">{v.dex}</span>
                       </p>
                       <p>
-                        AGI (敏捷):{" "}
-                        <span className="text-slate-200 font-bold">
-                          {v.agi}
-                        </span>
+                        AGI (敏捷): <span className="text-slate-200 font-bold">{v.agi}</span>
                       </p>
                     </div>
 
@@ -289,9 +261,7 @@ export const VillagerList: React.FC = () => {
                       >
                         <span className="flex items-center gap-1 text-[10px]">
                           <Sword className="w-3 h-3 text-amber-500" />
-                          {v.weaponId !== "none"
-                            ? ITEMS[v.weaponId].name
-                            : "武器なし"}
+                          {v.weaponId !== "none" ? ITEMS[v.weaponId].name : "武器なし"}
                         </span>
                       </button>
                       <button
@@ -303,9 +273,7 @@ export const VillagerList: React.FC = () => {
                       >
                         <span className="flex items-center gap-1 text-[10px]">
                           <Shield className="w-3 h-3 text-sky-400" />
-                          {v.armorId !== "none"
-                            ? ITEMS[v.armorId].name
-                            : "防具なし"}
+                          {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
                         </span>
                       </button>
                     </div>
@@ -343,13 +311,7 @@ export const VillagerList: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setVillagerOrder(
-                                v.id,
-                                "gather",
-                                v.destinationAreaId,
-                                null,
-                                null,
-                              );
+                              setVillagerOrder(v.id, "gather", v.destinationAreaId, null, null);
                             }}
                             disabled={v.order === "gather"}
                             className="py-1 text-center rounded bg-emerald-950/40 hover:bg-emerald-900 border border-emerald-900 text-[9px] font-bold text-emerald-400 hover:text-emerald-200 transition disabled:opacity-40"
@@ -359,13 +321,7 @@ export const VillagerList: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setVillagerOrder(
-                                v.id,
-                                "hunt",
-                                v.destinationAreaId,
-                                null,
-                                null,
-                              );
+                              setVillagerOrder(v.id, "hunt", v.destinationAreaId, null, null);
                             }}
                             disabled={v.order === "hunt"}
                             className="py-1 text-center rounded bg-red-950/40 hover:bg-red-900 border border-red-900 text-[9px] font-bold text-red-400 hover:text-red-200 transition disabled:opacity-40"
@@ -375,11 +331,7 @@ export const VillagerList: React.FC = () => {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setVillagerOrder(
-                                v.id,
-                                "rest",
-                                v.destinationAreaId,
-                              );
+                              setVillagerOrder(v.id, "rest", v.destinationAreaId);
                             }}
                             className="py-1 text-center rounded bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[9px] font-bold text-slate-400 hover:text-slate-200 transition"
                           >
@@ -389,21 +341,12 @@ export const VillagerList: React.FC = () => {
 
                         {v.order === "gather" && (
                           <div className="flex items-center justify-between gap-2 text-[10px]">
-                            <span className="text-slate-400">
-                              個別採取ターゲット:
-                            </span>
+                            <span className="text-slate-400">個別採取ターゲット:</span>
                             <select
                               value={v.targetGatherItemId || ""}
                               onChange={(e) => {
-                                const val =
-                                  e.target.value === "" ? null : e.target.value;
-                                setVillagerOrder(
-                                  v.id,
-                                  v.order,
-                                  v.destinationAreaId,
-                                  val,
-                                  null,
-                                );
+                                const val = e.target.value === "" ? null : e.target.value;
+                                setVillagerOrder(v.id, v.order, v.destinationAreaId, val, null);
                               }}
                               className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
                             >
@@ -412,10 +355,8 @@ export const VillagerList: React.FC = () => {
                                 .find((d) => d.id === v.destinationAreaId)
                                 ?.gathers.filter(
                                   (g) =>
-                                    (dungeons.find(
-                                      (d) => d.id === v.destinationAreaId,
-                                    )?.explorationProgress || 0) >=
-                                    (g.unlockedAtProgress || 0),
+                                    (dungeons.find((d) => d.id === v.destinationAreaId)
+                                      ?.explorationProgress || 0) >= (g.unlockedAtProgress || 0),
                                 )
                                 .map((g) => (
                                   <option key={g.itemId} value={g.itemId}>
@@ -428,21 +369,12 @@ export const VillagerList: React.FC = () => {
 
                         {v.order === "hunt" && (
                           <div className="flex items-center justify-between gap-2 text-[10px]">
-                            <span className="text-slate-400">
-                              個別討伐ターゲット:
-                            </span>
+                            <span className="text-slate-400">個別討伐ターゲット:</span>
                             <select
                               value={v.targetMonsterId || ""}
                               onChange={(e) => {
-                                const val =
-                                  e.target.value === "" ? null : e.target.value;
-                                setVillagerOrder(
-                                  v.id,
-                                  v.order,
-                                  v.destinationAreaId,
-                                  null,
-                                  val,
-                                );
+                                const val = e.target.value === "" ? null : e.target.value;
+                                setVillagerOrder(v.id, v.order, v.destinationAreaId, null, val);
                               }}
                               className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
                             >
@@ -451,10 +383,8 @@ export const VillagerList: React.FC = () => {
                                 .find((d) => d.id === v.destinationAreaId)
                                 ?.monsters.filter(
                                   (m) =>
-                                    (dungeons.find(
-                                      (d) => d.id === v.destinationAreaId,
-                                    )?.explorationProgress || 0) >=
-                                    (m.unlockedAtProgress || 0),
+                                    (dungeons.find((d) => d.id === v.destinationAreaId)
+                                      ?.explorationProgress || 0) >= (m.unlockedAtProgress || 0),
                                 )
                                 .map((m) => (
                                   <option key={m.id} value={m.id}>
@@ -490,9 +420,7 @@ export const VillagerList: React.FC = () => {
               {(Object.keys(JOBS) as JobType[]).map((jobKey) => {
                 const job = JOBS[jobKey];
                 const isHistory = selectedVillager.jobHistory.includes(jobKey);
-                const cost = isHistory
-                  ? 0
-                  : Math.floor(job.cost * discountRate);
+                const cost = isHistory ? 0 : Math.floor(job.cost * discountRate);
                 const canAfford = gold >= cost;
                 const isCurrent = selectedVillager.currentJob === jobKey;
 
@@ -507,18 +435,14 @@ export const VillagerList: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-sm text-slate-200">
-                          {jobKey}
-                        </span>
+                        <span className="font-bold text-sm text-slate-200">{jobKey}</span>
                         {isHistory && (
                           <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-400">
                             習得済
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] text-slate-400 mt-1">
-                        {job.description}
-                      </p>
+                      <p className="text-[11px] text-slate-400 mt-1">{job.description}</p>
                     </div>
 
                     <div>
@@ -592,9 +516,7 @@ export const VillagerList: React.FC = () => {
                         外す
                       </button>
                     ) : (
-                      <span className="text-[10px] text-sky-400 font-bold">
-                        装備中
-                      </span>
+                      <span className="text-[10px] text-sky-400 font-bold">装備中</span>
                     )}
                   </div>
 
@@ -611,17 +533,13 @@ export const VillagerList: React.FC = () => {
                           className="flex justify-between items-center bg-slate-950/50 p-2 border border-slate-800 rounded"
                         >
                           <div>
-                            <p className="text-xs font-bold text-slate-200">
-                              {item.name}
-                            </p>
+                            <p className="text-xs font-bold text-slate-200">{item.name}</p>
                             <p className="text-[10px] text-slate-500 font-mono">
                               倉庫在庫: {count}個
                             </p>
                           </div>
                           {isEquipped ? (
-                            <span className="text-[10px] text-sky-400 font-bold">
-                              装備中
-                            </span>
+                            <span className="text-[10px] text-sky-400 font-bold">装備中</span>
                           ) : (
                             <button
                               onClick={() => handleEquip(itemId, "weapon")}
@@ -654,9 +572,7 @@ export const VillagerList: React.FC = () => {
                         外す
                       </button>
                     ) : (
-                      <span className="text-[10px] text-sky-400 font-bold">
-                        装備中
-                      </span>
+                      <span className="text-[10px] text-sky-400 font-bold">装備中</span>
                     )}
                   </div>
 
@@ -673,17 +589,13 @@ export const VillagerList: React.FC = () => {
                           className="flex justify-between items-center bg-slate-950/50 p-2 border border-slate-800 rounded"
                         >
                           <div>
-                            <p className="text-xs font-bold text-slate-200">
-                              {item.name}
-                            </p>
+                            <p className="text-xs font-bold text-slate-200">{item.name}</p>
                             <p className="text-[10px] text-slate-500 font-mono">
                               倉庫在庫: {count}個
                             </p>
                           </div>
                           {isEquipped ? (
-                            <span className="text-[10px] text-sky-400 font-bold">
-                              装備中
-                            </span>
+                            <span className="text-[10px] text-sky-400 font-bold">装備中</span>
                           ) : (
                             <button
                               onClick={() => handleEquip(itemId, "armor")}

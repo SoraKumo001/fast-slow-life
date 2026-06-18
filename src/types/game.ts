@@ -1,23 +1,23 @@
 export type JobType =
-  | '無職'
-  | '農民'
-  | '鉱夫'
-  | '薬師'
-  | '猟師'
-  | '戦士'
-  | '魔術師'
-  | '僧侶'
-  | '職人';
+  | "無職"
+  | "農民"
+  | "鉱夫"
+  | "薬師"
+  | "猟師"
+  | "戦士"
+  | "魔術師"
+  | "僧侶"
+  | "職人";
 
 export type ItemCategory =
-  | 'food'
-  | 'ore'
-  | 'herb'
-  | 'mana_stone'
-  | 'material' // 加工中間素材 (木板、鉄インゴット等)
-  | 'gear_weapon'
-  | 'gear_armor'
-  | 'consumable';
+  | "food"
+  | "ore"
+  | "herb"
+  | "mana_stone"
+  | "material" // 加工中間素材 (木板、鉄インゴット等)
+  | "gear_weapon"
+  | "gear_armor"
+  | "consumable";
 
 export interface Item {
   id: string;
@@ -32,14 +32,14 @@ export interface Item {
   };
 }
 
-export type OrderType = 'gather' | 'hunt' | 'rest';
+export type OrderType = "gather" | "hunt" | "rest";
 
 export type VillagerStatus =
-  | 'idle'           // 村にいる（待機中）
-  | 'traveling_to'   // ダンジョンへ移動中
-  | 'active'         // ダンジョンで活動中（採取または討伐）
-  | 'traveling_back' // 村へ帰還中
-  | 'resting';       // 宿屋で休息中
+  | "idle" // 村にいる（待機中）
+  | "traveling_to" // ダンジョンへ移動中
+  | "active" // ダンジョンで活動中（採取または討伐）
+  | "traveling_back" // 村へ帰還中
+  | "resting"; // 宿屋で休息中
 
 export interface Villager {
   id: string;
@@ -57,15 +57,15 @@ export interface Villager {
   agi: number;
   vit: number;
   weaponId: string; // 'none' or itemId
-  armorId: string;  // 'none' or itemId
+  armorId: string; // 'none' or itemId
   order: OrderType;
   status: VillagerStatus;
   destinationAreaId: string | null; // 派遣先のエリアID
   travelTimeLeft: number; // 移動の残り時間
   assignedCraftJobId: string | null; // 施設でのクラフト担当時のジョブID（自動クラフト等）
   targetGatherItemId: string | null; // 追加：直接指示された採取アイテムID
-  targetMonsterId: string | null;    // 追加：直接指示された討伐対象モンスターID
-  autoTargetName?: string | null;    // 追加：自動意思決定で選択されているターゲット名
+  targetMonsterId: string | null; // 追加：直接指示された討伐対象モンスターID
+  autoTargetName?: string | null; // 追加：自動意思決定で選択されているターゲット名
 }
 
 export interface CraftJob {
@@ -76,7 +76,7 @@ export interface CraftJob {
   assignedVillagerId: string | null;
 }
 
-export type FacilityType = 'inn' | 'workshop' | 'blacksmith' | 'alchemy' | 'market';
+export type FacilityType = "inn" | "workshop" | "blacksmith" | "alchemy" | "market";
 
 export interface Facility {
   id: FacilityType;
@@ -123,7 +123,7 @@ export interface GameLog {
   id: string;
   timestamp: string; // "1日目 12:00" のようなフォーマット
   message: string;
-  type: 'info' | 'combat' | 'gather' | 'craft' | 'upgrade' | 'system' | 'warning' | 'error';
+  type: "info" | "combat" | "gather" | "craft" | "upgrade" | "system" | "warning" | "error";
 }
 
 export interface SoulUpgrade {
@@ -153,6 +153,6 @@ export interface GameState {
   gameLimitDays: number; // 現在のTierの制限日数
   gameOver: boolean;
   isPaused: boolean;
-  playSpeed: 'normal' | 'fast' | 'super'; // 自動進行のスピード
+  playSpeed: "normal" | "fast" | "super"; // 自動進行のスピード
   soulUpgrades: Record<string, number>; // upgradeId -> 購入レベル
 }

@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useGameStore } from './store/gameStore';
-import { Header } from './components/Header';
-import { InventoryPanel } from './components/InventoryPanel';
-import { VillagerList } from './components/VillagerList';
-import { FacilityList } from './components/FacilityList';
-import { DungeonPanel } from './components/DungeonPanel';
-import { FooterLogTicker } from './components/FooterLogTicker';
-import { SoulShop } from './components/SoulShop';
-import { Sparkles, X, HelpCircle } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useGameStore } from "./store/gameStore";
+import { Header } from "./components/Header";
+import { InventoryPanel } from "./components/InventoryPanel";
+import { VillagerList } from "./components/VillagerList";
+import { FacilityList } from "./components/FacilityList";
+import { DungeonPanel } from "./components/DungeonPanel";
+import { FooterLogTicker } from "./components/FooterLogTicker";
+import { SoulShop } from "./components/SoulShop";
+import { Sparkles, X, HelpCircle } from "lucide-react";
 
 export default function App() {
   const { isPaused, playSpeed, gameOver, advanceHour } = useGameStore();
@@ -19,8 +19,8 @@ export default function App() {
     if (isPaused || gameOver) return;
 
     let intervalMs = 1000; // normal
-    if (playSpeed === 'fast') intervalMs = 300;
-    if (playSpeed === 'super') intervalMs = 100;
+    if (playSpeed === "fast") intervalMs = 300;
+    if (playSpeed === "super") intervalMs = 100;
 
     const timer = setInterval(() => {
       advanceHour();
@@ -131,29 +131,35 @@ export default function App() {
 
             <div className="text-xs text-slate-300 space-y-3 leading-relaxed max-h-96 overflow-y-auto pr-1">
               <p>
-                <strong>1. 素材と目標（第1カラム）:</strong><br />
+                <strong>1. 素材と目標（第1カラム）:</strong>
+                <br />
                 倉庫内のアイテム一覧が表示されます。目標個数を設定すると、そのアイテムが不足している場合に、村人が自動で採取エリアへ派遣されたり、施設で自動的にクラフトが始まります。
                 クリックするとアイテムの詳細（売却額やレシピ）が見られ、交易所が解放されていれば売却できます。
               </p>
               <p>
-                <strong>2. キャラクターとAI指示（第2カラム）:</strong><br />
+                <strong>2. キャラクターとAI指示（第2カラム）:</strong>
+                <br />
                 村人のステータス（HP・スタミナ・基本能力）や、現在の行動状態が表示されます。
                 「転職」で異なる職業（得意分野が異なる）にチェンジさせたり、倉庫にある武器・防具を「装備」させて能力を向上させることができます。
               </p>
               <p>
-                <strong>3. 施設とクラフト（第3カラム）:</strong><br />
+                <strong>3. 施設とクラフト（第3カラム）:</strong>
+                <br />
                 各施設（宿屋、工房、鍛冶屋、錬金工房、交易所）のレベルやアップグレード、現在行われているクラフトキューが表示されます。
                 アップグレードやクラフトを指示すると、時間経過で進行します。
               </p>
               <p>
-                <strong>4. ダンジョンと派遣（第4カラム）:</strong><br />
+                <strong>4. ダンジョンと派遣（第4カラム）:</strong>
+                <br />
                 探索可能なエリアと、推奨レベルや出現する魔物が確認できます。
                 村人を選んで「採取派遣」または「討伐派遣」を行うことができます。活動中はスタミナを消費し、HPやスタミナが減ると自動で村に帰還します。
               </p>
               <p>
-                <strong>5. ボス討伐と転生:</strong><br />
+                <strong>5. ボス討伐と転生:</strong>
+                <br />
                 一定の日数までにエリアボスを倒せないとゲームオーバーになります。
-                ゲームオーバー時にはそれまでの進行度に応じた「ソウルポイント (SP)」が獲得でき、これを使って次回プレイが有利になる永続バフを購入できます（いつでも「転生」して次の周回に挑むことも可能です）。
+                ゲームオーバー時にはそれまでの進行度に応じた「ソウルポイント
+                (SP)」が獲得でき、これを使って次回プレイが有利になる永続バフを購入できます（いつでも「転生」して次の周回に挑むことも可能です）。
               </p>
             </div>
 

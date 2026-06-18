@@ -1,12 +1,12 @@
-import React from 'react';
-import { useGameStore, SOUL_UPGRADES } from '../store/gameStore';
-import { Sparkles, RefreshCw } from 'lucide-react';
+import React from "react";
+import { useGameStore, SOUL_UPGRADES } from "../store/gameStore";
+import { Sparkles, RefreshCw } from "lucide-react";
 
 export const SoulShop: React.FC = () => {
   const { soulPoints, soulUpgrades, buySoulUpgrade, resetGame } = useGameStore();
 
   const handleStartNewGame = () => {
-    if (window.confirm('バフを引き継いで新しい周回を開始しますか？')) {
+    if (window.confirm("バフを引き継いで新しい周回を開始しますか？")) {
       resetGame(true);
     }
   };
@@ -52,7 +52,8 @@ export const SoulShop: React.FC = () => {
 
               <div className="mt-4 flex justify-between items-center">
                 <span className="text-[10px] text-slate-500 font-mono">
-                  現在補正: {u.id === 'heritage' || u.id === 'storage' || u.id === 'body'
+                  現在補正:{" "}
+                  {u.id === "heritage" || u.id === "storage" || u.id === "body"
                     ? `+${currentLvl * u.effectValue}`
                     : `-${currentLvl * u.effectValue * 100}%`}
                 </span>

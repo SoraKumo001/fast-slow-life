@@ -1,6 +1,6 @@
-import React from 'react';
-import { useGameStore } from '../store/gameStore';
-import { Play, Pause, UserPlus, RefreshCw, AlertTriangle } from 'lucide-react';
+import React from "react";
+import { useGameStore } from "../store/gameStore";
+import { Play, Pause, UserPlus, RefreshCw, AlertTriangle } from "lucide-react";
 
 export const Header: React.FC = () => {
   const {
@@ -20,14 +20,18 @@ export const Header: React.FC = () => {
     hireVillager,
     resetGame,
     villagers,
-    advanceDay
+    advanceDay,
   } = useGameStore();
 
   const dailyFoodConsumption = villagers.length;
   const foodDaysLeft = dailyFoodConsumption > 0 ? Math.floor(food / dailyFoodConsumption) : 0;
 
   const handlePrestige = () => {
-    if (window.confirm('現在の周回を諦め、ソウルポイントを獲得して転生しますか？\n（村人Lv、施設Lv、インベントリはリセットされます）')) {
+    if (
+      window.confirm(
+        "現在の周回を諦め、ソウルポイントを獲得して転生しますか？\n（村人Lv、施設Lv、インベントリはリセットされます）",
+      )
+    ) {
       resetGame(true);
     }
   };
@@ -46,7 +50,7 @@ export const Header: React.FC = () => {
         <div className="bg-slate-950/80 px-4 py-2 rounded-lg border border-slate-800/80 flex items-center gap-3">
           <span className="text-slate-400 font-medium text-sm">時間:</span>
           <span className="text-sky-400 font-mono font-bold text-lg">
-            {currentDay}日目 {String(currentHour).padStart(2, '0')}:00
+            {currentDay}日目 {String(currentHour).padStart(2, "0")}:00
           </span>
           <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300">
             Tier {currentTier}
@@ -57,13 +61,21 @@ export const Header: React.FC = () => {
       {/* リソース情報 */}
       <div className="flex items-center gap-6 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">ゴールド</span>
-          <span className="text-amber-400 font-mono font-bold text-lg">{gold.toLocaleString()} G</span>
+          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            ゴールド
+          </span>
+          <span className="text-amber-400 font-mono font-bold text-lg">
+            {gold.toLocaleString()} G
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">食料在庫</span>
-          <span className={`font-mono font-bold text-lg ${food < 10 ? 'text-red-400 animate-pulse' : 'text-emerald-400'}`}>
+          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            食料在庫
+          </span>
+          <span
+            className={`font-mono font-bold text-lg ${food < 10 ? "text-red-400 animate-pulse" : "text-emerald-400"}`}
+          >
             {Math.floor(food)}
             <span className="text-[10px] text-slate-400 font-normal ml-1">
               (-{dailyFoodConsumption}/日, あと{foodDaysLeft}日分)
@@ -77,7 +89,9 @@ export const Header: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">ソウル (SP)</span>
+          <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
+            ソウル (SP)
+          </span>
           <span className="text-purple-400 font-mono font-bold text-lg">{soulPoints} SP</span>
         </div>
       </div>
@@ -90,10 +104,10 @@ export const Header: React.FC = () => {
           disabled={gameOver}
           className={`p-2 rounded-lg transition duration-200 border ${
             isPaused
-              ? 'bg-sky-950 border-sky-800 text-sky-400 hover:bg-sky-900'
-              : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'
+              ? "bg-sky-950 border-sky-800 text-sky-400 hover:bg-sky-900"
+              : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
           }`}
-          title={isPaused ? '再開' : '一時停止'}
+          title={isPaused ? "再開" : "一時停止"}
         >
           {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
         </button>
@@ -110,17 +124,17 @@ export const Header: React.FC = () => {
 
         {/* スピード */}
         <div className="bg-slate-950/60 p-0.5 rounded-lg border border-slate-800 flex gap-1">
-          {(['normal', 'fast', 'super'] as const).map((speed) => (
+          {(["normal", "fast", "super"] as const).map((speed) => (
             <button
               key={speed}
               onClick={() => setPlaySpeed(speed)}
               className={`px-3 py-1 rounded text-xs font-mono transition duration-200 ${
                 playSpeed === speed
-                  ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                  : 'text-slate-400 border border-transparent hover:text-slate-200'
+                  ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                  : "text-slate-400 border border-transparent hover:text-slate-200"
               }`}
             >
-              {speed === 'normal' ? '1x' : speed === 'fast' ? '3x' : '10x'}
+              {speed === "normal" ? "1x" : speed === "fast" ? "3x" : "10x"}
             </button>
           ))}
         </div>
@@ -149,7 +163,9 @@ export const Header: React.FC = () => {
       <div className="w-full text-center mt-2 md:mt-0 md:w-auto">
         <span className="text-xs text-slate-400">
           次の期限: <strong className="text-red-400">{gameLimitDays}日目</strong> までにボスを討伐
-          {bossDefeated && <span className="text-emerald-400 font-bold ml-2">(ボス討伐完了！現在猶予中)</span>}
+          {bossDefeated && (
+            <span className="text-emerald-400 font-bold ml-2">(ボス討伐完了！現在猶予中)</span>
+          )}
         </span>
       </div>
     </header>

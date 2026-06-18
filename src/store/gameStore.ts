@@ -745,17 +745,9 @@ interface GameActions {
     targetMonsterId?: string | null,
   ) => void;
   changeVillagerJob: (id: string, job: JobType) => void;
-  equipItem: (
-    villagerId: string,
-    itemId: string,
-    slot: "weapon" | "armor",
-  ) => void;
+  equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => void;
   unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
-  startCraft: (
-    facilityId: FacilityType,
-    itemId: string,
-    villagerId?: string,
-  ) => void;
+  startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType) => void;
   setTargetAmount: (itemId: string, count: number) => void;
   buySoulUpgrade: (upgradeId: string) => void;
@@ -798,10 +790,7 @@ export const useGameStore = create<GameState & GameActions>()(
       facilities: getInitialFacilities(),
       dungeons: DUNGEONS,
       inventory: { ...DEFAULT_INVENTORY },
-      targetAmounts: Object.keys(ITEMS).reduce(
-        (acc, key) => ({ ...acc, [key]: 0 }),
-        {},
-      ),
+      targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
       logs: [
         {
           id: "init",
@@ -847,10 +836,7 @@ export const useGameStore = create<GameState & GameActions>()(
       advanceDay: () => {
         const state = get();
         if (state.gameOver || !state.isPaused) return;
-        state.addLog(
-          "【システム】1日（24時間）スキップを開始します。",
-          "system",
-        );
+        state.addLog("【システム】1日（24時間）スキップを開始します。", "system");
         for (let i = 0; i < 24; i++) {
           if (get().gameOver) break;
           get().advanceHour();
@@ -861,14 +847,7 @@ export const useGameStore = create<GameState & GameActions>()(
       // 待機村人の自動派遣
       dispatchIdleVillagers: () => {
         const state = get();
-        const {
-          villagers,
-          inventory,
-          targetAmounts,
-          dungeons,
-          currentTier,
-          bossDefeated,
-        } = state;
+        const { villagers, inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
         let anyDispatched = false;
 
         const updatedVillagers = villagers.map((v) => {
@@ -877,28 +856,22 @@ export const useGameStore = create<GameState & GameActions>()(
             let targetOrder: OrderType = "gather";
             let resolvedAutoTargetName: string | null = null;
 
-            const missingItemIds = Object.keys(targetAmounts).filter(
-              (itemId) => {
-                const count = inventory[itemId] || 0;
-                const target = targetAmounts[itemId] || 0;
-                return count < target;
-              },
-            );
+            const missingItemIds = Object.keys(targetAmounts).filter((itemId) => {
+              const count = inventory[itemId] || 0;
+              const target = targetAmounts[itemId] || 0;
+              return count < target;
+            });
 
             if (missingItemIds.length > 0) {
               let preferredCategories: string[] = [];
               const job = v.currentJob;
               if (job === "農民") preferredCategories = ["food"];
-              else if (job === "猟師")
-                preferredCategories = ["food", "material"];
-              else if (job === "鉱夫")
-                preferredCategories = ["ore", "material"];
-              else if (job === "薬師")
-                preferredCategories = ["herb", "mana_stone"];
+              else if (job === "猟師") preferredCategories = ["food", "material"];
+              else if (job === "鉱夫") preferredCategories = ["ore", "material"];
+              else if (job === "薬師") preferredCategories = ["herb", "mana_stone"];
               else if (job === "魔術師") preferredCategories = ["mana_stone"];
               else if (job === "僧侶") preferredCategories = ["herb"];
-              else if (job === "職人")
-                preferredCategories = ["ore", "material"];
+              else if (job === "職人") preferredCategories = ["ore", "material"];
               else if (job === "戦士") preferredCategories = ["material"];
 
               const sortedMissingItemIds = [...missingItemIds].sort((a, b) => {
@@ -941,14 +914,11 @@ export const useGameStore = create<GameState & GameActions>()(
                   targetOrder = "hunt";
                   const targetMonster = dropArea.monsters.find(
                     (m) =>
-                      dropArea.explorationProgress >=
-                        (m.unlockedAtProgress || 0) &&
+                      dropArea.explorationProgress >= (m.unlockedAtProgress || 0) &&
                       (!m.isBoss || bossDefeated) &&
                       m.drops.some((dr) => dr.itemId === missingId),
                   );
-                  resolvedAutoTargetName = targetMonster
-                    ? targetMonster.name
-                    : null;
+                  resolvedAutoTargetName = targetMonster ? targetMonster.name : null;
                   break;
                 }
               }
@@ -997,10 +967,7 @@ export const useGameStore = create<GameState & GameActions>()(
       sellItem: (itemId, count) => {
         const state = get();
         if (state.facilities.market.level === 0) {
-          state.addLog(
-            "交易所が建設されていないため売却できません。",
-            "warning",
-          );
+          state.addLog("交易所が建設されていないため売却できません。", "warning");
           return;
         }
         const currentCount = state.inventory[itemId] || 0;
@@ -1011,8 +978,7 @@ export const useGameStore = create<GameState & GameActions>()(
         set((state) => ({
           inventory: { ...state.inventory, [itemId]: currentCount - toSell },
           gold: state.gold + price,
-          food:
-            itemId === "food" ? Math.max(0, state.food - toSell) : state.food,
+          food: itemId === "food" ? Math.max(0, state.food - toSell) : state.food,
         }));
         state.addLog(
           `${ITEMS[itemId].name} を ${toSell} 個売却し、${price} G 獲得しました。`,
@@ -1021,13 +987,7 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       // 村人の指示変更
-      setVillagerOrder: (
-        id,
-        order,
-        areaId,
-        targetGatherItemId = null,
-        targetMonsterId = null,
-      ) => {
+      setVillagerOrder: (id, order, areaId, targetGatherItemId = null, targetMonsterId = null) => {
         set((state) => {
           const updated = state.villagers.map((v) => {
             if (v.id !== id) return v;
@@ -1044,11 +1004,7 @@ export const useGameStore = create<GameState & GameActions>()(
                   ? v.targetGatherItemId
                   : null;
             const nextMonsterTarget =
-              targetMonsterId !== undefined
-                ? targetMonsterId
-                : sameArea
-                  ? v.targetMonsterId
-                  : null;
+              targetMonsterId !== undefined ? targetMonsterId : sameArea ? v.targetMonsterId : null;
 
             if (order === "rest") {
               status = "resting";
@@ -1056,11 +1012,7 @@ export const useGameStore = create<GameState & GameActions>()(
               travelTime = 0;
             } else if (areaId) {
               const area = DUNGEONS.find((d) => d.id === areaId);
-              if (
-                v.destinationAreaId !== areaId ||
-                v.status === "idle" ||
-                v.status === "resting"
-              ) {
+              if (v.destinationAreaId !== areaId || v.status === "idle" || v.status === "resting") {
                 status = "traveling_to";
                 travelTime = area ? area.distance : 1;
               }
@@ -1117,9 +1069,7 @@ export const useGameStore = create<GameState & GameActions>()(
         set((state) => {
           const updated = state.villagers.map((v) => {
             if (v.id !== id) return v;
-            const history = v.jobHistory.includes(job)
-              ? v.jobHistory
-              : [...v.jobHistory, job];
+            const history = v.jobHistory.includes(job) ? v.jobHistory : [...v.jobHistory, job];
 
             // ステータス補正の適用
             const baseStr = 10 + (state.soulUpgrades.body || 0) * 2;
@@ -1184,10 +1134,7 @@ export const useGameStore = create<GameState & GameActions>()(
         });
 
         const vName = get().villagers.find((v) => v.id === villagerId)?.name;
-        state.addLog(
-          `${vName} に ${ITEMS[itemId].name} を装備しました。`,
-          "info",
-        );
+        state.addLog(`${vName} に ${ITEMS[itemId].name} を装備しました。`, "info");
       },
 
       // 装備解除
@@ -1252,12 +1199,9 @@ export const useGameStore = create<GameState & GameActions>()(
         const baseTime = item.recipe.requiredTime;
         // 職人がアサインされていたらクラフト時間短縮（例: 20%短縮）
         const isCrafter = assignedId
-          ? state.villagers.find((v) => v.id === assignedId)?.currentJob ===
-            "職人"
+          ? state.villagers.find((v) => v.id === assignedId)?.currentJob === "職人"
           : false;
-        const timeNeeded = isCrafter
-          ? Math.max(1, Math.floor(baseTime * 0.8))
-          : baseTime;
+        const timeNeeded = isCrafter ? Math.max(1, Math.floor(baseTime * 0.8)) : baseTime;
 
         set((state) => {
           // 素材の消費
@@ -1300,9 +1244,7 @@ export const useGameStore = create<GameState & GameActions>()(
           };
         });
 
-        const vName = assignedId
-          ? state.villagers.find((v) => v.id === assignedId)?.name
-          : "なし";
+        const vName = assignedId ? state.villagers.find((v) => v.id === assignedId)?.name : "なし";
         state.addLog(
           `${facility.name} で ${item.name} のクラフトを開始しました（担当: ${vName}）。`,
           "craft",
@@ -1367,10 +1309,7 @@ export const useGameStore = create<GameState & GameActions>()(
       hireVillager: () => {
         const state = get();
         if (state.gold < 100) {
-          state.addLog(
-            "雇用に必要なゴールド (100G) が不足しています。",
-            "warning",
-          );
+          state.addLog("雇用に必要なゴールド (100G) が不足しています。", "warning");
           return;
         }
         if (state.villagers.length >= 10) {
@@ -1378,9 +1317,7 @@ export const useGameStore = create<GameState & GameActions>()(
           return;
         }
 
-        const name =
-          VILLAGER_NAMES[state.villagers.length % VILLAGER_NAMES.length] +
-          " (新人)";
+        const name = VILLAGER_NAMES[state.villagers.length % VILLAGER_NAMES.length] + " (新人)";
         const statBonus = (state.soulUpgrades.body || 0) * 2;
         const newVillager: Villager = {
           id: "v_" + Math.random().toString(36).substring(2),
@@ -1452,12 +1389,9 @@ export const useGameStore = create<GameState & GameActions>()(
 
         if (prestige) {
           // 周回SPの計算
-          const invValue = Object.entries(state.inventory).reduce(
-            (sum, [itemId, count]) => {
-              return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
-            },
-            0,
-          );
+          const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
+            return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
+          }, 0);
           const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
           earnedSp =
             Math.floor(state.gold / 1000) +
@@ -1484,10 +1418,7 @@ export const useGameStore = create<GameState & GameActions>()(
           facilities: getInitialFacilities(),
           dungeons: DUNGEONS,
           inventory: { ...DEFAULT_INVENTORY, food: startFood },
-          targetAmounts: Object.keys(ITEMS).reduce(
-            (acc, key) => ({ ...acc, [key]: 0 }),
-            {},
-          ),
+          targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
           logs: [
             {
               id: "prestige_init",
@@ -1563,30 +1494,22 @@ export const useGameStore = create<GameState & GameActions>()(
 
         // ② 探索度の進行処理
         const updatedDungeons = dungeons.map((d) => {
-          if (d.unlockedAtTier > currentTier || d.explorationProgress >= 100)
-            return d;
+          if (d.unlockedAtTier > currentTier || d.explorationProgress >= 100) return d;
 
           const activeVillagers = updatedVillagers.filter(
-            (v) =>
-              v.status === "active" &&
-              v.destinationAreaId === d.id &&
-              v.order !== "rest",
+            (v) => v.status === "active" && v.destinationAreaId === d.id && v.order !== "rest",
           );
 
           if (activeVillagers.length === 0) return d;
 
           let totalProgressGained = 0;
           activeVillagers.forEach((v) => {
-            const hourlyGain =
-              (v.dex * 0.2 + v.agi * 0.2) / d.difficulty / 24.0;
+            const hourlyGain = (v.dex * 0.2 + v.agi * 0.2) / d.difficulty / 24.0;
             totalProgressGained += hourlyGain;
           });
 
           const prevProgress = d.explorationProgress;
-          const nextProgress = Math.min(
-            100,
-            prevProgress + totalProgressGained,
-          );
+          const nextProgress = Math.min(100, prevProgress + totalProgressGained);
 
           if (nextProgress >= 100 && prevProgress < 100) {
             state.addLog(
@@ -1604,13 +1527,9 @@ export const useGameStore = create<GameState & GameActions>()(
                   .filter((m) => m.unlockedAtProgress === th)
                   .map((m) => m.name);
                 const itemsStr =
-                  unlockedItems.length > 0
-                    ? ` [素材: ${unlockedItems.join(", ")}]`
-                    : "";
+                  unlockedItems.length > 0 ? ` [素材: ${unlockedItems.join(", ")}]` : "";
                 const monsStr =
-                  unlockedMons.length > 0
-                    ? ` [魔物: ${unlockedMons.join(", ")}]`
-                    : "";
+                  unlockedMons.length > 0 ? ` [魔物: ${unlockedMons.join(", ")}]` : "";
                 state.addLog(
                   `【探索進行】${d.name} の探索度が ${th}% に達しました！新たな要素が解放されました：${itemsStr}${monsStr}`,
                   "system",
@@ -1639,22 +1558,21 @@ export const useGameStore = create<GameState & GameActions>()(
               );
 
               fac.upgradeCost.gold = fac.level * 300;
-              fac.upgradeCost.materials = fac.upgradeCost.materials.map(
-                (m) => ({ ...m, count: m.count + 5 }),
-              );
+              fac.upgradeCost.materials = fac.upgradeCost.materials.map((m) => ({
+                ...m,
+                count: m.count + 5,
+              }));
             }
           }
 
           fac.craftQueue = fac.craftQueue.filter((job) => {
             job.timeLeft -= 1;
             if (job.timeLeft <= 0) {
-              const successBonus =
-                0.05 + JOBS["職人"].statsMultiplier.dex * 0.05;
+              const successBonus = 0.05 + JOBS["職人"].statsMultiplier.dex * 0.05;
               const isGreatSuccess = Math.random() < successBonus;
               const craftCount = isGreatSuccess ? 2 : 1;
 
-              updatedInventory[job.itemId] =
-                (updatedInventory[job.itemId] || 0) + craftCount;
+              updatedInventory[job.itemId] = (updatedInventory[job.itemId] || 0) + craftCount;
               if (job.itemId === "food") {
                 food += craftCount;
               }
@@ -1665,9 +1583,7 @@ export const useGameStore = create<GameState & GameActions>()(
               );
 
               if (job.assignedVillagerId) {
-                const idx = updatedVillagers.findIndex(
-                  (v) => v.id === job.assignedVillagerId,
-                );
+                const idx = updatedVillagers.findIndex((v) => v.id === job.assignedVillagerId);
                 if (idx !== -1) {
                   updatedVillagers[idx].status = "idle";
                   updatedVillagers[idx].assignedCraftJobId = null;
@@ -1694,32 +1610,21 @@ export const useGameStore = create<GameState & GameActions>()(
             if (v.currentHp === v.maxHp && v.stamina === 100) {
               v.status = "idle";
               v.order = "gather";
-              state.addLog(
-                `${v.name} は体力が全回復し、行動可能になりました。`,
-                "info",
-              );
+              state.addLog(`${v.name} は体力が全回復し、行動可能になりました。`, "info");
             }
             continue;
           }
 
           if (hasStarvation) {
-            v.currentHp = Math.max(
-              1,
-              v.currentHp - Math.floor(v.maxHp * 0.004),
-            );
+            v.currentHp = Math.max(1, v.currentHp - Math.floor(v.maxHp * 0.004));
           }
 
           if (v.status === "traveling_to") {
             v.travelTimeLeft -= 1;
             if (v.travelTimeLeft <= 0) {
               v.status = "active";
-              const areaName = updatedDungeons.find(
-                (d) => d.id === v.destinationAreaId,
-              )?.name;
-              state.addLog(
-                `${v.name} が ${areaName} に到着し、活動を開始しました。`,
-                "info",
-              );
+              const areaName = updatedDungeons.find((d) => d.id === v.destinationAreaId)?.name;
+              state.addLog(`${v.name} が ${areaName} に到着し、活動を開始しました。`, "info");
             }
             continue;
           }
@@ -1730,10 +1635,7 @@ export const useGameStore = create<GameState & GameActions>()(
               v.destinationAreaId = null;
               if (v.order === "rest") {
                 v.status = "resting";
-                state.addLog(
-                  `${v.name} が村に帰還し、宿屋で休息を開始しました。`,
-                  "info",
-                );
+                state.addLog(`${v.name} が村に帰還し、宿屋で休息を開始しました。`, "info");
               } else {
                 v.status = "idle";
                 state.addLog(`${v.name} が村に帰還しました。`, "info");
@@ -1743,13 +1645,10 @@ export const useGameStore = create<GameState & GameActions>()(
           }
 
           if (v.status === "active" && v.destinationAreaId) {
-            const area = updatedDungeons.find(
-              (d) => d.id === v.destinationAreaId,
-            )!;
+            const area = updatedDungeons.find((d) => d.id === v.destinationAreaId)!;
             v.stamina = Math.max(0, v.stamina - 5);
 
-            const efficiency =
-              (hasStarvation ? 0.5 : 1.0) * (v.stamina === 0 ? 0.3 : 1.0);
+            const efficiency = (hasStarvation ? 0.5 : 1.0) * (v.stamina === 0 ? 0.3 : 1.0);
 
             if (v.currentHp < v.maxHp * 0.3 || v.stamina <= 0) {
               v.status = "traveling_back";
@@ -1778,9 +1677,7 @@ export const useGameStore = create<GameState & GameActions>()(
               !area.monsters.some((m) =>
                 m.drops.some((d) => {
                   const target = targetAmounts[d.itemId] || 0;
-                  return (
-                    target > 0 && (updatedInventory[d.itemId] || 0) < target
-                  );
+                  return target > 0 && (updatedInventory[d.itemId] || 0) < target;
                 }),
               );
 
@@ -1799,13 +1696,8 @@ export const useGameStore = create<GameState & GameActions>()(
               let bestItemId = "";
               const progress = area.explorationProgress;
 
-              const targetedGather = area.gathers.find(
-                (g) => g.itemId === v.targetGatherItemId,
-              );
-              if (
-                targetedGather &&
-                progress >= (targetedGather.unlockedAtProgress || 0)
-              ) {
+              const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
+              if (targetedGather && progress >= (targetedGather.unlockedAtProgress || 0)) {
                 bestItemId = v.targetGatherItemId!;
                 v.autoTargetName = null;
               } else {
@@ -1819,8 +1711,7 @@ export const useGameStore = create<GameState & GameActions>()(
                   const baseMultiplier = 1.0 / gather.difficulty;
 
                   let jobMod = 1.0;
-                  const jobAdapt =
-                    JOBS[v.currentJob]?.adaptability[item.category];
+                  const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
                   if (jobAdapt) jobMod = jobAdapt;
 
                   let statVal = 0;
@@ -1872,30 +1763,21 @@ export const useGameStore = create<GameState & GameActions>()(
 
                   // 職業補正 (農民ならfood獲得量+100%等)
                   let jobMod = 1.0;
-                  const jobAdapt =
-                    JOBS[v.currentJob]?.adaptability[item.category];
+                  const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
                   if (jobAdapt) jobMod = jobAdapt;
 
                   // 効率を加味した獲得数 (最低1個)
-                  const amount = Math.max(
-                    1,
-                    Math.floor(baseAmount * jobMod * efficiency),
-                  );
+                  const amount = Math.max(1, Math.floor(baseAmount * jobMod * efficiency));
 
-                  updatedInventory[bestItemId] =
-                    (updatedInventory[bestItemId] || 0) + amount;
+                  updatedInventory[bestItemId] = (updatedInventory[bestItemId] || 0) + amount;
                   if (bestItemId === "food") {
                     food += amount;
                   }
 
                   // 採取による経験値獲得 (難易度 * 5 を基準とし、教育バフをかける)
-                  const eduBonus =
-                    1.0 + (state.soulUpgrades.education || 0) * 0.1;
+                  const eduBonus = 1.0 + (state.soulUpgrades.education || 0) * 0.1;
                   const itemDiff = item.difficulty || 1.0;
-                  const expGained = Math.max(
-                    1,
-                    Math.floor(itemDiff * 5 * eduBonus),
-                  );
+                  const expGained = Math.max(1, Math.floor(itemDiff * 5 * eduBonus));
                   v.exp += expGained;
 
                   state.addLog(
@@ -1915,16 +1797,10 @@ export const useGameStore = create<GameState & GameActions>()(
                     v.vit += 2;
                     v.maxHp += 15;
                     v.currentHp = v.maxHp;
-                    state.addLog(
-                      `${v.name} が レベル ${v.level} に上がりました！`,
-                      "info",
-                    );
+                    state.addLog(`${v.name} が レベル ${v.level} に上がりました！`, "info");
                   }
                 } else {
-                  state.addLog(
-                    `${v.name} は ${area.name} で採取に失敗しました。`,
-                    "gather",
-                  );
+                  state.addLog(`${v.name} は ${area.name} で採取に失敗しました。`, "gather");
                 }
               }
             } else if (v.order === "hunt") {
@@ -1935,21 +1811,15 @@ export const useGameStore = create<GameState & GameActions>()(
 
               let enemy: Monster | null = null;
 
-              const targetedMonster = availableMonsters.find(
-                (m) => m.id === v.targetMonsterId,
-              );
+              const targetedMonster = availableMonsters.find((m) => m.id === v.targetMonsterId);
               if (targetedMonster) {
                 enemy = { ...targetedMonster };
                 v.autoTargetName = null;
               } else {
-                const normalMonsters = availableMonsters.filter(
-                  (m) => !m.isBoss,
-                );
+                const normalMonsters = availableMonsters.filter((m) => !m.isBoss);
                 if (normalMonsters.length > 0) {
                   enemy = {
-                    ...normalMonsters[
-                      Math.floor(Math.random() * normalMonsters.length)
-                    ],
+                    ...normalMonsters[Math.floor(Math.random() * normalMonsters.length)],
                   };
                   v.autoTargetName = enemy.name;
                 } else {
@@ -1969,9 +1839,7 @@ export const useGameStore = create<GameState & GameActions>()(
                 if (v.armorId === "iron_armor") armorDef = 15;
 
                 const vAtk = Math.floor(
-                  (v.str * 1.5 + weaponAtk) *
-                    (v.currentJob === "戦士" ? 1.3 : 1.0) *
-                    efficiency,
+                  (v.str * 1.5 + weaponAtk) * (v.currentJob === "戦士" ? 1.3 : 1.0) * efficiency,
                 );
                 const vDef = Math.floor((v.vit + armorDef) * efficiency);
 
@@ -2006,8 +1874,7 @@ export const useGameStore = create<GameState & GameActions>()(
                 }
 
                 if (battleWon) {
-                  const eduBonus =
-                    1.0 + (state.soulUpgrades.education || 0) * 0.1;
+                  const eduBonus = 1.0 + (state.soulUpgrades.education || 0) * 0.1;
                   const expGained = Math.floor(enemy.expReward * eduBonus);
                   v.exp += expGained;
 
@@ -2027,33 +1894,23 @@ export const useGameStore = create<GameState & GameActions>()(
                     v.vit += 2;
                     v.maxHp += 15;
                     v.currentHp = v.maxHp;
-                    state.addLog(
-                      `${v.name} が レベル ${v.level} に上がりました！`,
-                      "info",
-                    );
+                    state.addLog(`${v.name} が レベル ${v.level} に上がりました！`, "info");
                   }
 
                   enemy.drops.forEach((drop) => {
                     const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
                     if (Math.random() < drop.chance * hunterBonus) {
-                      updatedInventory[drop.itemId] =
-                        (updatedInventory[drop.itemId] || 0) + 1;
+                      updatedInventory[drop.itemId] = (updatedInventory[drop.itemId] || 0) + 1;
                       if (drop.itemId === "food") {
                         food += 1;
                       }
-                      state.addLog(
-                        `敵から ${ITEMS[drop.itemId].name} を獲得しました。`,
-                        "combat",
-                      );
+                      state.addLog(`敵から ${ITEMS[drop.itemId].name} を獲得しました。`, "combat");
                     }
                   });
 
                   if (enemy.isBoss) {
                     bossDefeated = true;
-                    state.addLog(
-                      `エリアボス【${enemy.name}】を撃破しました！`,
-                      "system",
-                    );
+                    state.addLog(`エリアボス【${enemy.name}】を撃破しました！`, "system");
 
                     if (currentTier < 5) {
                       currentTier += 1;
@@ -2071,10 +1928,7 @@ export const useGameStore = create<GameState & GameActions>()(
                     }
                   }
                 } else if (villagerDefeated) {
-                  state.addLog(
-                    `${v.name} が戦闘不能（死亡）になりました…`,
-                    "error",
-                  );
+                  state.addLog(`${v.name} が戦闘不能（死亡）になりました…`, "error");
                   updatedVillagers.splice(i, 1);
                   i--;
 
@@ -2105,9 +1959,7 @@ export const useGameStore = create<GameState & GameActions>()(
               const item = ITEMS[itemId];
               if (item.recipe) {
                 const currentCount = updatedInventory[itemId] || 0;
-                const inQueueCount = fac.craftQueue.filter(
-                  (j) => j.itemId === itemId,
-                ).length;
+                const inQueueCount = fac.craftQueue.filter((j) => j.itemId === itemId).length;
                 const target = targetAmounts[itemId] || 0;
 
                 if (currentCount + inQueueCount < target) {
@@ -2136,16 +1988,13 @@ export const useGameStore = create<GameState & GameActions>()(
                       const idleCrafter = updatedVillagers.find(
                         (v) => v.status === "idle" && v.currentJob === "職人",
                       );
-                      const idleAny = updatedVillagers.find(
-                        (v) => v.status === "idle",
-                      );
+                      const idleAny = updatedVillagers.find((v) => v.status === "idle");
                       const assignedId = (idleCrafter || idleAny)?.id || null;
 
                       const jobId = Math.random().toString(36).substring(2);
                       const baseTime = item.recipe.requiredTime;
                       const isCrafter = assignedId
-                        ? updatedVillagers.find((v) => v.id === assignedId)
-                            ?.currentJob === "職人"
+                        ? updatedVillagers.find((v) => v.id === assignedId)?.currentJob === "職人"
                         : false;
                       const timeNeeded = isCrafter
                         ? Math.max(1, Math.floor(baseTime * 0.8))
@@ -2160,9 +2009,7 @@ export const useGameStore = create<GameState & GameActions>()(
                       });
 
                       if (assignedId) {
-                        const idx = updatedVillagers.findIndex(
-                          (v) => v.id === assignedId,
-                        );
+                        const idx = updatedVillagers.findIndex((v) => v.id === assignedId);
                         updatedVillagers[idx].status = "active";
                         updatedVillagers[idx].assignedCraftJobId = jobId;
                       }
@@ -2225,9 +2072,7 @@ export const useGameStore = create<GameState & GameActions>()(
         // 1. ダンジョンのマスタ情報更新 (explorationProgress以外の固定値を最新コードから同期)
         if (persistedState.dungeons) {
           merged.dungeons = currentState.dungeons.map((curD: any) => {
-            const persD = persistedState.dungeons.find(
-              (d: any) => d.id === curD.id,
-            );
+            const persD = persistedState.dungeons.find((d: any) => d.id === curD.id);
             return {
               ...curD,
               explorationProgress: persD ? persD.explorationProgress : 0,

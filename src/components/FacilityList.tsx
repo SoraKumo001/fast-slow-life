@@ -1,16 +1,10 @@
-import React from 'react';
-import { useGameStore, ITEMS } from '../store/gameStore';
-import { Home, Hammer, Plus, ArrowUpCircle } from 'lucide-react';
+import React from "react";
+import { useGameStore, ITEMS } from "../store/gameStore";
+import { Home, Hammer, Plus, ArrowUpCircle } from "lucide-react";
 
 export const FacilityList: React.FC = () => {
-  const {
-    facilities,
-    inventory,
-    gold,
-    soulUpgrades,
-    startCraft,
-    startFacilityUpgrade
-  } = useGameStore();
+  const { facilities, inventory, gold, soulUpgrades, startCraft, startFacilityUpgrade } =
+    useGameStore();
 
   const buildLvl = soulUpgrades.building || 0;
   const costReduction = 1 - buildLvl * 0.05;
@@ -34,14 +28,16 @@ export const FacilityList: React.FC = () => {
             const reqCount = Math.floor(req.count * costReduction);
             return (inventory[req.itemId] || 0) >= reqCount;
           });
-          const canAffordUpgrade = gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
+          const canAffordUpgrade =
+            gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
 
           // この施設でクラフト可能なアイテム
           const craftableItems = Object.values(ITEMS).filter((item) => {
             if (!item.recipe) return false;
-            if (fac.id === 'workshop') return item.id === 'wood_plank' || item.id === 'iron_ingot';
-            if (fac.id === 'blacksmith') return item.id === 'iron_sword' || item.id === 'iron_armor';
-            if (fac.id === 'alchemy') return item.id === 'potion';
+            if (fac.id === "workshop") return item.id === "wood_plank" || item.id === "iron_ingot";
+            if (fac.id === "blacksmith")
+              return item.id === "iron_sword" || item.id === "iron_armor";
+            if (fac.id === "alchemy") return item.id === "potion";
             return false;
           });
 
@@ -50,8 +46,8 @@ export const FacilityList: React.FC = () => {
               key={fac.id}
               className={`border rounded-xl p-4 transition-all duration-200 ${
                 isUnlocked
-                  ? 'bg-slate-950/70 border-slate-800'
-                  : 'bg-slate-950/20 border-dashed border-slate-800 text-slate-500 opacity-60'
+                  ? "bg-slate-950/70 border-slate-800"
+                  : "bg-slate-950/20 border-dashed border-slate-800 text-slate-500 opacity-60"
               }`}
             >
               {/* 施設タイトル */}
@@ -60,12 +56,13 @@ export const FacilityList: React.FC = () => {
                   <h3 className="font-bold text-slate-100 flex items-center gap-1.5 text-sm sm:text-base">
                     {fac.name}
                     <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700 text-slate-400">
-                      {isUnlocked ? `Lv.${fac.level}` : '未建設'}
+                      {isUnlocked ? `Lv.${fac.level}` : "未建設"}
                     </span>
                   </h3>
                   {!isUnlocked && (
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      Tier {fac.id === 'blacksmith' ? '1' : fac.id === 'alchemy' ? '2' : '3'} でアンロック可能
+                      Tier {fac.id === "blacksmith" ? "1" : fac.id === "alchemy" ? "2" : "3"}{" "}
+                      でアンロック可能
                     </p>
                   )}
                 </div>
@@ -78,7 +75,7 @@ export const FacilityList: React.FC = () => {
                     className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-amber-600/90 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[10px] font-semibold transition cursor-pointer disabled:cursor-not-allowed"
                   >
                     <ArrowUpCircle className="w-3.5 h-3.5" />
-                    {fac.upgradeTimeLeft > 0 ? '工事中' : isUnlocked ? '強化' : '建設'}
+                    {fac.upgradeTimeLeft > 0 ? "工事中" : isUnlocked ? "強化" : "建設"}
                   </button>
                 )}
               </div>
@@ -93,7 +90,9 @@ export const FacilityList: React.FC = () => {
                   <div className="w-full bg-slate-900 h-1.5 rounded-full">
                     <div
                       className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${((fac.upgradeTotalTime - fac.upgradeTimeLeft) / fac.upgradeTotalTime) * 100}%` }}
+                      style={{
+                        width: `${((fac.upgradeTotalTime - fac.upgradeTimeLeft) / fac.upgradeTotalTime) * 100}%`,
+                      }}
                     />
                   </div>
                 </div>
@@ -103,14 +102,16 @@ export const FacilityList: React.FC = () => {
               {canUpgrade && fac.upgradeTimeLeft === 0 && (
                 <div className="mb-3 text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
                   <span className="font-semibold text-slate-300">必要: </span>
-                  <span className={gold >= goldCost ? 'text-amber-400' : 'text-red-400'}>{goldCost} G</span>
+                  <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
+                    {goldCost} G
+                  </span>
                   {fac.upgradeCost.materials.map((m) => {
                     const reqCount = Math.floor(m.count * costReduction);
                     const current = inventory[m.itemId] || 0;
                     return (
                       <span
                         key={m.itemId}
-                        className={`ml-2 whitespace-nowrap ${current >= reqCount ? 'text-slate-300' : 'text-red-400'}`}
+                        className={`ml-2 whitespace-nowrap ${current >= reqCount ? "text-slate-300" : "text-red-400"}`}
                       >
                         {ITEMS[m.itemId].name}({current}/{reqCount})
                       </span>
@@ -133,7 +134,7 @@ export const FacilityList: React.FC = () => {
                       const recipe = item.recipe!;
                       // 素材チェック
                       const hasMaterials = recipe.requiredItems.every(
-                        req => (inventory[req.itemId] || 0) >= req.count
+                        (req) => (inventory[req.itemId] || 0) >= req.count,
                       );
                       const canStart = hasMaterials && fac.craftQueue.length < 3;
 
@@ -145,9 +146,14 @@ export const FacilityList: React.FC = () => {
                           <div className="mb-1.5">
                             <p className="text-xs font-bold text-slate-200">{item.name}</p>
                             <p className="text-[9px] text-slate-500 font-mono">
-                              必要: {recipe.requiredItems.map(r => `${ITEMS[r.itemId].name}x${r.count}`).join(', ')}
+                              必要:{" "}
+                              {recipe.requiredItems
+                                .map((r) => `${ITEMS[r.itemId].name}x${r.count}`)
+                                .join(", ")}
                             </p>
-                            <p className="text-[9px] text-slate-500 font-mono">時間: {recipe.requiredTime}h</p>
+                            <p className="text-[9px] text-slate-500 font-mono">
+                              時間: {recipe.requiredTime}h
+                            </p>
                           </div>
 
                           <button
@@ -156,7 +162,7 @@ export const FacilityList: React.FC = () => {
                             className="w-full flex items-center justify-center gap-1 py-1 rounded bg-sky-600/90 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-medium text-white transition cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
-                            加工開始 {fac.craftQueue.length >= 3 ? '(満杯)' : ''}
+                            加工開始 {fac.craftQueue.length >= 3 ? "(満杯)" : ""}
                           </button>
                         </div>
                       );
@@ -166,7 +172,9 @@ export const FacilityList: React.FC = () => {
                   {/* クラフトキュー進捗 */}
                   {fac.craftQueue.length > 0 && (
                     <div className="mt-3 space-y-2 bg-slate-900/40 p-2 rounded border border-slate-900">
-                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">進行中のキュー</p>
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                        進行中のキュー
+                      </p>
                       {fac.craftQueue.map((job) => (
                         <div key={job.id} className="space-y-0.5">
                           <div className="flex justify-between text-[10px] font-mono text-slate-300">
@@ -176,7 +184,9 @@ export const FacilityList: React.FC = () => {
                           <div className="w-full bg-slate-950 h-1 rounded-full">
                             <div
                               className="bg-sky-400 h-1 rounded-full transition-all duration-300"
-                              style={{ width: `${((job.totalTime - job.timeLeft) / job.totalTime) * 100}%` }}
+                              style={{
+                                width: `${((job.totalTime - job.timeLeft) / job.totalTime) * 100}%`,
+                              }}
                             />
                           </div>
                         </div>
@@ -187,9 +197,10 @@ export const FacilityList: React.FC = () => {
               )}
 
               {/* 宿屋の機能説明 */}
-              {isUnlocked && fac.id === 'inn' && (
+              {isUnlocked && fac.id === "inn" && (
                 <p className="text-[10px] text-slate-400 mt-2 italic leading-relaxed">
-                  ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +{15 + fac.level * 5} 回復します。
+                  ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
+                  {15 + fac.level * 5} 回復します。
                 </p>
               )}
             </div>

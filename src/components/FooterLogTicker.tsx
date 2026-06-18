@@ -1,30 +1,38 @@
-import React, { useState } from 'react';
-import { useGameStore } from '../store/gameStore';
-import { GameLog } from '../types/game';
-import { Terminal, X } from 'lucide-react';
+import React, { useState } from "react";
+import { useGameStore } from "../store/gameStore";
+import { GameLog } from "../types/game";
+import { Terminal, X } from "lucide-react";
 
 export const FooterLogTicker: React.FC = () => {
   const { logs } = useGameStore();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [filter, setFilter] = useState<GameLog['type'] | 'all'>('all');
+  const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
 
   // 直近4件のログを区切り文字で繋げて表示
   const recentLogs = logs.slice(0, 4);
 
-  const getLogColorClass = (type: GameLog['type']) => {
+  const getLogColorClass = (type: GameLog["type"]) => {
     switch (type) {
-      case 'combat': return 'text-red-400';
-      case 'gather': return 'text-emerald-400';
-      case 'craft': return 'text-sky-400';
-      case 'upgrade': return 'text-amber-400';
-      case 'system': return 'text-purple-400 font-bold';
-      case 'warning': return 'text-yellow-400 font-semibold';
-      case 'error': return 'text-red-500 font-bold';
-      default: return 'text-slate-300';
+      case "combat":
+        return "text-red-400";
+      case "gather":
+        return "text-emerald-400";
+      case "craft":
+        return "text-sky-400";
+      case "upgrade":
+        return "text-amber-400";
+      case "system":
+        return "text-purple-400 font-bold";
+      case "warning":
+        return "text-yellow-400 font-semibold";
+      case "error":
+        return "text-red-500 font-bold";
+      default:
+        return "text-slate-300";
     }
   };
 
-  const filteredHistoryLogs = filter === 'all' ? logs : logs.filter(log => log.type === filter);
+  const filteredHistoryLogs = filter === "all" ? logs : logs.filter((log) => log.type === filter);
 
   return (
     <footer className="bg-slate-900 border-t border-slate-800 text-xs px-6 py-2.5 flex items-center justify-between gap-4 select-none shrink-0 sticky bottom-0 z-20">
@@ -33,7 +41,7 @@ export const FooterLogTicker: React.FC = () => {
         <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-950 text-sky-400 tracking-wider shrink-0">
           LOG
         </span>
-        
+
         {recentLogs.length === 0 ? (
           <span className="text-slate-500 italic">活動ログはありません</span>
         ) : (
@@ -77,17 +85,27 @@ export const FooterLogTicker: React.FC = () => {
 
             {/* カテゴリフィルター */}
             <div className="flex flex-wrap gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-slate-800 self-start">
-              {(['all', 'combat', 'gather', 'craft', 'upgrade', 'system'] as const).map((type) => (
+              {(["all", "combat", "gather", "craft", "upgrade", "system"] as const).map((type) => (
                 <button
                   key={type}
                   onClick={() => setFilter(type)}
                   className={`px-2 py-0.5 rounded text-[10px] font-semibold transition ${
                     filter === type
-                      ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
-                      : 'text-slate-400 border border-transparent hover:text-slate-200'
+                      ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                      : "text-slate-400 border border-transparent hover:text-slate-200"
                   }`}
                 >
-                  {type === 'all' ? 'すべて' : type === 'combat' ? '戦闘' : type === 'gather' ? '採取' : type === 'craft' ? '加工' : type === 'upgrade' ? '施設' : 'システム'}
+                  {type === "all"
+                    ? "すべて"
+                    : type === "combat"
+                      ? "戦闘"
+                      : type === "gather"
+                        ? "採取"
+                        : type === "craft"
+                          ? "加工"
+                          : type === "upgrade"
+                            ? "施設"
+                            : "システム"}
                 </button>
               ))}
             </div>
@@ -98,9 +116,14 @@ export const FooterLogTicker: React.FC = () => {
                 <p className="text-slate-500 text-center py-10 italic">該当するログはありません</p>
               ) : (
                 filteredHistoryLogs.map((log) => (
-                  <div key={log.id} className="flex items-start gap-2 hover:bg-slate-950/40 py-0.5 rounded px-1">
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-2 hover:bg-slate-950/40 py-0.5 rounded px-1"
+                  >
                     <span className="text-slate-500 font-bold shrink-0">{log.timestamp}</span>
-                    <span className={`break-words ${getLogColorClass(log.type)}`}>{log.message}</span>
+                    <span className={`break-words ${getLogColorClass(log.type)}`}>
+                      {log.message}
+                    </span>
                   </div>
                 ))
               )}
