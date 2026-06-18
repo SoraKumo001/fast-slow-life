@@ -5,6 +5,7 @@ import {
   Villager,
   JobType,
   Item,
+  CraftRecipe,
   Facility,
   DungeonArea,
   Monster,
@@ -25,6 +26,7 @@ export const ITEMS: Record<string, Item> = {
     category: "food",
     sellPrice: 1,
     difficulty: 1.0,
+    initialCount: 50,
     description: "生きるために必要な食料。毎時間村人が消費する。",
   },
   wood: {
@@ -33,6 +35,7 @@ export const ITEMS: Record<string, Item> = {
     category: "material",
     sellPrice: 1,
     difficulty: 1.0,
+    initialCount: 5,
     description: "基本的な木材。加工やアップグレードに使用する。",
   },
   stone: {
@@ -57,6 +60,7 @@ export const ITEMS: Record<string, Item> = {
     category: "herb",
     sellPrice: 2,
     difficulty: 1.5,
+    initialCount: 2,
     description: "回復薬の原料となる草。",
   },
   mana_stone: {
@@ -128,6 +132,7 @@ export const ITEMS: Record<string, Item> = {
     category: "gear_weapon",
     sellPrice: 30,
     difficulty: 1.0,
+    equipment: { slot: "weapon", bonuses: { attack: 15 } },
     recipe: {
       requiredItems: [
         { itemId: "iron_ingot", count: 2 },
@@ -142,6 +147,7 @@ export const ITEMS: Record<string, Item> = {
     category: "gear_armor",
     sellPrice: 45,
     difficulty: 1.0,
+    equipment: { slot: "armor", bonuses: { defense: 15 } },
     recipe: {
       requiredItems: [
         { itemId: "iron_ingot", count: 3 },
@@ -151,6 +157,82 @@ export const ITEMS: Record<string, Item> = {
     },
   },
 };
+
+export const RECIPES: Record<string, CraftRecipe> = {
+  wood_plank: {
+    id: "wood_plank",
+    resultItemId: "wood_plank",
+    facilityId: "workshop",
+    requiredFacilityLevel: 1,
+    requiredItems: [{ itemId: "wood", count: 3 }],
+    requiredTime: 1,
+    outputCount: 1,
+  },
+  iron_ingot: {
+    id: "iron_ingot",
+    resultItemId: "iron_ingot",
+    facilityId: "workshop",
+    requiredFacilityLevel: 1,
+    requiredItems: [{ itemId: "iron_ore", count: 3 }],
+    requiredTime: 2,
+    outputCount: 1,
+  },
+  potion: {
+    id: "potion",
+    resultItemId: "potion",
+    facilityId: "alchemy",
+    requiredFacilityLevel: 1,
+    requiredItems: [
+      { itemId: "herb", count: 2 },
+      { itemId: "food", count: 1 },
+    ],
+    requiredTime: 2,
+    outputCount: 1,
+  },
+  iron_sword: {
+    id: "iron_sword",
+    resultItemId: "iron_sword",
+    facilityId: "blacksmith",
+    requiredFacilityLevel: 1,
+    requiredItems: [
+      { itemId: "iron_ingot", count: 2 },
+      { itemId: "wood_plank", count: 1 },
+    ],
+    requiredTime: 4,
+    outputCount: 1,
+  },
+  iron_armor: {
+    id: "iron_armor",
+    resultItemId: "iron_armor",
+    facilityId: "blacksmith",
+    requiredFacilityLevel: 1,
+    requiredItems: [
+      { itemId: "iron_ingot", count: 3 },
+      { itemId: "leather", count: 2 },
+    ],
+    requiredTime: 5,
+    outputCount: 1,
+  },
+};
+
+export const getRecipeForItem = (itemId: string): CraftRecipe | undefined =>
+  Object.values(RECIPES).find((recipe) => recipe.resultItemId === itemId);
+
+export const getRecipesForFacility = (
+  facilityId: FacilityType,
+  facilityLevel: number,
+): CraftRecipe[] =>
+  Object.values(RECIPES).filter(
+    (recipe) => recipe.facilityId === facilityId && facilityLevel >= recipe.requiredFacilityLevel,
+  );
+
+export const getCraftableItemsForFacility = (
+  facilityId: FacilityType,
+  facilityLevel: number,
+): Item[] =>
+  getRecipesForFacility(facilityId, facilityLevel)
+    .map((recipe) => ITEMS[recipe.resultItemId])
+    .filter((item): item is Item => Boolean(item));
 
 export const MONSTERS: Record<string, Monster> = {
   goblin: {
@@ -761,24 +843,15 @@ interface GameActions {
   dispatchIdleVillagers: () => void;
 }
 
-const DEFAULT_INVENTORY: Record<string, number> = {
-  food: 50,
-  wood: 5,
-  stone: 0,
-  iron_ore: 0,
-  herb: 2,
-  mana_stone: 0,
-  leather: 0,
-  bone: 0,
-  wood_plank: 0,
-  iron_ingot: 0,
-  potion: 0,
-  iron_sword: 0,
-  iron_armor: 0,
-};
+const createInitialInventory = (foodOverride?: number): Record<string, number> => ({
+  ...Object.fromEntries(Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0])),
+  ...(foodOverride === undefined ? {} : { food: foodOverride }),
+});
+
+const DEFAULT_INVENTORY: Record<string, number> = createInitialInventory();
 
 export const useGameStore = create<GameState & GameActions>()(
-  persist(
+  persist<GameState & GameActions, [], [], Partial<GameState & GameActions>>(
     (set, get) => ({
       // 初期状態
       currentDay: 1,
@@ -1107,16 +1180,19 @@ export const useGameStore = create<GameState & GameActions>()(
       // 装備変更
       equipItem: (villagerId, itemId, slot) => {
         const state = get();
+        const item = ITEMS[itemId];
+        if (!item?.equipment || item.equipment.slot !== slot) return;
+
         const currentCount = state.inventory[itemId] || 0;
         if (currentCount <= 0) return;
 
         set((state) => {
+          const inv = { ...state.inventory };
           const updated = state.villagers.map((v) => {
             if (v.id !== villagerId) return v;
 
             // 既存装備を倉庫に戻す
             const oldEquipId = slot === "weapon" ? v.weaponId : v.armorId;
-            const inv = { ...state.inventory };
             if (oldEquipId && oldEquipId !== "none") {
               inv[oldEquipId] = (inv[oldEquipId] || 0) + 1;
             }
@@ -1130,7 +1206,7 @@ export const useGameStore = create<GameState & GameActions>()(
             };
           });
 
-          return { villagers: updated, inventory: state.inventory };
+          return { villagers: updated, inventory: inv };
         });
 
         const vName = get().villagers.find((v) => v.id === villagerId)?.name;
@@ -1168,10 +1244,18 @@ export const useGameStore = create<GameState & GameActions>()(
         const state = get();
         const facility = state.facilities[facilityId];
         const item = ITEMS[itemId];
-        if (!facility || !item || !item.recipe) return;
+        const recipe = getRecipeForItem(itemId);
+        if (
+          !facility ||
+          !item ||
+          !recipe ||
+          recipe.facilityId !== facilityId ||
+          facility.level < recipe.requiredFacilityLevel
+        )
+          return;
 
         // レシピ素材チェック
-        const missing = item.recipe.requiredItems.filter(
+        const missing = recipe.requiredItems.filter(
           (req) => (state.inventory[req.itemId] || 0) < req.count,
         );
         if (missing.length > 0) {
@@ -1196,7 +1280,7 @@ export const useGameStore = create<GameState & GameActions>()(
         }
 
         const jobId = Math.random().toString(36).substring(2);
-        const baseTime = item.recipe.requiredTime;
+        const baseTime = recipe.requiredTime;
         // 職人がアサインされていたらクラフト時間短縮（例: 20%短縮）
         const isCrafter = assignedId
           ? state.villagers.find((v) => v.id === assignedId)?.currentJob === "職人"
@@ -1207,7 +1291,7 @@ export const useGameStore = create<GameState & GameActions>()(
           // 素材の消費
           const inv = { ...state.inventory };
           let nextFood = state.food;
-          item.recipe!.requiredItems.forEach((req) => {
+          recipe.requiredItems.forEach((req) => {
             inv[req.itemId] = Math.max(0, (inv[req.itemId] || 0) - req.count);
             if (req.itemId === "food") {
               nextFood = Math.max(0, nextFood - req.count);
@@ -1417,7 +1501,7 @@ export const useGameStore = create<GameState & GameActions>()(
           villagers: getInitialVillagers(bodyLvl),
           facilities: getInitialFacilities(),
           dungeons: DUNGEONS,
-          inventory: { ...DEFAULT_INVENTORY, food: startFood },
+          inventory: createInitialInventory(startFood),
           targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
           logs: [
             {
@@ -1570,7 +1654,8 @@ export const useGameStore = create<GameState & GameActions>()(
             if (job.timeLeft <= 0) {
               const successBonus = 0.05 + JOBS["職人"].statsMultiplier.dex * 0.05;
               const isGreatSuccess = Math.random() < successBonus;
-              const craftCount = isGreatSuccess ? 2 : 1;
+              const recipe = getRecipeForItem(job.itemId);
+              const craftCount = (recipe?.outputCount || 1) * (isGreatSuccess ? 2 : 1);
 
               updatedInventory[job.itemId] = (updatedInventory[job.itemId] || 0) + craftCount;
               if (job.itemId === "food") {
@@ -1833,10 +1918,8 @@ export const useGameStore = create<GameState & GameActions>()(
                   "combat",
                 );
 
-                let weaponAtk = 0;
-                let armorDef = 0;
-                if (v.weaponId === "iron_sword") weaponAtk = 15;
-                if (v.armorId === "iron_armor") armorDef = 15;
+                const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
+                const armorDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
 
                 const vAtk = Math.floor(
                   (v.str * 1.5 + weaponAtk) * (v.currentJob === "戦士" ? 1.3 : 1.0) * efficiency,
@@ -1955,70 +2038,62 @@ export const useGameStore = create<GameState & GameActions>()(
         Object.keys(updatedFacilities).forEach((facKey) => {
           const fac = updatedFacilities[facKey as FacilityType];
           if (fac.level > 0 && fac.craftQueue.length < 3) {
-            Object.keys(ITEMS).forEach((itemId) => {
+            getRecipesForFacility(fac.id, fac.level).forEach((recipe) => {
+              const itemId = recipe.resultItemId;
               const item = ITEMS[itemId];
-              if (item.recipe) {
+              if (item) {
                 const currentCount = updatedInventory[itemId] || 0;
                 const inQueueCount = fac.craftQueue.filter((j) => j.itemId === itemId).length;
                 const target = targetAmounts[itemId] || 0;
 
                 if (currentCount + inQueueCount < target) {
-                  const isMatchFacility =
-                    ((itemId === "wood_plank" || itemId === "iron_ingot") &&
-                      fac.id === "workshop") ||
-                    ((itemId === "iron_sword" || itemId === "iron_armor") &&
-                      fac.id === "blacksmith") ||
-                    (itemId === "potion" && fac.id === "alchemy");
-
-                  if (isMatchFacility) {
-                    const hasMaterials = item.recipe.requiredItems.every(
-                      (req) => (updatedInventory[req.itemId] || 0) >= req.count,
-                    );
-                    if (hasMaterials) {
-                      item.recipe.requiredItems.forEach((req) => {
-                        updatedInventory[req.itemId] = Math.max(
-                          0,
-                          (updatedInventory[req.itemId] || 0) - req.count,
-                        );
-                        if (req.itemId === "food") {
-                          food = Math.max(0, food - req.count);
-                        }
-                      });
-
-                      const idleCrafter = updatedVillagers.find(
-                        (v) => v.status === "idle" && v.currentJob === "職人",
+                  const hasMaterials = recipe.requiredItems.every(
+                    (req) => (updatedInventory[req.itemId] || 0) >= req.count,
+                  );
+                  if (hasMaterials) {
+                    recipe.requiredItems.forEach((req) => {
+                      updatedInventory[req.itemId] = Math.max(
+                        0,
+                        (updatedInventory[req.itemId] || 0) - req.count,
                       );
-                      const idleAny = updatedVillagers.find((v) => v.status === "idle");
-                      const assignedId = (idleCrafter || idleAny)?.id || null;
-
-                      const jobId = Math.random().toString(36).substring(2);
-                      const baseTime = item.recipe.requiredTime;
-                      const isCrafter = assignedId
-                        ? updatedVillagers.find((v) => v.id === assignedId)?.currentJob === "職人"
-                        : false;
-                      const timeNeeded = isCrafter
-                        ? Math.max(1, Math.floor(baseTime * 0.8))
-                        : baseTime;
-
-                      fac.craftQueue.push({
-                        id: jobId,
-                        itemId,
-                        timeLeft: timeNeeded,
-                        totalTime: timeNeeded,
-                        assignedVillagerId: assignedId,
-                      });
-
-                      if (assignedId) {
-                        const idx = updatedVillagers.findIndex((v) => v.id === assignedId);
-                        updatedVillagers[idx].status = "active";
-                        updatedVillagers[idx].assignedCraftJobId = jobId;
+                      if (req.itemId === "food") {
+                        food = Math.max(0, food - req.count);
                       }
+                    });
 
-                      state.addLog(
-                        `【自動クラフト】${fac.name} で ${item.name} の生産を開始しました。`,
-                        "craft",
-                      );
+                    const idleCrafter = updatedVillagers.find(
+                      (v) => v.status === "idle" && v.currentJob === "職人",
+                    );
+                    const idleAny = updatedVillagers.find((v) => v.status === "idle");
+                    const assignedId = (idleCrafter || idleAny)?.id || null;
+
+                    const jobId = Math.random().toString(36).substring(2);
+                    const baseTime = recipe.requiredTime;
+                    const isCrafter = assignedId
+                      ? updatedVillagers.find((v) => v.id === assignedId)?.currentJob === "職人"
+                      : false;
+                    const timeNeeded = isCrafter
+                      ? Math.max(1, Math.floor(baseTime * 0.8))
+                      : baseTime;
+
+                    fac.craftQueue.push({
+                      id: jobId,
+                      itemId,
+                      timeLeft: timeNeeded,
+                      totalTime: timeNeeded,
+                      assignedVillagerId: assignedId,
+                    });
+
+                    if (assignedId) {
+                      const idx = updatedVillagers.findIndex((v) => v.id === assignedId);
+                      updatedVillagers[idx].status = "active";
+                      updatedVillagers[idx].assignedCraftJobId = jobId;
                     }
+
+                    state.addLog(
+                      `【自動クラフト】${fac.name} で ${item.name} の生産を開始しました。`,
+                      "craft",
+                    );
                   }
                 }
               }
@@ -2068,6 +2143,15 @@ export const useGameStore = create<GameState & GameActions>()(
         if (!persistedState) return currentState;
 
         const merged = { ...currentState, ...persistedState };
+
+        merged.inventory = {
+          ...currentState.inventory,
+          ...persistedState.inventory,
+        };
+        merged.targetAmounts = {
+          ...currentState.targetAmounts,
+          ...persistedState.targetAmounts,
+        };
 
         // 1. ダンジョンのマスタ情報更新 (explorationProgress以外の固定値を最新コードから同期)
         if (persistedState.dungeons) {

@@ -1,5 +1,10 @@
 import React from "react";
-import { useGameStore, ITEMS } from "../store/gameStore";
+import {
+  useGameStore,
+  ITEMS,
+  getCraftableItemsForFacility,
+  getRecipeForItem,
+} from "../store/gameStore";
 import { Home, Hammer, Plus, ArrowUpCircle } from "lucide-react";
 
 export const FacilityList: React.FC = () => {
@@ -32,14 +37,7 @@ export const FacilityList: React.FC = () => {
             gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
 
           // この施設でクラフト可能なアイテム
-          const craftableItems = Object.values(ITEMS).filter((item) => {
-            if (!item.recipe) return false;
-            if (fac.id === "workshop") return item.id === "wood_plank" || item.id === "iron_ingot";
-            if (fac.id === "blacksmith")
-              return item.id === "iron_sword" || item.id === "iron_armor";
-            if (fac.id === "alchemy") return item.id === "potion";
-            return false;
-          });
+          const craftableItems = getCraftableItemsForFacility(fac.id, fac.level);
 
           return (
             <div
@@ -131,7 +129,7 @@ export const FacilityList: React.FC = () => {
                   {/* レシピ一覧 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {craftableItems.map((item) => {
-                      const recipe = item.recipe!;
+                      const recipe = getRecipeForItem(item.id)!;
                       // 素材チェック
                       const hasMaterials = recipe.requiredItems.every(
                         (req) => (inventory[req.itemId] || 0) >= req.count,

@@ -26,10 +26,26 @@ export interface Item {
   sellPrice: number;
   difficulty: number; // 採取難易度（高いほどスコア低下に影響）
   description?: string;
+  initialCount?: number;
+  equipment?: {
+    slot: "weapon" | "armor";
+    bonuses: Partial<Record<"attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit", number>>;
+  };
+  // 互換用。新規データは CraftRecipe に定義する。
   recipe?: {
     requiredItems: { itemId: string; count: number }[];
     requiredTime: number; // 時間単位
   };
+}
+
+export interface CraftRecipe {
+  id: string;
+  resultItemId: string;
+  facilityId: FacilityType;
+  requiredFacilityLevel: number;
+  requiredItems: { itemId: string; count: number }[];
+  requiredTime: number; // 時間単位
+  outputCount: number;
 }
 
 export type OrderType = "gather" | "hunt" | "rest";

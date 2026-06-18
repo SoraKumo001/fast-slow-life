@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useGameStore, ITEMS } from "../store/gameStore";
+import { useGameStore, ITEMS, RECIPES, getRecipeForItem } from "../store/gameStore";
 import { Item } from "../types/game";
 import { ShoppingBag, Target } from "lucide-react";
 
@@ -57,9 +57,10 @@ export const InventoryPanel: React.FC = () => {
 
   // このアイテムが使われるレシピを逆引き
   const getUsageRecipes = (itemId: string) => {
-    return Object.values(ITEMS).filter((item) =>
-      item.recipe?.requiredItems.some((req) => req.itemId === itemId),
-    );
+    return Object.values(RECIPES)
+      .filter((recipe) => recipe.requiredItems.some((req) => req.itemId === itemId))
+      .map((recipe) => ITEMS[recipe.resultItemId])
+      .filter((item): item is Item => Boolean(item));
   };
 
   // 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
@@ -85,34 +86,10 @@ export const InventoryPanel: React.FC = () => {
     });
     if (isDroppable) return true;
 
-    if (item.recipe) {
-      if (item.id === "wood_plank") {
-        return (facilities.workshop?.level || 0) > 0;
-      }
-      if (item.id === "iron_ingot") {
-        const isIronOreAvailable =
-          (inventory["iron_ore"] || 0) > 0 ||
-          dungeons.some((d) => {
-            if (d.unlockedAtTier > currentTier) return false;
-            const canGather = d.gathers.some(
-              (g) =>
-                g.itemId === "iron_ore" && d.explorationProgress >= (g.unlockedAtProgress || 0),
-            );
-            const canDrop = d.monsters.some(
-              (m) =>
-                d.explorationProgress >= (m.unlockedAtProgress || 0) &&
-                m.drops.some((dr) => dr.itemId === "iron_ore"),
-            );
-            return canGather || canDrop;
-          });
-        return (facilities.workshop?.level || 0) > 0 && isIronOreAvailable;
-      }
-      if (item.id === "potion") {
-        return (facilities.alchemy?.level || 0) > 0;
-      }
-      if (item.id === "iron_sword" || item.id === "iron_armor") {
-        return (facilities.blacksmith?.level || 0) > 0;
-      }
+    const recipe = getRecipeForItem(item.id);
+    if (recipe) {
+      const facilityLevel = facilities[recipe.facilityId]?.level || 0;
+      return facilityLevel >= recipe.requiredFacilityLevel;
     }
 
     return false;
@@ -157,40 +134,6 @@ export const InventoryPanel: React.FC = () => {
                       </span>
                     )}
                   </div>
-                </div>
-
-                {/* 目標値 & 売却コントロール（イベントの伝播を防ぐ） */}
-                <div
-                  className="flex items-center gap-2 self-end sm:self-auto"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {/* 目標入力 */}
-                  <div
-                    className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5"
-                    title="自動生産の目標数"
-                  >
-                    <span className="text-[9px] text-slate-500 font-semibold select-none">
-                      <Target className="w-3 h-3" />
-                    </span>
-                    <input
-                      type="number"
-                      value={target === 0 ? "" : target}
-                      onChange={(e) => setTargetAmount(item.id, parseInt(e.target.value) || 0)}
-                      placeholder="0"
-                      className="w-10 bg-transparent text-xs font-mono text-center text-sky-400 font-bold focus:outline-none"
-                    />
-                  </div>
-
-                  {/* クイック売却（交易所解放時のみ） */}
-                  {isMarketUnlocked && (
-                    <button
-                      onClick={() => sellItem(item.id, 1)}
-                      disabled={currentCount < 1}
-                      className="px-2 py-1 bg-amber-600/10 hover:bg-amber-600/20 disabled:bg-transparent border border-amber-500/20 disabled:border-transparent text-amber-400 disabled:text-slate-600 font-medium rounded text-[10px] transition cursor-pointer"
-                    >
-                      売1
-                    </button>
-                  )}
                 </div>
               </div>
             );
@@ -297,17 +240,17 @@ export const InventoryPanel: React.FC = () => {
                 <span className="text-amber-400 font-bold">{selectedItem.sellPrice} G</span>
               </div>
 
-              {selectedItem.recipe && (
+              {getRecipeForItem(selectedItem.id) && (
                 <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1">
                   <span className="font-semibold text-slate-400 block mb-1">クラフトレシピ:</span>
                   <div className="space-y-0.5 text-slate-300 font-mono text-[11px]">
-                    {selectedItem.recipe.requiredItems.map((req) => (
+                    {getRecipeForItem(selectedItem.id)!.requiredItems.map((req) => (
                       <p key={req.itemId}>
                         • {ITEMS[req.itemId]?.name} x {req.count}
                       </p>
                     ))}
                     <p className="text-slate-500 mt-1">
-                      所要時間: {selectedItem.recipe.requiredTime}時間
+                      所要時間: {getRecipeForItem(selectedItem.id)!.requiredTime}時間
                     </p>
                   </div>
                 </div>
