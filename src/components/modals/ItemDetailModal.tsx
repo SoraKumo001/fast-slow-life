@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useGameStore, ITEMS, RECIPES, getRecipeForItem } from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { Target } from "lucide-react";
@@ -10,6 +10,21 @@ interface ItemDetailModalProps {
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose }) => {
   const { inventory, targetAmounts, facilities, setTargetAmount, sellItem } = useGameStore();
+
+  const maxAmount = inventory[item.id] || 0;
+  const [sellAmount, setSellAmount] = useState<number>(1);
+
+  // maxAmount の変化に応じて sellAmount を自動調整する
+  useEffect(() => {
+    if (maxAmount === 0) {
+      setSellAmount(0);
+    } else {
+      setSellAmount((prev) => {
+        if (prev === 0) return 1;
+        return Math.min(prev, maxAmount);
+      });
+    }
+  }, [maxAmount]);
 
   const getCategoryBadgeColor = (cat: Item["category"]) => {
     switch (cat) {
@@ -204,31 +219,68 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
 
         {/* 交易所取引セクション */}
         {isMarketUnlocked && (
-          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 flex flex-col gap-2">
-            <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-              取引 (交易所)
-            </span>
-            <div className="flex gap-2">
+          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 flex flex-col gap-3">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                取引 (交易所)
+              </span>
+              <span className="text-xs font-mono text-slate-400">
+                売却数: <span className="text-amber-400 font-bold">{sellAmount}</span> / {maxAmount}
+              </span>
+            </div>
+
+            {/* スライダー */}
+            <div className="flex items-center gap-2">
+              <input
+                type="range"
+                min={maxAmount > 0 ? 1 : 0}
+                max={maxAmount}
+                value={sellAmount}
+                onChange={(e) => setSellAmount(Number(e.target.value))}
+                disabled={maxAmount === 0}
+                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            {/* ショートカットと売却ボタン */}
+            <div className="flex items-center justify-between gap-2 border-t border-slate-900/60 pt-2">
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setSellAmount(maxAmount > 0 ? 1 : 0)}
+                  disabled={maxAmount === 0}
+                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                >
+                  1
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSellAmount(Math.max(1, Math.floor(maxAmount / 2)))}
+                  disabled={maxAmount < 2}
+                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                >
+                  1/2
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSellAmount(maxAmount)}
+                  disabled={maxAmount === 0}
+                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                >
+                  MAX
+                </button>
+              </div>
+
               <button
-                onClick={() => sellItem(item.id, 1)}
-                disabled={(inventory[item.id] || 0) < 1}
-                className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
+                type="button"
+                onClick={() => {
+                  sellItem(item.id, sellAmount);
+                }}
+                disabled={sellAmount <= 0}
+                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition flex items-center gap-1 cursor-pointer"
               >
-                1個売る
-              </button>
-              <button
-                onClick={() => sellItem(item.id, 10)}
-                disabled={(inventory[item.id] || 0) < 10}
-                className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
-              >
-                10個売る
-              </button>
-              <button
-                onClick={() => sellItem(item.id, inventory[item.id] || 0)}
-                disabled={!(inventory[item.id] > 0)}
-                className="flex-1 py-1.5 bg-amber-650 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
-              >
-                全部売る
+                <span>売却</span>
+                <span className="font-bold font-mono">({sellAmount * item.sellPrice} G)</span>
               </button>
             </div>
           </div>

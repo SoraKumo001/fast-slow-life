@@ -7,9 +7,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "format": "oxfmt",
+    "format:fix": "oxfmt",
     "format:check": "oxfmt --check",
-    "lint": "oxlint .",
+    "lint:check": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "test": "vitest",
     "test:run": "vitest run"

@@ -1042,9 +1042,22 @@ export const useGameStore = create<GameState & GameActions>()(
                 travelTimeLeft: 0,
                 order: "hunt" as OrderType,
                 targetMonsterId: monsterId,
+                assignedCraftJobId: null, // クラフトアサインを解除
               };
             }
             return v;
+          });
+
+          // 施設側のクラフトキューのアサイン解除
+          const updatedFacilities = { ...state.facilities };
+          Object.keys(updatedFacilities).forEach((key) => {
+            const fac = updatedFacilities[key as FacilityType];
+            fac.craftQueue = fac.craftQueue.map((job) => {
+              if (job.assignedVillagerId && villagerIds.includes(job.assignedVillagerId)) {
+                return { ...job, assignedVillagerId: null };
+              }
+              return job;
+            });
           });
 
           return {
@@ -1055,6 +1068,7 @@ export const useGameStore = create<GameState & GameActions>()(
               attackerIds: villagerIds,
             },
             villagers: updatedVillagers,
+            facilities: updatedFacilities,
             isPaused: false,
           };
         });
