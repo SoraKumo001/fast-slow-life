@@ -9,6 +9,48 @@ export const InventoryPanel: React.FC = () => {
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
+  type FilterTab = "all" | "material" | "consumable" | "gear";
+  type SortOption = "count-desc" | "count-asc" | "price-desc" | "price-asc" | "name-asc";
+
+  const [activeTab, setActiveTab] = useState<FilterTab>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("count-desc");
+
+  const filterItem = (item: Item) => {
+    if (activeTab === "all") return true;
+    if (activeTab === "material") {
+      return ["food", "ore", "herb", "mana_stone", "material"].includes(item.category);
+    }
+    if (activeTab === "consumable") {
+      return item.category === "consumable";
+    }
+    if (activeTab === "gear") {
+      return ["gear_weapon", "gear_armor"].includes(item.category);
+    }
+    return true;
+  };
+
+  const sortItems = (itemA: Item, itemB: Item) => {
+    const countA = inventory[itemA.id] || 0;
+    const countB = inventory[itemB.id] || 0;
+
+    if (sortBy === "count-desc") {
+      return countB - countA;
+    }
+    if (sortBy === "count-asc") {
+      return countA - countB;
+    }
+    if (sortBy === "price-desc") {
+      return itemB.sellPrice - itemA.sellPrice;
+    }
+    if (sortBy === "price-asc") {
+      return itemA.sellPrice - itemB.sellPrice;
+    }
+    if (sortBy === "name-asc") {
+      return itemA.name.localeCompare(itemB.name, "ja");
+    }
+    return 0;
+  };
+
   const getCategoryBadgeColor = (cat: Item["category"]) => {
     switch (cat) {
       case "food":
@@ -87,15 +129,58 @@ export const InventoryPanel: React.FC = () => {
 
   return (
     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
-      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-        <ShoppingBag className="w-5 h-5 text-sky-400" />
-        素材・倉庫アイテム
-      </h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+          <ShoppingBag className="w-5 h-5 text-sky-400" />
+          素材・倉庫アイテム
+        </h2>
+
+        {/* ソートセレクター */}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as SortOption)}
+          className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer"
+        >
+          <option value="count-desc">所持数順 (多)</option>
+          <option value="count-asc">所持数順 (少)</option>
+          <option value="price-desc">売却価格順 (高)</option>
+          <option value="price-asc">売却価格順 (安)</option>
+          <option value="name-asc">名前順</option>
+        </select>
+      </div>
+
+      {/* フィルタータブ */}
+      <div className="flex border-b border-slate-900 pb-2 mb-3 gap-1 overflow-x-auto no-scrollbar">
+        {(["all", "material", "consumable", "gear"] as FilterTab[]).map((tab) => {
+          const label = {
+            all: "すべて",
+            material: "素材",
+            consumable: "消耗品",
+            gear: "装備",
+          }[tab];
+
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
+                activeTab === tab
+                  ? "bg-sky-600/20 text-sky-400 border border-sky-500/30"
+                  : "text-slate-400 hover:text-slate-200 border border-transparent"
+              }`}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* 倉庫一覧リスト */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {Object.values(ITEMS)
           .filter(isItemAvailable)
+          .filter(filterItem)
+          .sort(sortItems)
           .map((item) => {
             const currentCount = inventory[item.id] || 0;
             const target = targetAmounts[item.id] || 0;

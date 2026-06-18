@@ -1,28 +1,25 @@
 import React, { useState } from "react";
 import { useGameStore, ITEMS } from "../../store/gameStore";
 import { DungeonArea } from "../../types/game";
-import { Compass, ShieldAlert, Users, Footprints, Sword, X } from "lucide-react";
-import { DungeonAssignModal } from "../modals/DungeonAssignModal";
+import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
 import { BossBattleModal } from "../modals/BossBattleModal";
 
 export const DungeonPanel: React.FC = () => {
   const { dungeons, villagers, currentTier, bossDefeated, activeBoss, withdrawFromBossBattle } =
     useGameStore();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
-  const [showAssignModal, setShowAssignModal] = useState(false);
   const [showBossModal, setShowBossModal] = useState(false);
+  const [expandedAreaIds, setExpandedAreaIds] = useState<Record<string, boolean>>({});
+
+  const toggleAreaExpand = (areaId: string) => {
+    setExpandedAreaIds((prev) => ({
+      ...prev,
+      [areaId]: !prev[areaId],
+    }));
+  };
 
   const getActiveVillagersInArea = (areaId: string) => {
     return villagers.filter((v) => v.destinationAreaId === areaId);
-  };
-
-  const getIdleVillagers = () => {
-    return villagers.filter((v) => v.status === "idle");
-  };
-
-  const handleOpenAssign = (area: DungeonArea) => {
-    setSelectedArea(area);
-    setShowAssignModal(true);
   };
 
   const handleOpenBossBattle = (area: DungeonArea) => {
@@ -32,7 +29,7 @@ export const DungeonPanel: React.FC = () => {
 
   return (
     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full relative">
-      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2 shrink-0">
         <Compass className="w-5 h-5 text-sky-400" />
         ダンジョン・探索派遣
       </h2>
@@ -105,14 +102,15 @@ export const DungeonPanel: React.FC = () => {
           return (
             <div
               key={area.id}
+              onClick={() => isUnlocked && toggleAreaExpand(area.id)}
               className={`border rounded-xl p-4 transition-all duration-200 ${
                 isUnlocked
-                  ? "bg-slate-950/70 border-slate-800"
+                  ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
                   : "bg-slate-950/10 border-dashed border-slate-900 opacity-50"
               }`}
             >
               {/* ダンジョン基本情報 */}
-              <div className="flex justify-between items-start mb-2">
+              <div className="flex justify-between items-start mb-2 select-none">
                 <div>
                   <h3 className="font-bold text-slate-100 flex items-center gap-1.5">
                     {area.name}
@@ -128,24 +126,26 @@ export const DungeonPanel: React.FC = () => {
                 </div>
 
                 {isUnlocked && (
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     {isBossAvailable && !isBossDefeatedInThisArea && !activeBoss && (
                       <button
-                        onClick={() => handleOpenBossBattle(area)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenBossBattle(area);
+                        }}
                         className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white rounded-lg transition animate-pulse-slow shadow-lg shadow-amber-900/20"
                       >
                         <Sword className="w-3.5 h-3.5" />
                         ボスと対決
                       </button>
                     )}
-                    <button
-                      onClick={() => handleOpenAssign(area)}
-                      disabled={getIdleVillagers().length === 0}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-semibold text-white rounded-lg transition"
-                    >
-                      <Footprints className="w-3.5 h-3.5" />
-                      派遣する
-                    </button>
+                    <div className="text-slate-400 hover:text-slate-200 p-1 transition ml-1 shrink-0">
+                      {expandedAreaIds[area.id] ? (
+                        <ChevronUp className="w-4 h-4" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4" />
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
@@ -168,7 +168,7 @@ export const DungeonPanel: React.FC = () => {
                 </div>
               )}
 
-              {isUnlocked && (
+              {isUnlocked && expandedAreaIds[area.id] && (
                 <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
                   {/* 採取可能アイテム & 出現モンスター */}
                   <div className="grid grid-cols-2 gap-3 text-[10px]">
@@ -263,17 +263,6 @@ export const DungeonPanel: React.FC = () => {
           );
         })}
       </div>
-
-      {/* 派遣アサインモーダル */}
-      {showAssignModal && selectedArea && (
-        <DungeonAssignModal
-          area={selectedArea}
-          onClose={() => {
-            setShowAssignModal(false);
-            setSelectedArea(null);
-          }}
-        />
-      )}
 
       {/* ボス討伐編成モーダル */}
       {showBossModal && selectedArea && (

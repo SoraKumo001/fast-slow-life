@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useGameStore, ITEMS, MONSTERS } from "../../store/gameStore";
 import { Villager } from "../../types/game";
-import { User, Shield, Sword, Heart, Zap, RefreshCw, CheckCircle } from "lucide-react";
+import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import { JobChangeModal } from "../modals/JobChangeModal";
 import { EquipmentModal } from "../modals/EquipmentModal";
 
@@ -79,7 +79,14 @@ export const VillagerList: React.FC = () => {
                 className="flex justify-between items-center cursor-pointer select-none"
               >
                 <div>
-                  <span className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 text-sky-400 font-medium">
+                  <span
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openJobModal(v);
+                    }}
+                    className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 text-sky-400 font-medium cursor-pointer transition-all duration-200"
+                    title="クリックして職業変更"
+                  >
                     {v.currentJob}
                   </span>
                   <span className="font-bold text-slate-100 text-sm">{v.name}</span>
@@ -121,15 +128,32 @@ export const VillagerList: React.FC = () => {
                   </div>
                   {/* 縮小時（折りたたみ時）の一行表示 */}
                   {!isExpanded && (
-                    <div className="mt-2 flex items-center gap-3 text-[10px] text-slate-400 font-mono">
-                      <span className="flex items-center gap-0.5">
+                    <div className="mt-2 flex items-center gap-x-4 text-[10px] text-slate-400 font-mono whitespace-nowrap overflow-x-auto no-scrollbar">
+                      {/* HP */}
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Heart className="w-3 h-3 text-red-500 shrink-0" />
-                        HP:{v.currentHp}/{v.maxHp}
-                      </span>
-                      <span className="flex items-center gap-0.5">
+                        <div className="w-10 bg-slate-900 rounded-full h-1 overflow-hidden shrink-0">
+                          <div
+                            className="bg-red-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${(v.currentHp / v.maxHp) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-slate-300 font-bold shrink-0">
+                          {v.currentHp}/{v.maxHp}
+                        </span>
+                      </div>
+
+                      {/* ST */}
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <Zap className="w-3 h-3 text-amber-500 shrink-0" />
-                        ST:{v.stamina}/100
-                      </span>
+                        <div className="w-10 bg-slate-900 rounded-full h-1 overflow-hidden shrink-0">
+                          <div
+                            className="bg-amber-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${v.stamina}%` }}
+                          />
+                        </div>
+                        <span className="text-slate-300 font-bold shrink-0">{v.stamina}/100</span>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -175,19 +199,6 @@ export const VillagerList: React.FC = () => {
                   {/* ステータス & 転職 & 装備 */}
                   <div className="grid grid-cols-2 gap-2 text-xs pt-1">
                     <div className="space-y-1 text-[11px] font-mono text-slate-400">
-                      <div className="flex items-center justify-between">
-                        <span>職業変更:</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openJobModal(v);
-                          }}
-                          className="p-1 rounded text-slate-400 hover:text-sky-400 hover:bg-slate-800 transition"
-                          title="転職する"
-                        >
-                          <RefreshCw className="w-3 h-3" />
-                        </button>
-                      </div>
                       <p>
                         STR (腕力): <span className="text-slate-200 font-bold">{v.str}</span>
                       </p>
