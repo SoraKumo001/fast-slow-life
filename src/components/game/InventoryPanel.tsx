@@ -129,9 +129,9 @@ export const InventoryPanel: React.FC = () => {
 
   return (
     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-          <ShoppingBag className="w-5 h-5 text-sky-400" />
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 whitespace-nowrap">
+          <ShoppingBag className="w-5 h-5 text-sky-400 shrink-0" />
           素材・倉庫アイテム
         </h2>
 
@@ -139,7 +139,7 @@ export const InventoryPanel: React.FC = () => {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortOption)}
-          className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer"
+          className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer shrink-0"
         >
           <option value="count-desc">所持数順 (多)</option>
           <option value="count-asc">所持数順 (少)</option>

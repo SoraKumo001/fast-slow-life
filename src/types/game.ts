@@ -92,7 +92,7 @@ export interface CraftJob {
   assignedVillagerId: string | null;
 }
 
-export type FacilityType = "inn" | "workshop" | "blacksmith" | "alchemy" | "market";
+export type FacilityType = "inn" | "workshop" | "blacksmith" | "alchemy" | "market" | "guild";
 
 export interface Facility {
   id: FacilityType;

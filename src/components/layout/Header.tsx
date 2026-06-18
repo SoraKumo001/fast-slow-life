@@ -1,6 +1,6 @@
 import React from "react";
 import { useGameStore } from "../../store/gameStore";
-import { Play, Pause, UserPlus, RefreshCw, AlertTriangle } from "lucide-react";
+import { Play, Pause, RefreshCw, AlertTriangle } from "lucide-react";
 
 export const Header: React.FC = () => {
   const {
@@ -17,7 +17,6 @@ export const Header: React.FC = () => {
     bossDefeated,
     togglePause,
     setPlaySpeed,
-    hireVillager,
     resetGame,
     villagers,
     advanceDay,
@@ -138,16 +137,6 @@ export const Header: React.FC = () => {
             </button>
           ))}
         </div>
-
-        {/* 村人雇用 */}
-        <button
-          onClick={hireVillager}
-          disabled={gold < 100 || villagers.length >= 10 || gameOver}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition duration-200"
-        >
-          <UserPlus className="w-4 h-4" />
-          雇用 (100G)
-        </button>
 
         {/* 転生 */}
         <button

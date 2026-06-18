@@ -1116,6 +1116,22 @@ function getInitialFacilities(): Record<FacilityType, Facility> {
       },
       craftQueue: [],
     },
+    guild: {
+      id: "guild",
+      name: "冒険者ギルド",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 300,
+        materials: [
+          { itemId: "wood", count: 10 },
+          { itemId: "stone", count: 5 },
+        ],
+      },
+      craftQueue: [],
+    },
   };
 }
 
@@ -1777,12 +1793,27 @@ export const useGameStore = create<GameState & GameActions>()(
       // 新しい村人の雇用 (100G)
       hireVillager: () => {
         const state = get();
+        const guild = state.facilities.guild;
+        if (!guild || guild.level === 0) {
+          state.addLog("冒険者ギルドが建設されていないため雇用できません。", "warning");
+          return;
+        }
+        const maxVillagers = 3 + guild.level * 2;
+        const actualMax = Math.min(10, maxVillagers);
+
         if (state.gold < 100) {
           state.addLog("雇用に必要なゴールド (100G) が不足しています。", "warning");
           return;
         }
-        if (state.villagers.length >= 10) {
-          state.addLog("これ以上村人を雇用できません（上限10人）。", "warning");
+        if (state.villagers.length >= actualMax) {
+          if (actualMax >= 10) {
+            state.addLog("これ以上村人を雇用できません（上限10人）。", "warning");
+          } else {
+            state.addLog(
+              `ギルドレベル ${guild.level} の雇用上限に達しています（上限 ${actualMax} 人）。ギルドをアップグレードしてください。`,
+              "warning",
+            );
+          }
           return;
         }
 

@@ -8,8 +8,8 @@ export const FooterLogTicker: React.FC = () => {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
 
-  // 直近4件のログを区切り文字で繋げて表示
-  const recentLogs = logs.slice(0, 4);
+  // 直近8件のログを縦並びで表示
+  const recentLogs = logs.slice(0, 8);
 
   const getLogColorClass = (type: GameLog["type"]) => {
     switch (type) {
@@ -35,23 +35,22 @@ export const FooterLogTicker: React.FC = () => {
   const filteredHistoryLogs = filter === "all" ? logs : logs.filter((log) => log.type === filter);
 
   return (
-    <footer className="bg-slate-900 border-t border-slate-800 text-xs px-6 py-2.5 flex items-center justify-between gap-4 select-none shrink-0 sticky bottom-0 z-20">
-      {/* 1行ログティッカーエリア */}
-      <div className="flex-1 min-w-0 overflow-hidden font-mono flex items-center gap-2">
-        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-950 text-sky-400 tracking-wider shrink-0">
+    <footer className="bg-slate-900 border-t border-slate-800 text-xs px-6 py-3 flex items-start justify-between gap-4 select-none shrink-0 sticky bottom-0 z-20">
+      {/* 複数行ログ表示エリア */}
+      <div className="flex-1 min-w-0 font-mono flex items-start gap-2">
+        <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-950 text-sky-400 tracking-wider shrink-0 mt-0.5">
           LOG
         </span>
 
         {recentLogs.length === 0 ? (
-          <span className="text-slate-500 italic">活動ログはありません</span>
+          <span className="text-slate-500 italic text-[11px]">活動ログはありません</span>
         ) : (
-          <div className="truncate flex items-center gap-2 text-[11px]">
-            {recentLogs.map((log, index) => (
-              <React.Fragment key={log.id}>
-                {index > 0 && <span className="text-slate-700 font-bold">|</span>}
-                <span className="text-slate-500 font-semibold">[{log.timestamp}]</span>
-                <span className={getLogColorClass(log.type)}>{log.message}</span>
-              </React.Fragment>
+          <div className="flex-1 flex flex-col gap-1.5 text-[11px] h-20 overflow-y-auto pr-1 no-scrollbar">
+            {recentLogs.map((log) => (
+              <div key={log.id} className="flex items-start gap-2 leading-relaxed">
+                <span className="text-slate-500 font-semibold shrink-0">[{log.timestamp}]</span>
+                <span className={`${getLogColorClass(log.type)} break-all`}>{log.message}</span>
+              </div>
             ))}
           </div>
         )}
@@ -60,7 +59,7 @@ export const FooterLogTicker: React.FC = () => {
       {/* 履歴表示ボタン */}
       <button
         onClick={() => setShowHistoryModal(true)}
-        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 hover:text-white rounded border border-slate-700 hover:border-slate-600 transition shrink-0 cursor-pointer"
+        className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-300 hover:text-white rounded border border-slate-700 hover:border-slate-600 transition shrink-0 cursor-pointer mt-0.5"
       >
         ログ履歴
       </button>
@@ -68,7 +67,7 @@ export const FooterLogTicker: React.FC = () => {
       {/* ログ履歴ポップアップモーダル */}
       {showHistoryModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-xl w-full p-5 space-y-4 relative flex flex-col max-h-[80vh]">
+          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-xl w-full p-5 space-y-4 relative flex flex-col max-h-[90vh]">
             {/* モーダルヘッダー */}
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
@@ -111,7 +110,7 @@ export const FooterLogTicker: React.FC = () => {
             </div>
 
             {/* スクロール可能な履歴 */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[11px] leading-relaxed min-h-[200px]">
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[11px] leading-relaxed min-h-[350px] max-h-[60vh]">
               {filteredHistoryLogs.length === 0 ? (
                 <p className="text-slate-500 text-center py-10 italic">該当するログはありません</p>
               ) : (

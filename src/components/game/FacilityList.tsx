@@ -8,7 +8,15 @@ import {
 import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 
 export const FacilityList: React.FC = () => {
-  const { facilities, inventory, gold, soulUpgrades, startFacilityUpgrade } = useGameStore();
+  const {
+    facilities,
+    inventory,
+    gold,
+    soulUpgrades,
+    startFacilityUpgrade,
+    villagers,
+    hireVillager,
+  } = useGameStore();
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -65,8 +73,18 @@ export const FacilityList: React.FC = () => {
                   </h3>
                   {!isUnlocked && (
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      Tier {fac.id === "blacksmith" ? "1" : fac.id === "alchemy" ? "2" : "3"}{" "}
+                      Tier{" "}
+                      {fac.id === "guild" || fac.id === "blacksmith"
+                        ? "1"
+                        : fac.id === "alchemy"
+                          ? "2"
+                          : "3"}{" "}
                       でアンロック可能
+                    </p>
+                  )}
+                  {!isUnlocked && fac.id === "guild" && (
+                    <p className="text-[10px] text-amber-500/80 font-medium mt-1">
+                      ※建設すると冒険者（村人）を新しく雇用できるようになります。
                     </p>
                   )}
                 </div>
@@ -117,6 +135,10 @@ export const FacilityList: React.FC = () => {
                 <div className="mt-2 text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
                   {fac.id === "inn" ? (
                     <span className="text-slate-500">休息機能利用可能</span>
+                  ) : fac.id === "guild" ? (
+                    <span className="text-slate-500">
+                      雇用上限: {3 + fac.level * 2}人 (現在: {villagers.length}人)
+                    </span>
                   ) : fac.craftQueue.length > 0 ? (
                     <>
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
@@ -224,6 +246,38 @@ export const FacilityList: React.FC = () => {
                       ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
                       {15 + fac.level * 5} 回復します。
                     </p>
+                  )}
+
+                  {/* 冒険者ギルドの機能説明と雇用UI */}
+                  {fac.id === "guild" && (
+                    <div className="space-y-3 bg-slate-900/40 p-3 rounded-lg border border-slate-800 leading-relaxed">
+                      <div className="flex justify-between items-center text-[10px] font-mono">
+                        <span className="text-slate-300 font-medium">
+                          現在人数: <strong className="text-sky-400">{villagers.length}</strong> /{" "}
+                          {3 + fac.level * 2} 人
+                        </span>
+                        <span className="text-slate-400">雇用コスト: 100 G</span>
+                      </div>
+
+                      <p className="text-[10px] text-slate-400 leading-normal">
+                        ギルドレベルに応じて雇用できる村人の上限が緩和されます。
+                        <br />
+                        ・Lv1: 最大5人 / ・Lv2: 最大7人 / ・Lv3: 最大9人 / ・Lv4以上: 最大10人
+                      </p>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          hireVillager();
+                        }}
+                        disabled={gold < 100 || villagers.length >= Math.min(10, 3 + fac.level * 2)}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs rounded-lg transition-all"
+                      >
+                        {villagers.length >= Math.min(10, 3 + fac.level * 2)
+                          ? "雇用上限に達しています"
+                          : "新しい冒険者を雇用する (100G)"}
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
