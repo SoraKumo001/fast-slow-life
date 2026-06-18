@@ -1,12 +1,23 @@
 import React, { useState } from "react";
 import { useGameStore, ITEMS } from "../store/gameStore";
 import { DungeonArea } from "../types/game";
-import { Compass, ShieldAlert, Users, Footprints, AlertCircle } from "lucide-react";
+import { Compass, ShieldAlert, Users, Footprints, AlertCircle, Sword, X } from "lucide-react";
 
 export const DungeonPanel: React.FC = () => {
-  const { dungeons, villagers, currentTier, bossDefeated, setVillagerOrder } = useGameStore();
+  const {
+    dungeons,
+    villagers,
+    currentTier,
+    bossDefeated,
+    activeBoss,
+    setVillagerOrder,
+    startBossBattle,
+    withdrawFromBossBattle,
+  } = useGameStore();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
+  const [showBossModal, setShowBossModal] = useState(false);
+  const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
 
   const getActiveVillagersInArea = (areaId: string) => {
     return villagers.filter((v) => v.destinationAreaId === areaId);
@@ -21,6 +32,12 @@ export const DungeonPanel: React.FC = () => {
     setShowAssignModal(true);
   };
 
+  const handleOpenBossBattle = (area: DungeonArea) => {
+    setSelectedArea(area);
+    setSelectedAttackerIds([]);
+    setShowBossModal(true);
+  };
+
   const handleAssign = (vId: string, order: "gather" | "hunt") => {
     if (selectedArea) {
       setVillagerOrder(vId, order, selectedArea.id);
@@ -28,18 +45,90 @@ export const DungeonPanel: React.FC = () => {
     }
   };
 
+  const toggleAttacker = (vId: string) => {
+    if (selectedAttackerIds.includes(vId)) {
+      setSelectedAttackerIds(selectedAttackerIds.filter((id) => id !== vId));
+    } else if (selectedAttackerIds.length < 4) {
+      setSelectedAttackerIds([...selectedAttackerIds, vId]);
+    }
+  };
+
+  const handleStartBossBattle = () => {
+    if (selectedArea && selectedAttackerIds.length > 0) {
+      const boss = selectedArea.monsters.find((m) => m.isBoss);
+      if (boss) {
+        startBossBattle(boss.id, selectedAttackerIds);
+        setShowBossModal(false);
+      }
+    }
+  };
+
   return (
-    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
+    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full relative">
       <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
         <Compass className="w-5 h-5 text-sky-400" />
         ダンジョン・探索派遣
       </h2>
+
+      {/* アクティブなボス戦表示 */}
+      {activeBoss && (
+        <div className="mb-6 p-4 bg-red-950/30 border border-red-900/50 rounded-xl animate-pulse-slow">
+          <div className="flex justify-between items-end mb-2">
+            <div>
+              <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                Decision Battle
+              </span>
+              <h3 className="text-lg font-black text-white italic">
+                VS {useGameStore.getState().dungeons.find(d => d.monsters.some(m => m.id === activeBoss.monsterId))?.monsters.find(m => m.id === activeBoss.monsterId)?.name || "Boss"}
+              </h3>
+            </div>
+            <div className="text-right">
+              <span className="text-[10px] text-slate-400 font-mono">BOSS HP</span>
+              <div className="text-sm font-black text-red-400 font-mono">
+                {Math.ceil(activeBoss.currentHp)} / {activeBoss.maxHp}
+              </div>
+            </div>
+          </div>
+          <div className="w-full bg-slate-950 rounded-full h-3 border border-red-900/30 overflow-hidden mb-3">
+            <div
+              className="bg-gradient-to-r from-red-600 to-rose-500 h-full transition-all duration-500"
+              style={{ width: `${(activeBoss.currentHp / activeBoss.maxHp) * 100}%` }}
+            />
+          </div>
+          <div className="flex justify-between items-center">
+            <div className="flex -space-x-2">
+              {activeBoss.attackerIds.map((id) => {
+                const v = villagers.find((vil) => vil.id === id);
+                return (
+                  <div
+                    key={id}
+                    className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-sky-400"
+                    title={v?.name}
+                  >
+                    {v?.name[0]}
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              onClick={withdrawFromBossBattle}
+              className="px-3 py-1 bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white rounded text-[10px] font-bold transition flex items-center gap-1"
+            >
+              <X className="w-3 h-3" />
+              撤退する
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {dungeons.map((area) => {
           const isUnlocked = area.unlockedAtTier <= currentTier;
           const activeInArea = getActiveVillagersInArea(area.id);
           const boss = area.monsters.find((m) => m.isBoss);
+          const isBossAvailable = area.explorationProgress >= 100;
+          const isBossDefeatedInThisArea =
+            currentTier > area.unlockedAtTier || (currentTier === area.unlockedAtTier && bossDefeated);
 
           return (
             <div
@@ -67,14 +156,25 @@ export const DungeonPanel: React.FC = () => {
                 </div>
 
                 {isUnlocked && (
-                  <button
-                    onClick={() => handleOpenAssign(area)}
-                    disabled={getIdleVillagers().length === 0}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-semibold text-white rounded-lg transition"
-                  >
-                    <Footprints className="w-3.5 h-3.5" />
-                    派遣する
-                  </button>
+                  <div className="flex gap-2">
+                    {isBossAvailable && !isBossDefeatedInThisArea && !activeBoss && (
+                      <button
+                        onClick={() => handleOpenBossBattle(area)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white rounded-lg transition animate-pulse-slow shadow-lg shadow-amber-900/20"
+                      >
+                        <Sword className="w-3.5 h-3.5" />
+                        ボスと対決
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleOpenAssign(area)}
+                      disabled={getIdleVillagers().length === 0}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-semibold text-white rounded-lg transition"
+                    >
+                      <Footprints className="w-3.5 h-3.5" />
+                      派遣する
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -258,6 +358,100 @@ export const DungeonPanel: React.FC = () => {
                 className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition"
               >
                 キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ボス討伐編成モーダル */}
+      {showBossModal && selectedArea && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 space-y-6 shadow-2xl">
+            <div className="text-center">
+              <span className="text-amber-500 font-black tracking-widest text-xs uppercase mb-1 block">
+                Boss Decisive Battle
+              </span>
+              <h3 className="text-2xl font-black text-white italic">
+                {selectedArea.monsters.find((m) => m.isBoss)?.name} との決戦
+              </h3>
+              <p className="text-xs text-slate-400 mt-2 font-medium">
+                最大4名まで選択可能です。ボスのHPは継続し、自然回復します。
+              </p>
+            </div>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+              {getIdleVillagers().length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-8 bg-slate-950 rounded-xl border border-dashed border-slate-800">
+                  現在、派遣可能な待機中の村人がいません。
+                </p>
+              ) : (
+                getIdleVillagers().map((v) => {
+                  const isSelected = selectedAttackerIds.includes(v.id);
+                  const isLvOk = v.level >= selectedArea.recommendedLevel;
+
+                  return (
+                    <div
+                      key={v.id}
+                      onClick={() => toggleAttacker(v.id)}
+                      className={`cursor-pointer border-2 rounded-xl p-4 flex items-center justify-between transition-all duration-200 ${
+                        isSelected
+                          ? "bg-amber-950/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+                          : "bg-slate-950 border-slate-800 hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold border-2 ${
+                            isSelected
+                              ? "bg-amber-500 border-amber-400 text-amber-950"
+                              : "bg-slate-800 border-slate-700 text-slate-400"
+                          }`}
+                        >
+                          {v.name[0]}
+                        </div>
+                        <div>
+                          <span
+                            className={`font-bold text-base block ${isSelected ? "text-amber-400" : "text-slate-200"}`}
+                          >
+                            {v.name}
+                          </span>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              Lv.{v.level} • {v.currentJob}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-mono">
+                              HP: {v.currentHp}/{v.maxHp}
+                            </span>
+                          </div>
+                          {!isLvOk && (
+                            <span className="text-[9px] text-red-400 font-bold flex items-center gap-0.5 mt-1">
+                              <AlertCircle className="w-3 h-3" /> 非推奨レベル
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {isSelected && <Sword className="w-5 h-5 text-amber-500" />}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={handleStartBossBattle}
+                disabled={selectedAttackerIds.length === 0}
+                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-900/20 disabled:shadow-none flex items-center justify-center gap-2 uppercase tracking-wider"
+              >
+                <Sword className="w-5 h-5" />
+                決戦を開始する ({selectedAttackerIds.length} / 4)
+              </button>
+              <button
+                onClick={() => setShowBossModal(false)}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition"
+              >
+                今はやめておく
               </button>
             </div>
           </div>

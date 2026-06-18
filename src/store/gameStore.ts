@@ -841,6 +841,8 @@ interface GameActions {
   sellItem: (itemId: string, count: number) => void;
   advanceDay: () => void;
   dispatchIdleVillagers: () => void;
+  startBossBattle: (monsterId: string, villagerIds: string[]) => void;
+  withdrawFromBossBattle: () => void;
 }
 
 const createInitialInventory = (foodOverride?: number): Record<string, number> => ({
@@ -873,6 +875,7 @@ export const useGameStore = create<GameState & GameActions>()(
         },
       ],
       currentTier: 1,
+      activeBoss: null,
       bossDefeated: false,
       gameLimitDays: TIER_LIMIT_DAYS[1],
       gameOver: false,
@@ -1020,6 +1023,68 @@ export const useGameStore = create<GameState & GameActions>()(
         if (anyDispatched) {
           set({ villagers: updatedVillagers });
         }
+      },
+
+      // ボス討伐開始
+      startBossBattle: (monsterId, villagerIds) => {
+        const monster = MONSTERS[monsterId];
+        if (!monster) return;
+
+        set((state) => {
+          const updatedVillagers = state.villagers.map((v) => {
+            if (villagerIds.includes(v.id)) {
+              const area = state.dungeons.find((d) => d.monsters.some((m) => m.id === monsterId));
+              return {
+                ...v,
+                status: "active" as VillagerStatus,
+                destinationAreaId: area?.id || null,
+                travelTimeLeft: 0,
+                order: "hunt" as OrderType,
+                targetMonsterId: monsterId,
+              };
+            }
+            return v;
+          });
+
+          return {
+            activeBoss: {
+              monsterId,
+              currentHp: monster.hp,
+              maxHp: monster.maxHp,
+              attackerIds: villagerIds,
+            },
+            villagers: updatedVillagers,
+            isPaused: false,
+          };
+        });
+
+        get().addLog(`エリアボス【${monster.name}】との決戦を開始しました！`, "system");
+      },
+
+      // ボス討伐から撤退
+      withdrawFromBossBattle: () => {
+        set((state) => {
+          if (!state.activeBoss) return state;
+
+          const updatedVillagers = state.villagers.map((v) => {
+            if (state.activeBoss?.attackerIds.includes(v.id)) {
+              return {
+                ...v,
+                status: "idle" as VillagerStatus,
+                destinationAreaId: null,
+                travelTimeLeft: 0,
+              };
+            }
+            return v;
+          });
+
+          return {
+            activeBoss: null,
+            villagers: updatedVillagers,
+          };
+        });
+
+        get().addLog("ボス戦から撤退しました。", "info");
       },
 
       // 進行スピード設定
@@ -1539,6 +1604,7 @@ export const useGameStore = create<GameState & GameActions>()(
           inventory,
           targetAmounts,
           currentTier,
+          activeBoss,
           bossDefeated,
           gameLimitDays,
         } = state;
@@ -1680,6 +1746,90 @@ export const useGameStore = create<GameState & GameActions>()(
           });
         });
 
+        // ③.5 ボス討伐の進行処理
+        let updatedActiveBoss = activeBoss ? { ...activeBoss } : null;
+        if (updatedActiveBoss) {
+          const monster = MONSTERS[updatedActiveBoss.monsterId];
+          const attackers = updatedVillagers.filter(
+            (v) => updatedActiveBoss?.attackerIds.includes(v.id) && v.status === "active",
+          );
+
+          if (attackers.length > 0) {
+            const regen = Math.floor(updatedActiveBoss.maxHp * 0.01);
+            updatedActiveBoss.currentHp = Math.min(
+              updatedActiveBoss.maxHp,
+              updatedActiveBoss.currentHp + regen,
+            );
+
+            for (let t = 0; t < 5; t++) {
+              if (updatedActiveBoss.currentHp <= 0) break;
+              attackers.forEach((v) => {
+                if (v.currentHp <= 0 || updatedActiveBoss!.currentHp <= 0) return;
+                const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
+                const efficiency = (hasStarvation ? 0.5 : 1.0) * (v.stamina === 0 ? 0.3 : 1.0);
+                const vAtk = Math.floor(
+                  (v.str * 1.5 + weaponAtk) * (v.currentJob === "戦士" ? 1.3 : 1.0) * efficiency,
+                );
+                const damage = Math.max(2, vAtk - monster.def);
+                updatedActiveBoss!.currentHp -= damage;
+              });
+
+              if (updatedActiveBoss.currentHp > 0) {
+                const target = attackers[Math.floor(Math.random() * attackers.length)];
+                if (target && target.currentHp > 0) {
+                  const armorDef = ITEMS[target.armorId]?.equipment?.bonuses.defense || 0;
+                  const efficiency = (hasStarvation ? 0.5 : 1.0) * (target.stamina === 0 ? 0.3 : 1.0);
+                  const vDef = Math.floor((target.vit + armorDef) * efficiency);
+                  const damage = Math.max(5, monster.atk - vDef);
+                  target.currentHp = Math.max(0, target.currentHp - damage);
+                }
+              }
+            }
+
+            if (updatedActiveBoss.currentHp <= 0) {
+              state.addLog(`エリアボス【${monster.name}】を撃破しました！`, "system");
+              bossDefeated = true;
+              attackers.forEach((v) => {
+                if (v.currentHp > 0) {
+                  const eduBonus = 1.0 + (state.soulUpgrades.education || 0) * 0.1;
+                  const expGained = Math.floor(monster.expReward * eduBonus);
+                  v.exp += expGained;
+                  const expNeeded = v.level * 100;
+                  if (v.exp >= expNeeded) {
+                    v.level += 1;
+                    v.exp -= expNeeded;
+                    v.str += 2;
+                    v.int += 2;
+                    v.dex += 2;
+                    v.agi += 2;
+                    v.vit += 2;
+                    v.maxHp += 15;
+                    v.currentHp = v.maxHp;
+                    state.addLog(`${v.name} が レベル ${v.level} に上がりました！`, "info");
+                  }
+                }
+                v.status = "idle";
+              });
+              if (currentTier < 5) {
+                currentTier += 1;
+                gameLimitDays = TIER_LIMIT_DAYS[currentTier];
+                bossDefeated = false;
+                state.addLog(
+                  `新しいエリアと施設が解放されました！ 次のボス期限は ${gameLimitDays} 日目まで。`,
+                  "system",
+                );
+              }
+              updatedActiveBoss = null;
+            }
+          } else {
+            const regen = Math.floor(updatedActiveBoss.maxHp * 0.01);
+            updatedActiveBoss.currentHp = Math.min(
+              updatedActiveBoss.maxHp,
+              updatedActiveBoss.currentHp + regen,
+            );
+          }
+        }
+
         // ④ 村人の行動・移動・戦闘・採取処理
         for (let i = 0; i < updatedVillagers.length; i++) {
           const v = updatedVillagers[i];
@@ -1744,6 +1894,11 @@ export const useGameStore = create<GameState & GameActions>()(
                 `${v.name} は消耗が激しいため、村への帰還を開始しました（残り時間: ${area.distance}h）。`,
                 "warning",
               );
+              continue;
+            }
+
+            // ボス戦参加中の村人は個別行動をスキップ
+            if (updatedActiveBoss && updatedActiveBoss.attackerIds.includes(v.id)) {
               continue;
             }
 
@@ -1990,26 +2145,6 @@ export const useGameStore = create<GameState & GameActions>()(
                       state.addLog(`敵から ${ITEMS[drop.itemId].name} を獲得しました。`, "combat");
                     }
                   });
-
-                  if (enemy.isBoss) {
-                    bossDefeated = true;
-                    state.addLog(`エリアボス【${enemy.name}】を撃破しました！`, "system");
-
-                    if (currentTier < 5) {
-                      currentTier += 1;
-                      gameLimitDays = TIER_LIMIT_DAYS[currentTier];
-                      bossDefeated = false;
-                      state.addLog(
-                        `新しいエリアと施設が解放されました！ 次のボス討伐期限は ${gameLimitDays} 日目まで。`,
-                        "system",
-                      );
-                    } else {
-                      state.addLog(
-                        `おめでとうございます！【終焉の竜】を撃破し、世界に平和が戻りました！(無限サバイバルに移行します)`,
-                        "system",
-                      );
-                    }
-                  }
                 } else if (villagerDefeated) {
                   state.addLog(`${v.name} が戦闘不能（死亡）になりました…`, "error");
                   updatedVillagers.splice(i, 1);
@@ -2111,6 +2246,7 @@ export const useGameStore = create<GameState & GameActions>()(
           dungeons: updatedDungeons,
           inventory: updatedInventory,
           currentTier,
+          activeBoss: updatedActiveBoss,
           bossDefeated,
           gameLimitDays,
         });
@@ -2134,6 +2270,7 @@ export const useGameStore = create<GameState & GameActions>()(
         targetAmounts: state.targetAmounts,
         logs: state.logs,
         currentTier: state.currentTier,
+        activeBoss: state.activeBoss,
         bossDefeated: state.bossDefeated,
         gameLimitDays: state.gameLimitDays,
         gameOver: state.gameOver,

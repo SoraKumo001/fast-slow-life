@@ -152,6 +152,13 @@ export interface SoulUpgrade {
   effectValue: number; // レベルごとの倍率・加算値
 }
 
+export interface ActiveBossState {
+  monsterId: string;
+  currentHp: number;
+  maxHp: number;
+  attackerIds: string[]; // 参加中の村人IDリスト
+}
+
 export interface GameState {
   currentDay: number;
   currentHour: number;
@@ -165,6 +172,7 @@ export interface GameState {
   targetAmounts: Record<string, number>; // itemId -> 目標個数
   logs: GameLog[];
   currentTier: number; // 1 to 5
+  activeBoss: ActiveBossState | null; // 現在対峙中のボス。nullなら不在
   bossDefeated: boolean;
   gameLimitDays: number; // 現在のTierの制限日数
   gameOver: boolean;
