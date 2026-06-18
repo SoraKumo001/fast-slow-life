@@ -63,6 +63,9 @@ export interface Villager {
   destinationAreaId: string | null; // 派遣先のエリアID
   travelTimeLeft: number; // 移動の残り時間
   assignedCraftJobId: string | null; // 施設でのクラフト担当時のジョブID（自動クラフト等）
+  targetGatherItemId: string | null; // 追加：直接指示された採取アイテムID
+  targetMonsterId: string | null;    // 追加：直接指示された討伐対象モンスターID
+  autoTargetName?: string | null;    // 追加：自動意思決定で選択されているターゲット名
 }
 
 export interface CraftJob {
@@ -101,6 +104,7 @@ export interface Monster {
   expReward: number;
   drops: { itemId: string; chance: number }[]; // 0.0 - 1.0
   isBoss?: boolean;
+  unlockedAtProgress?: number; // 追加：解放に必要な探索度
 }
 
 export interface DungeonArea {
@@ -109,8 +113,10 @@ export interface DungeonArea {
   distance: number; // 往路・復路に必要な時間（時間単位）
   recommendedLevel: number;
   unlockedAtTier: number;
-  gathers: { itemId: string; difficulty: number }[];
+  gathers: { itemId: string; difficulty: number; unlockedAtProgress?: number }[];
   monsters: Monster[];
+  explorationProgress: number; // 追加：現在の探索度 (0 - 100)
+  difficulty: number; // 追加：探索難易度
 }
 
 export interface GameLog {

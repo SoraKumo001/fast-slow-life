@@ -9,7 +9,9 @@ export const InventoryPanel: React.FC = () => {
     targetAmounts,
     facilities,
     setTargetAmount,
-    sellItem
+    sellItem,
+    currentTier,
+    dungeons
   } = useGameStore();
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -50,6 +52,56 @@ export const InventoryPanel: React.FC = () => {
     );
   };
 
+  // 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
+  const isItemAvailable = (item: Item) => {
+    if ((inventory[item.id] || 0) > 0) return true;
+
+    const isGatherable = dungeons.some((d) => {
+      if (d.unlockedAtTier > currentTier) return false;
+      return d.gathers.some((g) => {
+        if (g.itemId !== item.id) return false;
+        return d.explorationProgress >= (g.unlockedAtProgress || 0);
+      });
+    });
+    if (isGatherable) return true;
+
+    const isDroppable = dungeons.some((d) => {
+      if (d.unlockedAtTier > currentTier) return false;
+      return d.monsters.some((m) => {
+        const isMonsUnlocked = d.explorationProgress >= (m.unlockedAtProgress || 0);
+        if (!isMonsUnlocked) return false;
+        return m.drops.some((drop) => drop.itemId === item.id);
+      });
+    });
+    if (isDroppable) return true;
+
+    if (item.recipe) {
+      if (item.id === "wood_plank") {
+        return (facilities.workshop?.level || 0) > 0;
+      }
+      if (item.id === "iron_ingot") {
+        const isIronOreAvailable = (inventory["iron_ore"] || 0) > 0 || dungeons.some((d) => {
+          if (d.unlockedAtTier > currentTier) return false;
+          const canGather = d.gathers.some((g) => g.itemId === "iron_ore" && d.explorationProgress >= (g.unlockedAtProgress || 0));
+          const canDrop = d.monsters.some((m) => 
+            d.explorationProgress >= (m.unlockedAtProgress || 0) &&
+            m.drops.some((dr) => dr.itemId === "iron_ore")
+          );
+          return canGather || canDrop;
+        });
+        return (facilities.workshop?.level || 0) > 0 && isIronOreAvailable;
+      }
+      if (item.id === "potion") {
+        return (facilities.alchemy?.level || 0) > 0;
+      }
+      if (item.id === "iron_sword" || item.id === "iron_armor") {
+        return (facilities.blacksmith?.level || 0) > 0;
+      }
+    }
+
+    return false;
+  };
+
   return (
     <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
       <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
@@ -59,9 +111,11 @@ export const InventoryPanel: React.FC = () => {
 
       {/* 倉庫一覧リスト */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {Object.values(ITEMS).map((item) => {
-          const currentCount = inventory[item.id] || 0;
-          const target = targetAmounts[item.id] || 0;
+        {Object.values(ITEMS)
+          .filter(isItemAvailable)
+          .map((item) => {
+            const currentCount = inventory[item.id] || 0;
+            const target = targetAmounts[item.id] || 0;
 
           return (
             <div
@@ -119,7 +173,7 @@ export const InventoryPanel: React.FC = () => {
 
       {/* 詳細モーダル */}
       {selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onClick={() => setSelectedItem(null)}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => setSelectedItem(null)}>
           <div
             className="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-6 space-y-4 relative"
             onClick={(e) => e.stopPropagation()}
@@ -137,6 +191,69 @@ export const InventoryPanel: React.FC = () => {
                 </p>
               )}
             </div>
+
+             {/* 所持数 & 目標設定セクション */}
+             <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 space-y-2.5">
+               <div className="flex justify-between items-center text-xs">
+                 <span className="text-slate-400">現在の所持数:</span>
+                 <span className="text-slate-100 font-bold font-mono text-sm">
+                   {inventory[selectedItem.id] || 0} 個
+                 </span>
+               </div>
+               <div className="flex flex-col gap-2 border-t border-slate-900 pt-2.5">
+                 <div className="flex justify-between items-center text-xs">
+                   <span className="text-slate-400 flex items-center gap-1">
+                     <Target className="w-3.5 h-3.5 text-sky-400" /> 自動生産目標数:
+                   </span>
+                   <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-2 py-1">
+                     <input
+                       type="number"
+                       value={targetAmounts[selectedItem.id] === 0 ? '' : targetAmounts[selectedItem.id]}
+                       onChange={(e) => setTargetAmount(selectedItem.id, parseInt(e.target.value) || 0)}
+                       placeholder="0"
+                       className="w-16 bg-transparent text-xs font-mono text-right text-sky-400 font-bold focus:outline-none"
+                     />
+                     <span className="text-[10px] text-slate-500 font-mono">個</span>
+                   </div>
+                 </div>
+                 {/* 目標数調整ボタン */}
+                 <div className="flex gap-1.5 justify-end">
+                   <button
+                     onClick={() => setTargetAmount(selectedItem.id, 0)}
+                     className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded text-[10px] font-medium transition cursor-pointer"
+                   >
+                     リセット
+                   </button>
+                   <button
+                     onClick={() => {
+                       const cur = targetAmounts[selectedItem.id] || 0;
+                       setTargetAmount(selectedItem.id, cur + 1);
+                     }}
+                     className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                   >
+                     +1
+                   </button>
+                   <button
+                     onClick={() => {
+                       const cur = targetAmounts[selectedItem.id] || 0;
+                       setTargetAmount(selectedItem.id, cur + 10);
+                     }}
+                     className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                   >
+                     +10
+                   </button>
+                   <button
+                     onClick={() => {
+                       const cur = targetAmounts[selectedItem.id] || 0;
+                       setTargetAmount(selectedItem.id, cur + 100);
+                     }}
+                     className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                   >
+                     +100
+                   </button>
+                 </div>
+               </div>
+             </div>
 
             {/* 価格・用途情報 */}
             <div className="space-y-2.5 text-xs border-t border-slate-800 pt-3.5">
@@ -180,21 +297,21 @@ export const InventoryPanel: React.FC = () => {
                   <button
                     onClick={() => sellItem(selectedItem.id, 1)}
                     disabled={(inventory[selectedItem.id] || 0) < 1}
-                    className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition"
+                    className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
                   >
                     1個売る
                   </button>
                   <button
                     onClick={() => sellItem(selectedItem.id, 10)}
                     disabled={(inventory[selectedItem.id] || 0) < 10}
-                    className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition"
+                    className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
                   >
                     10個売る
                   </button>
                   <button
                     onClick={() => sellItem(selectedItem.id, inventory[selectedItem.id] || 0)}
                     disabled={!(inventory[selectedItem.id] > 0)}
-                    className="flex-1 py-1.5 bg-amber-650 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition"
+                    className="flex-1 py-1.5 bg-amber-650 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition cursor-pointer"
                   >
                     全部売る
                   </button>
@@ -205,7 +322,7 @@ export const InventoryPanel: React.FC = () => {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition"
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition cursor-pointer"
               >
                 閉じる
               </button>

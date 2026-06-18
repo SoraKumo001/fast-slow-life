@@ -78,26 +78,58 @@ export const DungeonPanel: React.FC = () => {
                 )}
               </div>
 
+              {/* 探索度プログレスバー */}
               {isUnlocked && (
-                <div className="space-y-2.5 mt-3 border-t border-slate-900 pt-3">
+                <div className="mt-2 mb-3">
+                  <div className="flex justify-between text-[10px] mb-1">
+                    <span className="text-slate-400 font-medium">探索度</span>
+                    <span className="text-sky-400 font-bold font-mono">{Math.floor(area.explorationProgress)}%</span>
+                  </div>
+                  <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
+                    <div
+                      className="bg-sky-500 h-full transition-all duration-300 rounded-full"
+                      style={{ width: `${area.explorationProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {isUnlocked && (
+                <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
                   {/* 採取可能アイテム & 出現モンスター */}
                   <div className="grid grid-cols-2 gap-3 text-[10px]">
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
                       <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
-                        {area.gathers.map(g => (
-                          <li key={g.itemId}>{ITEMS[g.itemId].name} (難度 {g.difficulty})</li>
-                        ))}
+                        {area.gathers.map(g => {
+                          const isItemUnlocked = area.explorationProgress >= (g.unlockedAtProgress || 0);
+                          return (
+                            <li key={g.itemId} className={isItemUnlocked ? '' : 'text-slate-600 font-normal'}>
+                              {isItemUnlocked ? (
+                                `${ITEMS[g.itemId].name} (難度 ${g.difficulty})`
+                              ) : (
+                                `??? (${g.unlockedAtProgress}%で解放)`
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
                       <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
-                        {area.monsters.map(m => (
-                          <li key={m.id} className={m.isBoss ? 'text-amber-400 font-bold' : ''}>
-                            {m.name} {m.isBoss ? '(ボス)' : `(Lv.${m.level})`}
-                          </li>
-                        ))}
+                        {area.monsters.map(m => {
+                          const isMonsUnlocked = area.explorationProgress >= (m.unlockedAtProgress || 0);
+                          return (
+                            <li key={m.id} className={isMonsUnlocked ? (m.isBoss ? 'text-amber-400 font-bold' : '') : 'text-slate-600 font-normal'}>
+                              {isMonsUnlocked ? (
+                                `${m.name} ${m.isBoss ? '(ボス)' : `(Lv.${m.level})`}`
+                              ) : (
+                                `??? (${m.unlockedAtProgress}%で解放)`
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </div>
@@ -131,7 +163,7 @@ export const DungeonPanel: React.FC = () => {
                   {boss && (
                     <div className="flex items-center gap-2 mt-1 text-[10px]">
                       <span className="text-slate-400">エリアボス:</span>
-                      {bossDefeated && currentTier >= area.unlockedAtTier ? (
+                      {currentTier > area.unlockedAtTier || (currentTier === area.unlockedAtTier && bossDefeated) ? (
                         <span className="text-emerald-400 font-bold">撃破済</span>
                       ) : (
                         <span className="text-amber-500 font-bold flex items-center gap-1">
