@@ -1,5 +1,5 @@
 import React from "react";
-import { useGameStore } from "../store/gameStore";
+import { useGameStore } from "../../store/gameStore";
 import { Play, Pause, UserPlus, RefreshCw, AlertTriangle } from "lucide-react";
 
 export const Header: React.FC = () => {

@@ -35,7 +35,6 @@ describe("gameStore", () => {
     let state = useGameStore.getState();
     expect(state.activeBoss).not.toBeNull();
     expect(state.activeBoss?.monsterId).toBe("goblin_leader");
-    const initialHp = state.activeBoss?.currentHp || 0;
 
     // 1時間進める
     store.advanceHour();

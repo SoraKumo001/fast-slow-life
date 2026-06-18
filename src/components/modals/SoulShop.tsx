@@ -1,5 +1,5 @@
 import React from "react";
-import { useGameStore, SOUL_UPGRADES } from "../store/gameStore";
+import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
 import { Sparkles, RefreshCw } from "lucide-react";
 
 export const SoulShop: React.FC = () => {

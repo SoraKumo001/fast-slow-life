@@ -1,23 +1,16 @@
 import React, { useState } from "react";
-import { useGameStore, ITEMS } from "../store/gameStore";
-import { DungeonArea } from "../types/game";
-import { Compass, ShieldAlert, Users, Footprints, AlertCircle, Sword, X } from "lucide-react";
+import { useGameStore, ITEMS } from "../../store/gameStore";
+import { DungeonArea } from "../../types/game";
+import { Compass, ShieldAlert, Users, Footprints, Sword, X } from "lucide-react";
+import { DungeonAssignModal } from "../modals/DungeonAssignModal";
+import { BossBattleModal } from "../modals/BossBattleModal";
 
 export const DungeonPanel: React.FC = () => {
-  const {
-    dungeons,
-    villagers,
-    currentTier,
-    bossDefeated,
-    activeBoss,
-    setVillagerOrder,
-    startBossBattle,
-    withdrawFromBossBattle,
-  } = useGameStore();
+  const { dungeons, villagers, currentTier, bossDefeated, activeBoss, withdrawFromBossBattle } =
+    useGameStore();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showBossModal, setShowBossModal] = useState(false);
-  const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
 
   const getActiveVillagersInArea = (areaId: string) => {
     return villagers.filter((v) => v.destinationAreaId === areaId);
@@ -34,33 +27,7 @@ export const DungeonPanel: React.FC = () => {
 
   const handleOpenBossBattle = (area: DungeonArea) => {
     setSelectedArea(area);
-    setSelectedAttackerIds([]);
     setShowBossModal(true);
-  };
-
-  const handleAssign = (vId: string, order: "gather" | "hunt") => {
-    if (selectedArea) {
-      setVillagerOrder(vId, order, selectedArea.id);
-      setShowAssignModal(false);
-    }
-  };
-
-  const toggleAttacker = (vId: string) => {
-    if (selectedAttackerIds.includes(vId)) {
-      setSelectedAttackerIds(selectedAttackerIds.filter((id) => id !== vId));
-    } else if (selectedAttackerIds.length < 4) {
-      setSelectedAttackerIds([...selectedAttackerIds, vId]);
-    }
-  };
-
-  const handleStartBossBattle = () => {
-    if (selectedArea && selectedAttackerIds.length > 0) {
-      const boss = selectedArea.monsters.find((m) => m.isBoss);
-      if (boss) {
-        startBossBattle(boss.id, selectedAttackerIds);
-        setShowBossModal(false);
-      }
-    }
   };
 
   return (
@@ -79,7 +46,11 @@ export const DungeonPanel: React.FC = () => {
                 Decision Battle
               </span>
               <h3 className="text-lg font-black text-white italic">
-                VS {useGameStore.getState().dungeons.find(d => d.monsters.some(m => m.id === activeBoss.monsterId))?.monsters.find(m => m.id === activeBoss.monsterId)?.name || "Boss"}
+                VS{" "}
+                {useGameStore
+                  .getState()
+                  .dungeons.find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId))
+                  ?.monsters.find((m) => m.id === activeBoss.monsterId)?.name || "Boss"}
               </h3>
             </div>
             <div className="text-right">
@@ -128,7 +99,8 @@ export const DungeonPanel: React.FC = () => {
           const boss = area.monsters.find((m) => m.isBoss);
           const isBossAvailable = area.explorationProgress >= 100;
           const isBossDefeatedInThisArea =
-            currentTier > area.unlockedAtTier || (currentTier === area.unlockedAtTier && bossDefeated);
+            currentTier > area.unlockedAtTier ||
+            (currentTier === area.unlockedAtTier && bossDefeated);
 
           return (
             <div
@@ -279,7 +251,7 @@ export const DungeonPanel: React.FC = () => {
                       (currentTier === area.unlockedAtTier && bossDefeated) ? (
                         <span className="text-emerald-400 font-bold">撃破済</span>
                       ) : (
-                        <span className="text-amber-500 font-bold flex items-center gap-1">
+                        <span className="text-amber-505 font-bold flex items-center gap-1">
                           <ShieldAlert className="w-3.5 h-3.5" /> 未撃破
                         </span>
                       )}
@@ -294,168 +266,24 @@ export const DungeonPanel: React.FC = () => {
 
       {/* 派遣アサインモーダル */}
       {showAssignModal && selectedArea && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-100">
-                村人を {selectedArea.name} へ派遣
-              </h3>
-              <p className="text-xs text-slate-400 font-mono">
-                推奨レベル: {selectedArea.recommendedLevel} • 必要移動時間: {selectedArea.distance}
-                時間
-              </p>
-            </div>
-
-            <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-              {getIdleVillagers().length === 0 ? (
-                <p className="text-xs text-slate-500 text-center py-4">
-                  派遣できる待機中の村人がいません。
-                </p>
-              ) : (
-                getIdleVillagers().map((v) => {
-                  const isLvOk = v.level >= selectedArea.recommendedLevel;
-
-                  return (
-                    <div
-                      key={v.id}
-                      className="bg-slate-950 border border-slate-800 rounded-lg p-3 flex items-center justify-between gap-3"
-                    >
-                      <div>
-                        <span className="font-bold text-sm text-slate-200 block">{v.name}</span>
-                        <span className="text-[10px] text-slate-500 font-mono">
-                          Lv.{v.level} • {v.currentJob} • HP:{v.currentHp}/{v.maxHp}
-                        </span>
-                        {!isLvOk && (
-                          <span className="text-[9px] text-red-400 font-bold flex items-center gap-0.5 mt-1">
-                            <AlertCircle className="w-3 h-3" /> レベル不足注意
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="flex gap-1.5">
-                        <button
-                          onClick={() => handleAssign(v.id, "gather")}
-                          className="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[10px] transition"
-                        >
-                          採取派遣
-                        </button>
-                        <button
-                          onClick={() => handleAssign(v.id, "hunt")}
-                          className="px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white font-medium text-[10px] transition"
-                        >
-                          討伐派遣
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setShowAssignModal(false)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition"
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
+        <DungeonAssignModal
+          area={selectedArea}
+          onClose={() => {
+            setShowAssignModal(false);
+            setSelectedArea(null);
+          }}
+        />
       )}
 
       {/* ボス討伐編成モーダル */}
       {showBossModal && selectedArea && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 space-y-6 shadow-2xl">
-            <div className="text-center">
-              <span className="text-amber-500 font-black tracking-widest text-xs uppercase mb-1 block">
-                Boss Decisive Battle
-              </span>
-              <h3 className="text-2xl font-black text-white italic">
-                {selectedArea.monsters.find((m) => m.isBoss)?.name} との決戦
-              </h3>
-              <p className="text-xs text-slate-400 mt-2 font-medium">
-                最大4名まで選択可能です。ボスのHPは継続し、自然回復します。
-              </p>
-            </div>
-
-            <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-              {getIdleVillagers().length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-8 bg-slate-950 rounded-xl border border-dashed border-slate-800">
-                  現在、派遣可能な待機中の村人がいません。
-                </p>
-              ) : (
-                getIdleVillagers().map((v) => {
-                  const isSelected = selectedAttackerIds.includes(v.id);
-                  const isLvOk = v.level >= selectedArea.recommendedLevel;
-
-                  return (
-                    <div
-                      key={v.id}
-                      onClick={() => toggleAttacker(v.id)}
-                      className={`cursor-pointer border-2 rounded-xl p-4 flex items-center justify-between transition-all duration-200 ${
-                        isSelected
-                          ? "bg-amber-950/20 border-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
-                          : "bg-slate-950 border-slate-800 hover:border-slate-600"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold border-2 ${
-                            isSelected
-                              ? "bg-amber-500 border-amber-400 text-amber-950"
-                              : "bg-slate-800 border-slate-700 text-slate-400"
-                          }`}
-                        >
-                          {v.name[0]}
-                        </div>
-                        <div>
-                          <span
-                            className={`font-bold text-base block ${isSelected ? "text-amber-400" : "text-slate-200"}`}
-                          >
-                            {v.name}
-                          </span>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              Lv.{v.level} • {v.currentJob}
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-mono">
-                              HP: {v.currentHp}/{v.maxHp}
-                            </span>
-                          </div>
-                          {!isLvOk && (
-                            <span className="text-[9px] text-red-400 font-bold flex items-center gap-0.5 mt-1">
-                              <AlertCircle className="w-3 h-3" /> 非推奨レベル
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      {isSelected && <Sword className="w-5 h-5 text-amber-500" />}
-                    </div>
-                  );
-                })
-              )}
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleStartBossBattle}
-                disabled={selectedAttackerIds.length === 0}
-                className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-900/20 disabled:shadow-none flex items-center justify-center gap-2 uppercase tracking-wider"
-              >
-                <Sword className="w-5 h-5" />
-                決戦を開始する ({selectedAttackerIds.length} / 4)
-              </button>
-              <button
-                onClick={() => setShowBossModal(false)}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition"
-              >
-                今はやめておく
-              </button>
-            </div>
-          </div>
-        </div>
+        <BossBattleModal
+          area={selectedArea}
+          onClose={() => {
+            setShowBossModal(false);
+            setSelectedArea(null);
+          }}
+        />
       )}
     </div>
   );

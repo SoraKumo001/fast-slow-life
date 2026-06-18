@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useGameStore } from "../store/gameStore";
-import { GameLog } from "../types/game";
+import { useGameStore } from "../../store/gameStore";
+import { GameLog } from "../../types/game";
 import { Terminal, X } from "lucide-react";
 
 export const FooterLogTicker: React.FC = () => {

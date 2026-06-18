@@ -13,6 +13,7 @@ import {
   FacilityType,
   OrderType,
   SoulUpgrade,
+  VillagerStatus,
 } from "../types/game";
 
 // ==========================================
@@ -1778,7 +1779,8 @@ export const useGameStore = create<GameState & GameActions>()(
                 const target = attackers[Math.floor(Math.random() * attackers.length)];
                 if (target && target.currentHp > 0) {
                   const armorDef = ITEMS[target.armorId]?.equipment?.bonuses.defense || 0;
-                  const efficiency = (hasStarvation ? 0.5 : 1.0) * (target.stamina === 0 ? 0.3 : 1.0);
+                  const efficiency =
+                    (hasStarvation ? 0.5 : 1.0) * (target.stamina === 0 ? 0.3 : 1.0);
                   const vDef = Math.floor((target.vit + armorDef) * efficiency);
                   const damage = Math.max(5, monster.atk - vDef);
                   target.currentHp = Math.max(0, target.currentHp - damage);

@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useGameStore } from "./store/gameStore";
-import { Header } from "./components/Header";
-import { InventoryPanel } from "./components/InventoryPanel";
-import { VillagerList } from "./components/VillagerList";
-import { FacilityList } from "./components/FacilityList";
-import { DungeonPanel } from "./components/DungeonPanel";
-import { FooterLogTicker } from "./components/FooterLogTicker";
-import { SoulShop } from "./components/SoulShop";
+import { Header } from "./components/layout/Header";
+import { InventoryPanel } from "./components/game/InventoryPanel";
+import { VillagerList } from "./components/game/VillagerList";
+import { FacilityList } from "./components/game/FacilityList";
+import { DungeonPanel } from "./components/game/DungeonPanel";
+import { FooterLogTicker } from "./components/layout/FooterLogTicker";
+import { SoulShop } from "./components/modals/SoulShop";
 import { Sparkles, X, HelpCircle } from "lucide-react";
 
 export default function App() {

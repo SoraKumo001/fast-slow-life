@@ -1,0 +1,139 @@
+import React, { useState } from "react";
+import { useGameStore, ITEMS, getRecipeForItem } from "../../store/gameStore";
+import { Item } from "../../types/game";
+import { ShoppingBag } from "lucide-react";
+import { ItemDetailModal } from "../modals/ItemDetailModal";
+
+export const InventoryPanel: React.FC = () => {
+  const { inventory, targetAmounts, facilities, currentTier, dungeons } = useGameStore();
+
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+  const getCategoryBadgeColor = (cat: Item["category"]) => {
+    switch (cat) {
+      case "food":
+        return "bg-emerald-950/60 text-emerald-400 border border-emerald-900/60";
+      case "ore":
+        return "bg-amber-950/60 text-amber-400 border border-amber-900/60";
+      case "herb":
+        return "bg-teal-950/60 text-teal-400 border border-teal-900/60";
+      case "mana_stone":
+        return "bg-purple-950/60 text-purple-400 border border-purple-900/60";
+      case "material":
+        return "bg-slate-800 text-slate-300 border border-slate-700";
+      case "gear_weapon":
+        return "bg-red-950/60 text-red-400 border border-red-900/60";
+      case "gear_armor":
+        return "bg-sky-950/60 text-sky-400 border border-sky-900/60";
+      case "consumable":
+        return "bg-indigo-950/60 text-indigo-400 border border-indigo-900/60";
+      default:
+        return "bg-slate-900 text-slate-400";
+    }
+  };
+
+  const getCategoryLabel = (cat: Item["category"]) => {
+    switch (cat) {
+      case "food":
+        return "食料";
+      case "ore":
+        return "鉱石";
+      case "herb":
+        return "薬草";
+      case "mana_stone":
+        return "魔法石";
+      case "material":
+        return "素材";
+      case "gear_weapon":
+        return "武器";
+      case "gear_armor":
+        return "防具";
+      case "consumable":
+        return "消耗品";
+    }
+  };
+
+  // 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
+  const isItemAvailable = (item: Item) => {
+    if ((inventory[item.id] || 0) > 0) return true;
+
+    const isGatherable = dungeons.some((d) => {
+      if (d.unlockedAtTier > currentTier) return false;
+      return d.gathers.some((g) => {
+        if (g.itemId !== item.id) return false;
+        return d.explorationProgress >= (g.unlockedAtProgress || 0);
+      });
+    });
+    if (isGatherable) return true;
+
+    const isDroppable = dungeons.some((d) => {
+      if (d.unlockedAtTier > currentTier) return false;
+      return d.monsters.some((m) => {
+        const isMonsUnlocked = d.explorationProgress >= (m.unlockedAtProgress || 0);
+        if (!isMonsUnlocked) return false;
+        return m.drops.some((drop) => drop.itemId === item.id);
+      });
+    });
+    if (isDroppable) return true;
+
+    const recipe = getRecipeForItem(item.id);
+    if (recipe) {
+      const facilityLevel = facilities[recipe.facilityId]?.level || 0;
+      return facilityLevel >= recipe.requiredFacilityLevel;
+    }
+
+    return false;
+  };
+
+  return (
+    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
+      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+        <ShoppingBag className="w-5 h-5 text-sky-400" />
+        素材・倉庫アイテム
+      </h2>
+
+      {/* 倉庫一覧リスト */}
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        {Object.values(ITEMS)
+          .filter(isItemAvailable)
+          .map((item) => {
+            const currentCount = inventory[item.id] || 0;
+            const target = targetAmounts[item.id] || 0;
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => setSelectedItem(item)}
+                className="bg-slate-950/80 border border-slate-850 hover:border-slate-750 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition cursor-pointer"
+              >
+                {/* 名前 & カテゴリ */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-slate-200 text-sm truncate">{item.name}</span>
+                    <span
+                      className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${getCategoryBadgeColor(item.category)}`}
+                    >
+                      {getCategoryLabel(item.category)}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                    所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
+                    {target > 0 && (
+                      <span className="ml-2 text-sky-400">
+                        (目標: {target}) {currentCount >= target ? "✓" : "不足"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+      </div>
+
+      {/* 詳細モーダル */}
+      {selectedItem && (
+        <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+      )}
+    </div>
+  );
+};

@@ -4,7 +4,7 @@ import {
   ITEMS,
   getCraftableItemsForFacility,
   getRecipeForItem,
-} from "../store/gameStore";
+} from "../../store/gameStore";
 import { Home, Hammer, Plus, ArrowUpCircle } from "lucide-react";
 
 export const FacilityList: React.FC = () => {
