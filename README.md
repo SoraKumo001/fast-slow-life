@@ -30,17 +30,17 @@
 
 Godotでの実装に向けた、詳細な仕様書およびデータ定義です。
 
-1. **[システム設計書](file:///c:/prog/game/fast-slow-life/docs/system_design.md)**
+1. **[システム設計書](docs/system_design.md)**
    - 時間経過（1時間単位）ルール、ターン処理フロー、期限と目標更新の仕組み、周回・ソウルポイント計算式。
-2. **[キャラクター＆職業設計書](file:///c:/prog/game/fast-slow-life/docs/villagers_and_jobs.md)**
+2. **[キャラクター＆職業設計書](docs/villagers_and_jobs.md)**
    - 村人のステータス項目、職業（ジョブ）データ定義、転職システム、指示に対する自動意思決定ロジック。
-3. **[施設＆クラフト設計書](file:///c:/prog/game/fast-slow-life/docs/facilities_and_crafting.md)**
+3. **[施設＆クラフト設計書](docs/facilities_and_crafting.md)**
    - 各施設の機能、アップグレードコストと効果、アイテム加工（クラフト）レシピの一覧。
-4. **[ダンジョン＆戦闘設計書](file:///c:/prog/game/fast-slow-life/docs/dungeons_and_combat.md)**
+4. **[ダンジョン＆戦闘設計書](docs/dungeons_and_combat.md)**
    - フィールド・ダンジョンデータ、出現モンスターと採取素材の分布、戦闘ダメージ計算式、報酬システム、およびボス討伐の仕様。
-5. **[アイテムリスト](file:///c:/prog/game/fast-slow-life/docs/items.md)**
+5. **[アイテムリスト](docs/items.md)**
    - 一次素材、中間素材、消費アイテム、装備品（武器・防具）のパラメータとレシピ一覧。
-6. **[画面構成・UI設計書](file:///c:/prog/game/fast-slow-life/docs/screen_layout.md)**
+6. **[画面構成・UI設計書](docs/screen_layout.md)**
    - 画面全体のレイアウト構成（基本情報、4カラムメインエリア、一行ログ）、各リストおよび詳細ポップアップの仕様。
 
 ---
