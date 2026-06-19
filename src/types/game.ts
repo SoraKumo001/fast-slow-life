@@ -123,14 +123,29 @@ export interface Monster {
   unlockedAtProgress?: number; // 追加：解放に必要な探索度
 }
 
+export interface DungeonGather {
+  itemId: string;
+  difficulty: number;
+  unlockedAtProgress?: number;
+  currentProgress?: number; // 採取進捗 (0 - 100)
+  respawnTimeLeft?: number; // リスポーン残り時間 (時間)
+  respawnTimeTotal?: number; // リスポーン所要時間 (時間)
+}
+
+export interface DungeonMonster extends Monster {
+  currentProgress?: number; // 遭遇/戦闘進捗 (0 - 100)
+  respawnTimeLeft?: number; // リスポーン残り時間 (時間)
+  respawnTimeTotal?: number; // リスポーン所要時間 (時間)
+}
+
 export interface DungeonArea {
   id: string;
   name: string;
   distance: number; // 往路・復路に必要な時間（時間単位）
   recommendedLevel: number;
   unlockedAtTier: number;
-  gathers: { itemId: string; difficulty: number; unlockedAtProgress?: number }[];
-  monsters: Monster[];
+  gathers: DungeonGather[];
+  monsters: DungeonMonster[];
   explorationProgress: number; // 追加：現在の探索度 (0 - 100)
   difficulty: number; // 追加：探索難易度
 }

@@ -174,18 +174,55 @@ export const DungeonPanel: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 text-[10px]">
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
-                      <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
+                      <ul className="space-y-1 text-slate-300 font-mono">
                         {area.gathers.map((g) => {
                           const isItemUnlocked =
                             area.explorationProgress >= (g.unlockedAtProgress || 0);
                           return (
                             <li
                               key={g.itemId}
-                              className={isItemUnlocked ? "" : "text-slate-600 font-normal"}
+                              className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
+                                isItemUnlocked ? "" : "text-slate-600 font-normal"
+                              }`}
                             >
-                              {isItemUnlocked
-                                ? `${ITEMS[g.itemId].name} (難度 ${g.difficulty})`
-                                : `??? (${g.unlockedAtProgress}%で解放)`}
+                              {/* 背景の進行ゲージ */}
+                              {isItemUnlocked && !(g.respawnTimeLeft && g.respawnTimeLeft > 0) && (
+                                <div
+                                  className="absolute left-0 top-0 bottom-0 bg-emerald-500/15 transition-all duration-300 pointer-events-none"
+                                  style={{ width: `${g.currentProgress || 0}%` }}
+                                />
+                              )}
+                              {/* リスポーン中の背景 */}
+                              {isItemUnlocked && g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
+                                <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
+                              ) : null}
+
+                              {/* 前面コンテンツ */}
+                              <span
+                                className="z-10 truncate whitespace-nowrap text-[10px]"
+                                style={{ whiteSpace: "nowrap" }}
+                                title={
+                                  isItemUnlocked ? ITEMS[g.itemId]?.name || g.itemId : undefined
+                                }
+                              >
+                                •{" "}
+                                {isItemUnlocked
+                                  ? `${ITEMS[g.itemId]?.name || g.itemId}`
+                                  : `??? (${g.unlockedAtProgress}%で解放)`}
+                              </span>
+                              {isItemUnlocked && (
+                                <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
+                                  {g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
+                                    <span className="text-amber-500">
+                                      リスポーン中 ({g.respawnTimeLeft}h)
+                                    </span>
+                                  ) : (
+                                    <span className="text-emerald-400">
+                                      {Math.floor(g.currentProgress || 0)}%
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </li>
                           );
                         })}
@@ -193,24 +230,66 @@ export const DungeonPanel: React.FC = () => {
                     </div>
                     <div>
                       <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
-                      <ul className="list-disc list-inside space-y-0.5 text-slate-300 font-mono">
+                      <ul className="space-y-1 text-slate-300 font-mono">
                         {area.monsters.map((m) => {
                           const isMonsUnlocked =
                             area.explorationProgress >= (m.unlockedAtProgress || 0);
                           return (
                             <li
                               key={m.id}
-                              className={
+                              className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
                                 isMonsUnlocked
                                   ? m.isBoss
-                                    ? "text-amber-400 font-bold"
+                                    ? "text-amber-400 font-bold bg-amber-500/5 border border-amber-500/10"
                                     : ""
                                   : "text-slate-600 font-normal"
-                              }
+                              }`}
                             >
-                              {isMonsUnlocked
-                                ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
-                                : `??? (${m.unlockedAtProgress}%で解放)`}
+                              {/* 背景の進行ゲージ */}
+                              {isMonsUnlocked &&
+                                !m.isBoss &&
+                                !(m.respawnTimeLeft && m.respawnTimeLeft > 0) && (
+                                  <div
+                                    className="absolute left-0 top-0 bottom-0 bg-sky-500/15 transition-all duration-300 pointer-events-none"
+                                    style={{ width: `${m.currentProgress || 0}%` }}
+                                  />
+                                )}
+                              {/* リスポーン中の背景 */}
+                              {isMonsUnlocked &&
+                              !m.isBoss &&
+                              m.respawnTimeLeft &&
+                              m.respawnTimeLeft > 0 ? (
+                                <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
+                              ) : null}
+
+                              {/* 前面コンテンツ */}
+                              <span
+                                className="z-10 truncate whitespace-nowrap text-[10px]"
+                                style={{ whiteSpace: "nowrap" }}
+                                title={
+                                  isMonsUnlocked
+                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                    : undefined
+                                }
+                              >
+                                •{" "}
+                                {isMonsUnlocked
+                                  ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                  : `??? (${m.unlockedAtProgress}%で解放)`}
+                              </span>
+                              {isMonsUnlocked && !m.isBoss && (
+                                <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
+                                  {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
+                                    <span className="text-amber-500">
+                                      リスポーン中 ({m.respawnTimeLeft}h)
+                                    </span>
+                                  ) : (
+                                    <span className="text-sky-400">
+                                      {Math.floor(m.currentProgress || 0)}%
+                                    </span>
+                                  )}
+                                </div>
+                              )}
                             </li>
                           );
                         })}

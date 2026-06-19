@@ -225,6 +225,46 @@ function getInitialFacilities(): Record<FacilityType, Facility> {
   };
 }
 
+function getInitialDungeons(): DungeonArea[] {
+  return DUNGEONS.map((d) => ({
+    ...d,
+    gathers: d.gathers.map((g) => {
+      let respawnTimeTotal = 3; // デフォルト
+      if (g.itemId === "stone" || g.itemId === "iron_ore" || g.itemId === "silver_ore") {
+        respawnTimeTotal = 6;
+      } else if (g.itemId === "mana_stone") {
+        respawnTimeTotal = 12;
+      }
+      return {
+        ...g,
+        currentProgress: 0,
+        respawnTimeLeft: 0,
+        respawnTimeTotal,
+      };
+    }),
+    monsters: d.monsters.map((m) => {
+      let respawnTimeTotal = 4; // デフォルト
+      if (
+        m.id === "orc" ||
+        m.id === "werewolf" ||
+        m.id === "demon" ||
+        m.id === "gargoyle" ||
+        m.id === "dragon_spawn"
+      ) {
+        respawnTimeTotal = 8;
+      } else if (m.id === "golem" || m.id === "chimera" || m.id === "archdemon") {
+        respawnTimeTotal = 16;
+      }
+      return {
+        ...m,
+        currentProgress: 0,
+        respawnTimeLeft: 0,
+        respawnTimeTotal,
+      };
+    }),
+  }));
+}
+
 // ==========================================
 // 3. Zustand ストア実装
 // ==========================================
@@ -275,7 +315,7 @@ export const useGameStore = create<GameState & GameActions>()(
       soulPoints: 0,
       villagers: getInitialVillagers(0),
       facilities: getInitialFacilities(),
-      dungeons: DUNGEONS,
+      dungeons: getInitialDungeons(),
       inventory: { ...DEFAULT_INVENTORY },
       targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
       logs: [
@@ -377,7 +417,8 @@ export const useGameStore = create<GameState & GameActions>()(
                     d.gathers.some(
                       (g) =>
                         g.itemId === missingId &&
-                        d.explorationProgress >= (g.unlockedAtProgress || 0),
+                        d.explorationProgress >= (g.unlockedAtProgress || 0) &&
+                        !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
                     ),
                 );
                 if (area) {
@@ -394,6 +435,7 @@ export const useGameStore = create<GameState & GameActions>()(
                       (m) =>
                         d.explorationProgress >= (m.unlockedAtProgress || 0) &&
                         (!m.isBoss || bossDefeated) &&
+                        !(m.respawnTimeLeft && m.respawnTimeLeft > 0) &&
                         m.drops.some((dr) => dr.itemId === missingId),
                     ),
                 );
@@ -404,6 +446,7 @@ export const useGameStore = create<GameState & GameActions>()(
                     (m) =>
                       dropArea.explorationProgress >= (m.unlockedAtProgress || 0) &&
                       (!m.isBoss || bossDefeated) &&
+                      !(m.respawnTimeLeft && m.respawnTimeLeft > 0) &&
                       m.drops.some((dr) => dr.itemId === missingId),
                   );
                   resolvedAutoTargetName = targetMonster ? targetMonster.name : null;
@@ -1028,7 +1071,7 @@ export const useGameStore = create<GameState & GameActions>()(
           soulPoints: state.soulPoints + earnedSp,
           villagers: getInitialVillagers(bodyLvl),
           facilities: getInitialFacilities(),
-          dungeons: DUNGEONS,
+          dungeons: getInitialDungeons(),
           inventory: createInitialInventory(startFood),
           targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
           logs: [
@@ -1127,13 +1170,29 @@ export const useGameStore = create<GameState & GameActions>()(
           ...persistedState.targetAmounts,
         };
 
-        // 1. ダンジョンのマスタ情報更新 (explorationProgress以外の固定値を最新コードから同期)
+        // 1. ダンジョンのマスタ情報更新 (explorationProgressや動的状態を最新のマスタ定義と同期しつつ永続値を反映)
         if (persistedState.dungeons) {
           merged.dungeons = currentState.dungeons.map((curD: any) => {
             const persD = persistedState.dungeons.find((d: any) => d.id === curD.id);
             return {
               ...curD,
               explorationProgress: persD ? persD.explorationProgress : 0,
+              gathers: curD.gathers.map((curG: any) => {
+                const persG = persD?.gathers?.find((g: any) => g.itemId === curG.itemId);
+                return {
+                  ...curG,
+                  currentProgress: persG?.currentProgress !== undefined ? persG.currentProgress : 0,
+                  respawnTimeLeft: persG?.respawnTimeLeft !== undefined ? persG.respawnTimeLeft : 0,
+                };
+              }),
+              monsters: curD.monsters.map((curM: any) => {
+                const persM = persD?.monsters?.find((m: any) => m.id === curM.id);
+                return {
+                  ...curM,
+                  currentProgress: persM?.currentProgress !== undefined ? persM.currentProgress : 0,
+                  respawnTimeLeft: persM?.respawnTimeLeft !== undefined ? persM.respawnTimeLeft : 0,
+                };
+              }),
             };
           });
         }

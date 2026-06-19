@@ -33,6 +33,23 @@ export interface AdvanceHourResult {
 }
 
 /**
+ * リスポーン時間経過処理
+ */
+export function processRespawns(dungeons: DungeonArea[]): DungeonArea[] {
+  return dungeons.map((d) => ({
+    ...d,
+    gathers: d.gathers.map((g) => ({
+      ...g,
+      respawnTimeLeft: g.respawnTimeLeft ? Math.max(0, g.respawnTimeLeft - 1) : 0,
+    })),
+    monsters: d.monsters.map((m) => ({
+      ...m,
+      respawnTimeLeft: m.respawnTimeLeft ? Math.max(0, m.respawnTimeLeft - 1) : 0,
+    })),
+  }));
+}
+
+/**
  * ① 食料消費と飢餓判定
  */
 export function processStarvation(food: number, villagersCount: number) {
@@ -338,6 +355,11 @@ export function processVillagerActivities(
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
   const nextInventory = { ...inventory };
+  const nextDungeons = dungeons.map((d) => ({
+    ...d,
+    gathers: d.gathers.map((g) => ({ ...g })),
+    monsters: d.monsters.map((m) => ({ ...m })),
+  }));
   let nextFood = food;
   let gameOver = false;
   let isPaused = false;
@@ -373,7 +395,7 @@ export function processVillagerActivities(
       v.travelTimeLeft -= 1;
       if (v.travelTimeLeft <= 0) {
         v.status = "active";
-        const areaName = dungeons.find((d) => d.id === v.destinationAreaId)?.name || "";
+        const areaName = nextDungeons.find((d) => d.id === v.destinationAreaId)?.name || "";
         logs.push({
           message: `${v.name} が ${areaName} に到着し、活動を開始しました。`,
           type: "info",
@@ -406,7 +428,12 @@ export function processVillagerActivities(
     }
 
     if (v.status === "active" && v.destinationAreaId) {
-      const area = dungeons.find((d) => d.id === v.destinationAreaId)!;
+      const areaIdx = nextDungeons.findIndex((d) => d.id === v.destinationAreaId);
+      if (areaIdx === -1) {
+        nextVillagers[i] = v;
+        continue;
+      }
+      const area = nextDungeons[areaIdx];
       v.stamina = Math.max(0, v.stamina - 5);
 
       const efficiency = (hasStarvation ? 0.5 : 1.0) * (v.stamina === 0 ? 0.3 : 1.0);
@@ -464,13 +491,19 @@ export function processVillagerActivities(
         const progress = area.explorationProgress;
 
         const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
-        if (targetedGather && progress >= (targetedGather.unlockedAtProgress || 0)) {
+        if (
+          targetedGather &&
+          progress >= (targetedGather.unlockedAtProgress || 0) &&
+          !(targetedGather.respawnTimeLeft && targetedGather.respawnTimeLeft > 0)
+        ) {
           bestItemId = v.targetGatherItemId!;
           v.autoTargetName = null;
         } else {
           let maxScore = -1;
           const availableGathers = area.gathers.filter(
-            (g) => progress >= (g.unlockedAtProgress || 0),
+            (g) =>
+              progress >= (g.unlockedAtProgress || 0) &&
+              !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
           );
 
           availableGathers.forEach((gather) => {
@@ -518,182 +551,219 @@ export function processVillagerActivities(
         }
 
         if (bestItemId) {
-          const successRate = Math.min(0.95, 0.5 + v.dex * 0.01);
-          if (Math.random() < successRate) {
-            const item = ITEMS[bestItemId];
-            const baseAmount = item.id === "food" ? 10 : 1;
+          const gatherIdx = area.gathers.findIndex((g) => g.itemId === bestItemId);
+          if (gatherIdx !== -1) {
+            const gather = { ...area.gathers[gatherIdx] };
+            const progressSpeed = (v.dex * 0.8 + 10) / gather.difficulty;
+            gather.currentProgress = Math.min(
+              100,
+              (gather.currentProgress || 0) + progressSpeed * efficiency,
+            );
+            area.gathers[gatherIdx] = gather;
 
-            let jobMod = 1.0;
-            const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
-            if (jobAdapt) jobMod = jobAdapt;
+            if (gather.currentProgress >= 100) {
+              const item = ITEMS[bestItemId];
+              const baseAmount = item.id === "food" ? 10 : 1;
 
-            const amount = Math.max(1, Math.floor(baseAmount * jobMod * efficiency));
+              let jobMod = 1.0;
+              const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
+              if (jobAdapt) jobMod = jobAdapt;
 
-            nextInventory[bestItemId] = (nextInventory[bestItemId] || 0) + amount;
-            if (bestItemId === "food") {
-              nextFood += amount;
-            }
+              const amount = Math.max(1, Math.floor(baseAmount * jobMod * efficiency));
 
-            const eduBonus = 1.0 + (soulUpgrades.education || 0) * 0.1;
-            const itemDiff = item.difficulty || 1.0;
-            const expGained = Math.max(1, Math.floor(itemDiff * 5 * eduBonus));
-            v.exp += expGained;
+              nextInventory[bestItemId] = (nextInventory[bestItemId] || 0) + amount;
+              if (bestItemId === "food") {
+                nextFood += amount;
+              }
 
-            logs.push({
-              message: `${v.name} が ${area.name} で ${item.name} を ${amount} 個採取しました。（+${expGained} EXP）`,
-              type: "gather",
-            });
+              const eduBonus = 1.0 + (soulUpgrades.education || 0) * 0.1;
+              const itemDiff = item.difficulty || 1.0;
+              const expGained = Math.max(1, Math.floor(itemDiff * 5 * eduBonus));
+              v.exp += expGained;
 
-            const expNeeded = v.level * 100;
-            if (v.exp >= expNeeded) {
-              v.level += 1;
-              v.exp -= expNeeded;
-              v.str += 2;
-              v.int += 2;
-              v.dex += 2;
-              v.agi += 2;
-              v.vit += 2;
-              v.maxHp += 15;
-              v.currentHp = v.maxHp;
               logs.push({
-                message: `${v.name} が レベル ${v.level} に上がりました！`,
-                type: "info",
+                message: `${v.name} が ${area.name} で ${item.name} を ${amount} 個採取しました。（+${expGained} EXP）`,
+                type: "gather",
               });
+
+              const expNeeded = v.level * 100;
+              if (v.exp >= expNeeded) {
+                v.level += 1;
+                v.exp -= expNeeded;
+                v.str += 2;
+                v.int += 2;
+                v.dex += 2;
+                v.agi += 2;
+                v.vit += 2;
+                v.maxHp += 15;
+                v.currentHp = v.maxHp;
+                logs.push({
+                  message: `${v.name} が レベル ${v.level} に上がりました！`,
+                  type: "info",
+                });
+              }
+
+              // リスポーン設定
+              gather.respawnTimeLeft = gather.respawnTimeTotal || 3;
+              gather.currentProgress = 0;
+              area.gathers[gatherIdx] = gather;
             }
-          } else {
-            logs.push({
-              message: `${v.name} は ${area.name} で採取に失敗しました。`,
-              type: "gather",
-            });
           }
         }
       } else if (v.order === "hunt") {
         const progress = area.explorationProgress;
         const availableMonsters = area.monsters.filter(
-          (m) => progress >= (m.unlockedAtProgress || 0),
+          (m) =>
+            progress >= (m.unlockedAtProgress || 0) &&
+            !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
         );
 
-        let enemy: Monster | null = null;
+        let enemy: DungeonMonster | null = null;
+        let enemyIdx = -1;
 
-        const targetedMonster = availableMonsters.find((m) => m.id === v.targetMonsterId);
-        if (targetedMonster) {
+        const targetedMonsterIdx = area.monsters.findIndex((m) => m.id === v.targetMonsterId);
+        const targetedMonster =
+          targetedMonsterIdx !== -1 ? area.monsters[targetedMonsterIdx] : null;
+        if (
+          targetedMonster &&
+          progress >= (targetedMonster.unlockedAtProgress || 0) &&
+          !(targetedMonster.respawnTimeLeft && targetedMonster.respawnTimeLeft > 0)
+        ) {
           enemy = { ...targetedMonster };
+          enemyIdx = targetedMonsterIdx;
           v.autoTargetName = null;
         } else {
           const normalMonsters = availableMonsters.filter((m) => !m.isBoss);
           if (normalMonsters.length > 0) {
-            enemy = {
-              ...normalMonsters[Math.floor(Math.random() * normalMonsters.length)],
-            };
+            const randMons = normalMonsters[Math.floor(Math.random() * normalMonsters.length)];
+            enemy = { ...randMons };
+            enemyIdx = area.monsters.findIndex((m) => m.id === randMons.id);
             v.autoTargetName = enemy.name;
           } else {
             v.autoTargetName = null;
           }
         }
 
-        if (enemy) {
-          logs.push({
-            message: `${v.name} が ${enemy.name} (Lv.${enemy.level}) と遭遇し、戦闘を開始！`,
-            type: "combat",
-          });
-
-          const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
-          const armorDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
-
-          const vAtk = Math.floor(
-            (v.str * 1.5 + weaponAtk) * (v.currentJob === "戦士" ? 1.3 : 1.0) * efficiency,
+        if (enemy && enemyIdx !== -1) {
+          const monsterState = { ...area.monsters[enemyIdx] };
+          const progressSpeed = (v.agi * 0.8 + 10) / enemy.level;
+          monsterState.currentProgress = Math.min(
+            100,
+            (monsterState.currentProgress || 0) + progressSpeed * efficiency,
           );
-          const vDef = Math.floor((v.vit + armorDef) * efficiency);
+          area.monsters[enemyIdx] = monsterState;
 
-          let enemyHp = enemy.hp;
-          let battleWon = false;
-          let villagerDefeated = false;
-
-          for (let turn = 1; turn <= 10; turn++) {
-            const damageToEnemy = Math.max(2, vAtk - enemy.def);
-            enemyHp -= damageToEnemy;
-
-            if (enemyHp <= 0) {
-              battleWon = true;
-              break;
-            }
-
-            const damageToVillager = Math.max(2, enemy.atk - vDef);
-            v.currentHp = Math.max(0, v.currentHp - damageToVillager);
-
+          if (monsterState.currentProgress >= 100) {
             logs.push({
-              message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。`,
+              message: `${v.name} が ${enemy.name} (Lv.${enemy.level}) と遭遇し、戦闘を開始！`,
               type: "combat",
             });
 
-            if (v.currentHp <= 0) {
-              villagerDefeated = true;
-              break;
-            }
-          }
+            const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
+            const armorDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
 
-          if (battleWon) {
-            const eduBonus = 1.0 + (soulUpgrades.education || 0) * 0.1;
-            const expGained = Math.floor(enemy.expReward * eduBonus);
-            v.exp += expGained;
+            const vAtk = Math.floor(
+              (v.str * 1.5 + weaponAtk) * (v.currentJob === "戦士" ? 1.3 : 1.0) * efficiency,
+            );
+            const vDef = Math.floor((v.vit + armorDef) * efficiency);
 
-            logs.push({
-              message: `${v.name} は ${enemy.name} に勝利！ 経験値 ${expGained} を獲得。`,
-              type: "combat",
-            });
+            let enemyHp = enemy.hp;
+            let battleWon = false;
+            let villagerDefeated = false;
 
-            const expNeeded = v.level * 100;
-            if (v.exp >= expNeeded) {
-              v.level += 1;
-              v.exp -= expNeeded;
-              v.str += 2;
-              v.int += 2;
-              v.dex += 2;
-              v.agi += 2;
-              v.vit += 2;
-              v.maxHp += 15;
-              v.currentHp = v.maxHp;
+            for (let turn = 1; turn <= 10; turn++) {
+              const damageToEnemy = Math.max(2, vAtk - enemy.def);
+              enemyHp -= damageToEnemy;
+
+              if (enemyHp <= 0) {
+                battleWon = true;
+                break;
+              }
+
+              const damageToVillager = Math.max(2, enemy.atk - vDef);
+              v.currentHp = Math.max(0, v.currentHp - damageToVillager);
+
               logs.push({
-                message: `${v.name} が レベル ${v.level} に上がりました！`,
-                type: "info",
+                message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。`,
+                type: "combat",
               });
+
+              if (v.currentHp <= 0) {
+                villagerDefeated = true;
+                break;
+              }
             }
 
-            enemy.drops.forEach((drop) => {
-              const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
-              if (Math.random() < drop.chance * hunterBonus) {
-                nextInventory[drop.itemId] = (nextInventory[drop.itemId] || 0) + 1;
-                if (drop.itemId === "food") {
-                  nextFood += 1;
-                }
+            if (battleWon) {
+              const eduBonus = 1.0 + (soulUpgrades.education || 0) * 0.1;
+              const expGained = Math.floor(enemy.expReward * eduBonus);
+              v.exp += expGained;
+
+              logs.push({
+                message: `${v.name} は ${enemy.name} に勝利！ 経験値 ${expGained} を獲得。`,
+                type: "combat",
+              });
+
+              const expNeeded = v.level * 100;
+              if (v.exp >= expNeeded) {
+                v.level += 1;
+                v.exp -= expNeeded;
+                v.str += 2;
+                v.int += 2;
+                v.dex += 2;
+                v.agi += 2;
+                v.vit += 2;
+                v.maxHp += 15;
+                v.currentHp = v.maxHp;
                 logs.push({
-                  message: `敵から ${ITEMS[drop.itemId]?.name || drop.itemId} を獲得しました。`,
-                  type: "combat",
+                  message: `${v.name} が レベル ${v.level} に上がりました！`,
+                  type: "info",
                 });
               }
-            });
-          } else if (villagerDefeated) {
-            logs.push({
-              message: `${v.name} が戦闘不能（死亡）になりました…`,
-              type: "error",
-            });
-            nextVillagers.splice(i, 1);
-            i--;
 
-            if (nextVillagers.length === 0 && gold < 100) {
+              enemy.drops.forEach((drop) => {
+                const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
+                if (Math.random() < drop.chance * hunterBonus) {
+                  nextInventory[drop.itemId] = (nextInventory[drop.itemId] || 0) + 1;
+                  if (drop.itemId === "food") {
+                    nextFood += 1;
+                  }
+                  logs.push({
+                    message: `敵から ${ITEMS[drop.itemId]?.name || drop.itemId} を獲得しました。`,
+                    type: "combat",
+                  });
+                }
+              });
+
+              // リスポーン設定
+              monsterState.respawnTimeLeft = monsterState.respawnTimeTotal || 4;
+              monsterState.currentProgress = 0;
+              area.monsters[enemyIdx] = monsterState;
+            } else if (villagerDefeated) {
               logs.push({
-                message: "すべての村人が死亡し、雇用するゴールドもありません。ゲームオーバー！",
+                message: `${v.name} が戦闘不能（死亡）になりました…`,
                 type: "error",
               });
-              gameOver = true;
-              isPaused = true;
-              break;
+              nextVillagers.splice(i, 1);
+              i--;
+
+              if (nextVillagers.length === 0 && gold < 100) {
+                logs.push({
+                  message: "すべての村人が死亡し、雇用するゴールドもありません。ゲームオーバー！",
+                  type: "error",
+                });
+                gameOver = true;
+                isPaused = true;
+                break;
+              }
+            } else {
+              logs.push({
+                message: `10ターン以内に ${enemy.name} を倒しきれず、引き分け（一時撤退）となりました。`,
+                type: "combat",
+              });
+              monsterState.currentProgress = 0;
+              area.monsters[enemyIdx] = monsterState;
             }
-          } else {
-            logs.push({
-              message: `10ターン以内に ${enemy.name} を倒しきれず、引き分け（一時撤退）となりました。`,
-              type: "combat",
-            });
           }
         }
       }
@@ -705,6 +775,7 @@ export function processVillagerActivities(
     villagers: nextVillagers,
     inventory: nextInventory,
     food: nextFood,
+    dungeons: nextDungeons,
     logs,
     gameOver,
     isPaused,
@@ -859,6 +930,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     };
   }
 
+  // リスポーン時間の進捗
+  dungeons = processRespawns(dungeons);
+
   // ① 食料消費と飢餓判定
   const { nextFood, hasStarvation } = processStarvation(food, villagers.length);
   food = nextFood;
@@ -919,6 +993,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   villagers = actRes.villagers;
   Object.assign(updatedInventory, actRes.inventory);
   food = actRes.food;
+  dungeons = actRes.dungeons;
   logsToAppend.push(...actRes.logs);
   if (actRes.gameOver) {
     return {
