@@ -42,7 +42,8 @@ export function processCraftingAndUpgrades(
       }
     }
 
-    fac.craftQueue = fac.craftQueue.filter((job) => {
+    const nextQueue: typeof fac.craftQueue = [];
+    fac.craftQueue.forEach((job) => {
       const updatedJob = { ...job };
       updatedJob.timeLeft -= 1;
       if (updatedJob.timeLeft <= 0) {
@@ -69,10 +70,11 @@ export function processCraftingAndUpgrades(
             };
           }
         }
-        return false;
+      } else {
+        nextQueue.push(updatedJob);
       }
-      return true;
     });
+    fac.craftQueue = nextQueue;
 
     nextFacilities[facKey as FacilityType] = fac;
   });

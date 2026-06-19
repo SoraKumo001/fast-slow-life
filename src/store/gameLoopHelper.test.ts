@@ -6,6 +6,7 @@ import {
   processExploration,
   processRespawns,
   processVillagerActivities,
+  processCraftingAndUpgrades,
 } from "./gameLoopHelper";
 
 describe("gameLoopHelper", () => {
@@ -545,6 +546,125 @@ describe("gameLoopHelper", () => {
 
       // オークが選ばれて、autoTargetNameが「オーク」になること
       expect(result.villagers[0].autoTargetName).toBe("オーク");
+    });
+  });
+
+  describe("processCraftingAndUpgrades", () => {
+    it("クラフトジョブの残り時間が減少し、0に達するとアイテムがインベントリに追加されること", () => {
+      const facilities = {
+        inn: {
+          id: "inn",
+          name: "宿屋",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [],
+        },
+        workshop: {
+          id: "workshop",
+          name: "加工工房",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [
+            {
+              id: "job1",
+              itemId: "wood",
+              timeLeft: 2,
+              totalTime: 2,
+              assignedVillagerId: "v1",
+            },
+          ],
+        },
+        blacksmith: {
+          id: "blacksmith",
+          name: "鍛冶屋",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [],
+        },
+        alchemy: {
+          id: "alchemy",
+          name: "錬金工房",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [],
+        },
+        market: {
+          id: "market",
+          name: "交易所",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [],
+        },
+        guild: {
+          id: "guild",
+          name: "冒険者ギルド",
+          level: 1,
+          maxLevel: 5,
+          upgradeTimeLeft: 0,
+          upgradeTotalTime: 0,
+          upgradeCost: { gold: 0, materials: [] },
+          craftQueue: [],
+        },
+      } as Record<FacilityType, Facility>;
+
+      const villagers: Villager[] = [
+        {
+          id: "v1",
+          name: "アルフ",
+          level: 1,
+          exp: 0,
+          currentJob: "職人",
+          jobHistory: ["職人"],
+          maxHp: 100,
+          currentHp: 100,
+          stamina: 100,
+          str: 10,
+          int: 10,
+          dex: 10,
+          agi: 10,
+          vit: 10,
+          weaponId: "none",
+          armorId: "none",
+          order: "gather",
+          status: "active",
+          destinationAreaId: null,
+          travelTimeLeft: 0,
+          assignedCraftJobId: "job1",
+          targetGatherItemId: null,
+          targetMonsterId: null,
+          potionCount: 0,
+        },
+      ];
+
+      const inventory = {};
+
+      // 1回目の呼び出し: 残り時間が 2 -> 1 に減少し、キューに残るはず
+      const res1 = processCraftingAndUpgrades(facilities, villagers, inventory, {});
+      expect(res1.facilities.workshop.craftQueue[0].timeLeft).toBe(1);
+      expect(res1.inventory["wood"]).toBeUndefined();
+      expect(res1.villagers[0].status).toBe("active");
+
+      // 2回目の呼び出し: 残り時間が 1 -> 0 に減少し、キューから削除されてアイテムがインベントリに追加され、村人が解放されるはず
+      const res2 = processCraftingAndUpgrades(res1.facilities, res1.villagers, res1.inventory, {});
+      expect(res2.facilities.workshop.craftQueue.length).toBe(0);
+      expect(res2.inventory["wood"]).toBeGreaterThan(0);
+      expect(res2.villagers[0].status).toBe("idle");
+      expect(res2.villagers[0].assignedCraftJobId).toBeNull();
     });
   });
 });
