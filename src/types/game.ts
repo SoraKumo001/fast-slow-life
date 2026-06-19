@@ -179,7 +179,6 @@ export interface GameState {
   currentDay: number;
   currentHour: number;
   gold: number;
-  food: number;
   soulPoints: number;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;

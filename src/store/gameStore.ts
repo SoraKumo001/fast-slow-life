@@ -4,8 +4,6 @@ import {
   GameState,
   Villager,
   JobType,
-  Facility,
-  DungeonArea,
   GameLog,
   FacilityType,
   OrderType,
@@ -26,6 +24,30 @@ import {
 } from "../data/masterData";
 
 import { calculateAdvanceHour } from "./gameLoopHelper";
+import {
+  getInitialVillagers,
+  getInitialFacilities,
+  getInitialDungeons,
+  createInitialInventory,
+  DEFAULT_INVENTORY,
+} from "./initialState";
+import { partialize, merge } from "./persistence";
+import {
+  TIER_LIMIT_DAYS,
+  STARTING_GOLD,
+  STARTING_FOOD,
+  HIRE_COST,
+  BASE_MAX_VILLAGERS,
+  MAX_VILLAGERS_ABSOLUTE,
+  VILLAGERS_PER_GUILD_LEVEL,
+  DISCOUNT_PER_SOUL_LEVEL,
+  HERITAGE_GOLD_PER_LEVEL,
+  STORAGE_FOOD_PER_LEVEL,
+  BODY_STAT_PER_LEVEL,
+  BUILDING_COST_REDUCTION,
+  MAX_LOG_COUNT,
+  MAX_POTIONS_PER_VILLAGER,
+} from "../constants";
 
 export {
   ITEMS,
@@ -38,235 +60,6 @@ export {
   getRecipesForFacility,
   getCraftableItemsForFacility,
 };
-
-// ==========================================
-// 2. 初期化ヘルパー
-// ==========================================
-
-function getInitialVillagers(bodyLvl: number = 0): Villager[] {
-  const statBonus = bodyLvl * 2;
-  return [
-    {
-      id: "v1",
-      name: "アルフ",
-      level: 1,
-      exp: 0,
-      currentJob: "無職",
-      jobHistory: ["無職"],
-      maxHp: 100 + statBonus * 10,
-      currentHp: 100 + statBonus * 10,
-      stamina: 100,
-      str: 10 + statBonus,
-      int: 10 + statBonus,
-      dex: 10 + statBonus,
-      agi: 10 + statBonus,
-      vit: 10 + statBonus,
-      weaponId: "none",
-      armorId: "none",
-      order: "gather",
-      status: "idle",
-      destinationAreaId: null,
-      travelTimeLeft: 0,
-      assignedCraftJobId: null,
-      targetGatherItemId: null,
-      targetMonsterId: null,
-      autoTargetName: null,
-      potionCount: 0,
-    },
-    {
-      id: "v2",
-      name: "ベアトリス",
-      level: 1,
-      exp: 0,
-      currentJob: "無職",
-      jobHistory: ["無職"],
-      maxHp: 100 + statBonus * 10,
-      currentHp: 100 + statBonus * 10,
-      stamina: 100,
-      str: 8 + statBonus,
-      int: 12 + statBonus,
-      dex: 11 + statBonus,
-      agi: 9 + statBonus,
-      vit: 10 + statBonus,
-      weaponId: "none",
-      armorId: "none",
-      order: "gather",
-      status: "idle",
-      destinationAreaId: null,
-      travelTimeLeft: 0,
-      assignedCraftJobId: null,
-      targetGatherItemId: null,
-      targetMonsterId: null,
-      autoTargetName: null,
-      potionCount: 0,
-    },
-    {
-      id: "v3",
-      name: "シリル",
-      level: 1,
-      exp: 0,
-      currentJob: "無職",
-      jobHistory: ["無職"],
-      maxHp: 100 + statBonus * 10,
-      currentHp: 100 + statBonus * 10,
-      stamina: 100,
-      str: 12 + statBonus,
-      int: 8 + statBonus,
-      dex: 9 + statBonus,
-      agi: 11 + statBonus,
-      vit: 10 + statBonus,
-      weaponId: "none",
-      armorId: "none",
-      order: "gather",
-      status: "idle",
-      destinationAreaId: null,
-      travelTimeLeft: 0,
-      assignedCraftJobId: null,
-      targetGatherItemId: null,
-      targetMonsterId: null,
-      autoTargetName: null,
-      potionCount: 0,
-    },
-  ];
-}
-
-const TIER_LIMIT_DAYS = [0, 30, 70, 120, 180, 250];
-
-function getInitialFacilities(): Record<FacilityType, Facility> {
-  return {
-    inn: {
-      id: "inn",
-      name: "宿屋",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: { gold: 200, materials: [{ itemId: "wood", count: 10 }] },
-      craftQueue: [],
-    },
-    workshop: {
-      id: "workshop",
-      name: "加工工房",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 300,
-        materials: [
-          { itemId: "wood", count: 15 },
-          { itemId: "stone", count: 10 },
-        ],
-      },
-      craftQueue: [],
-    },
-    blacksmith: {
-      id: "blacksmith",
-      name: "鍛冶屋",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 500,
-        materials: [
-          { itemId: "wood_plank", count: 5 },
-          { itemId: "stone", count: 15 },
-        ],
-      },
-      craftQueue: [],
-    },
-    alchemy: {
-      id: "alchemy",
-      name: "錬金工房",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 600,
-        materials: [
-          { itemId: "wood_plank", count: 8 },
-          { itemId: "iron_ingot", count: 3 },
-        ],
-      },
-      craftQueue: [],
-    },
-    market: {
-      id: "market",
-      name: "交易所",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [{ itemId: "wood_plank", count: 12 }],
-      },
-      craftQueue: [],
-    },
-    guild: {
-      id: "guild",
-      name: "冒険者ギルド",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 300,
-        materials: [
-          { itemId: "wood", count: 10 },
-          { itemId: "stone", count: 5 },
-        ],
-      },
-      craftQueue: [],
-    },
-  };
-}
-
-function getInitialDungeons(): DungeonArea[] {
-  return DUNGEONS.map((d) => ({
-    ...d,
-    gathers: d.gathers.map((g) => {
-      let respawnTimeTotal = 3; // デフォルト
-      if (g.itemId === "stone" || g.itemId === "iron_ore" || g.itemId === "silver_ore") {
-        respawnTimeTotal = 6;
-      } else if (g.itemId === "mana_stone") {
-        respawnTimeTotal = 12;
-      }
-      return {
-        ...g,
-        currentProgress: 0,
-        respawnTimeLeft: 0,
-        respawnTimeTotal,
-      };
-    }),
-    monsters: d.monsters.map((m) => {
-      let respawnTimeTotal = 4; // デフォルト
-      if (
-        m.id === "orc" ||
-        m.id === "werewolf" ||
-        m.id === "demon" ||
-        m.id === "gargoyle" ||
-        m.id === "dragon_spawn"
-      ) {
-        respawnTimeTotal = 8;
-      } else if (m.id === "golem" || m.id === "chimera" || m.id === "archdemon") {
-        respawnTimeTotal = 16;
-      }
-      return {
-        ...m,
-        currentProgress: 0,
-        respawnTimeLeft: 0,
-        respawnTimeTotal,
-      };
-    }),
-  }));
-}
-
-// ==========================================
-// 3. Zustand ストア実装
-// ==========================================
 
 interface GameActions {
   advanceHour: () => void;
@@ -296,21 +89,12 @@ interface GameActions {
   withdrawFromBossBattle: () => void;
 }
 
-const createInitialInventory = (foodOverride?: number): Record<string, number> => ({
-  ...Object.fromEntries(Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0])),
-  ...(foodOverride === undefined ? {} : { food: foodOverride }),
-});
-
-const DEFAULT_INVENTORY: Record<string, number> = createInitialInventory();
-
 export const useGameStore = create<GameState & GameActions>()(
   persist<GameState & GameActions, [], [], Partial<GameState & GameActions>>(
     (set, get) => ({
-      // 初期状態
       currentDay: 1,
       currentHour: 0,
-      gold: 500,
-      food: 50,
+      gold: STARTING_GOLD,
       soulPoints: 0,
       villagers: getInitialVillagers(0),
       facilities: getInitialFacilities(),
@@ -341,7 +125,6 @@ export const useGameStore = create<GameState & GameActions>()(
         discount: 0,
       },
 
-      // ログ追加
       addLog: (message: string, type: GameLog["type"]) => {
         const { currentDay, currentHour } = get();
         const timestamp = `${currentDay}日目 ${String(currentHour).padStart(2, "0")}:00`;
@@ -352,14 +135,12 @@ export const useGameStore = create<GameState & GameActions>()(
           type,
         };
         set((state) => ({
-          logs: [newLog, ...state.logs].slice(0, 100), // 最大100件保持
+          logs: [newLog, ...state.logs].slice(0, MAX_LOG_COUNT),
         }));
       },
 
-      // 一時停止切り替え
       togglePause: () => set((state) => ({ isPaused: !state.isPaused })),
 
-      // 1日スキップ
       advanceDay: () => {
         const state = get();
         if (state.gameOver || !state.isPaused) return;
@@ -371,7 +152,6 @@ export const useGameStore = create<GameState & GameActions>()(
         state.addLog("【システム】1日スキップが完了しました。", "system");
       },
 
-      // 待機村人の自動派遣
       dispatchIdleVillagers: () => {
         const state = get();
         const { villagers, inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
@@ -412,9 +192,8 @@ export const useGameStore = create<GameState & GameActions>()(
                   return bPref - aPref;
                 }
 
-                // 達成率が低いものを優先する (所持数 / 目標数)
                 const aCount = inventory[a] || 0;
-                const aTarget = targetAmounts[a] || 1; // 0除算防ぐ
+                const aTarget = targetAmounts[a] || 1;
                 const aRatio = aCount / aTarget;
 
                 const bCount = inventory[b] || 0;
@@ -473,11 +252,10 @@ export const useGameStore = create<GameState & GameActions>()(
               anyDispatched = true;
               const area = dungeons.find((d) => d.id === targetAreaId)!;
 
-              // 回復薬の自動持たせ処理
               let assignedPotionCount = 0;
               const availablePotions = nextInventory.potion || 0;
               if (availablePotions > 0) {
-                assignedPotionCount = Math.min(2, availablePotions);
+                assignedPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, availablePotions);
                 nextInventory.potion = availablePotions - assignedPotionCount;
               }
 
@@ -504,7 +282,6 @@ export const useGameStore = create<GameState & GameActions>()(
         }
       },
 
-      // ボス討伐開始
       startBossBattle: (monsterId, villagerIds) => {
         const monster = MONSTERS[monsterId];
         if (!monster) return;
@@ -520,13 +297,12 @@ export const useGameStore = create<GameState & GameActions>()(
                 travelTimeLeft: 0,
                 order: "hunt" as OrderType,
                 targetMonsterId: monsterId,
-                assignedCraftJobId: null, // クラフトアサインを解除
+                assignedCraftJobId: null,
               };
             }
             return v;
           });
 
-          // 施設側のクラフトキューのアサイン解除
           const updatedFacilities = { ...state.facilities };
           Object.keys(updatedFacilities).forEach((key) => {
             const fac = updatedFacilities[key as FacilityType];
@@ -554,7 +330,6 @@ export const useGameStore = create<GameState & GameActions>()(
         get().addLog(`エリアボス【${monster.name}】との決戦を開始しました！`, "system");
       },
 
-      // ボス討伐から撤退
       withdrawFromBossBattle: () => {
         set((state) => {
           if (!state.activeBoss) return state;
@@ -580,10 +355,8 @@ export const useGameStore = create<GameState & GameActions>()(
         get().addLog("ボス戦から撤退しました。", "info");
       },
 
-      // 進行スピード設定
       setPlaySpeed: (speed) => set({ playSpeed: speed }),
 
-      // 目標個数設定
       setTargetAmount: (itemId, count) => {
         set((state) => ({
           targetAmounts: {
@@ -594,7 +367,6 @@ export const useGameStore = create<GameState & GameActions>()(
         get().dispatchIdleVillagers();
       },
 
-      // アイテム売却 (交易所)
       sellItem: (itemId, count) => {
         const state = get();
         if (state.facilities.market.level === 0) {
@@ -609,7 +381,6 @@ export const useGameStore = create<GameState & GameActions>()(
         set((state) => ({
           inventory: { ...state.inventory, [itemId]: currentCount - toSell },
           gold: state.gold + price,
-          food: itemId === "food" ? Math.max(0, state.food - toSell) : state.food,
         }));
         state.addLog(
           `${ITEMS[itemId].name} を ${toSell} 個売却し、${price} G 獲得しました。`,
@@ -617,7 +388,6 @@ export const useGameStore = create<GameState & GameActions>()(
         );
       },
 
-      // 村人の指示変更
       setVillagerOrder: (id, order, areaId, targetGatherItemId = null, targetMonsterId = null) => {
         set((state) => {
           const nextInventory = { ...state.inventory };
@@ -639,7 +409,6 @@ export const useGameStore = create<GameState & GameActions>()(
             const nextMonsterTarget =
               targetMonsterId !== undefined ? targetMonsterId : sameArea ? v.targetMonsterId : null;
 
-            // 村での待機・休息に変更する場合：所持ポーションを返却
             if (order === "rest" || !areaId) {
               if (nextPotionCount > 0) {
                 nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
@@ -657,21 +426,18 @@ export const useGameStore = create<GameState & GameActions>()(
               travelTime = 0;
             } else if (areaId) {
               const area = DUNGEONS.find((d) => d.id === areaId);
-              // 新たに派遣される場合、または派遣先が変更される場合
               if (v.destinationAreaId !== areaId || v.status === "idle" || v.status === "resting") {
                 status = "traveling_to";
                 travelTime = area ? area.distance : 1;
 
-                // 既に持っているポーションがあれば一旦返却
                 if (nextPotionCount > 0) {
                   nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
                   nextPotionCount = 0;
                 }
 
-                // 倉庫から最大2個持たせる
                 const availablePotions = nextInventory.potion || 0;
                 if (availablePotions > 0) {
-                  nextPotionCount = Math.min(2, availablePotions);
+                  nextPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, availablePotions);
                   nextInventory.potion = availablePotions - nextPotionCount;
                   state.addLog(
                     `【準備】${v.name} は回復薬を ${nextPotionCount} 個所持しました。`,
@@ -714,7 +480,6 @@ export const useGameStore = create<GameState & GameActions>()(
         );
       },
 
-      // 転職
       changeVillagerJob: (id, job) => {
         const state = get();
         const villager = state.villagers.find((v) => v.id === id);
@@ -722,7 +487,6 @@ export const useGameStore = create<GameState & GameActions>()(
 
         const isFree = villager.jobHistory.includes(job);
 
-        // 転職要件チェック (すでに就いたことがある職業への再転職時はチェックを免除)
         if (!isFree) {
           const req = JOBS[job].requirements;
           if (req) {
@@ -744,7 +508,7 @@ export const useGameStore = create<GameState & GameActions>()(
         }
 
         const discountLvl = state.soulUpgrades.discount || 0;
-        const discountRate = 1 - discountLvl * 0.1;
+        const discountRate = 1 - discountLvl * DISCOUNT_PER_SOUL_LEVEL;
         const cost = isFree ? 0 : Math.floor(JOBS[job].cost * discountRate);
 
         if (state.gold < cost) {
@@ -757,14 +521,12 @@ export const useGameStore = create<GameState & GameActions>()(
             if (v.id !== id) return v;
             const history = v.jobHistory.includes(job) ? v.jobHistory : [...v.jobHistory, job];
 
-            // ステータス補正の適用
-            const baseStr = 10 + (state.soulUpgrades.body || 0) * 2;
-            const baseInt = 10 + (state.soulUpgrades.body || 0) * 2;
-            const baseDex = 10 + (state.soulUpgrades.body || 0) * 2;
-            const baseAgi = 10 + (state.soulUpgrades.body || 0) * 2;
-            const baseVit = 10 + (state.soulUpgrades.body || 0) * 2;
+            const baseStr = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
+            const baseInt = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
+            const baseDex = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
+            const baseAgi = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
+            const baseVit = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
 
-            // 簡易的に職業別初期ステータス倍率をかける
             const mult = JOBS[job].statsMultiplier;
             const lvlBonus = v.level - 1;
 
@@ -790,7 +552,6 @@ export const useGameStore = create<GameState & GameActions>()(
         state.addLog(`${villager.name} が ${job} に転職しました。`, "info");
       },
 
-      // 装備変更
       equipItem: (villagerId, itemId, slot) => {
         const state = get();
         const item = ITEMS[itemId];
@@ -804,13 +565,11 @@ export const useGameStore = create<GameState & GameActions>()(
           const updated = state.villagers.map((v) => {
             if (v.id !== villagerId) return v;
 
-            // 既存装備を倉庫に戻す
             const oldEquipId = slot === "weapon" ? v.weaponId : v.armorId;
             if (oldEquipId && oldEquipId !== "none") {
               inv[oldEquipId] = (inv[oldEquipId] || 0) + 1;
             }
 
-            // 新しい装備をインベントリから減らす
             inv[itemId] = Math.max(0, currentCount - 1);
 
             return {
@@ -826,7 +585,6 @@ export const useGameStore = create<GameState & GameActions>()(
         state.addLog(`${vName} に ${ITEMS[itemId].name} を装備しました。`, "info");
       },
 
-      // 装備解除
       unequipItem: (villagerId, slot) => {
         const state = get();
         const villager = state.villagers.find((v) => v.id === villagerId);
@@ -852,7 +610,6 @@ export const useGameStore = create<GameState & GameActions>()(
         state.addLog(`${villager.name} の装備を外しました。`, "info");
       },
 
-      // クラフト開始
       startCraft: (facilityId, itemId, villagerId) => {
         const state = get();
         const facility = state.facilities[facilityId];
@@ -867,7 +624,6 @@ export const useGameStore = create<GameState & GameActions>()(
         )
           return;
 
-        // レシピ素材チェック
         const missing = recipe.requiredItems.filter(
           (req) => (state.inventory[req.itemId] || 0) < req.count,
         );
@@ -876,7 +632,6 @@ export const useGameStore = create<GameState & GameActions>()(
           return;
         }
 
-        // 村人のアサインチェック
         let assignedId: string | null = null;
         if (villagerId) {
           const v = state.villagers.find((v) => v.id === villagerId);
@@ -884,7 +639,6 @@ export const useGameStore = create<GameState & GameActions>()(
             assignedId = villagerId;
           }
         } else {
-          // 自動クラフト用：暇な職人(crafter)がいれば優先アサイン
           const idleCrafter = state.villagers.find(
             (v) => v.status === "idle" && v.currentJob === "職人",
           );
@@ -894,24 +648,17 @@ export const useGameStore = create<GameState & GameActions>()(
 
         const jobId = Math.random().toString(36).substring(2);
         const baseTime = recipe.requiredTime;
-        // 職人がアサインされていたらクラフト時間短縮（例: 20%短縮）
         const isCrafter = assignedId
           ? state.villagers.find((v) => v.id === assignedId)?.currentJob === "職人"
           : false;
         const timeNeeded = isCrafter ? Math.max(1, Math.floor(baseTime * 0.8)) : baseTime;
 
         set((state) => {
-          // 素材の消費
           const inv = { ...state.inventory };
-          let nextFood = state.food;
           recipe.requiredItems.forEach((req) => {
             inv[req.itemId] = Math.max(0, (inv[req.itemId] || 0) - req.count);
-            if (req.itemId === "food") {
-              nextFood = Math.max(0, nextFood - req.count);
-            }
           });
 
-          // キューに追加
           const updatedFacilities = { ...state.facilities };
           updatedFacilities[facilityId].craftQueue.push({
             id: jobId,
@@ -921,7 +668,6 @@ export const useGameStore = create<GameState & GameActions>()(
             assignedVillagerId: assignedId,
           });
 
-          // 村人のステータスを更新 (クラフト従事)
           const updatedVillagers = state.villagers.map((v) => {
             if (v.id === assignedId) {
               return {
@@ -937,7 +683,6 @@ export const useGameStore = create<GameState & GameActions>()(
             inventory: inv,
             facilities: updatedFacilities,
             villagers: updatedVillagers,
-            food: nextFood,
           };
         });
 
@@ -948,15 +693,13 @@ export const useGameStore = create<GameState & GameActions>()(
         );
       },
 
-      // 施設アップグレード開始
       startFacilityUpgrade: (facilityId) => {
         const state = get();
         const facility = state.facilities[facilityId];
         if (!facility || facility.level >= facility.maxLevel) return;
 
-        // コスト計算（周回バフ適用）
         const buildLvl = state.soulUpgrades.building || 0;
-        const costReduction = 1 - buildLvl * 0.05;
+        const costReduction = 1 - buildLvl * BUILDING_COST_REDUCTION;
 
         const goldCost = Math.floor(facility.upgradeCost.gold * costReduction);
         if (state.gold < goldCost) {
@@ -982,7 +725,7 @@ export const useGameStore = create<GameState & GameActions>()(
           });
 
           const updatedFacilities = { ...state.facilities };
-          const time = 5 + facility.level * 5; // レベルに応じた所要時間 (5h, 10h, 15h...)
+          const time = 5 + facility.level * 5;
           updatedFacilities[facilityId] = {
             ...facility,
             upgradeTimeLeft: time,
@@ -1002,7 +745,6 @@ export const useGameStore = create<GameState & GameActions>()(
         );
       },
 
-      // 新しい村人の雇用 (100G)
       hireVillager: () => {
         const state = get();
         const guild = state.facilities.guild;
@@ -1010,16 +752,19 @@ export const useGameStore = create<GameState & GameActions>()(
           state.addLog("冒険者ギルドが建設されていないため雇用できません。", "warning");
           return;
         }
-        const maxVillagers = 3 + guild.level * 2;
-        const actualMax = Math.min(10, maxVillagers);
+        const maxVillagers = BASE_MAX_VILLAGERS + guild.level * VILLAGERS_PER_GUILD_LEVEL;
+        const actualMax = Math.min(MAX_VILLAGERS_ABSOLUTE, maxVillagers);
 
-        if (state.gold < 100) {
-          state.addLog("雇用に必要なゴールド (100G) が不足しています。", "warning");
+        if (state.gold < HIRE_COST) {
+          state.addLog(`雇用に必要なゴールド (${HIRE_COST}G) が不足しています。`, "warning");
           return;
         }
         if (state.villagers.length >= actualMax) {
-          if (actualMax >= 10) {
-            state.addLog("これ以上村人を雇用できません（上限10人）。", "warning");
+          if (actualMax >= MAX_VILLAGERS_ABSOLUTE) {
+            state.addLog(
+              `これ以上村人を雇用できません（上限${MAX_VILLAGERS_ABSOLUTE}人）。`,
+              "warning",
+            );
           } else {
             state.addLog(
               `ギルドレベル ${guild.level} の雇用上限に達しています（上限 ${actualMax} 人）。ギルドをアップグレードしてください。`,
@@ -1030,7 +775,7 @@ export const useGameStore = create<GameState & GameActions>()(
         }
 
         const name = VILLAGER_NAMES[state.villagers.length % VILLAGER_NAMES.length] + " (新人)";
-        const statBonus = (state.soulUpgrades.body || 0) * 2;
+        const statBonus = (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
         const newVillager: Villager = {
           id: "v_" + Math.random().toString(36).substring(2),
           name,
@@ -1060,7 +805,7 @@ export const useGameStore = create<GameState & GameActions>()(
         };
 
         set((state) => ({
-          gold: state.gold - 100,
+          gold: state.gold - HIRE_COST,
           villagers: [...state.villagers, newVillager],
         }));
         get().dispatchIdleVillagers();
@@ -1068,7 +813,6 @@ export const useGameStore = create<GameState & GameActions>()(
         state.addLog(`新しい村人 ${name} を雇用しました。`, "info");
       },
 
-      // 周回アップグレード購入
       buySoulUpgrade: (upgradeId) => {
         const state = get();
         const currentLvl = state.soulUpgrades[upgradeId] || 0;
@@ -1095,13 +839,11 @@ export const useGameStore = create<GameState & GameActions>()(
         );
       },
 
-      // リセット & 転生
       resetGame: (prestige = false) => {
         const state = get();
         let earnedSp = 0;
 
         if (prestige) {
-          // 周回SPの計算
           const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
             return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
           }, 0);
@@ -1116,8 +858,8 @@ export const useGameStore = create<GameState & GameActions>()(
         const heritageLvl = state.soulUpgrades.heritage || 0;
         const storageLvl = state.soulUpgrades.storage || 0;
 
-        const startGold = 500 + heritageLvl * 500;
-        const startFood = 50 + storageLvl * 100;
+        const startGold = STARTING_GOLD + heritageLvl * HERITAGE_GOLD_PER_LEVEL;
+        const startFood = STARTING_FOOD + storageLvl * STORAGE_FOOD_PER_LEVEL;
 
         const bodyLvl = state.soulUpgrades.body || 0;
 
@@ -1125,7 +867,6 @@ export const useGameStore = create<GameState & GameActions>()(
           currentDay: 1,
           currentHour: 0,
           gold: startGold,
-          food: startFood,
           soulPoints: state.soulPoints + earnedSp,
           villagers: getInitialVillagers(bodyLvl),
           facilities: getInitialFacilities(),
@@ -1147,21 +888,16 @@ export const useGameStore = create<GameState & GameActions>()(
           bossDefeated: false,
           gameLimitDays: TIER_LIMIT_DAYS[1],
           gameOver: false,
-          // 転生後は自動的にゲーム開始（ゲームオーバーから先に進めない問題の修正）
           isPaused: !prestige,
         });
       },
 
-      // ==========================================
-      // 4. コアロジック: 1時間の時間経過 (advanceHour)
-      // ==========================================
       advanceHour: () => {
         const state = get();
         if (state.gameOver) return;
 
         const result = calculateAdvanceHour(state);
 
-        // ログの追加
         result.logsToAppend.forEach((log) => {
           const timestamp = `${result.currentDay}日目 ${String(result.currentHour).padStart(2, "0")}:00`;
           const newLog: GameLog = {
@@ -1171,14 +907,13 @@ export const useGameStore = create<GameState & GameActions>()(
             type: log.type,
           };
           set((s) => ({
-            logs: [newLog, ...s.logs].slice(0, 100),
+            logs: [newLog, ...s.logs].slice(0, MAX_LOG_COUNT),
           }));
         });
 
         set({
           currentDay: result.currentDay,
           currentHour: result.currentHour,
-          food: result.food,
           villagers: result.villagers,
           facilities: result.facilities,
           dungeons: result.dungeons,
@@ -1191,97 +926,13 @@ export const useGameStore = create<GameState & GameActions>()(
           isPaused: result.isPaused,
         });
 
-        // 待機村人の自動派遣
         get().dispatchIdleVillagers();
       },
     }),
     {
       name: "fast-slow-life-save-state",
-      partialize: (state) => ({
-        currentDay: state.currentDay,
-        currentHour: state.currentHour,
-        gold: state.gold,
-        food: state.food,
-        soulPoints: state.soulPoints,
-        villagers: state.villagers,
-        facilities: state.facilities,
-        dungeons: state.dungeons,
-        inventory: state.inventory,
-        targetAmounts: state.targetAmounts,
-        logs: state.logs,
-        currentTier: state.currentTier,
-        activeBoss: state.activeBoss,
-        bossDefeated: state.bossDefeated,
-        gameLimitDays: state.gameLimitDays,
-        gameOver: state.gameOver,
-        soulUpgrades: state.soulUpgrades,
-      }),
-      merge: (persistedState: any, currentState: any) => {
-        if (!persistedState) return currentState;
-
-        const merged = { ...currentState, ...persistedState };
-
-        merged.inventory = {
-          ...currentState.inventory,
-          ...persistedState.inventory,
-        };
-        merged.targetAmounts = {
-          ...currentState.targetAmounts,
-          ...persistedState.targetAmounts,
-        };
-
-        // 1. ダンジョンのマスタ情報更新 (explorationProgressや動的状態を最新のマスタ定義と同期しつつ永続値を反映)
-        if (persistedState.dungeons) {
-          merged.dungeons = currentState.dungeons.map((curD: any) => {
-            const persD = persistedState.dungeons.find((d: any) => d.id === curD.id);
-            return {
-              ...curD,
-              explorationProgress: persD ? persD.explorationProgress : 0,
-              gathers: curD.gathers.map((curG: any) => {
-                const persG = persD?.gathers?.find((g: any) => g.itemId === curG.itemId);
-                return {
-                  ...curG,
-                  currentProgress: persG?.currentProgress !== undefined ? persG.currentProgress : 0,
-                  respawnTimeLeft: persG?.respawnTimeLeft !== undefined ? persG.respawnTimeLeft : 0,
-                };
-              }),
-              monsters: curD.monsters.map((curM: any) => {
-                const persM = persD?.monsters?.find((m: any) => m.id === curM.id);
-                return {
-                  ...curM,
-                  currentProgress: persM?.currentProgress !== undefined ? persM.currentProgress : 0,
-                  respawnTimeLeft: persM?.respawnTimeLeft !== undefined ? persM.respawnTimeLeft : 0,
-                };
-              }),
-            };
-          });
-        }
-
-        // 2. 施設の未建設（Lv0）時のアンロックコスト同期
-        if (persistedState.facilities) {
-          const initialFacs = currentState.facilities;
-          merged.facilities = { ...persistedState.facilities };
-
-          Object.keys(merged.facilities).forEach((key) => {
-            const fac = merged.facilities[key as FacilityType];
-            const initFac = initialFacs[key as FacilityType];
-            if (fac && initFac && fac.level === 0) {
-              // レベル0（未建設）の場合は、最新の初期コストを適用する
-              fac.upgradeCost = { ...initFac.upgradeCost };
-            }
-          });
-        }
-
-        // 3. 村人の新規ステータス（potionCount）の同期
-        if (persistedState.villagers) {
-          merged.villagers = persistedState.villagers.map((v: any) => ({
-            ...v,
-            potionCount: v.potionCount !== undefined ? v.potionCount : 0,
-          }));
-        }
-
-        return merged;
-      },
+      partialize,
+      merge,
     },
   ),
 );

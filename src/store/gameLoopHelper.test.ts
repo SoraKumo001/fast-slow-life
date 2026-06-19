@@ -11,20 +11,20 @@ describe("gameLoopHelper", () => {
   describe("processStarvation", () => {
     it("十分な食料がある場合、食料が減少し、飢餓状態にならないこと", () => {
       const villagersCount = 3;
-      const initialFood = 10;
-      const { nextFood, hasStarvation } = processStarvation(initialFood, villagersCount);
+      const inventory = { food: 10 };
+      const { inventory: resultInv, hasStarvation } = processStarvation(inventory, villagersCount);
 
       expect(hasStarvation).toBe(false);
-      expect(nextFood).toBe(initialFood - villagersCount * (1.0 / 24.0));
+      expect(resultInv.food).toBe(10 - villagersCount * (1.0 / 24.0));
     });
 
     it("食料が不足している場合、食料が0になり、飢餓状態になること", () => {
-      const villagersCount = 24; // 1時間あたり 1 消費
-      const initialFood = 0.5; // 1未満
-      const { nextFood, hasStarvation } = processStarvation(initialFood, villagersCount);
+      const villagersCount = 24;
+      const inventory = { food: 0.5 };
+      const { inventory: resultInv, hasStarvation } = processStarvation(inventory, villagersCount);
 
       expect(hasStarvation).toBe(true);
-      expect(nextFood).toBe(0);
+      expect(resultInv.food).toBe(0);
     });
   });
 
@@ -260,7 +260,6 @@ describe("gameLoopHelper", () => {
           },
         },
         {},
-        10,
         { food: 100 },
         null,
         false,
@@ -269,7 +268,6 @@ describe("gameLoopHelper", () => {
         500,
       );
 
-      // アイテムが獲得され、リスポーン中になり、進捗が0に戻る
       expect(result.inventory["food"]).toBeGreaterThan(0);
       expect(result.dungeons[0].gathers[0].respawnTimeLeft).toBe(3);
       expect(result.dungeons[0].gathers[0].currentProgress).toBe(0);
@@ -376,7 +374,6 @@ describe("gameLoopHelper", () => {
         [],
         mockFacilities,
         inventory,
-        10,
         {},
         null,
         false,
@@ -439,7 +436,6 @@ describe("gameLoopHelper", () => {
         dungeons,
         mockFacilities,
         {},
-        10,
         {},
         null,
         false,
@@ -448,7 +444,6 @@ describe("gameLoopHelper", () => {
         500,
       );
 
-      // ポーションが1個消費され、HPが+50回復して90になる
       expect(result.villagers[0].potionCount).toBe(1);
       expect(result.villagers[0].currentHp).toBe(90);
     });
@@ -539,7 +534,6 @@ describe("gameLoopHelper", () => {
         dungeons,
         mockFacilities,
         inventory,
-        10,
         targetAmounts,
         null,
         false,

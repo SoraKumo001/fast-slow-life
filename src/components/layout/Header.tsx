@@ -7,7 +7,7 @@ export const Header: React.FC = () => {
     currentDay,
     currentHour,
     gold,
-    food,
+    inventory,
     soulPoints,
     isPaused,
     playSpeed,
@@ -23,7 +23,8 @@ export const Header: React.FC = () => {
   } = useGameStore();
 
   const dailyFoodConsumption = villagers.length;
-  const foodDaysLeft = dailyFoodConsumption > 0 ? Math.floor(food / dailyFoodConsumption) : 0;
+  const foodAmount = inventory.food || 0;
+  const foodDaysLeft = dailyFoodConsumption > 0 ? Math.floor(foodAmount / dailyFoodConsumption) : 0;
 
   const handlePrestige = () => {
     if (
@@ -73,14 +74,14 @@ export const Header: React.FC = () => {
             食料在庫
           </span>
           <span
-            className={`font-mono font-bold text-lg ${food < 10 ? "text-red-400 animate-pulse" : "text-emerald-400"}`}
+            className={`font-mono font-bold text-lg ${foodAmount < 10 ? "text-red-400 animate-pulse" : "text-emerald-400"}`}
           >
-            {Math.floor(food)}
+            {Math.floor(foodAmount)}
             <span className="text-[10px] text-slate-400 font-normal ml-1">
               (-{dailyFoodConsumption}/日, あと{foodDaysLeft}日分)
             </span>
           </span>
-          {food === 0 && (
+          {foodAmount === 0 && (
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-950 border border-red-800 text-red-400 flex items-center gap-1 font-bold">
               <AlertTriangle className="w-3 h-3" /> 飢餓
             </span>
