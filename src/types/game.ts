@@ -82,6 +82,7 @@ export interface Villager {
   targetGatherItemId: string | null; // 追加：直接指示された採取アイテムID
   targetMonsterId: string | null; // 追加：直接指示された討伐対象モンスターID
   autoTargetName?: string | null; // 追加：自動意思決定で選択されているターゲット名
+  potionCount: number; // 追加：所持している回復薬の数
 }
 
 export interface CraftJob {

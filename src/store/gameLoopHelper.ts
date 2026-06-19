@@ -6,6 +6,7 @@ import {
   ActiveBossState,
   GameLog,
   FacilityType,
+  DungeonMonster,
 } from "../types/game";
 
 import { ITEMS, MONSTERS, JOBS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
@@ -134,7 +135,7 @@ export function processCraftingAndUpgrades(
   villagers: Villager[],
   inventory: Record<string, number>,
   food: number,
-  soulUpgrades: Record<string, number>,
+  _soulUpgrades: Record<string, number>,
 ) {
   const logs: LogPayload[] = [];
   const nextFacilities = { ...facilities };
@@ -216,7 +217,7 @@ export function processCraftingAndUpgrades(
 export function processBossBattle(
   activeBoss: ActiveBossState | null,
   villagers: Villager[],
-  dungeons: DungeonArea[],
+  _dungeons: DungeonArea[],
   currentTier: number,
   bossDefeated: boolean,
   gameLimitDays: number,
@@ -347,7 +348,7 @@ export function processVillagerActivities(
   food: number,
   targetAmounts: Record<string, number>,
   activeBoss: ActiveBossState | null,
-  bossDefeated: boolean,
+  _bossDefeated: boolean,
   hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   gold: number,
@@ -409,6 +410,14 @@ export function processVillagerActivities(
       v.travelTimeLeft -= 1;
       if (v.travelTimeLeft <= 0) {
         v.destinationAreaId = null;
+        if (v.potionCount > 0) {
+          nextInventory.potion = (nextInventory.potion || 0) + v.potionCount;
+          logs.push({
+            message: `${v.name} が未使用のポーション ${v.potionCount} 個を倉庫に返却しました。`,
+            type: "info",
+          });
+          v.potionCount = 0;
+        }
         if (v.order === "rest") {
           v.status = "resting";
           logs.push({
@@ -437,6 +446,15 @@ export function processVillagerActivities(
       v.stamina = Math.max(0, v.stamina - 5);
 
       const efficiency = (hasStarvation ? 0.5 : 1.0) * (v.stamina === 0 ? 0.3 : 1.0);
+
+      if (v.currentHp <= v.maxHp * 0.5 && v.potionCount > 0) {
+        v.potionCount -= 1;
+        v.currentHp = Math.min(v.maxHp, v.currentHp + 50);
+        logs.push({
+          message: `${v.name} がポーションを使用し、HPを回復しました。`,
+          type: "info",
+        });
+      }
 
       if (v.currentHp < v.maxHp * 0.3 || v.stamina <= 0) {
         v.status = "traveling_back";
@@ -635,9 +653,29 @@ export function processVillagerActivities(
         } else {
           const normalMonsters = availableMonsters.filter((m) => !m.isBoss);
           if (normalMonsters.length > 0) {
-            const randMons = normalMonsters[Math.floor(Math.random() * normalMonsters.length)];
-            enemy = { ...randMons };
-            enemyIdx = area.monsters.findIndex((m) => m.id === randMons.id);
+            let selectedMonster = normalMonsters[Math.floor(Math.random() * normalMonsters.length)];
+            let bestTargetRatio = Infinity;
+
+            normalMonsters.forEach((monster) => {
+              const neededDropRatios = monster.drops
+                .map((drop) => {
+                  const target = targetAmounts[drop.itemId] || 0;
+                  if (target <= 0) return null;
+                  return (nextInventory[drop.itemId] || 0) / target;
+                })
+                .filter((ratio): ratio is number => ratio !== null && ratio < 1);
+
+              if (neededDropRatios.length === 0) return;
+
+              const monsterRatio = Math.min(...neededDropRatios);
+              if (monsterRatio < bestTargetRatio) {
+                bestTargetRatio = monsterRatio;
+                selectedMonster = monster;
+              }
+            });
+
+            enemy = { ...selectedMonster };
+            enemyIdx = area.monsters.findIndex((m) => m.id === selectedMonster.id);
             v.autoTargetName = enemy.name;
           } else {
             v.autoTargetName = null;
@@ -721,7 +759,7 @@ export function processVillagerActivities(
                 });
               }
 
-              enemy.drops.forEach((drop) => {
+              enemy.drops.forEach((drop: { itemId: string; chance: number }) => {
                 const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
                 if (Math.random() < drop.chance * hunterBonus) {
                   nextInventory[drop.itemId] = (nextInventory[drop.itemId] || 0) + 1;

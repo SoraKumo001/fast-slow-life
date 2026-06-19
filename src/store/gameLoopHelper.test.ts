@@ -77,6 +77,7 @@ describe("gameLoopHelper", () => {
           assignedCraftJobId: null,
           targetGatherItemId: null,
           targetMonsterId: null,
+          potionCount: 0,
         },
       ];
 
@@ -167,6 +168,7 @@ describe("gameLoopHelper", () => {
           assignedCraftJobId: null,
           targetGatherItemId: "food",
           targetMonsterId: null,
+          potionCount: 0,
         },
       ];
 
@@ -271,6 +273,283 @@ describe("gameLoopHelper", () => {
       expect(result.inventory["food"]).toBeGreaterThan(0);
       expect(result.dungeons[0].gathers[0].respawnTimeLeft).toBe(3);
       expect(result.dungeons[0].gathers[0].currentProgress).toBe(0);
+    });
+  });
+
+  describe("processVillagerActivities - Potion Auto Use & Return", () => {
+    const mockFacilities = {
+      inn: {
+        id: "inn",
+        name: "宿屋",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+      workshop: {
+        id: "workshop",
+        name: "加工工房",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+      blacksmith: {
+        id: "blacksmith",
+        name: "鍛冶屋",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+      alchemy: {
+        id: "alchemy",
+        name: "錬金工房",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+      market: {
+        id: "market",
+        name: "交易所",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+      guild: {
+        id: "guild",
+        name: "冒険者ギルド",
+        level: 1,
+        maxLevel: 5,
+        upgradeTimeLeft: 0,
+        upgradeTotalTime: 0,
+        upgradeCost: { gold: 0, materials: [] },
+        craftQueue: [],
+      },
+    } as any;
+
+    it("帰還完了した村人のポーションが倉庫に返却されること", () => {
+      const villagers: Villager[] = [
+        {
+          id: "v1",
+          name: "アルフ",
+          level: 1,
+          exp: 0,
+          currentJob: "農民",
+          jobHistory: ["農民"],
+          maxHp: 100,
+          currentHp: 100,
+          stamina: 100,
+          str: 10,
+          int: 10,
+          dex: 10,
+          agi: 10,
+          vit: 10,
+          weaponId: "none",
+          armorId: "none",
+          order: "rest",
+          status: "traveling_back",
+          destinationAreaId: "forest",
+          travelTimeLeft: 1,
+          assignedCraftJobId: null,
+          targetGatherItemId: null,
+          targetMonsterId: null,
+          potionCount: 2,
+        },
+      ];
+
+      const inventory = { potion: 5 };
+      const result = processVillagerActivities(
+        villagers,
+        [],
+        mockFacilities,
+        inventory,
+        10,
+        {},
+        null,
+        false,
+        false,
+        {},
+        500,
+      );
+
+      expect(result.villagers[0].potionCount).toBe(0);
+      expect(result.villagers[0].status).toBe("resting");
+      expect(result.inventory["potion"]).toBe(7); // 5 + 2
+    });
+
+    it("探索中の村人がHP50%以下になった時にポーションを自動使用して回復すること", () => {
+      const villagers: Villager[] = [
+        {
+          id: "v1",
+          name: "アルフ",
+          level: 1,
+          exp: 0,
+          currentJob: "農民",
+          jobHistory: ["農民"],
+          maxHp: 100,
+          currentHp: 40, // 50%以下
+          stamina: 100,
+          str: 10,
+          int: 10,
+          dex: 10,
+          agi: 10,
+          vit: 10,
+          weaponId: "none",
+          armorId: "none",
+          order: "gather",
+          status: "active",
+          destinationAreaId: "forest",
+          travelTimeLeft: 0,
+          assignedCraftJobId: null,
+          targetGatherItemId: "food",
+          targetMonsterId: null,
+          potionCount: 2,
+        },
+      ];
+
+      const dungeons: DungeonArea[] = [
+        {
+          id: "forest",
+          name: "始まりの森",
+          distance: 1,
+          recommendedLevel: 1,
+          unlockedAtTier: 1,
+          gathers: [{ itemId: "food", difficulty: 1.0, currentProgress: 0 }],
+          monsters: [],
+          explorationProgress: 100,
+          difficulty: 1.0,
+        },
+      ];
+
+      const result = processVillagerActivities(
+        villagers,
+        dungeons,
+        mockFacilities,
+        {},
+        10,
+        {},
+        null,
+        false,
+        false,
+        {},
+        500,
+      );
+
+      // ポーションが1個消費され、HPが+50回復して90になる
+      expect(result.villagers[0].potionCount).toBe(1);
+      expect(result.villagers[0].currentHp).toBe(90);
+    });
+
+    it("討伐で目標達成率が最も低いモンスターが優先してターゲットになること", () => {
+      const villagers: Villager[] = [
+        {
+          id: "v1",
+          name: "アルフ",
+          level: 1,
+          exp: 0,
+          currentJob: "戦士",
+          jobHistory: ["戦士"],
+          maxHp: 100,
+          currentHp: 100,
+          stamina: 100,
+          str: 10,
+          int: 10,
+          dex: 10,
+          agi: 100, // 高いAGIで一戦闘進捗を100%にする
+          vit: 10,
+          weaponId: "none",
+          armorId: "none",
+          order: "hunt",
+          status: "active",
+          destinationAreaId: "forest",
+          travelTimeLeft: 0,
+          assignedCraftJobId: null,
+          targetGatherItemId: null,
+          targetMonsterId: null,
+          potionCount: 0,
+        },
+      ];
+
+      const dungeons: DungeonArea[] = [
+        {
+          id: "forest",
+          name: "始まりの森",
+          distance: 1,
+          recommendedLevel: 1,
+          unlockedAtTier: 1,
+          gathers: [],
+          monsters: [
+            {
+              id: "goblin",
+              name: "ゴブリン",
+              level: 1,
+              hp: 30,
+              maxHp: 30,
+              atk: 5,
+              def: 2,
+              mdef: 1,
+              expReward: 10,
+              drops: [{ itemId: "slime_jelly", chance: 1.0 }],
+              respawnTimeLeft: 0,
+              respawnTimeTotal: 4,
+              currentProgress: 90, // 一瞬で戦闘に入るように
+            },
+            {
+              id: "orc",
+              name: "オーク",
+              level: 1,
+              hp: 30,
+              maxHp: 30,
+              atk: 5,
+              def: 2,
+              mdef: 1,
+              expReward: 10,
+              drops: [{ itemId: "meat", chance: 1.0 }],
+              respawnTimeLeft: 0,
+              respawnTimeTotal: 4,
+              currentProgress: 90,
+            },
+          ],
+          explorationProgress: 100,
+          difficulty: 1.0,
+        },
+      ];
+
+      // 目標設定: slime_jelly=10, meat=10
+      // 所持数: slime_jelly=8 (80%), meat=2 (20%)
+      // オーク（meatをドロップ）が優先されるはず
+      const inventory = { slime_jelly: 8, meat: 2 };
+      const targetAmounts = { slime_jelly: 10, meat: 10 };
+
+      const result = processVillagerActivities(
+        villagers,
+        dungeons,
+        mockFacilities,
+        inventory,
+        10,
+        targetAmounts,
+        null,
+        false,
+        false,
+        {},
+        500,
+      );
+
+      // オークが選ばれて、autoTargetNameが「オーク」になること
+      expect(result.villagers[0].autoTargetName).toBe("オーク");
     });
   });
 });

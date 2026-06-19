@@ -339,7 +339,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   potion: {
     id: "potion",
     resultItemId: "potion",
-    facilityId: "alchemy",
+    facilityId: "workshop",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "herb", count: 2 },

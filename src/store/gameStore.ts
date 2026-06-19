@@ -4,15 +4,11 @@ import {
   GameState,
   Villager,
   JobType,
-  Item,
-  CraftRecipe,
   Facility,
   DungeonArea,
-  Monster,
   GameLog,
   FacilityType,
   OrderType,
-  SoulUpgrade,
   VillagerStatus,
 } from "../types/game";
 
@@ -75,6 +71,7 @@ function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionCount: 0,
     },
     {
       id: "v2",
@@ -101,6 +98,7 @@ function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionCount: 0,
     },
     {
       id: "v3",
@@ -127,6 +125,7 @@ function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionCount: 0,
     },
   ];
 }
@@ -377,6 +376,7 @@ export const useGameStore = create<GameState & GameActions>()(
         const state = get();
         const { villagers, inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
         let anyDispatched = false;
+        const nextInventory = { ...inventory };
 
         const updatedVillagers = villagers.map((v) => {
           if (v.status === "idle" && v.order !== "rest") {
@@ -407,7 +407,21 @@ export const useGameStore = create<GameState & GameActions>()(
                 const bCategory = ITEMS[b]?.category || "";
                 const aPref = preferredCategories.includes(aCategory) ? 1 : 0;
                 const bPref = preferredCategories.includes(bCategory) ? 1 : 0;
-                return bPref - aPref;
+
+                if (aPref !== bPref) {
+                  return bPref - aPref;
+                }
+
+                // 達成率が低いものを優先する (所持数 / 目標数)
+                const aCount = inventory[a] || 0;
+                const aTarget = targetAmounts[a] || 1; // 0除算防ぐ
+                const aRatio = aCount / aTarget;
+
+                const bCount = inventory[b] || 0;
+                const bTarget = targetAmounts[b] || 1;
+                const bRatio = bCount / bTarget;
+
+                return aRatio - bRatio;
               });
 
               for (const missingId of sortedMissingItemIds) {
@@ -458,8 +472,17 @@ export const useGameStore = create<GameState & GameActions>()(
             if (targetAreaId) {
               anyDispatched = true;
               const area = dungeons.find((d) => d.id === targetAreaId)!;
+
+              // 回復薬の自動持たせ処理
+              let assignedPotionCount = 0;
+              const availablePotions = nextInventory.potion || 0;
+              if (availablePotions > 0) {
+                assignedPotionCount = Math.min(2, availablePotions);
+                nextInventory.potion = availablePotions - assignedPotionCount;
+              }
+
               state.addLog(
-                `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}）。`,
+                `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${assignedPotionCount > 0 ? `、回復薬 x${assignedPotionCount}所持` : ""}）。`,
                 "info",
               );
               return {
@@ -469,6 +492,7 @@ export const useGameStore = create<GameState & GameActions>()(
                 order: targetOrder,
                 autoTargetName: resolvedAutoTargetName,
                 travelTimeLeft: area.distance,
+                potionCount: assignedPotionCount,
               } as Villager;
             }
           }
@@ -476,7 +500,7 @@ export const useGameStore = create<GameState & GameActions>()(
         });
 
         if (anyDispatched) {
-          set({ villagers: updatedVillagers });
+          set({ villagers: updatedVillagers, inventory: nextInventory });
         }
       },
 
@@ -596,12 +620,14 @@ export const useGameStore = create<GameState & GameActions>()(
       // 村人の指示変更
       setVillagerOrder: (id, order, areaId, targetGatherItemId = null, targetMonsterId = null) => {
         set((state) => {
+          const nextInventory = { ...state.inventory };
           const updated = state.villagers.map((v) => {
             if (v.id !== id) return v;
 
             let status = v.status;
             let travelTime = v.travelTimeLeft;
             let dest = v.destinationAreaId;
+            let nextPotionCount = v.potionCount || 0;
 
             const sameArea = v.destinationAreaId === areaId;
             const nextGatherTarget =
@@ -613,15 +639,45 @@ export const useGameStore = create<GameState & GameActions>()(
             const nextMonsterTarget =
               targetMonsterId !== undefined ? targetMonsterId : sameArea ? v.targetMonsterId : null;
 
+            // 村での待機・休息に変更する場合：所持ポーションを返却
+            if (order === "rest" || !areaId) {
+              if (nextPotionCount > 0) {
+                nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
+                state.addLog(
+                  `【返却】${v.name} は回復薬 ${nextPotionCount} 個を倉庫に戻しました。`,
+                  "info",
+                );
+                nextPotionCount = 0;
+              }
+            }
+
             if (order === "rest") {
               status = "resting";
               dest = null;
               travelTime = 0;
             } else if (areaId) {
               const area = DUNGEONS.find((d) => d.id === areaId);
+              // 新たに派遣される場合、または派遣先が変更される場合
               if (v.destinationAreaId !== areaId || v.status === "idle" || v.status === "resting") {
                 status = "traveling_to";
                 travelTime = area ? area.distance : 1;
+
+                // 既に持っているポーションがあれば一旦返却
+                if (nextPotionCount > 0) {
+                  nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
+                  nextPotionCount = 0;
+                }
+
+                // 倉庫から最大2個持たせる
+                const availablePotions = nextInventory.potion || 0;
+                if (availablePotions > 0) {
+                  nextPotionCount = Math.min(2, availablePotions);
+                  nextInventory.potion = availablePotions - nextPotionCount;
+                  state.addLog(
+                    `【準備】${v.name} は回復薬を ${nextPotionCount} 個所持しました。`,
+                    "info",
+                  );
+                }
               }
               dest = areaId;
             } else {
@@ -639,9 +695,10 @@ export const useGameStore = create<GameState & GameActions>()(
               targetGatherItemId: nextGatherTarget,
               targetMonsterId: nextMonsterTarget,
               autoTargetName: null,
+              potionCount: nextPotionCount,
             };
           });
-          return { villagers: updated };
+          return { villagers: updated, inventory: nextInventory };
         });
         const vName = get().villagers.find((v) => v.id === id)?.name;
         const areaName = DUNGEONS.find((d) => d.id === areaId)?.name || "村";
@@ -999,6 +1056,7 @@ export const useGameStore = create<GameState & GameActions>()(
           targetGatherItemId: null,
           targetMonsterId: null,
           autoTargetName: null,
+          potionCount: 0,
         };
 
         set((state) => ({
@@ -1085,10 +1143,12 @@ export const useGameStore = create<GameState & GameActions>()(
             },
           ],
           currentTier: 1,
+          activeBoss: null,
           bossDefeated: false,
           gameLimitDays: TIER_LIMIT_DAYS[1],
           gameOver: false,
-          isPaused: true,
+          // 転生後は自動的にゲーム開始（ゲームオーバーから先に進めない問題の修正）
+          isPaused: !prestige,
         });
       },
 
@@ -1210,6 +1270,14 @@ export const useGameStore = create<GameState & GameActions>()(
               fac.upgradeCost = { ...initFac.upgradeCost };
             }
           });
+        }
+
+        // 3. 村人の新規ステータス（potionCount）の同期
+        if (persistedState.villagers) {
+          merged.villagers = persistedState.villagers.map((v: any) => ({
+            ...v,
+            potionCount: v.potionCount !== undefined ? v.potionCount : 0,
+          }));
         }
 
         return merged;

@@ -154,6 +154,13 @@ export const VillagerList: React.FC = () => {
                         </div>
                         <span className="text-slate-300 font-bold shrink-0">{v.stamina}/100</span>
                       </div>
+
+                      {/* 回復薬 */}
+                      {v.potionCount > 0 && (
+                        <div className="flex items-center gap-1 shrink-0 bg-indigo-950/40 border border-indigo-900/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-400 font-bold">
+                          🧪 x{v.potionCount}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -239,6 +246,16 @@ export const VillagerList: React.FC = () => {
                           {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
                         </span>
                       </button>
+
+                      {/* 回復薬 */}
+                      {v.potionCount > 0 && (
+                        <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">
+                          <span className="flex items-center gap-1 text-[10px]">
+                            <span className="text-[11px] leading-none shrink-0 font-sans">🧪</span>
+                            回復薬 x{v.potionCount}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 
