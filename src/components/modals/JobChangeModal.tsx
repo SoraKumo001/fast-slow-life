@@ -70,12 +70,15 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">{job.description}</p>
-                  
+
                   {/* 転職要件の表示 */}
                   {!isCurrent && req && (
                     <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] font-mono leading-none">
                       <span className={isLevelMet ? "text-emerald-400/90" : "text-rose-400/90"}>
-                        必要Lv.{req.level} {isHistory || villager.level >= req.level ? "✓" : `(現在:Lv.${villager.level})`}
+                        必要Lv.{req.level}{" "}
+                        {isHistory || villager.level >= req.level
+                          ? "✓"
+                          : `(現在:Lv.${villager.level})`}
                       </span>
                       {req.jobs && req.jobs.length > 0 && (
                         <span className={isPrevJobMet ? "text-emerald-400/90" : "text-rose-400/90"}>
