@@ -1,7 +1,8 @@
+import "./setupMockStorage";
 import * as fs from "fs";
 import * as path from "path";
 
-import { describe, it } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { FacilityType, JobType } from "../types/game";
 import { ITEMS, JOBS, useGameStore } from "./gameStore";
