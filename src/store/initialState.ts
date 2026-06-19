@@ -37,6 +37,7 @@ export function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionItemId: "potion",
       potionCount: 0,
     },
     {
@@ -64,6 +65,7 @@ export function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionItemId: "potion",
       potionCount: 0,
     },
     {
@@ -91,6 +93,7 @@ export function getInitialVillagers(bodyLvl: number = 0): Villager[] {
       targetGatherItemId: null,
       targetMonsterId: null,
       autoTargetName: null,
+      potionItemId: "potion",
       potionCount: 0,
     },
   ];
@@ -98,13 +101,25 @@ export function getInitialVillagers(bodyLvl: number = 0): Villager[] {
 
 function getItemRespawnHours(itemId: string): number {
   if (itemId === "mana_stone") return RARE_GATHER_RESPAWN_HOURS;
-  if (["stone", "iron_ore", "silver_ore"].includes(itemId)) return HARD_GATHER_RESPAWN_HOURS;
+  if (["stone", "iron_ore", "silver_ore", "crystal_fragment"].includes(itemId))
+    return HARD_GATHER_RESPAWN_HOURS;
   return DEFAULT_GATHER_RESPAWN_HOURS;
 }
 
 function getMonsterRespawnHours(monsterId: string): number {
   if (["golem", "chimera", "archdemon"].includes(monsterId)) return BOSS_MONSTER_RESPAWN_HOURS;
-  if (["orc", "werewolf", "demon", "gargoyle", "dragon_spawn"].includes(monsterId))
+  if (
+    [
+      "orc",
+      "werewolf",
+      "demon",
+      "gargoyle",
+      "dragon_spawn",
+      "harpy",
+      "treant",
+      "shadow_knight",
+    ].includes(monsterId)
+  )
     return HARD_MONSTER_RESPAWN_HOURS;
   return DEFAULT_MONSTER_RESPAWN_HOURS;
 }

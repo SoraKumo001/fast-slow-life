@@ -8,6 +8,18 @@ import {
   getRecipeForItem,
 } from "../../store/gameStore";
 
+const FACILITY_DESCRIPTIONS: Record<string, string> = {
+  inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
+  workshop: "採取した原木や鉄鉱石などの素材を、木板や鉄インゴットなどの中間素材へ加工できます。",
+  blacksmith:
+    "武器や防具などの装備品をクラフトできます。強力な装備を作って村人のステータスを強化しましょう。",
+  alchemy: "薬草から回復薬を調合したり、魔法石からより強力なポーションやエリクサーを生産できます。",
+  market:
+    "倉庫内のアイテム詳細画面から、素材や不要になった装備を売却してゴールドを入手できるようになります。",
+  guild:
+    "新しい冒険者（村人）を雇用して開拓の効率を上げられます。レベルアップで最大10人まで雇用枠が広がります。",
+};
+
 export const FacilityList: React.FC = () => {
   const {
     facilities,
@@ -49,18 +61,21 @@ export const FacilityList: React.FC = () => {
           const canAffordUpgrade =
             gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
 
-          // この施設でクラフト可能なアイテム
-          const craftableItems = getCraftableItemsForFacility(fac.id, fac.level);
-          const isExpanded = isUnlocked && !!expandedIds[fac.id];
+          // この施設でクラフト可能なアイテム (未建設の場合はLv.1で解放されるアイテムを表示)
+          const craftableItems = getCraftableItemsForFacility(
+            fac.id,
+            fac.level > 0 ? fac.level : 1,
+          );
+          const isExpanded = !!expandedIds[fac.id];
 
           return (
             <div
               key={fac.id}
-              onClick={() => isUnlocked && toggleExpand(fac.id)}
+              onClick={() => toggleExpand(fac.id)}
               className={`border rounded-xl p-4 transition-all duration-200 ${
                 isUnlocked
                   ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
-                  : "bg-slate-950/20 border-dashed border-slate-800 text-slate-500 opacity-60"
+                  : "bg-slate-950/40 border-dashed border-slate-800 hover:border-slate-700/60 cursor-pointer"
               }`}
             >
               {/* 施設タイトル */}
@@ -72,22 +87,6 @@ export const FacilityList: React.FC = () => {
                       {isUnlocked ? `Lv.${fac.level}` : "未建設"}
                     </span>
                   </h3>
-                  {!isUnlocked && (
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      Tier{" "}
-                      {fac.id === "guild" || fac.id === "blacksmith"
-                        ? "1"
-                        : fac.id === "alchemy"
-                          ? "2"
-                          : "3"}{" "}
-                      でアンロック可能
-                    </p>
-                  )}
-                  {!isUnlocked && fac.id === "guild" && (
-                    <p className="text-[10px] text-amber-500/80 font-medium mt-1">
-                      ※建設すると冒険者（村人）を新しく雇用できるようになります。
-                    </p>
-                  )}
                 </div>
 
                 {/* 操作・展開インジケーター */}
@@ -105,11 +104,9 @@ export const FacilityList: React.FC = () => {
                       {fac.upgradeTimeLeft > 0 ? "工事中" : isUnlocked ? "強化" : "建設"}
                     </button>
                   )}
-                  {isUnlocked && (
-                    <span className="text-xs text-slate-500 font-mono ml-1">
-                      {isExpanded ? "▲" : "▼"}
-                    </span>
-                  )}
+                  <span className="text-xs text-slate-500 font-mono ml-1">
+                    {isExpanded ? "▲" : "▼"}
+                  </span>
                 </div>
               </div>
 
@@ -132,27 +129,48 @@ export const FacilityList: React.FC = () => {
               )}
 
               {/* 通常表示（折りたたみ時）の簡易ステータス表示 */}
-              {!isExpanded && isUnlocked && (
-                <div className="mt-2 text-[11px] text-slate-400 font-mono flex items-center gap-1.5">
-                  {fac.id === "inn" ? (
-                    <span className="text-slate-500">休息機能利用可能</span>
-                  ) : fac.id === "guild" ? (
-                    <span className="text-slate-500">
-                      雇用上限: {3 + fac.level * 2}人 (現在: {villagers.length}人)
-                    </span>
-                  ) : fac.craftQueue.length > 0 ? (
-                    <>
-                      <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                      <span className="text-sky-400 font-bold">
-                        加工中 ({fac.craftQueue.length}/3)
+              {!isExpanded && (
+                <div className="mt-2 text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-1.5">
+                  {isUnlocked ? (
+                    fac.id === "inn" ? (
+                      <span className="text-slate-500">休息機能利用可能</span>
+                    ) : fac.id === "guild" ? (
+                      <span className="text-slate-500">
+                        雇用上限: {3 + fac.level * 2}人 (現在: {villagers.length}人)
                       </span>
-                      <span className="text-slate-500 text-[10px] truncate max-w-[150px] sm:max-w-xs">
-                        • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
-                        {fac.craftQueue[0].timeLeft}h)
-                      </span>
-                    </>
+                    ) : fac.craftQueue.length > 0 ? (
+                      <>
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                        <span className="text-sky-400 font-bold">
+                          加工中 ({fac.craftQueue.length}/3)
+                        </span>
+                        <span className="text-slate-500 text-[10px] truncate max-w-[150px] sm:max-w-xs">
+                          • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
+                          {fac.craftQueue[0].timeLeft}h)
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-slate-500">生産停止中 (待機)</span>
+                    )
                   ) : (
-                    <span className="text-slate-500">生産停止中 (待機)</span>
+                    <>
+                      <span className="text-slate-500 font-semibold">建設条件: </span>
+                      <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
+                        {goldCost}G
+                      </span>
+                      {fac.upgradeCost.materials.map((m) => {
+                        const reqCount = Math.floor(m.count * costReduction);
+                        const current = inventory[m.itemId] || 0;
+                        return (
+                          <span
+                            key={m.itemId}
+                            className={current >= reqCount ? "text-slate-400" : "text-red-400"}
+                          >
+                            {ITEMS[m.itemId].name}({current}/{reqCount})
+                          </span>
+                        );
+                      })}
+                    </>
                   )}
                 </div>
               )}
@@ -160,6 +178,11 @@ export const FacilityList: React.FC = () => {
               {/* 拡張表示 (展開された時の詳細コンテンツ) */}
               {isExpanded && (
                 <div className="mt-3 pt-3 border-t border-slate-900 space-y-3.5">
+                  {/* 施設の概要説明 */}
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
+                    {FACILITY_DESCRIPTIONS[fac.id]}
+                  </p>
+
                   {/* 建設/強化コスト情報 */}
                   {canUpgrade && fac.upgradeTimeLeft === 0 && (
                     <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
@@ -187,7 +210,7 @@ export const FacilityList: React.FC = () => {
                     <div className="space-y-2.5">
                       <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                         <Hammer className="w-3 h-3 text-sky-400" />
-                        生産レシピ (最大3枠)
+                        {isUnlocked ? "生産レシピ (最大3枠)" : "解放される生産レシピ"}
                       </h4>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -255,9 +278,10 @@ export const FacilityList: React.FC = () => {
                       <div className="flex justify-between items-center text-[10px] font-mono">
                         <span className="text-slate-300 font-medium">
                           現在人数: <strong className="text-sky-400">{villagers.length}</strong> /{" "}
-                          {3 + fac.level * 2} 人
+                          {3 + fac.level * 2} 人{" "}
+                          {!isUnlocked && <span className="text-slate-400">(建設後: 5人)</span>}
                         </span>
-                        <span className="text-slate-400">雇用コスト: 100 G</span>
+                        {isUnlocked && <span className="text-slate-400">雇用コスト: 100 G</span>}
                       </div>
 
                       <p className="text-[10px] text-slate-400 leading-normal">
@@ -271,12 +295,18 @@ export const FacilityList: React.FC = () => {
                           e.stopPropagation();
                           hireVillager();
                         }}
-                        disabled={gold < 100 || villagers.length >= Math.min(10, 3 + fac.level * 2)}
-                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs rounded-lg transition-all"
+                        disabled={
+                          !isUnlocked ||
+                          gold < 100 ||
+                          villagers.length >= Math.min(10, 3 + fac.level * 2)
+                        }
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
                       >
-                        {villagers.length >= Math.min(10, 3 + fac.level * 2)
-                          ? "雇用上限に達しています"
-                          : "新しい冒険者を雇用する (100G)"}
+                        {!isUnlocked
+                          ? "冒険者ギルドを建設すると雇用できます"
+                          : villagers.length >= Math.min(10, 3 + fac.level * 2)
+                            ? "雇用上限に達しています"
+                            : "新しい冒険者を雇用する (100G)"}
                       </button>
                     </div>
                   )}

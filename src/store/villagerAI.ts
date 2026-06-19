@@ -3,7 +3,6 @@ import {
   STARVATION_EFFICIENCY_PENALTY,
   ZERO_STAMINA_PENALTY,
   STARVATION_HP_LOSS_PERCENT,
-  POTION_HEAL_AMOUNT,
   BASE_HP_RECOVERY,
   HP_RECOVERY_PER_INN_LEVEL,
   BASE_STAMINA_RECOVERY,
@@ -99,9 +98,11 @@ export function processVillagerActivities(
       if (v.travelTimeLeft <= 0) {
         v.destinationAreaId = null;
         if (v.potionCount > 0) {
-          nextInventory.potion = (nextInventory.potion || 0) + v.potionCount;
+          const returnId = v.potionItemId || "potion";
+          nextInventory[returnId] = (nextInventory[returnId] || 0) + v.potionCount;
+          const pName = ITEMS[returnId]?.name || "回復薬";
           logs.push({
-            message: `${v.name} が未使用のポーション ${v.potionCount} 個を倉庫に返却しました。`,
+            message: `${v.name} が未使用の${pName} ${v.potionCount} 個を倉庫に返却しました。`,
             type: "info",
           });
           v.potionCount = 0;
@@ -139,9 +140,11 @@ export function processVillagerActivities(
 
       if (v.currentHp <= v.maxHp * 0.5 && v.potionCount > 0) {
         v.potionCount -= 1;
-        v.currentHp = Math.min(v.maxHp, v.currentHp + POTION_HEAL_AMOUNT);
+        const pId = v.potionItemId || "potion";
+        const healAmt = ITEMS[pId]?.healAmount || 50;
+        v.currentHp = Math.min(v.maxHp, v.currentHp + healAmt);
         logs.push({
-          message: `${v.name} がポーションを使用し、HPを回復しました。`,
+          message: `${v.name} が${ITEMS[pId]?.name || "回復薬"}を使用し、HPを ${healAmt} 回復しました。`,
           type: "info",
         });
       }
@@ -244,8 +247,27 @@ export function processVillagerActivities(
               targetPenalty = 0.01;
             }
 
+            // 同エリアで同じアイテムを狙っている他のアクティブな村人がいる場合はスコアを下げる（ターゲットの重複を避ける）
+            let dupPenalty = 1.0;
+            const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
+              if (idx === i) return false;
+              if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
+                return false;
+              const otherTarget = otherV.targetGatherItemId || otherV.autoTargetName;
+              return otherTarget === gather.itemId || otherTarget === item.name;
+            });
+            if (isTargetedByOthers) {
+              dupPenalty = 0.05;
+            }
+
             const score =
-              baseMultiplier * jobMod * statVal * (1.0 + v.agi * 0.01) * efficiency * targetPenalty;
+              baseMultiplier *
+              jobMod *
+              statVal *
+              (1.0 + v.agi * 0.01) *
+              efficiency *
+              targetPenalty *
+              dupPenalty;
             if (score > maxScore) {
               maxScore = score;
               bestItemId = gather.itemId;
@@ -280,7 +302,7 @@ export function processVillagerActivities(
 
               const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
               const itemDiff = item.difficulty || 1.0;
-              const expGained = Math.max(1, Math.floor(itemDiff * 5 * eduBonus));
+              const expGained = Math.max(1, Math.floor(itemDiff * 10 * eduBonus));
               v.exp += expGained;
 
               logs.push({
@@ -351,7 +373,20 @@ export function processVillagerActivities(
 
               if (neededDropRatios.length === 0) return;
 
-              const monsterRatio = Math.min(...neededDropRatios);
+              let monsterRatio = Math.min(...neededDropRatios);
+
+              // 同エリアで同じモンスターを狙っている他のアクティブな村人がいる場合は優先度を下げる（ターゲットの重複を避ける）
+              const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
+                if (idx === i) return false;
+                if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
+                  return false;
+                const otherTarget = otherV.targetMonsterId || otherV.autoTargetName;
+                return otherTarget === monster.id || otherTarget === monster.name;
+              });
+              if (isTargetedByOthers) {
+                monsterRatio += 10.0;
+              }
+
               if (monsterRatio < bestTargetRatio) {
                 bestTargetRatio = monsterRatio;
                 selectedMonster = monster;

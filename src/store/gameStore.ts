@@ -252,14 +252,21 @@ export const useGameStore = create<GameState & GameActions>()(
               const area = dungeons.find((d) => d.id === targetAreaId)!;
 
               let assignedPotionCount = 0;
-              const availablePotions = nextInventory.potion || 0;
-              if (availablePotions > 0) {
-                assignedPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, availablePotions);
-                nextInventory.potion = availablePotions - assignedPotionCount;
+              let assignedPotionId = "potion";
+              const potionPriority = ["high_potion", "mid_potion", "potion"];
+              for (const pId of potionPriority) {
+                const countInInv = nextInventory[pId] || 0;
+                if (countInInv > 0) {
+                  assignedPotionId = pId;
+                  assignedPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv);
+                  nextInventory[pId] = countInInv - assignedPotionCount;
+                  break;
+                }
               }
 
+              const potionName = ITEMS[assignedPotionId]?.name || "回復薬";
               state.addLog(
-                `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${assignedPotionCount > 0 ? `、回復薬 x${assignedPotionCount}所持` : ""}）。`,
+                `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${assignedPotionCount > 0 ? `、${potionName} x${assignedPotionCount}所持` : ""}）。`,
                 "info",
               );
               return {
@@ -269,6 +276,7 @@ export const useGameStore = create<GameState & GameActions>()(
                 order: targetOrder,
                 autoTargetName: resolvedAutoTargetName,
                 travelTimeLeft: area.distance,
+                potionItemId: assignedPotionId,
                 potionCount: assignedPotionCount,
               } as Villager;
             }
@@ -397,6 +405,7 @@ export const useGameStore = create<GameState & GameActions>()(
             let travelTime = v.travelTimeLeft;
             let dest = v.destinationAreaId;
             let nextPotionCount = v.potionCount || 0;
+            let nextPotionItemId = v.potionItemId || "potion";
 
             const sameArea = v.destinationAreaId === areaId;
             const nextGatherTarget =
@@ -410,9 +419,11 @@ export const useGameStore = create<GameState & GameActions>()(
 
             if (order === "rest" || !areaId) {
               if (nextPotionCount > 0) {
-                nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
+                const returnId = nextPotionItemId;
+                nextInventory[returnId] = (nextInventory[returnId] || 0) + nextPotionCount;
+                const pName = ITEMS[returnId]?.name || "回復薬";
                 state.addLog(
-                  `【返却】${v.name} は回復薬 ${nextPotionCount} 個を倉庫に戻しました。`,
+                  `【返却】${v.name} は${pName} ${nextPotionCount} 個を倉庫に戻しました。`,
                   "info",
                 );
                 nextPotionCount = 0;
@@ -430,16 +441,31 @@ export const useGameStore = create<GameState & GameActions>()(
                 travelTime = area ? area.distance : 1;
 
                 if (nextPotionCount > 0) {
-                  nextInventory.potion = (nextInventory.potion || 0) + nextPotionCount;
+                  const returnId = nextPotionItemId;
+                  nextInventory[returnId] = (nextInventory[returnId] || 0) + nextPotionCount;
                   nextPotionCount = 0;
                 }
 
-                const availablePotions = nextInventory.potion || 0;
-                if (availablePotions > 0) {
-                  nextPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, availablePotions);
-                  nextInventory.potion = availablePotions - nextPotionCount;
+                // 強いポーションから優先してアサイン
+                let assignedCount = 0;
+                let assignedId = "potion";
+                const potionPriority = ["high_potion", "mid_potion", "potion"];
+                for (const pId of potionPriority) {
+                  const countInInv = nextInventory[pId] || 0;
+                  if (countInInv > 0) {
+                    assignedId = pId;
+                    assignedCount = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv);
+                    nextInventory[pId] = countInInv - assignedCount;
+                    break;
+                  }
+                }
+
+                if (assignedCount > 0) {
+                  nextPotionCount = assignedCount;
+                  nextPotionItemId = assignedId;
+                  const pName = ITEMS[assignedId]?.name || "回復薬";
                   state.addLog(
-                    `【準備】${v.name} は回復薬を ${nextPotionCount} 個所持しました。`,
+                    `【準備】${v.name} は${pName}を ${assignedCount} 個所持しました。`,
                     "info",
                   );
                 }
@@ -460,6 +486,7 @@ export const useGameStore = create<GameState & GameActions>()(
               targetGatherItemId: nextGatherTarget,
               targetMonsterId: nextMonsterTarget,
               autoTargetName: null,
+              potionItemId: nextPotionItemId,
               potionCount: nextPotionCount,
             };
           });
@@ -800,6 +827,7 @@ export const useGameStore = create<GameState & GameActions>()(
           targetGatherItemId: null,
           targetMonsterId: null,
           autoTargetName: null,
+          potionItemId: "potion",
           potionCount: 0,
         };
 

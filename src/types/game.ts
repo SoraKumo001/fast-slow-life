@@ -27,6 +27,7 @@ export interface Item {
   difficulty: number; // 採取難易度（高いほどスコア低下に影響）
   description?: string;
   initialCount?: number;
+  healAmount?: number; // 回復薬の回復量
   equipment?: {
     slot: "weapon" | "armor";
     bonuses: Partial<Record<"attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit", number>>;
@@ -82,6 +83,7 @@ export interface Villager {
   targetGatherItemId: string | null; // 追加：直接指示された採取アイテムID
   targetMonsterId: string | null; // 追加：直接指示された討伐対象モンスターID
   autoTargetName?: string | null; // 追加：自動意思決定で選択されているターゲット名
+  potionItemId?: string; // 追加：所持している回復薬のアイテムID
   potionCount: number; // 追加：所持している回復薬の数
 }
 

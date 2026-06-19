@@ -43,6 +43,4 @@ out/
 # TypeScript
 *.tsbuildinfo
 
-# Godot 4+ specific ignores (Legacy)
-.godot/
-/android/
+debug/

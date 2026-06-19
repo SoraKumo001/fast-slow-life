@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "format": "oxfmt && oxlint --fix .",
     "test": "vitest",
-    "test:run": "vitest run"
+    "test:run": "vitest run",
+    "test:balance": "vitest run src/store/balanceSimulator.test.ts"
   },
   "dependencies": {
     "lucide-react": "^0.454.0",
