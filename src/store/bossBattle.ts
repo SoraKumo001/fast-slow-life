@@ -1,5 +1,3 @@
-import { Villager, DungeonArea, ActiveBossState } from "../types/game";
-import { ITEMS, MONSTERS } from "../data/masterData";
 import {
   TIER_LIMIT_DAYS,
   BOSS_BATTLE_ROUNDS,
@@ -14,6 +12,8 @@ import {
   HP_GROWTH_PER_LEVEL,
   EXP_NEEDED_PER_LEVEL,
 } from "../constants";
+import { ITEMS, MONSTERS } from "../data/masterData";
+import { Villager, DungeonArea, ActiveBossState } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processBossBattle(

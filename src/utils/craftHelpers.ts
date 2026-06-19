@@ -1,6 +1,6 @@
+import { CRAFTER_TIME_REDUCTION } from "../constants";
 import { Villager } from "../types/game";
 import { CraftRecipe } from "../types/game";
-import { CRAFTER_TIME_REDUCTION } from "../constants";
 
 export function generateCraftJobId(): string {
   return Math.random().toString(36).substring(2);

@@ -1,7 +1,8 @@
+import { CheckCircle } from "lucide-react";
 import React from "react";
+
 import { useGameStore, JOBS } from "../../store/gameStore";
 import { JobType, Villager } from "../../types/game";
-import { CheckCircle } from "lucide-react";
 
 interface JobChangeModalProps {
   villager: Villager;

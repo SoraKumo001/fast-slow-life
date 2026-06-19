@@ -1,13 +1,14 @@
+import { Sparkles, X, HelpCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useGameStore } from "./store/gameStore";
-import { Header } from "./components/layout/Header";
+
+import { DungeonPanel } from "./components/game/DungeonPanel";
+import { FacilityList } from "./components/game/FacilityList";
 import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
-import { FacilityList } from "./components/game/FacilityList";
-import { DungeonPanel } from "./components/game/DungeonPanel";
 import { FooterLogTicker } from "./components/layout/FooterLogTicker";
+import { Header } from "./components/layout/Header";
 import { SoulShop } from "./components/modals/SoulShop";
-import { Sparkles, X, HelpCircle } from "lucide-react";
+import { useGameStore } from "./store/gameStore";
 
 export default function App() {
   const { isPaused, playSpeed, gameOver, advanceHour } = useGameStore();

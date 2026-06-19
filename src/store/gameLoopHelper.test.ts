@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
+
+import { DungeonArea, Villager, Facility, FacilityType } from "../types/game";
 import {
   processStarvation,
   processExploration,
   processRespawns,
   processVillagerActivities,
 } from "./gameLoopHelper";
-import { DungeonArea, Villager } from "../types/game";
 
 describe("gameLoopHelper", () => {
   describe("processStarvation", () => {
@@ -336,7 +337,7 @@ describe("gameLoopHelper", () => {
         upgradeCost: { gold: 0, materials: [] },
         craftQueue: [],
       },
-    } as any;
+    } as Record<FacilityType, Facility>;
 
     it("帰還完了した村人のポーションが倉庫に返却されること", () => {
       const villagers: Villager[] = [

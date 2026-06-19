@@ -1,5 +1,3 @@
-import { Villager, Facility, FacilityType } from "../types/game";
-import { ITEMS, JOBS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
 import {
   BASE_GREAT_SUCCESS_RATE,
   CRAFT_QUEUE_MAX_LENGTH,
@@ -7,6 +5,8 @@ import {
   UPGRADE_COST_MATERIAL_INCREMENT,
   CRAFTER_TIME_REDUCTION,
 } from "../constants";
+import { ITEMS, JOBS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
+import { Villager, Facility, FacilityType } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processCraftingAndUpgrades(

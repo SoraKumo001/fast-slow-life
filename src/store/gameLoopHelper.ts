@@ -1,11 +1,11 @@
 import { GameState } from "../types/game";
+import { processBossBattle } from "./bossBattle";
+import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
+import { processExploration } from "./exploration";
+import { AdvanceHourResult } from "./gameLoopTypes";
 import { processRespawns } from "./respawns";
 import { processStarvation } from "./starvation";
-import { processExploration } from "./exploration";
-import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
-import { processBossBattle } from "./bossBattle";
 import { processVillagerActivities } from "./villagerAI";
-import { AdvanceHourResult } from "./gameLoopTypes";
 
 export type { AdvanceHourResult, LogPayload } from "./gameLoopTypes";
 

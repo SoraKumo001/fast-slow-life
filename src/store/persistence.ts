@@ -1,4 +1,4 @@
-import { GameState } from "../types/game";
+import { GameState, Villager, DungeonArea, DungeonGather, DungeonMonster } from "../types/game";
 import { FacilityType } from "../types/game";
 import { getInitialFacilities } from "./initialState";
 
@@ -21,36 +21,37 @@ export const partialize = (state: GameState): Partial<GameState> => ({
   soulUpgrades: state.soulUpgrades,
 });
 
-export const merge = (persistedState: any, currentState: any) => {
+export const merge = <S extends GameState>(persistedState: unknown, currentState: S): S => {
   if (!persistedState) return currentState;
+  const persisted = persistedState as Partial<GameState>;
 
-  const merged = { ...currentState, ...persistedState };
+  const merged: S = { ...currentState, ...persisted };
 
   merged.inventory = {
     ...currentState.inventory,
-    ...persistedState.inventory,
+    ...persisted.inventory,
   };
   merged.targetAmounts = {
     ...currentState.targetAmounts,
-    ...persistedState.targetAmounts,
+    ...persisted.targetAmounts,
   };
 
-  if (persistedState.dungeons) {
-    merged.dungeons = currentState.dungeons.map((curD: any) => {
-      const persD = persistedState.dungeons.find((d: any) => d.id === curD.id);
+  if (persisted.dungeons) {
+    merged.dungeons = currentState.dungeons.map((curD: DungeonArea) => {
+      const persD = persisted.dungeons!.find((d: DungeonArea) => d.id === curD.id);
       return {
         ...curD,
         explorationProgress: persD ? persD.explorationProgress : 0,
-        gathers: curD.gathers.map((curG: any) => {
-          const persG = persD?.gathers?.find((g: any) => g.itemId === curG.itemId);
+        gathers: curD.gathers.map((curG: DungeonGather) => {
+          const persG = persD?.gathers?.find((g: DungeonGather) => g.itemId === curG.itemId);
           return {
             ...curG,
             currentProgress: persG?.currentProgress !== undefined ? persG.currentProgress : 0,
             respawnTimeLeft: persG?.respawnTimeLeft !== undefined ? persG.respawnTimeLeft : 0,
           };
         }),
-        monsters: curD.monsters.map((curM: any) => {
-          const persM = persD?.monsters?.find((m: any) => m.id === curM.id);
+        monsters: curD.monsters.map((curM: DungeonMonster) => {
+          const persM = persD?.monsters?.find((m: DungeonMonster) => m.id === curM.id);
           return {
             ...curM,
             currentProgress: persM?.currentProgress !== undefined ? persM.currentProgress : 0,
@@ -61,9 +62,9 @@ export const merge = (persistedState: any, currentState: any) => {
     });
   }
 
-  if (persistedState.facilities) {
+  if (persisted.facilities) {
     const initialFacs = getInitialFacilities();
-    merged.facilities = { ...persistedState.facilities };
+    merged.facilities = { ...persisted.facilities };
 
     Object.keys(merged.facilities).forEach((key) => {
       const fac = merged.facilities[key as FacilityType];
@@ -74,8 +75,8 @@ export const merge = (persistedState: any, currentState: any) => {
     });
   }
 
-  if (persistedState.villagers) {
-    merged.villagers = persistedState.villagers.map((v: any) => ({
+  if (persisted.villagers) {
+    merged.villagers = persisted.villagers.map((v: Villager) => ({
       ...v,
       potionCount: v.potionCount !== undefined ? v.potionCount : 0,
     }));

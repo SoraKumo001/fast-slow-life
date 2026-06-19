@@ -1,7 +1,8 @@
+import { AlertCircle } from "lucide-react";
 import React from "react";
+
 import { useGameStore } from "../../store/gameStore";
 import { DungeonArea, Villager } from "../../types/game";
-import { AlertCircle } from "lucide-react";
 
 interface DungeonAssignModalProps {
   area: DungeonArea;

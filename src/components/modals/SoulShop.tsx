@@ -1,6 +1,7 @@
-import React from "react";
-import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
 import { Sparkles, RefreshCw } from "lucide-react";
+import React from "react";
+
+import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
 
 export const SoulShop: React.FC = () => {
   const { soulPoints, soulUpgrades, buySoulUpgrade, resetGame } = useGameStore();

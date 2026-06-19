@@ -1,7 +1,8 @@
+import { AlertCircle, Sword } from "lucide-react";
 import React, { useState } from "react";
+
 import { useGameStore } from "../../store/gameStore";
 import { DungeonArea, Villager } from "../../types/game";
-import { AlertCircle, Sword } from "lucide-react";
 
 interface BossBattleModalProps {
   area: DungeonArea;

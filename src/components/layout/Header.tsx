@@ -1,6 +1,7 @@
-import React from "react";
-import { useGameStore } from "../../store/gameStore";
 import { Play, Pause, RefreshCw, AlertTriangle } from "lucide-react";
+import React from "react";
+
+import { useGameStore } from "../../store/gameStore";
 
 export const Header: React.FC = () => {
   const {

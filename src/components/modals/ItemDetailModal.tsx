@@ -1,8 +1,9 @@
+import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
+
 import { useGameStore, ITEMS, RECIPES, getRecipeForItem } from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
-import { Target } from "lucide-react";
 
 interface ItemDetailModalProps {
   item: Item;

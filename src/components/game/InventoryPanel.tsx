@@ -1,8 +1,9 @@
+import { ShoppingBag } from "lucide-react";
 import React, { useState } from "react";
+
 import { useGameStore, ITEMS, getRecipeForItem } from "../../store/gameStore";
 import { Item } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
-import { ShoppingBag } from "lucide-react";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 
 export const InventoryPanel: React.FC = () => {

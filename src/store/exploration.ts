@@ -1,5 +1,5 @@
-import { DungeonArea, Villager } from "../types/game";
 import { ITEMS } from "../data/masterData";
+import { DungeonArea, Villager } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processExploration(

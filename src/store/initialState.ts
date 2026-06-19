@@ -1,5 +1,3 @@
-import { Villager, Facility, FacilityType, DungeonArea } from "../types/game";
-import { DUNGEONS, ITEMS } from "../data/masterData";
 import {
   DEFAULT_GATHER_RESPAWN_HOURS,
   HARD_GATHER_RESPAWN_HOURS,
@@ -8,6 +6,8 @@ import {
   HARD_MONSTER_RESPAWN_HOURS,
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
+import { DUNGEONS, ITEMS } from "../data/masterData";
+import { Villager, Facility, FacilityType, DungeonArea } from "../types/game";
 
 export function getInitialVillagers(bodyLvl: number = 0): Villager[] {
   const statBonus = bodyLvl * 2;

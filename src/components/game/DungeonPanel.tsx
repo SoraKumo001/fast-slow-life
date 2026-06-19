@@ -1,7 +1,8 @@
+import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
+
 import { useGameStore, ITEMS } from "../../store/gameStore";
 import { DungeonArea } from "../../types/game";
-import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
 import { BossBattleModal } from "../modals/BossBattleModal";
 
 export const DungeonPanel: React.FC = () => {

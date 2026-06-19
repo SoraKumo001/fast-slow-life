@@ -1,11 +1,12 @@
+import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
+
 import {
   useGameStore,
   ITEMS,
   getCraftableItemsForFacility,
   getRecipeForItem,
 } from "../../store/gameStore";
-import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 
 export const FacilityList: React.FC = () => {
   const {

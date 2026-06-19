@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { DUNGEONS, ITEMS, RECIPES, useGameStore } from "./gameStore";
+
 import { FacilityType } from "../types/game";
+import { DUNGEONS, ITEMS, RECIPES, useGameStore } from "./gameStore";
 
 describe("gameStore", () => {
   beforeEach(() => {

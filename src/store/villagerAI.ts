@@ -1,13 +1,4 @@
 import {
-  Villager,
-  DungeonArea,
-  Facility,
-  FacilityType,
-  DungeonMonster,
-  ActiveBossState,
-} from "../types/game";
-import { ITEMS, JOBS } from "../data/masterData";
-import {
   STAMINA_COST_PER_HOUR,
   STARVATION_EFFICIENCY_PENALTY,
   ZERO_STAMINA_PENALTY,
@@ -28,6 +19,15 @@ import {
   HP_GROWTH_PER_LEVEL,
   EXP_NEEDED_PER_LEVEL,
 } from "../constants";
+import { ITEMS, JOBS } from "../data/masterData";
+import {
+  Villager,
+  DungeonArea,
+  Facility,
+  FacilityType,
+  DungeonMonster,
+  ActiveBossState,
+} from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processVillagerActivities(

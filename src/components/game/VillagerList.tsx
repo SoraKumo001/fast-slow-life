@@ -1,9 +1,10 @@
+import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import React, { useState } from "react";
+
 import { useGameStore, ITEMS, MONSTERS } from "../../store/gameStore";
 import { Villager } from "../../types/game";
-import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
-import { JobChangeModal } from "../modals/JobChangeModal";
 import { EquipmentModal } from "../modals/EquipmentModal";
+import { JobChangeModal } from "../modals/JobChangeModal";
 
 export const VillagerList: React.FC = () => {
   const { dungeons, villagers, setVillagerOrder } = useGameStore();
