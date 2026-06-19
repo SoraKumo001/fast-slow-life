@@ -873,6 +873,10 @@ export const JOBS: Record<
       vit: number;
     };
     adaptability: Record<string, number>; // カテゴリ別採取適性
+    requirements?: {
+      level: number;
+      jobs?: JobType[];
+    };
   }
 > = {
   無職: {
@@ -888,6 +892,7 @@ export const JOBS: Record<
     cost: 100,
     statsMultiplier: { str: 1.1, int: 0.9, agi: 1.1, dex: 1.0, vit: 1.0 },
     adaptability: { food: 2.0 },
+    requirements: { level: 1 },
   },
   鉱夫: {
     name: "鉱夫",
@@ -895,6 +900,7 @@ export const JOBS: Record<
     cost: 150,
     statsMultiplier: { str: 1.3, int: 0.7, agi: 0.8, dex: 1.0, vit: 1.2 },
     adaptability: { ore: 2.0, material: 1.5 }, // 石材も多め
+    requirements: { level: 1 },
   },
   薬師: {
     name: "薬師",
@@ -902,6 +908,7 @@ export const JOBS: Record<
     cost: 150,
     statsMultiplier: { str: 0.8, int: 1.2, agi: 1.0, dex: 1.3, vit: 0.8 },
     adaptability: { herb: 2.0, mana_stone: 1.2 },
+    requirements: { level: 1 },
   },
   猟師: {
     name: "猟師",
@@ -909,6 +916,7 @@ export const JOBS: Record<
     cost: 200,
     statsMultiplier: { str: 1.1, int: 0.9, agi: 1.2, dex: 1.2, vit: 0.9 },
     adaptability: { food: 1.5 }, // 討伐ドロップ率も後で考慮
+    requirements: { level: 1 },
   },
   戦士: {
     name: "戦士",
@@ -916,6 +924,7 @@ export const JOBS: Record<
     cost: 300,
     statsMultiplier: { str: 1.4, int: 0.5, agi: 1.1, dex: 1.0, vit: 1.3 },
     adaptability: {},
+    requirements: { level: 5, jobs: ["猟師"] },
   },
   魔術師: {
     name: "魔術師",
@@ -923,6 +932,7 @@ export const JOBS: Record<
     cost: 350,
     statsMultiplier: { str: 0.5, int: 1.5, agi: 1.0, dex: 1.1, vit: 0.7 },
     adaptability: { mana_stone: 2.0 },
+    requirements: { level: 5, jobs: ["薬師"] },
   },
   僧侶: {
     name: "僧侶",
@@ -930,6 +940,7 @@ export const JOBS: Record<
     cost: 350,
     statsMultiplier: { str: 0.8, int: 1.3, agi: 0.9, dex: 1.1, vit: 1.1 },
     adaptability: { herb: 1.3 },
+    requirements: { level: 5, jobs: ["薬師"] },
   },
   職人: {
     name: "職人",
@@ -937,6 +948,7 @@ export const JOBS: Record<
     cost: 300,
     statsMultiplier: { str: 1.0, int: 1.0, agi: 0.9, dex: 1.4, vit: 1.0 },
     adaptability: { ore: 1.2 },
+    requirements: { level: 5, jobs: ["鉱夫"] },
   },
 };
 
@@ -1531,6 +1543,25 @@ export const useGameStore = create<GameState & GameActions>()(
         if (!villager) return;
 
         const isFree = villager.jobHistory.includes(job);
+
+        // 転職要件チェック (すでに就いたことがある職業への再転職時はチェックを免除)
+        if (!isFree) {
+          const req = JOBS[job].requirements;
+          if (req) {
+            if (villager.level < req.level) {
+              state.addLog(`転職条件を達成していません (必要レベル: ${req.level})。`, "warning");
+              return;
+            }
+            if (req.jobs && req.jobs.length > 0) {
+              const hasPrevJob = req.jobs.some((reqJob) => villager.jobHistory.includes(reqJob));
+              if (!hasPrevJob) {
+                state.addLog(`転職条件を達成していません (前提職業: ${req.jobs.join(" または ")} の習得が必要)。`, "warning");
+                return;
+              }
+            }
+          }
+        }
+
         const discountLvl = state.soulUpgrades.discount || 0;
         const discountRate = 1 - discountLvl * 0.1;
         const cost = isFree ? 0 : Math.floor(JOBS[job].cost * discountRate);

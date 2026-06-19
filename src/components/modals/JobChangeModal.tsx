@@ -33,17 +33,31 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
           {(Object.keys(JOBS) as JobType[]).map((jobKey) => {
             const job = JOBS[jobKey];
             const isHistory = villager.jobHistory.includes(jobKey);
+            const isCurrent = villager.currentJob === jobKey;
+
+            const req = job.requirements;
+            const isLevelMet = isHistory || !req || villager.level >= req.level;
+            const isPrevJobMet =
+              isHistory ||
+              !req ||
+              !req.jobs ||
+              req.jobs.length === 0 ||
+              req.jobs.some((j) => villager.jobHistory.includes(j));
+            const isReqMet = isLevelMet && isPrevJobMet;
+
             const cost = isHistory ? 0 : Math.floor(job.cost * discountRate);
             const canAfford = gold >= cost;
-            const isCurrent = villager.currentJob === jobKey;
+            const canChange = isReqMet && canAfford && !isCurrent;
 
             return (
               <div
                 key={jobKey}
-                className={`border rounded-lg p-3 flex justify-between items-center ${
+                className={`border rounded-lg p-3 flex justify-between items-center transition duration-200 ${
                   isCurrent
                     ? "border-sky-500 bg-sky-950/20"
-                    : "border-slate-800 bg-slate-950/50 hover:bg-slate-950"
+                    : !isReqMet
+                      ? "border-slate-950 bg-slate-950/20 opacity-60"
+                      : "border-slate-800 bg-slate-950/50 hover:bg-slate-950"
                 }`}
               >
                 <div>
@@ -56,6 +70,20 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
                     )}
                   </div>
                   <p className="text-[11px] text-slate-400 mt-1">{job.description}</p>
+                  
+                  {/* 転職要件の表示 */}
+                  {!isCurrent && req && (
+                    <div className="mt-1.5 flex flex-wrap gap-x-2 gap-y-0.5 text-[10px] font-mono leading-none">
+                      <span className={isLevelMet ? "text-emerald-400/90" : "text-rose-400/90"}>
+                        必要Lv.{req.level} {isHistory || villager.level >= req.level ? "✓" : `(現在:Lv.${villager.level})`}
+                      </span>
+                      {req.jobs && req.jobs.length > 0 && (
+                        <span className={isPrevJobMet ? "text-emerald-400/90" : "text-rose-400/90"}>
+                          必要前職: {req.jobs.join("/")} {isPrevJobMet ? "✓" : "(未習得)"}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -66,10 +94,10 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
                   ) : (
                     <button
                       onClick={() => handleJobChange(jobKey)}
-                      disabled={!canAfford}
-                      className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-medium text-xs transition"
+                      disabled={!canChange}
+                      className="px-3 py-1.5 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-850 disabled:text-slate-500 text-white font-semibold text-xs transition min-w-[70px] text-center"
                     >
-                      {cost === 0 ? "無料" : `${cost} G`}
+                      {!isReqMet ? "条件未達" : cost === 0 ? "無料" : `${cost} G`}
                     </button>
                   )}
                 </div>
