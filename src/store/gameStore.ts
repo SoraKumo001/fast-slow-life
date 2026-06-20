@@ -2,21 +2,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import {
-  TIER_LIMIT_DAYS,
   STARTING_GOLD,
-  STARTING_FOOD,
-  HIRE_COST,
-  BASE_MAX_VILLAGERS,
-  MAX_VILLAGERS_ABSOLUTE,
-  VILLAGERS_PER_GUILD_LEVEL,
-  DISCOUNT_PER_SOUL_LEVEL,
-  HERITAGE_GOLD_PER_LEVEL,
-  STORAGE_FOOD_PER_LEVEL,
-  BODY_STAT_PER_LEVEL,
   BUILDING_COST_REDUCTION,
   MAX_LOG_COUNT,
-  MAX_POTIONS_PER_VILLAGER,
-  STAMINA_GROWTH_PER_LEVEL,
+  TIER_LIMIT_DAYS,
 } from "../constants";
 import {
   ITEMS,
@@ -25,7 +14,6 @@ import {
   DUNGEONS,
   SOUL_UPGRADES,
   JOBS,
-  VILLAGER_NAMES,
   getRecipeForItem,
   getRecipesForFacility,
   getCraftableItemsForFacility,
@@ -41,14 +29,18 @@ import {
 } from "../types/game";
 import { calculateCraftTime } from "./crafting";
 import { calculateAdvanceHour } from "./gameLoopHelper";
+import { resetGameHelper, calculateEarnedSp } from "./gameReset";
 import {
   getInitialVillagers,
   getInitialFacilities,
   getInitialDungeons,
-  createInitialInventory,
   DEFAULT_INVENTORY,
 } from "./initialState";
 import { partialize, merge } from "./persistence";
+import { dispatchIdleVillagersHelper } from "./villagerDispatch";
+import { hireVillagerHelper } from "./villagerHire";
+import { changeVillagerJobHelper } from "./villagerJob";
+import { setVillagerOrderHelper } from "./villagerOrder";
 
 declare global {
   var IS_TEST_ENVIRONMENT: boolean | undefined;
@@ -58,22 +50,6 @@ export const getMarketSellBonus = (level: number): number => {
   if (level <= 1) return 0.0;
   if (level === 2) return 0.1;
   return 0.2; // Lv3以上
-};
-
-/** ゲーム終了時の獲得SPを計算する共通ヘルパー */
-export const calculateEarnedSp = (
-  state: Pick<GameState, "gold" | "inventory" | "currentTier" | "bossDefeated" | "currentDay">,
-): number => {
-  const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
-    return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
-  }, 0);
-  const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
-  return (
-    Math.floor(state.gold / 1000) +
-    Math.floor(invValue / 100) +
-    bossCount * 50 +
-    state.currentDay * 2
-  );
 };
 
 export {
@@ -86,6 +62,7 @@ export {
   getRecipeForItem,
   getRecipesForFacility,
   getCraftableItemsForFacility,
+  calculateEarnedSp,
 };
 
 interface GameActions {
@@ -183,144 +160,24 @@ export const useGameStore = create<GameState & GameActions>()(
       dispatchIdleVillagers: () => {
         const state = get();
         const { villagers } = state;
-        // 派遣待ち（idle 状態かつ rest 以外の指示）の村人がいない場合は早期リターンして高速化
         const hasIdleVillagers = villagers.some((v) => v.status === "idle" && v.order !== "rest");
         if (!hasIdleVillagers) return;
 
-        const { inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
-        let anyDispatched = false;
-        const nextInventory = { ...inventory };
-
-        const updatedVillagers = villagers.map((v) => {
-          if (v.status === "idle" && v.order !== "rest") {
-            let targetAreaId: string | null = null;
-            let targetOrder: OrderType = "gather";
-            let resolvedAutoTargetName: string | null = null;
-
-            const missingItemIds = Object.keys(targetAmounts).filter((itemId) => {
-              const count = inventory[itemId] || 0;
-              const target = targetAmounts[itemId] || 0;
-              return count < target;
-            });
-
-            if (missingItemIds.length > 0) {
-              let preferredCategories: string[] = [];
-              const job = v.currentJob;
-              if (job === "農民") preferredCategories = ["food"];
-              else if (job === "木こり") preferredCategories = ["material"];
-              else if (job === "猟師") preferredCategories = ["food", "material"];
-              else if (job === "鉱夫") preferredCategories = ["ore", "material"];
-              else if (job === "薬師") preferredCategories = ["herb", "mana_stone"];
-              else if (job === "魔術師") preferredCategories = ["mana_stone"];
-              else if (job === "僧侶") preferredCategories = ["herb"];
-              else if (job === "職人") preferredCategories = ["ore", "material"];
-              else if (job === "戦士") preferredCategories = ["material"];
-
-              const sortedMissingItemIds = [...missingItemIds].sort((a, b) => {
-                const aCategory = ITEMS[a]?.category || "";
-                const bCategory = ITEMS[b]?.category || "";
-                const aPref = preferredCategories.includes(aCategory) ? 1 : 0;
-                const bPref = preferredCategories.includes(bCategory) ? 1 : 0;
-
-                if (aPref !== bPref) {
-                  return bPref - aPref;
-                }
-
-                const aCount = inventory[a] || 0;
-                const aTarget = targetAmounts[a] || 1;
-                const aRatio = aCount / aTarget;
-
-                const bCount = inventory[b] || 0;
-                const bTarget = targetAmounts[b] || 1;
-                const bRatio = bCount / bTarget;
-
-                return aRatio - bRatio;
-              });
-
-              for (const missingId of sortedMissingItemIds) {
-                const area = dungeons.find(
-                  (d) =>
-                    d.unlockedAtTier <= currentTier &&
-                    d.gathers.some(
-                      (g) =>
-                        g.itemId === missingId &&
-                        d.explorationProgress >= (g.unlockedAtProgress || 0) &&
-                        !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
-                    ),
-                );
-                if (area) {
-                  targetAreaId = area.id;
-                  targetOrder = "gather";
-                  resolvedAutoTargetName = ITEMS[missingId]?.name || null;
-                  break;
-                }
-
-                const dropArea = dungeons.find(
-                  (d) =>
-                    d.unlockedAtTier <= currentTier &&
-                    d.monsters.some(
-                      (m) =>
-                        d.explorationProgress >= (m.unlockedAtProgress || 0) &&
-                        (!m.isBoss || bossDefeated) &&
-                        !(m.respawnTimeLeft && m.respawnTimeLeft > 0) &&
-                        m.drops.some((dr) => dr.itemId === missingId),
-                    ),
-                );
-                if (dropArea) {
-                  targetAreaId = dropArea.id;
-                  targetOrder = "hunt";
-                  const targetMonster = dropArea.monsters.find(
-                    (m) =>
-                      dropArea.explorationProgress >= (m.unlockedAtProgress || 0) &&
-                      (!m.isBoss || bossDefeated) &&
-                      !(m.respawnTimeLeft && m.respawnTimeLeft > 0) &&
-                      m.drops.some((dr) => dr.itemId === missingId),
-                  );
-                  resolvedAutoTargetName = targetMonster ? targetMonster.name : null;
-                  break;
-                }
-              }
-            }
-
-            if (targetAreaId) {
-              anyDispatched = true;
-              const area = dungeons.find((d) => d.id === targetAreaId)!;
-
-              let assignedPotionCount = 0;
-              let assignedPotionId = "potion";
-              const potionPriority = ["high_potion", "mid_potion", "potion"];
-              for (const pId of potionPriority) {
-                const countInInv = nextInventory[pId] || 0;
-                if (countInInv > 0) {
-                  assignedPotionId = pId;
-                  assignedPotionCount = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv);
-                  nextInventory[pId] = countInInv - assignedPotionCount;
-                  break;
-                }
-              }
-
-              const potionName = ITEMS[assignedPotionId]?.name || "回復薬";
-              state.addLog(
-                `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${assignedPotionCount > 0 ? `、${potionName} x${assignedPotionCount}所持` : ""}）。`,
-                "info",
-              );
-              return {
-                ...v,
-                status: "traveling_to",
-                destinationAreaId: targetAreaId,
-                order: targetOrder,
-                autoTargetName: resolvedAutoTargetName,
-                travelTimeLeft: area.distance,
-                potionItemId: assignedPotionId,
-                potionCount: assignedPotionCount,
-              } as Villager;
-            }
-          }
-          return v;
+        const result = dispatchIdleVillagersHelper({
+          villagers: state.villagers,
+          inventory: state.inventory,
+          targetAmounts: state.targetAmounts,
+          dungeons: state.dungeons,
+          currentTier: state.currentTier,
+          bossDefeated: state.bossDefeated,
         });
 
-        if (anyDispatched) {
-          set({ villagers: updatedVillagers, inventory: nextInventory });
+        if (result.anyDispatched) {
+          result.logs.forEach((log) => state.addLog(log.message, log.type));
+          set({
+            villagers: result.villagers,
+            inventory: result.inventory,
+          });
         }
       },
 
@@ -437,187 +294,41 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       setVillagerOrder: (id, order, areaId, targetGatherItemId = null, targetMonsterId = null) => {
-        set((state) => {
-          const nextInventory = { ...state.inventory };
-          const updated = state.villagers.map((v) => {
-            if (v.id !== id) return v;
-
-            let status = v.status;
-            let travelTime = v.travelTimeLeft;
-            let dest = v.destinationAreaId;
-            let nextPotionCount = v.potionCount || 0;
-            let nextPotionItemId = v.potionItemId || "potion";
-
-            const sameArea = v.destinationAreaId === areaId;
-            const nextGatherTarget =
-              targetGatherItemId !== undefined
-                ? targetGatherItemId
-                : sameArea
-                  ? v.targetGatherItemId
-                  : null;
-            const nextMonsterTarget =
-              targetMonsterId !== undefined ? targetMonsterId : sameArea ? v.targetMonsterId : null;
-
-            if (order === "rest" || !areaId) {
-              if (nextPotionCount > 0) {
-                const returnId = nextPotionItemId;
-                nextInventory[returnId] = (nextInventory[returnId] || 0) + nextPotionCount;
-                const pName = ITEMS[returnId]?.name || "回復薬";
-                state.addLog(
-                  `【返却】${v.name} は${pName} ${nextPotionCount} 個を倉庫に戻しました。`,
-                  "info",
-                );
-                nextPotionCount = 0;
-              }
-            }
-
-            if (order === "rest") {
-              status = "resting";
-              dest = null;
-              travelTime = 0;
-            } else if (areaId) {
-              const area = DUNGEONS.find((d) => d.id === areaId);
-              if (v.destinationAreaId !== areaId || v.status === "idle" || v.status === "resting") {
-                status = "traveling_to";
-                travelTime = area ? area.distance : 1;
-
-                if (nextPotionCount > 0) {
-                  const returnId = nextPotionItemId;
-                  nextInventory[returnId] = (nextInventory[returnId] || 0) + nextPotionCount;
-                  nextPotionCount = 0;
-                }
-
-                // 強いポーションから優先してアサイン
-                let assignedCount = 0;
-                let assignedId = "potion";
-                const potionPriority = ["high_potion", "mid_potion", "potion"];
-                for (const pId of potionPriority) {
-                  const countInInv = nextInventory[pId] || 0;
-                  if (countInInv > 0) {
-                    assignedId = pId;
-                    assignedCount = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv);
-                    nextInventory[pId] = countInInv - assignedCount;
-                    break;
-                  }
-                }
-
-                if (assignedCount > 0) {
-                  nextPotionCount = assignedCount;
-                  nextPotionItemId = assignedId;
-                  const pName = ITEMS[assignedId]?.name || "回復薬";
-                  state.addLog(
-                    `【準備】${v.name} は${pName}を ${assignedCount} 個所持しました。`,
-                    "info",
-                  );
-                }
-              }
-              dest = areaId;
-            } else {
-              dest = null;
-              status = "idle";
-              travelTime = 0;
-            }
-
-            return {
-              ...v,
-              order,
-              status,
-              destinationAreaId: dest,
-              travelTimeLeft: travelTime,
-              targetGatherItemId: nextGatherTarget,
-              targetMonsterId: nextMonsterTarget,
-              autoTargetName: null,
-              potionItemId: nextPotionItemId,
-              potionCount: nextPotionCount,
-            };
-          });
-          return { villagers: updated, inventory: nextInventory };
+        const state = get();
+        const result = setVillagerOrderHelper({
+          villagerId: id,
+          order,
+          areaId,
+          targetGatherItemId,
+          targetMonsterId,
+          villagers: state.villagers,
+          inventory: state.inventory,
         });
-        const vName = get().villagers.find((v) => v.id === id)?.name;
-        const areaName = DUNGEONS.find((d) => d.id === areaId)?.name || "村";
-        const targetName = targetGatherItemId
-          ? ITEMS[targetGatherItemId]?.name
-          : targetMonsterId
-            ? MONSTERS[targetMonsterId]?.name
-            : null;
-        const targetStr = targetName ? `、個別指示: ${targetName}` : "";
-        get().addLog(
-          `${vName} の方針を【${order === "rest" ? "休息" : order === "gather" ? "採取" : "討伐"}】（場所: ${areaName}${targetStr}）に変更しました。`,
-          "info",
-        );
+
+        result.logs.forEach((log) => state.addLog(log.message, log.type));
+        set({
+          villagers: result.villagers,
+          inventory: result.inventory,
+        });
       },
 
       changeVillagerJob: (id, job) => {
         const state = get();
-        const villager = state.villagers.find((v) => v.id === id);
-        if (!villager) return;
-
-        const isFree = villager.jobHistory.includes(job);
-
-        if (!isFree) {
-          const req = JOBS[job].requirements;
-          if (req) {
-            if (villager.level < req.level) {
-              state.addLog(`転職条件を達成していません (必要レベル: ${req.level})。`, "warning");
-              return;
-            }
-            if (req.jobs && req.jobs.length > 0) {
-              const hasPrevJob = req.jobs.some((reqJob) => villager.jobHistory.includes(reqJob));
-              if (!hasPrevJob) {
-                state.addLog(
-                  `転職条件を達成していません (前提職業: ${req.jobs.join(" または ")} の習得が必要)。`,
-                  "warning",
-                );
-                return;
-              }
-            }
-          }
-        }
-
-        const discountLvl = state.soulUpgrades.discount || 0;
-        const discountRate = 1 - discountLvl * DISCOUNT_PER_SOUL_LEVEL;
-        const cost = isFree ? 0 : Math.floor(JOBS[job].cost * discountRate);
-
-        if (state.gold < cost) {
-          state.addLog("転職に必要なゴールドが不足しています。", "warning");
-          return;
-        }
-
-        set((state) => {
-          const updated = state.villagers.map((v) => {
-            if (v.id !== id) return v;
-            const history = v.jobHistory.includes(job) ? v.jobHistory : [...v.jobHistory, job];
-
-            const baseStr = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-            const baseInt = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-            const baseDex = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-            const baseAgi = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-            const baseVit = 10 + (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-
-            const mult = JOBS[job].statsMultiplier;
-            const lvlBonus = v.level - 1;
-
-            return {
-              ...v,
-              currentJob: job,
-              jobHistory: history,
-              str: Math.floor((baseStr + lvlBonus * 1.5) * mult.str),
-              int: Math.floor((baseInt + lvlBonus * 1.5) * mult.int),
-              dex: Math.floor((baseDex + lvlBonus * 1.5) * mult.dex),
-              agi: Math.floor((baseAgi + lvlBonus * 1.5) * mult.agi),
-              vit: Math.floor((baseVit + lvlBonus * 1.5) * mult.vit),
-              maxHp: Math.floor((100 + lvlBonus * 10) * mult.vit),
-              maxStamina: 100 + lvlBonus * STAMINA_GROWTH_PER_LEVEL,
-            };
-          });
-
-          return {
-            villagers: updated,
-            gold: state.gold - cost,
-          };
+        const result = changeVillagerJobHelper({
+          villagerId: id,
+          job,
+          villagers: state.villagers,
+          gold: state.gold,
+          soulUpgrades: state.soulUpgrades,
         });
 
-        state.addLog(`${villager.name} が ${job} に転職しました。`, "info");
+        result.logs.forEach((log) => state.addLog(log.message, log.type));
+        if (result.success) {
+          set({
+            villagers: result.villagers,
+            gold: result.gold,
+          });
+        }
       },
 
       equipItem: (villagerId, itemId, slot) => {
@@ -815,72 +526,21 @@ export const useGameStore = create<GameState & GameActions>()(
 
       hireVillager: () => {
         const state = get();
-        const guild = state.facilities.guild;
-        if (!guild || guild.level === 0) {
-          state.addLog("冒険者ギルドが建設されていないため雇用できません。", "warning");
-          return;
+        const result = hireVillagerHelper({
+          gold: state.gold,
+          villagers: state.villagers,
+          guildFacility: state.facilities.guild,
+          soulUpgrades: state.soulUpgrades,
+        });
+
+        result.logs.forEach((log) => state.addLog(log.message, log.type));
+        if (result.success) {
+          set({
+            gold: result.gold,
+            villagers: result.villagers,
+          });
+          get().dispatchIdleVillagers();
         }
-        const maxVillagers = BASE_MAX_VILLAGERS + guild.level * VILLAGERS_PER_GUILD_LEVEL;
-        const actualMax = Math.min(MAX_VILLAGERS_ABSOLUTE, maxVillagers);
-
-        if (state.gold < HIRE_COST) {
-          state.addLog(`雇用に必要なゴールド (${HIRE_COST}G) が不足しています。`, "warning");
-          return;
-        }
-        if (state.villagers.length >= actualMax) {
-          if (actualMax >= MAX_VILLAGERS_ABSOLUTE) {
-            state.addLog(
-              `これ以上村人を雇用できません（上限${MAX_VILLAGERS_ABSOLUTE}人）。`,
-              "warning",
-            );
-          } else {
-            state.addLog(
-              `ギルドレベル ${guild.level} の雇用上限に達しています（上限 ${actualMax} 人）。ギルドをアップグレードしてください。`,
-              "warning",
-            );
-          }
-          return;
-        }
-
-        const name = VILLAGER_NAMES[state.villagers.length % VILLAGER_NAMES.length] + " (新人)";
-        const statBonus = (state.soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-        const newVillager: Villager = {
-          id: "v_" + Math.random().toString(36).substring(2),
-          name,
-          level: 1,
-          exp: 0,
-          currentJob: "無職",
-          jobHistory: ["無職"],
-          maxHp: 100 + statBonus * 10,
-          currentHp: 100 + statBonus * 10,
-          stamina: 100,
-          maxStamina: 100,
-          str: 10 + statBonus,
-          int: 10 + statBonus,
-          dex: 10 + statBonus,
-          agi: 10 + statBonus,
-          vit: 10 + statBonus,
-          weaponId: "none",
-          armorId: "none",
-          order: "gather",
-          status: "idle",
-          destinationAreaId: null,
-          travelTimeLeft: 0,
-          assignedCraftJobId: null,
-          targetGatherItemId: null,
-          targetMonsterId: null,
-          autoTargetName: null,
-          potionItemId: "potion",
-          potionCount: 0,
-        };
-
-        set((state) => ({
-          gold: state.gold - HIRE_COST,
-          villagers: [...state.villagers, newVillager],
-        }));
-        get().dispatchIdleVillagers();
-
-        state.addLog(`新しい村人 ${name} を雇用しました。`, "info");
       },
 
       buySoulUpgrade: (upgradeId) => {
@@ -911,52 +571,37 @@ export const useGameStore = create<GameState & GameActions>()(
 
       resetGame: (prestige = false) => {
         const state = get();
-        let earnedSp = 0;
-
-        if (prestige) {
-          if (state.gameOver) {
-            // ゲームオーバーによる転生の場合、SPは advanceHour 時点で既に加算済みなので再計算しない
-            earnedSp = 0;
-          } else {
-            // 任意転生の場合は通常通り計算して加算
-            earnedSp = calculateEarnedSp(state);
-          }
-        }
-
-        const heritageLvl = state.soulUpgrades.heritage || 0;
-        const storageLvl = state.soulUpgrades.storage || 0;
-
-        const startGold = STARTING_GOLD + heritageLvl * HERITAGE_GOLD_PER_LEVEL;
-        const startFood = STARTING_FOOD + storageLvl * STORAGE_FOOD_PER_LEVEL;
-
-        const bodyLvl = state.soulUpgrades.body || 0;
+        const result = resetGameHelper({
+          prestige,
+          state: {
+            gameOver: state.gameOver,
+            gold: state.gold,
+            inventory: state.inventory,
+            currentTier: state.currentTier,
+            bossDefeated: state.bossDefeated,
+            currentDay: state.currentDay,
+            soulPoints: state.soulPoints,
+            soulUpgrades: state.soulUpgrades,
+          },
+        });
 
         set({
-          currentDay: 1,
-          currentHour: 0,
-          gold: startGold,
-          soulPoints: state.soulPoints + earnedSp,
-          villagers: getInitialVillagers(bodyLvl),
-          facilities: getInitialFacilities(),
-          dungeons: getInitialDungeons(),
-          inventory: createInitialInventory(startFood),
-          targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
-          logs: [
-            {
-              id: "prestige_init",
-              timestamp: "1日目 00:00",
-              message: prestige
-                ? `ソウルポイントを ${earnedSp} SP 獲得し、新たな周回を開始しました。`
-                : "ゲームを初期状態からリスタートしました。",
-              type: "system",
-            },
-          ],
-          currentTier: 1,
-          activeBoss: null,
-          bossDefeated: false,
-          gameLimitDays: TIER_LIMIT_DAYS[1],
-          gameOver: false,
-          isPaused: true,
+          currentDay: result.currentDay,
+          currentHour: result.currentHour,
+          gold: result.gold,
+          soulPoints: result.soulPoints,
+          villagers: result.villagers,
+          facilities: result.facilities,
+          dungeons: result.dungeons,
+          inventory: result.inventory,
+          targetAmounts: result.targetAmounts,
+          logs: result.logs,
+          currentTier: result.currentTier,
+          activeBoss: result.activeBoss,
+          bossDefeated: result.bossDefeated,
+          gameLimitDays: result.gameLimitDays,
+          gameOver: result.gameOver,
+          isPaused: result.isPaused,
         });
       },
 

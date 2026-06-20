@@ -49,22 +49,22 @@ export default function App() {
       {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
       <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
         {/* 1. 素材・アイテム */}
-        <div className="h-[500px] lg:h-full overflow-hidden">
+        <div className="h-125 lg:h-full overflow-hidden">
           <InventoryPanel />
         </div>
 
         {/* 2. 村人一覧 */}
-        <div className="h-[500px] lg:h-full overflow-hidden">
+        <div className="h-125 lg:h-full overflow-hidden">
           <VillagerList />
         </div>
 
         {/* 3. 施設・クラフト */}
-        <div className="h-[500px] lg:h-full overflow-hidden">
+        <div className="h-125 lg:h-full overflow-hidden">
           <FacilityList />
         </div>
 
         {/* 4. ダンジョン派遣 */}
-        <div className="h-[500px] lg:h-full overflow-hidden">
+        <div className="h-125 lg:h-full overflow-hidden">
           <DungeonPanel />
         </div>
       </main>
