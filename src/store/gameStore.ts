@@ -53,6 +53,12 @@ declare global {
   var IS_TEST_ENVIRONMENT: boolean | undefined;
 }
 
+export const getMarketSellBonus = (level: number): number => {
+  if (level <= 1) return 0.0;
+  if (level === 2) return 0.10;
+  return 0.20; // Lv3以上
+};
+
 export {
   ITEMS,
   RECIPES,
@@ -388,7 +394,8 @@ export const useGameStore = create<GameState & GameActions>()(
 
       sellItem: (itemId, count) => {
         const state = get();
-        if (state.facilities.market.level === 0) {
+        const marketLvl = state.facilities.market.level;
+        if (marketLvl === 0) {
           state.addLog("交易所が建設されていないため売却できません。", "warning");
           return;
         }
@@ -396,13 +403,18 @@ export const useGameStore = create<GameState & GameActions>()(
         const toSell = Math.min(currentCount, count);
         if (toSell <= 0) return;
 
-        const price = (ITEMS[itemId]?.sellPrice || 0) * toSell;
+        const bonusRate = getMarketSellBonus(marketLvl);
+        const basePrice = (ITEMS[itemId]?.sellPrice || 0) * toSell;
+        const price = Math.floor(basePrice * (1 + bonusRate));
+
         set((state) => ({
           inventory: { ...state.inventory, [itemId]: currentCount - toSell },
           gold: state.gold + price,
         }));
+
+        const bonusText = bonusRate > 0 ? ` (ボーナス +${Math.round(bonusRate * 100)}% 適用)` : "";
         state.addLog(
-          `${ITEMS[itemId].name} を ${toSell} 個売却し、${price} G 獲得しました。`,
+          `${ITEMS[itemId].name} を ${toSell} 個売却し、${price} G 獲得しました。${bonusText}`,
           "info",
         );
       },

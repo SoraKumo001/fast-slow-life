@@ -1,7 +1,7 @@
 import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
-import { useGameStore, ITEMS, RECIPES, getRecipeForItem } from "../../store/gameStore";
+import { useGameStore, ITEMS, RECIPES, getRecipeForItem, getMarketSellBonus } from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
 
@@ -15,6 +15,8 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
 
   const maxAmount = Math.floor(inventory[item.id] || 0);
   const [sellAmount, setSellAmount] = useState<number>(1);
+  const marketLevel = facilities.market.level;
+  const bonusRate = getMarketSellBonus(marketLevel);
 
   // maxAmount の変化に応じて sellAmount を自動調整する
   useEffect(() => {
@@ -134,7 +136,14 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
         <div className="space-y-2.5 text-xs border-t border-slate-800 pt-3.5">
           <div className="flex justify-between font-mono">
             <span className="text-slate-500">売却価格 (交易所):</span>
-            <span className="text-amber-400 font-bold">{item.sellPrice} G</span>
+            <div className="text-right">
+              <span className="text-amber-400 font-bold">{item.sellPrice} G</span>
+              {bonusRate > 0 && (
+                <span className="text-emerald-400 font-bold ml-1.5 text-[10px]">
+                  (+{Math.round(bonusRate * 100)}%ボーナス)
+                </span>
+              )}
+            </div>
           </div>
 
           {(() => {
@@ -238,7 +247,9 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
                 className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition flex items-center gap-1 cursor-pointer"
               >
                 <span>売却</span>
-                <span className="font-bold font-mono">({sellAmount * item.sellPrice} G)</span>
+                <span className="font-bold font-mono">
+                  ({Math.floor(sellAmount * item.sellPrice * (1 + bonusRate))} G)
+                </span>
               </button>
             </div>
           </div>
