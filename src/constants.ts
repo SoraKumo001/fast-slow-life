@@ -1,4 +1,4 @@
-export const TIER_LIMIT_DAYS = [0, 30, 70, 120, 180, 250];
+export const TIER_LIMIT_DAYS = [0, 60, 180, 320, 550, 850];
 
 export const HOURS_PER_DAY = 24;
 export const MAX_LOG_COUNT = 100;
@@ -9,7 +9,7 @@ export const BASE_STAMINA = 100;
 export const STAT_GROWTH_PER_LEVEL = 2;
 export const HP_GROWTH_PER_LEVEL = 15;
 export const STAMINA_GROWTH_PER_LEVEL = 10;
-export const EXP_NEEDED_PER_LEVEL = 50;
+export const EXP_NEEDED_PER_LEVEL = 25;
 export const STAMINA_COST_PER_HOUR = 5;
 
 export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
@@ -32,7 +32,7 @@ export const STAMINA_RECOVERY_PER_INN_LEVEL = 5;
 
 export const HUNT_MAX_TURNS = 10;
 export const BOSS_BATTLE_ROUNDS = 5;
-export const BOSS_REGEN_PERCENT = 0.01;
+export const BOSS_REGEN_PERCENT = 0.002;
 export const STARVATION_HP_LOSS_PERCENT = 0.004;
 export const STARVATION_EFFICIENCY_PENALTY = 0.5;
 export const ZERO_STAMINA_PENALTY = 0.3;

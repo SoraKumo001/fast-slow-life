@@ -24,7 +24,7 @@ interface SimulationResult {
 
 // 指定された回数分のシミュレーションを回すチャンク実行関数
 function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] {
-  const MAX_HOURS = 250 * 24; // 最大250日間 (6000時間)
+  const MAX_HOURS = 900 * 24; // 最大900日間 (21600時間)
   const results: SimulationResult[] = [];
 
   for (let idx = 0; idx < runs; idx++) {
