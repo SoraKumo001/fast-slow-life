@@ -152,6 +152,37 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
             </div>
           </div>
 
+          {/* 装備性能 */}
+          {item.equipment && (
+            <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1">
+              <span className="font-semibold text-slate-400 block mb-1">装備性能:</span>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-300 font-mono text-[11px]">
+                {Object.entries(item.equipment.bonuses).map(([stat, val]) => {
+                  if (val === undefined || val === 0) return null;
+                  const labelMap: Record<string, string> = {
+                    attack: "攻撃力 (ATK)",
+                    defense: "防御力 (DEF)",
+                    str: "STR (腕力)",
+                    int: "INT (魔力)",
+                    dex: "DEX (器用)",
+                    agi: "AGI (敏捷)",
+                    vit: "VIT (耐久)",
+                  };
+                  const label = labelMap[stat] || stat.toUpperCase();
+                  return (
+                    <div
+                      key={stat}
+                      className="flex justify-between border-b border-slate-900 pb-0.5"
+                    >
+                      <span className="text-slate-500">{label}:</span>
+                      <span className="text-emerald-400 font-bold">+{val}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {(() => {
             const recipe = getRecipeForItem(item.id) as CraftRecipe | undefined;
             if (!recipe) return null;

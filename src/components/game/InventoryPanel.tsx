@@ -3,7 +3,11 @@ import React, { useState } from "react";
 
 import { useGameStore, ITEMS, getRecipeForItem } from "../../store/gameStore";
 import { Item } from "../../types/game";
-import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
+import {
+  getCategoryBadgeColor,
+  getCategoryLabel,
+  getEquipmentBonusString,
+} from "../../utils/itemHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 
 export const InventoryPanel: React.FC = () => {
@@ -169,11 +173,18 @@ export const InventoryPanel: React.FC = () => {
                       {getCategoryLabel(item.category)}
                     </span>
                   </div>
-                  <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                    所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
+                  <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex flex-wrap gap-x-2 items-center">
+                    <span>
+                      所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
+                    </span>
                     {target > 0 && (
-                      <span className="ml-2 text-sky-400">
+                      <span className="text-sky-400 font-bold">
                         (目標: {target}) {currentCount >= target ? "✓" : "不足"}
+                      </span>
+                    )}
+                    {item.equipment && (
+                      <span className="text-emerald-400 font-sans font-bold">
+                        [{getEquipmentBonusString(item)}]
                       </span>
                     )}
                   </div>

@@ -1,6 +1,7 @@
 import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
 
+import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import {
   useGameStore,
   ITEMS,
@@ -138,7 +139,8 @@ export const FacilityList: React.FC = () => {
                         <span className="text-slate-500">休息機能利用可能</span>
                       ) : fac.id === "guild" ? (
                         <span className="text-slate-500">
-                          雇用上限: {3 + fac.level * 2}人 (現在: {villagers.length}人)
+                          雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
+                          {villagers.length}人)
                         </span>
                       ) : fac.craftQueue.length > 0 ? (
                         <>
@@ -280,7 +282,7 @@ export const FacilityList: React.FC = () => {
                         <div className="flex justify-between items-center text-[10px] font-mono">
                           <span className="text-slate-300 font-medium">
                             現在人数: <strong className="text-sky-400">{villagers.length}</strong> /{" "}
-                            {3 + fac.level * 2} 人{" "}
+                            {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)} 人{" "}
                             {!isUnlocked && <span className="text-slate-400">(建設後: 5人)</span>}
                           </span>
                           {isUnlocked && <span className="text-slate-400">雇用コスト: 100 G</span>}
@@ -300,13 +302,14 @@ export const FacilityList: React.FC = () => {
                           disabled={
                             !isUnlocked ||
                             gold < 100 ||
-                            villagers.length >= Math.min(10, 3 + fac.level * 2)
+                            villagers.length >= Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)
                           }
                           className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
                         >
                           {!isUnlocked
                             ? "冒険者ギルドを建設すると雇用できます"
-                            : villagers.length >= Math.min(10, 3 + fac.level * 2)
+                            : villagers.length >=
+                                Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)
                               ? "雇用上限に達しています"
                               : "新しい冒険者を雇用する (100G)"}
                         </button>
