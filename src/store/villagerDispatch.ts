@@ -125,6 +125,37 @@ export function dispatchIdleVillagersHelper(params: {
         }
       }
 
+      if (!targetAreaId) {
+        // 目標アイテムが不足していない場合の自動稼ぎ派遣
+        const maxUnlockedDungeon = [...dungeons]
+          .filter((d) => d.unlockedAtTier <= currentTier)
+          .sort((a, b) => b.unlockedAtTier - a.unlockedAtTier)[0];
+
+        if (maxUnlockedDungeon) {
+          targetAreaId = maxUnlockedDungeon.id;
+          const combatJobs = ["戦士", "魔術師", "猟師", "僧侶"];
+          targetOrder = combatJobs.includes(v.currentJob) ? "hunt" : "gather";
+
+          if (targetOrder === "gather") {
+            const availableGathers = maxUnlockedDungeon.gathers
+              .filter((g) => maxUnlockedDungeon.explorationProgress >= (g.unlockedAtProgress || 0))
+              .sort((a, b) => b.difficulty - a.difficulty);
+            resolvedAutoTargetName = availableGathers[0]
+              ? ITEMS[availableGathers[0].itemId]?.name || null
+              : null;
+          } else {
+            const availableMonsters = maxUnlockedDungeon.monsters
+              .filter(
+                (m) =>
+                  !m.isBoss &&
+                  maxUnlockedDungeon.explorationProgress >= (m.unlockedAtProgress || 0),
+              )
+              .sort((a, b) => b.level - a.level);
+            resolvedAutoTargetName = availableMonsters[0] ? availableMonsters[0].name : null;
+          }
+        }
+      }
+
       if (targetAreaId) {
         anyDispatched = true;
         const area = dungeons.find((d) => d.id === targetAreaId)!;

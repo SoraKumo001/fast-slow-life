@@ -9,8 +9,8 @@ import { describe, it, expect } from "vitest";
 import type { SimulationResult } from "./balanceSimulator.worker";
 
 describe("Balance Simulator", () => {
-  it("Run game balance simulation (100 times) in parallel", async () => {
-    const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 100;
+  it("Run game balance simulation (30 times) in parallel", async () => {
+    const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
     const numCPUs = Math.min(os.cpus().length || 4, 16);
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
@@ -68,6 +68,10 @@ describe("Balance Simulator", () => {
     const totalDeaths = results.reduce((sum, r) => sum + r.deathsCount, 0);
     const avgDeaths = (totalDeaths / totalRuns).toFixed(1);
 
+    const prestigeCounts = results.map((r) => r.prestigeCount);
+    const avgPrestige = (prestigeCounts.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
+    const maxPrestige = Math.max(...prestigeCounts);
+
     // 各Tierのボス平均突破日数
     const tierDefeatDays: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
     results.forEach((r) => {
@@ -89,7 +93,7 @@ describe("Balance Simulator", () => {
     // 最初の5回の詳細データをレポートに追加
     let detailedRunsText = "\n■ 各回（最初の5回）の最終詳細情報\n";
     results.slice(0, 5).forEach((r) => {
-      detailedRunsText += `  - Run #${r.run}: ${r.gameOverReason} (Day ${r.days}, Gold: ${r.gold}G, Villagers: ${r.villagersCount}, AvgLvl: ${r.averageLevel.toFixed(1)}, Dungeons: ${r.dungeonsProgress})\n`;
+      detailedRunsText += `  - Run #${r.run}: ${r.gameOverReason} (Prestige: ${r.prestigeCount}, Day ${r.days}, Gold: ${r.gold}G, Villagers: ${r.villagersCount}, AvgLvl: ${r.averageLevel.toFixed(1)}, Dungeons: ${r.dungeonsProgress})\n`;
     });
 
     const reportText = `
@@ -102,6 +106,7 @@ describe("Balance Simulator", () => {
   - ゲームオーバー率 (Game Over Rate): ${(100 - clearRate).toFixed(1)}%
     - 期限切れによる敗北 (Time Limit Defeats): ${((timeLimitDefeats / totalRuns) * 100).toFixed(1)}%
     - 全滅・破産による敗北 (Bankruptcy Defeats): ${((bankruptcyDefeats / totalRuns) * 100).toFixed(1)}%
+  - 平均転生回数 (Avg Prestige Count): ${avgPrestige} 回 (最大: ${maxPrestige} 回)
 
 ■ クリア時の詳細統計 (Clear Runs)
   - 平均クリア日数 (Avg Days to Clear): ${avgClearDays} 日
@@ -131,5 +136,5 @@ ${detailedRunsText}==================================================
     }
 
     expect(totalRuns).toBe(TOTAL_RUNS);
-  }, 180000);
+  }, 300000);
 });

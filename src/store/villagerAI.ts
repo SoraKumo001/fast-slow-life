@@ -431,7 +431,7 @@ export function processVillagerActivities(
 
         if (enemy && enemyIdx !== -1) {
           const monsterState = { ...area.monsters[enemyIdx] };
-          const progressSpeed = (v.agi * 0.8 + 10) / enemy.level;
+          const progressSpeed = Math.max(5.0, (v.agi * 0.8 + 10) / (enemy.level * 0.4 + 2));
           monsterState.currentProgress = Math.min(
             100,
             (monsterState.currentProgress || 0) + progressSpeed * efficiency,
