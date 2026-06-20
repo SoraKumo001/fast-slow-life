@@ -60,6 +60,22 @@ export const getMarketSellBonus = (level: number): number => {
   return 0.2; // Lv3以上
 };
 
+/** ゲーム終了時の獲得SPを計算する共通ヘルパー */
+export const calculateEarnedSp = (
+  state: Pick<GameState, "gold" | "inventory" | "currentTier" | "bossDefeated" | "currentDay">,
+): number => {
+  const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
+    return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
+  }, 0);
+  const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
+  return (
+    Math.floor(state.gold / 1000) +
+    Math.floor(invValue / 100) +
+    bossCount * 50 +
+    state.currentDay * 2
+  );
+};
+
 export {
   ITEMS,
   RECIPES,
@@ -898,15 +914,13 @@ export const useGameStore = create<GameState & GameActions>()(
         let earnedSp = 0;
 
         if (prestige) {
-          const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
-            return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
-          }, 0);
-          const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
-          earnedSp =
-            Math.floor(state.gold / 1000) +
-            Math.floor(invValue / 100) +
-            bossCount * 50 +
-            state.currentDay * 2;
+          if (state.gameOver) {
+            // ゲームオーバーによる転生の場合、SPは advanceHour 時点で既に加算済みなので再計算しない
+            earnedSp = 0;
+          } else {
+            // 任意転生の場合は通常通り計算して加算
+            earnedSp = calculateEarnedSp(state);
+          }
         }
 
         const heritageLvl = state.soulUpgrades.heritage || 0;
@@ -980,6 +994,20 @@ export const useGameStore = create<GameState & GameActions>()(
           gameLimitDays: result.gameLimitDays,
           gameOver: result.gameOver,
           isPaused: result.isPaused,
+          // ゲームオーバー時にその場でSPを加算する（ダイアログ表示時点で既に反映させる）
+          ...(result.gameOver && !state.gameOver
+            ? {
+                soulPoints:
+                  state.soulPoints +
+                  calculateEarnedSp({
+                    gold: state.gold,
+                    inventory: result.inventory,
+                    currentTier: result.currentTier,
+                    bossDefeated: result.bossDefeated,
+                    currentDay: result.currentDay,
+                  }),
+              }
+            : {}),
         });
 
         get().dispatchIdleVillagers();
