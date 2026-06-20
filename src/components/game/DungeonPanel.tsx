@@ -279,7 +279,7 @@ export const DungeonPanel: React.FC = () => {
                                     : `??? (${m.unlockedAtProgress}%で解放)`}
                                 </span>
                                 {isMonsUnlocked && m.drops.length > 0 && (
-                                  <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-[80px]">
+                                  <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-20">
                                     [
                                     {m.drops
                                       .map((d) => ITEMS[d.itemId]?.name || d.itemId)

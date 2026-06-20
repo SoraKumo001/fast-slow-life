@@ -3,7 +3,6 @@ import React, { useState } from "react";
 
 import { useGameStore, ITEMS, MONSTERS } from "../../store/gameStore";
 import { Villager } from "../../types/game";
-import { getEquipmentBonusString } from "../../utils/itemHelpers";
 import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";
 
@@ -267,38 +266,20 @@ export const VillagerList: React.FC = () => {
                           e.stopPropagation();
                           openEquipModal(v);
                         }}
-                        className="flex items-center justify-between px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition w-full"
+                        className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
                       >
-                        <span className="flex items-center justify-between w-full text-[10px]">
-                          <span className="flex items-center gap-1">
-                            <Sword className="w-3 h-3 text-amber-500" />
-                            {v.weaponId !== "none" ? ITEMS[v.weaponId].name : "武器なし"}
-                          </span>
-                          {v.weaponId !== "none" && (
-                            <span className="text-emerald-400 font-semibold font-mono ml-1 text-[9px]">
-                              [{getEquipmentBonusString(ITEMS[v.weaponId])}]
-                            </span>
-                          )}
-                        </span>
+                        <Sword className="w-3 h-3 text-amber-500" />
+                        {v.weaponId !== "none" ? ITEMS[v.weaponId].name : "武器なし"}
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           openEquipModal(v);
                         }}
-                        className="flex items-center justify-between px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition w-full"
+                        className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
                       >
-                        <span className="flex items-center justify-between w-full text-[10px]">
-                          <span className="flex items-center gap-1">
-                            <Shield className="w-3 h-3 text-sky-400" />
-                            {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
-                          </span>
-                          {v.armorId !== "none" && (
-                            <span className="text-emerald-400 font-semibold font-mono ml-1 text-[9px]">
-                              [{getEquipmentBonusString(ITEMS[v.armorId])}]
-                            </span>
-                          )}
-                        </span>
+                        <Shield className="w-3 h-3 text-sky-400" />
+                        {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
                       </button>
 
                       {/* 回復薬 */}

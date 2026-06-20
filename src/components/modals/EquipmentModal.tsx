@@ -10,18 +10,22 @@ interface EquipmentModalProps {
 }
 
 export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClose }) => {
-  const { inventory, equipItem, unequipItem } = useGameStore();
+  const { villagers, inventory, equipItem, unequipItem } = useGameStore();
+
+  // ストアから常に最新の村人データを取得（装備変更後にリアルタイムで反映される）
+  const currentVillager = villagers.find((v) => v.id === villager.id) ?? villager;
 
   const handleEquip = (itemId: string, slot: "weapon" | "armor") => {
-    equipItem(villager.id, itemId, slot);
+    equipItem(currentVillager.id, itemId, slot);
   };
 
   const handleUnequip = (slot: "weapon" | "armor") => {
-    unequipItem(villager.id, slot);
+    unequipItem(currentVillager.id, slot);
   };
 
-  const currentWeapon = villager.weaponId !== "none" ? ITEMS[villager.weaponId] : null;
-  const currentArmor = villager.armorId !== "none" ? ITEMS[villager.armorId] : null;
+  const currentWeapon =
+    currentVillager.weaponId !== "none" ? ITEMS[currentVillager.weaponId] : null;
+  const currentArmor = currentVillager.armorId !== "none" ? ITEMS[currentVillager.armorId] : null;
 
   const getBonusDiff = (item: Item, currentItem: Item | null) => {
     type BonusKey = "attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit";
@@ -68,7 +72,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
         className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 cursor-default"
       >
         <div>
-          <h3 className="text-lg font-bold text-slate-100">{villager.name} の装備変更</h3>
+          <h3 className="text-lg font-bold text-slate-100">{currentVillager.name} の装備変更</h3>
           <div className="text-xs text-slate-400 mt-1 leading-relaxed">
             現在装備:
             <div className="ml-2 mt-0.5 font-mono text-[11px]">
@@ -134,7 +138,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                     </div>
                   )}
                 </div>
-                {villager.weaponId !== "none" ? (
+                {currentVillager.weaponId !== "none" ? (
                   <button
                     onClick={() => handleUnequip("weapon")}
                     className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300"
@@ -150,18 +154,19 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
               {(Object.entries(ITEMS) as [string, Item][])
                 .filter(([_, item]) => item.category === "gear_weapon")
                 .filter(
-                  ([itemId, _]) => (inventory[itemId] || 0) > 0 || villager.weaponId === itemId,
+                  ([itemId, _]) =>
+                    (inventory[itemId] || 0) > 0 || currentVillager.weaponId === itemId,
                 )
                 .map(([itemId, item]) => {
                   const count = Math.floor(inventory[itemId] || 0);
-                  const isEquipped = villager.weaponId === itemId;
+                  const isEquipped = currentVillager.weaponId === itemId;
 
                   return (
                     <div
                       key={itemId}
-                      className="flex justify-between items-center bg-slate-950/50 p-2.5 border border-slate-800 rounded"
+                      className="flex justify-between items-start bg-slate-950/50 p-2.5 border border-slate-800 rounded"
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <p className="text-xs font-bold text-slate-200">{item.name}</p>
 
                         {/* ステータス変化 */}
@@ -186,17 +191,19 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
 
                         <p className="text-[10px] text-slate-500 font-mono">倉庫在庫: {count}個</p>
                       </div>
-                      {isEquipped ? (
-                        <span className="text-[10px] text-sky-400 font-bold">装備中</span>
-                      ) : (
-                        <button
-                          onClick={() => handleEquip(itemId, "weapon")}
-                          disabled={count <= 0}
-                          className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] text-white font-medium transition cursor-pointer"
-                        >
-                          装備
-                        </button>
-                      )}
+                      <div className="shrink-0 ml-2 self-start">
+                        {isEquipped ? (
+                          <span className="text-[10px] text-sky-400 font-bold">装備中</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip(itemId, "weapon")}
+                            disabled={count <= 0}
+                            className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] text-white font-medium transition cursor-pointer"
+                          >
+                            装備
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -236,7 +243,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                     </div>
                   )}
                 </div>
-                {villager.armorId !== "none" ? (
+                {currentVillager.armorId !== "none" ? (
                   <button
                     onClick={() => handleUnequip("armor")}
                     className="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300"
@@ -252,18 +259,19 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
               {(Object.entries(ITEMS) as [string, Item][])
                 .filter(([_, item]) => item.category === "gear_armor")
                 .filter(
-                  ([itemId, _]) => (inventory[itemId] || 0) > 0 || villager.armorId === itemId,
+                  ([itemId, _]) =>
+                    (inventory[itemId] || 0) > 0 || currentVillager.armorId === itemId,
                 )
                 .map(([itemId, item]) => {
                   const count = Math.floor(inventory[itemId] || 0);
-                  const isEquipped = villager.armorId === itemId;
+                  const isEquipped = currentVillager.armorId === itemId;
 
                   return (
                     <div
                       key={itemId}
-                      className="flex justify-between items-center bg-slate-950/50 p-2.5 border border-slate-800 rounded"
+                      className="flex justify-between items-start bg-slate-950/50 p-2.5 border border-slate-800 rounded"
                     >
-                      <div className="space-y-1">
+                      <div className="space-y-1 min-w-0 flex-1">
                         <p className="text-xs font-bold text-slate-200">{item.name}</p>
 
                         {/* ステータス変化 */}
@@ -288,17 +296,19 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
 
                         <p className="text-[10px] text-slate-500 font-mono">倉庫在庫: {count}個</p>
                       </div>
-                      {isEquipped ? (
-                        <span className="text-[10px] text-sky-400 font-bold">装備中</span>
-                      ) : (
-                        <button
-                          onClick={() => handleEquip(itemId, "armor")}
-                          disabled={count <= 0}
-                          className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] text-white font-medium transition cursor-pointer"
-                        >
-                          装備
-                        </button>
-                      )}
+                      <div className="shrink-0 ml-2 self-start">
+                        {isEquipped ? (
+                          <span className="text-[10px] text-sky-400 font-bold">装備中</span>
+                        ) : (
+                          <button
+                            onClick={() => handleEquip(itemId, "armor")}
+                            disabled={count <= 0}
+                            className="px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] text-white font-medium transition cursor-pointer"
+                          >
+                            装備
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
