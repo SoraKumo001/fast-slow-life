@@ -1,0 +1,83 @@
+import { DungeonArea } from "../types/game";
+import { MONSTERS } from "./monsters";
+
+export const DUNGEONS: DungeonArea[] = [
+  {
+    id: "forest",
+    name: "始まりの森",
+    distance: 1,
+    recommendedLevel: 1,
+    unlockedAtTier: 1,
+    gathers: [
+      { itemId: "food", difficulty: 1.0, unlockedAtProgress: 0 },
+      { itemId: "wood", difficulty: 1.0, unlockedAtProgress: 0 },
+      { itemId: "mushroom", difficulty: 1.2, unlockedAtProgress: 20 },
+      { itemId: "herb", difficulty: 1.5, unlockedAtProgress: 40 },
+    ],
+    monsters: [MONSTERS.goblin, MONSTERS.wild_boar, MONSTERS.goblin_leader],
+    explorationProgress: 0,
+    difficulty: 1.0,
+  },
+  {
+    id: "mine",
+    name: "廃鉱山",
+    distance: 2,
+    recommendedLevel: 5,
+    unlockedAtTier: 2,
+    gathers: [
+      { itemId: "stone", difficulty: 1.2, unlockedAtProgress: 0 },
+      { itemId: "copper_ore", difficulty: 1.3, unlockedAtProgress: 15 },
+      { itemId: "iron_ore", difficulty: 1.8, unlockedAtProgress: 40 },
+      { itemId: "silver_ore", difficulty: 2.0, unlockedAtProgress: 70 },
+    ],
+    monsters: [MONSTERS.bat, MONSTERS.spider, MONSTERS.slime, MONSTERS.golem],
+    explorationProgress: 0,
+    difficulty: 2.0,
+  },
+  {
+    id: "valley",
+    name: "魔獣の谷",
+    distance: 3,
+    recommendedLevel: 12,
+    unlockedAtTier: 3,
+    gathers: [
+      { itemId: "herb", difficulty: 2.0, unlockedAtProgress: 0 },
+      { itemId: "silver_ore", difficulty: 1.8, unlockedAtProgress: 0 },
+      { itemId: "crystal_fragment", difficulty: 2.0, unlockedAtProgress: 25 },
+      { itemId: "mana_stone", difficulty: 3.0, unlockedAtProgress: 50 },
+    ],
+    monsters: [MONSTERS.orc, MONSTERS.harpy, MONSTERS.werewolf, MONSTERS.chimera],
+    explorationProgress: 0,
+    difficulty: 3.5,
+  },
+  {
+    id: "world_tree",
+    name: "世界樹の根",
+    distance: 4,
+    recommendedLevel: 20,
+    unlockedAtTier: 4,
+    gathers: [
+      { itemId: "wood", difficulty: 2.0, unlockedAtProgress: 0 },
+      { itemId: "mushroom", difficulty: 1.8, unlockedAtProgress: 10 },
+      { itemId: "herb", difficulty: 2.5, unlockedAtProgress: 40 },
+      { itemId: "mana_stone", difficulty: 3.5, unlockedAtProgress: 70 },
+    ],
+    monsters: [MONSTERS.demon, MONSTERS.treant, MONSTERS.gargoyle, MONSTERS.archdemon],
+    explorationProgress: 0,
+    difficulty: 5.0,
+  },
+  {
+    id: "abyss",
+    name: "深淵の奈落",
+    distance: 5,
+    recommendedLevel: 35,
+    unlockedAtTier: 5,
+    gathers: [
+      { itemId: "mana_stone", difficulty: 4.0, unlockedAtProgress: 0 },
+      { itemId: "crystal_fragment", difficulty: 3.0, unlockedAtProgress: 20 },
+    ],
+    monsters: [MONSTERS.dragon_spawn, MONSTERS.shadow_knight, MONSTERS.ancient_dragon],
+    explorationProgress: 0,
+    difficulty: 8.0,
+  },
+];

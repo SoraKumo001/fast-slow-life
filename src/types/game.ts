@@ -32,11 +32,6 @@ export interface Item {
     slot: "weapon" | "armor";
     bonuses: Partial<Record<"attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit", number>>;
   };
-  // 互換用。新規データは CraftRecipe に定義する。
-  recipe?: {
-    requiredItems: { itemId: string; count: number }[];
-    requiredTime: number; // 時間単位
-  };
 }
 
 export interface CraftRecipe {

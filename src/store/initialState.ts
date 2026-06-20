@@ -218,7 +218,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTotalTime: 0,
       upgradeCost: {
         gold: 0,
-        materials: [{ itemId: "wood_plank", count: 12 }],
+        materials: [{ itemId: "wood", count: 20 }],
       },
       craftQueue: [],
     },

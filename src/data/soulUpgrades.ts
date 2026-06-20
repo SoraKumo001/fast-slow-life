@@ -1,0 +1,58 @@
+import { SoulUpgrade } from "../types/game";
+
+export const SOUL_UPGRADES: SoulUpgrade[] = [
+  {
+    id: "heritage",
+    name: "先祖の遺産",
+    description: "初期ゴールド +500",
+    level: 0,
+    maxLevel: 10,
+    costPerLevel: 10,
+    effectValue: 500,
+  },
+  {
+    id: "storage",
+    name: "豊かな備蓄",
+    description: "初期食料 +100",
+    level: 0,
+    maxLevel: 10,
+    costPerLevel: 5,
+    effectValue: 100,
+  },
+  {
+    id: "education",
+    name: "英才教育",
+    description: "村人の獲得経験値 +10%",
+    level: 0,
+    maxLevel: 5,
+    costPerLevel: 20,
+    effectValue: 0.1,
+  },
+  {
+    id: "body",
+    name: "頑強な肉体",
+    description: "全村人の初期ステータス +2",
+    level: 0,
+    maxLevel: 5,
+    costPerLevel: 15,
+    effectValue: 2,
+  },
+  {
+    id: "building",
+    name: "効率的な建築",
+    description: "施設アップグレードの素材必要量 -5%",
+    level: 0,
+    maxLevel: 5,
+    costPerLevel: 25,
+    effectValue: 0.05,
+  },
+  {
+    id: "discount",
+    name: "値切り上手",
+    description: "転職に必要なゴールド -10%",
+    level: 0,
+    maxLevel: 5,
+    costPerLevel: 15,
+    effectValue: 0.1,
+  },
+];

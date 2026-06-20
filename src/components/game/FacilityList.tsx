@@ -48,8 +48,11 @@ export const FacilityList: React.FC = () => {
 
       {/* 施設一覧 */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {Object.values(facilities).map((fac) => {
-          const isUnlocked = fac.level > 0;
+        {(["inn", "market", "workshop", "blacksmith", "alchemy", "guild"] as const)
+          .map((id) => facilities[id])
+          .filter(Boolean)
+          .map((fac) => {
+            const isUnlocked = fac.level > 0;
           const canUpgrade = fac.level < fac.maxLevel;
           const goldCost = Math.floor(fac.upgradeCost.gold * costReduction);
 
