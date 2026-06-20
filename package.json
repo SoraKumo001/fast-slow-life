@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "format": "oxfmt && oxlint --fix .",
+    "tailwind:upgrade": "npx @tailwindcss/upgrade --force",
     "test": "vitest",
     "test:run": "vitest run",
     "test:balance": "vitest run src/store/balanceSimulator.test.ts"
@@ -19,14 +20,14 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.0.0",
+    "@tailwindcss/vite": "^4.3.1",
     "@types/node": "26.0.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.3",
     "oxfmt": "0.55.0",
     "oxlint": "1.70.0",
-    "tailwindcss": "^4.0.0",
+    "tailwindcss": "^4.3.1",
     "tsx": "4.22.4",
     "typescript": "^5.6.3",
     "vite": "^5.4.10",

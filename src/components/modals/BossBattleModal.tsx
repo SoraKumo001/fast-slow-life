@@ -155,7 +155,7 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
           <button
             onClick={handleStartBossBattle}
             disabled={selectedAttackerIds.length === 0}
-            className="w-full py-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-900/20 disabled:shadow-none flex items-center justify-center gap-2 uppercase tracking-wider"
+            className="w-full py-4 bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-900/20 disabled:shadow-none flex items-center justify-center gap-2 uppercase tracking-wider"
           >
             <Sword className="w-5 h-5" />
             決戦を開始する ({selectedAttackerIds.length} / 4)

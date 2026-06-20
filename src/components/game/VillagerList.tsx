@@ -98,7 +98,7 @@ export const VillagerList: React.FC = () => {
                       {v.level * 100}
                     </span>
                   </span>
-                  <div className="mt-1 flex gap-0.5 items-center gap-2">
+                  <div className="mt-1 flex gap-0.5 items-center">
                     <div>
                       <span
                         className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${

@@ -60,7 +60,7 @@ export const DungeonPanel: React.FC = () => {
           </div>
           <div className="w-full bg-slate-950 rounded-full h-3 border border-red-900/30 overflow-hidden mb-3">
             <div
-              className="bg-gradient-to-r from-red-600 to-rose-500 h-full transition-all duration-500"
+              className="bg-linear-to-r from-red-600 to-rose-500 h-full transition-all duration-500"
               style={{ width: `${(activeBoss.currentHp / activeBoss.maxHp) * 100}%` }}
             />
           </div>

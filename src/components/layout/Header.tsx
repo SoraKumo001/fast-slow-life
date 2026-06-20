@@ -42,7 +42,7 @@ export const Header: React.FC = () => {
       {/* タイトルと時間 */}
       <div className="flex items-center gap-6">
         <div>
-          <h1 className="text-xl font-extrabold bg-gradient-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent tracking-wider">
+          <h1 className="text-xl font-extrabold bg-linear-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent tracking-wider">
             FAST SLOW LIFE
           </h1>
           <p className="text-xs text-slate-400 font-mono">Web Edition</p>
@@ -143,7 +143,7 @@ export const Header: React.FC = () => {
         {/* 転生 */}
         <button
           onClick={handlePrestige}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition duration-200 border border-purple-500/20"
+          className="flex items-center gap-2 bg-linear-to-r from-purple-700 to-indigo-700 hover:from-purple-600 hover:to-indigo-600 text-white font-medium text-xs px-3.5 py-2 rounded-lg transition duration-200 border border-purple-500/20"
         >
           <RefreshCw className="w-4 h-4" />
           転生

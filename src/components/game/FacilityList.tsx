@@ -147,7 +147,7 @@ export const FacilityList: React.FC = () => {
                         <span className="text-sky-400 font-bold">
                           加工中 ({fac.craftQueue.length}/3)
                         </span>
-                        <span className="text-slate-500 text-[10px] truncate max-w-[150px] sm:max-w-xs">
+                        <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
                           • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
                           {fac.craftQueue[0].timeLeft}h)
                         </span>

@@ -121,7 +121,7 @@ export const FooterLogTicker: React.FC = () => {
                     className="flex items-start gap-2 hover:bg-slate-950/40 py-0.5 rounded px-1"
                   >
                     <span className="text-slate-500 font-bold shrink-0">{log.timestamp}</span>
-                    <span className={`break-words ${getLogColorClass(log.type)}`}>
+                    <span className={`wrap-break-word ${getLogColorClass(log.type)}`}>
                       {log.message}
                     </span>
                   </div>

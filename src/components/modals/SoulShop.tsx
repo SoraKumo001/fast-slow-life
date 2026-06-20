@@ -80,7 +80,7 @@ export const SoulShop: React.FC = () => {
       <div className="pt-2 flex justify-center">
         <button
           onClick={handleStartNewGame}
-          className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs px-6 py-3 rounded-lg transition shadow-lg shadow-purple-950/50"
+          className="flex items-center gap-2 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs px-6 py-3 rounded-lg transition shadow-lg shadow-purple-950/50"
         >
           <RefreshCw className="w-4 h-4" />
           バフを適用して新しい周回を開始

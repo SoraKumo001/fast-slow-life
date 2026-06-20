@@ -255,7 +255,7 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
                   <span className="text-[9px] font-mono text-slate-500">分岐派生</span>
                   <div className="flex md:flex-col gap-8 md:gap-2">
                     <ArrowRight className="w-5 h-5 rotate-90 md:rotate-[-20deg]" />
-                    <ArrowRight className="w-5 h-5 rotate-90 md:rotate-[20deg]" />
+                    <ArrowRight className="w-5 h-5 rotate-90 md:rotate-20" />
                   </div>
                 </div>
 
