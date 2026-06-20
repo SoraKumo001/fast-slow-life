@@ -10,8 +10,8 @@ import type { SimulationResult } from "./balanceSimulator.worker";
 
 describe("Balance Simulator", () => {
   it("Run game balance simulation (100 times) in parallel", async () => {
-    const TOTAL_RUNS = 100;
-    const numCPUs = Math.min(os.cpus().length || 4, 8);
+    const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 100;
+    const numCPUs = Math.min(os.cpus().length || 4, 16);
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
 
@@ -121,10 +121,6 @@ ${detailedRunsText}==================================================
     console.log(reportText);
 
     try {
-      const artifactDir =
-        "C:\\Users\\oikawa\\.gemini\\antigravity-ide\\brain\\6f9999c6-7855-4599-9149-e3cdad4d46a6";
-      fs.writeFileSync(path.join(artifactDir, "simulation_report.txt"), reportText, "utf-8");
-
       const debugDir = path.join(process.cwd(), "debug");
       if (!fs.existsSync(debugDir)) {
         fs.mkdirSync(debugDir, { recursive: true });

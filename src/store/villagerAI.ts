@@ -109,6 +109,16 @@ export function processVillagerActivities(
           });
           v.potionCount = 0;
         }
+        if (v.staminaDrinkCount > 0) {
+          const returnId = v.staminaDrinkItemId || "stamina_drink";
+          nextInventory[returnId] = (nextInventory[returnId] || 0) + v.staminaDrinkCount;
+          const sdName = ITEMS[returnId]?.name || "スタミナポーション";
+          logs.push({
+            message: `${v.name} が未使用の${sdName} ${v.staminaDrinkCount} 個を倉庫に返却しました。`,
+            type: "info",
+          });
+          v.staminaDrinkCount = 0;
+        }
         if (v.order === "rest") {
           v.status = "resting";
           logs.push({
@@ -134,7 +144,26 @@ export function processVillagerActivities(
         continue;
       }
       const area = nextDungeons[areaIdx];
+
+      if (activeBoss && activeBoss.attackerIds.includes(v.id)) {
+        nextVillagers[i] = v;
+        continue;
+      }
+
       v.stamina = Math.max(0, v.stamina - STAMINA_COST_PER_HOUR);
+
+      // スタミナが30以下で、スタミナポーションを持っている場合に使用
+      if (v.stamina <= 30 && v.staminaDrinkCount > 0) {
+        v.staminaDrinkCount -= 1;
+        const sdId = v.staminaDrinkItemId || "stamina_drink";
+        const staminaHealAmt = ITEMS[sdId]?.staminaHealAmount || 50;
+        const maxStamina = v.maxStamina || 100;
+        v.stamina = Math.min(maxStamina, v.stamina + staminaHealAmt);
+        logs.push({
+          message: `${v.name} が${ITEMS[sdId]?.name || "スタミナポーション"}を使用し、スタミナを ${staminaHealAmt} 回復しました。（残り ${v.staminaDrinkCount} 個）`,
+          type: "info",
+        });
+      }
 
       const efficiency =
         (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
@@ -160,11 +189,6 @@ export function processVillagerActivities(
           message: `${v.name} は消耗が激しいため、村への帰還を開始しました（残り時間: ${area.distance}h）。`,
           type: "warning",
         });
-        nextVillagers[i] = v;
-        continue;
-      }
-
-      if (activeBoss && activeBoss.attackerIds.includes(v.id)) {
         nextVillagers[i] = v;
         continue;
       }
@@ -353,6 +377,7 @@ export function processVillagerActivities(
           targetedMonsterIdx !== -1 ? area.monsters[targetedMonsterIdx] : null;
         if (
           targetedMonster &&
+          !targetedMonster.isBoss &&
           progress >= (targetedMonster.unlockedAtProgress || 0) &&
           !(targetedMonster.respawnTimeLeft && targetedMonster.respawnTimeLeft > 0)
         ) {

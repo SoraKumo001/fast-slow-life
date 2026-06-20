@@ -39,6 +39,8 @@ export function setVillagerOrderHelper(params: {
     let dest = v.destinationAreaId;
     let nextPotionCount = v.potionCount || 0;
     let nextPotionItemId = v.potionItemId || "potion";
+    let nextStaminaDrinkCount = v.staminaDrinkCount || 0;
+    let nextStaminaDrinkItemId = v.staminaDrinkItemId || "stamina_drink";
 
     const sameArea = v.destinationAreaId === areaId;
     const nextGatherTarget =
@@ -61,6 +63,16 @@ export function setVillagerOrderHelper(params: {
         });
         nextPotionCount = 0;
       }
+      if (nextStaminaDrinkCount > 0) {
+        const returnId = nextStaminaDrinkItemId;
+        nextInventory[returnId] = (nextInventory[returnId] || 0) + nextStaminaDrinkCount;
+        const sdName = ITEMS[returnId]?.name || "スタミナポーション";
+        logs.push({
+          message: `【返却】${v.name} は${sdName} ${nextStaminaDrinkCount} 個を倉庫に戻しました。`,
+          type: "info",
+        });
+        nextStaminaDrinkCount = 0;
+      }
     }
 
     if (order === "rest") {
@@ -79,10 +91,16 @@ export function setVillagerOrderHelper(params: {
           nextPotionCount = 0;
         }
 
+        if (nextStaminaDrinkCount > 0) {
+          const returnId = nextStaminaDrinkItemId;
+          nextInventory[returnId] = (nextInventory[returnId] || 0) + nextStaminaDrinkCount;
+          nextStaminaDrinkCount = 0;
+        }
+
         // 強いポーションから優先してアサイン
         let assignedCount = 0;
         let assignedId = "potion";
-        const potionPriority = ["high_potion", "mid_potion", "potion"];
+        const potionPriority = ["elixir", "high_potion", "mid_potion", "potion"];
         for (const pId of potionPriority) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
@@ -99,6 +117,25 @@ export function setVillagerOrderHelper(params: {
           const pName = ITEMS[assignedId]?.name || "回復薬";
           logs.push({
             message: `【準備】${v.name} は${pName}を ${assignedCount} 個所持しました。`,
+            type: "info",
+          });
+        }
+
+        // スタミナポーションをアサイン
+        let assignedStaminaCount = 0;
+        const staminaDrinkId = "stamina_drink";
+        const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
+        if (staminaDrinkInInv > 0) {
+          assignedStaminaCount = Math.min(2, staminaDrinkInInv);
+          nextInventory[staminaDrinkId] = staminaDrinkInInv - assignedStaminaCount;
+        }
+
+        if (assignedStaminaCount > 0) {
+          nextStaminaDrinkCount = assignedStaminaCount;
+          nextStaminaDrinkItemId = staminaDrinkId;
+          const staminaName = ITEMS[staminaDrinkId]?.name || "スタミナポーション";
+          logs.push({
+            message: `【準備】${v.name} は${staminaName}を ${assignedStaminaCount} 個所持しました。`,
             type: "info",
           });
         }
@@ -121,6 +158,8 @@ export function setVillagerOrderHelper(params: {
       autoTargetName: null,
       potionItemId: nextPotionItemId,
       potionCount: nextPotionCount,
+      staminaDrinkItemId: nextStaminaDrinkItemId,
+      staminaDrinkCount: nextStaminaDrinkCount,
     };
   });
 

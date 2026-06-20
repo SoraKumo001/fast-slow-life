@@ -370,10 +370,6 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
     if (run === 1) {
       try {
-        const artifactDir =
-          "C:\\Users\\oikawa\\.gemini\\antigravity-ide\\brain\\6f9999c6-7855-4599-9149-e3cdad4d46a6";
-        fs.writeFileSync(path.join(artifactDir, "simulation_trace.txt"), traceLog, "utf-8");
-
         const debugDir = path.join(process.cwd(), "debug");
         if (!fs.existsSync(debugDir)) {
           fs.mkdirSync(debugDir, { recursive: true });

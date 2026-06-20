@@ -160,8 +160,24 @@ export const VillagerList: React.FC = () => {
 
                       {/* 回復薬 */}
                       {v.potionCount > 0 && (
-                        <div className="flex items-center gap-1 shrink-0 bg-indigo-950/40 border border-indigo-900/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-400 font-bold">
+                        <div
+                          title={ITEMS[v.potionItemId || "potion"]?.name || "回復薬"}
+                          className="flex items-center gap-1 shrink-0 bg-indigo-950/40 border border-indigo-900/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-400 font-bold"
+                        >
                           🧪 x{v.potionCount}
+                        </div>
+                      )}
+
+                      {/* スタミナポーション */}
+                      {v.staminaDrinkCount > 0 && (
+                        <div
+                          title={
+                            ITEMS[v.staminaDrinkItemId || "stamina_drink"]?.name ||
+                            "スタミナポーション"
+                          }
+                          className="flex items-center gap-1 shrink-0 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded text-[9px] text-amber-400 font-bold"
+                        >
+                          ⚡️ x{v.staminaDrinkCount}
                         </div>
                       )}
                     </div>
@@ -275,7 +291,21 @@ export const VillagerList: React.FC = () => {
                         <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">
                           <span className="flex items-center gap-1 text-[10px]">
                             <span className="text-[11px] leading-none shrink-0 font-sans">🧪</span>
-                            回復薬 x{v.potionCount}
+                            {ITEMS[v.potionItemId || "potion"]?.name || "回復薬"} x{v.potionCount}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* スタミナポーション */}
+                      {v.staminaDrinkCount > 0 && (
+                        <div className="flex items-center justify-between px-2 py-1 rounded bg-amber-950/20 border border-amber-900/40 text-[10px] text-amber-400">
+                          <span className="flex items-center gap-1 text-[10px]">
+                            <span className="text-[11.5px] leading-none shrink-0 font-sans">
+                              ⚡️
+                            </span>
+                            {ITEMS[v.staminaDrinkItemId || "stamina_drink"]?.name ||
+                              "スタミナポーション"}{" "}
+                            x{v.staminaDrinkCount}
                           </span>
                         </div>
                       )}

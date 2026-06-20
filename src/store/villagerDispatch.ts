@@ -131,7 +131,7 @@ export function dispatchIdleVillagersHelper(params: {
 
         let assignedPotionCount = 0;
         let assignedPotionId = "potion";
-        const potionPriority = ["high_potion", "mid_potion", "potion"];
+        const potionPriority = ["elixir", "high_potion", "mid_potion", "potion"];
         for (const pId of potionPriority) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
@@ -142,9 +142,27 @@ export function dispatchIdleVillagersHelper(params: {
           }
         }
 
+        let assignedStaminaCount = 0;
+        const staminaDrinkId = "stamina_drink";
+        const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
+        if (staminaDrinkInInv > 0) {
+          assignedStaminaCount = Math.min(2, staminaDrinkInInv);
+          nextInventory[staminaDrinkId] = staminaDrinkInInv - assignedStaminaCount;
+        }
+
         const potionName = ITEMS[assignedPotionId]?.name || "回復薬";
+        const staminaName = ITEMS[staminaDrinkId]?.name || "スタミナポーション";
+        let itemStatusText = "";
+        if (assignedPotionCount > 0 && assignedStaminaCount > 0) {
+          itemStatusText = `、${potionName} x${assignedPotionCount}・${staminaName} x${assignedStaminaCount}所持`;
+        } else if (assignedPotionCount > 0) {
+          itemStatusText = `、${potionName} x${assignedPotionCount}所持`;
+        } else if (assignedStaminaCount > 0) {
+          itemStatusText = `、${staminaName} x${assignedStaminaCount}所持`;
+        }
+
         logs.push({
-          message: `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${assignedPotionCount > 0 ? `、${potionName} x${assignedPotionCount}所持` : ""}）。`,
+          message: `【自動派遣】${v.name} を ${area.name} へ派遣しました（目的: ${targetOrder === "gather" ? `採取 [${resolvedAutoTargetName}]` : `討伐 [${resolvedAutoTargetName}]`}${itemStatusText}）。`,
           type: "info",
         });
 
@@ -157,6 +175,8 @@ export function dispatchIdleVillagersHelper(params: {
           travelTimeLeft: area.distance,
           potionItemId: assignedPotionId,
           potionCount: assignedPotionCount,
+          staminaDrinkItemId: staminaDrinkId,
+          staminaDrinkCount: assignedStaminaCount,
         } as Villager;
       }
     }

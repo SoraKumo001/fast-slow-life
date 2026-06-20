@@ -240,6 +240,10 @@ export const useGameStore = create<GameState & GameActions>()(
                 status: "idle" as VillagerStatus,
                 destinationAreaId: null,
                 travelTimeLeft: 0,
+                order: "gather" as OrderType,
+                targetMonsterId: null,
+                targetGatherItemId: null,
+                autoTargetName: null,
               };
             }
             return v;

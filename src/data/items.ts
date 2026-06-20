@@ -152,6 +152,8 @@ export const ITEMS: Record<string, Item> = {
     category: "consumable",
     sellPrice: 15,
     difficulty: 1.0,
+    staminaHealAmount: 50,
+    description: "活力を与える飲み物。スタミナを50回復する。",
   },
   elixir: {
     id: "elixir",
@@ -159,6 +161,8 @@ export const ITEMS: Record<string, Item> = {
     category: "consumable",
     sellPrice: 75,
     difficulty: 1.0,
+    healAmount: 999,
+    description: "すべての傷を癒す奇跡の霊薬。HPを完全に回復する。",
   },
   wooden_staff: {
     id: "wooden_staff",
