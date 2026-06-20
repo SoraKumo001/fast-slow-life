@@ -32,8 +32,8 @@ export const InventoryPanel: React.FC = () => {
   };
 
   const sortItems = (itemA: Item, itemB: Item) => {
-    const countA = inventory[itemA.id] || 0;
-    const countB = inventory[itemB.id] || 0;
+    const countA = Math.floor(inventory[itemA.id] || 0);
+    const countB = Math.floor(inventory[itemB.id] || 0);
 
     if (sortBy === "count-desc") {
       return countB - countA;
@@ -54,7 +54,10 @@ export const InventoryPanel: React.FC = () => {
   };
 
   // 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
-  const isItemAvailable = (item: Item) => {
+  const isItemAvailable = (item: Item, visited = new Set<string>()): boolean => {
+    if (visited.has(item.id)) return false;
+    visited.add(item.id);
+
     if ((inventory[item.id] || 0) > 0) return true;
 
     const isGatherable = dungeons.some((d) => {
@@ -79,7 +82,14 @@ export const InventoryPanel: React.FC = () => {
     const recipe = getRecipeForItem(item.id);
     if (recipe) {
       const facilityLevel = facilities[recipe.facilityId]?.level || 0;
-      return facilityLevel >= recipe.requiredFacilityLevel;
+      const isFacilityUnlocked = facilityLevel >= recipe.requiredFacilityLevel;
+      if (isFacilityUnlocked) {
+        return recipe.requiredItems.every((req) => {
+          const reqItem = ITEMS[req.itemId];
+          if (!reqItem) return false;
+          return isItemAvailable(reqItem, new Set(visited));
+        });
+      }
     }
 
     return false;
@@ -136,11 +146,11 @@ export const InventoryPanel: React.FC = () => {
       {/* 倉庫一覧リスト */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {Object.values(ITEMS)
-          .filter(isItemAvailable)
+          .filter((item) => isItemAvailable(item))
           .filter(filterItem)
           .sort(sortItems)
           .map((item) => {
-            const currentCount = inventory[item.id] || 0;
+            const currentCount = Math.floor(inventory[item.id] || 0);
             const target = targetAmounts[item.id] || 0;
 
             return (

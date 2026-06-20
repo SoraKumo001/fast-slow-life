@@ -56,10 +56,9 @@ export const FacilityList: React.FC = () => {
             const canUpgrade = fac.level < fac.maxLevel;
             const goldCost = Math.floor(fac.upgradeCost.gold * costReduction);
 
-            // 必要素材が足りているかチェック
             const hasUpgradeMaterials = fac.upgradeCost.materials.every((req) => {
               const reqCount = Math.floor(req.count * costReduction);
-              return (inventory[req.itemId] || 0) >= reqCount;
+              return Math.floor(inventory[req.itemId] || 0) >= reqCount;
             });
             const canAffordUpgrade =
               gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
@@ -163,7 +162,7 @@ export const FacilityList: React.FC = () => {
                         </span>
                         {fac.upgradeCost.materials.map((m) => {
                           const reqCount = Math.floor(m.count * costReduction);
-                          const current = inventory[m.itemId] || 0;
+                          const current = Math.floor(inventory[m.itemId] || 0);
                           return (
                             <span
                               key={m.itemId}
@@ -195,7 +194,7 @@ export const FacilityList: React.FC = () => {
                         </span>
                         {fac.upgradeCost.materials.map((m) => {
                           const reqCount = Math.floor(m.count * costReduction);
-                          const current = inventory[m.itemId] || 0;
+                          const current = Math.floor(inventory[m.itemId] || 0);
                           return (
                             <span
                               key={m.itemId}

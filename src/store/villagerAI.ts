@@ -17,6 +17,7 @@ import {
   STAT_GROWTH_PER_LEVEL,
   HP_GROWTH_PER_LEVEL,
   EXP_NEEDED_PER_LEVEL,
+  STAMINA_GROWTH_PER_LEVEL,
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import {
@@ -60,10 +61,11 @@ export function processVillagerActivities(
       const hpRecovery = BASE_HP_RECOVERY + innLvl * HP_RECOVERY_PER_INN_LEVEL;
       const staminaRecovery = BASE_STAMINA_RECOVERY + innLvl * STAMINA_RECOVERY_PER_INN_LEVEL;
 
+      const maxStamina = v.maxStamina || 100;
       v.currentHp = Math.min(v.maxHp, v.currentHp + hpRecovery);
-      v.stamina = Math.min(100, v.stamina + staminaRecovery);
+      v.stamina = Math.min(maxStamina, v.stamina + staminaRecovery);
 
-      if (v.currentHp === v.maxHp && v.stamina === 100) {
+      if (v.currentHp === v.maxHp && v.stamina === maxStamina) {
         v.status = "idle";
         v.order = "gather";
         logs.push({
@@ -320,6 +322,7 @@ export function processVillagerActivities(
                 v.agi += STAT_GROWTH_PER_LEVEL;
                 v.vit += STAT_GROWTH_PER_LEVEL;
                 v.maxHp += HP_GROWTH_PER_LEVEL;
+                v.maxStamina = (v.maxStamina || 100) + STAMINA_GROWTH_PER_LEVEL;
                 v.currentHp = v.maxHp;
                 logs.push({
                   message: `${v.name} が レベル ${v.level} に上がりました！`,
@@ -473,6 +476,7 @@ export function processVillagerActivities(
                 v.agi += STAT_GROWTH_PER_LEVEL;
                 v.vit += STAT_GROWTH_PER_LEVEL;
                 v.maxHp += HP_GROWTH_PER_LEVEL;
+                v.maxStamina = (v.maxStamina || 100) + STAMINA_GROWTH_PER_LEVEL;
                 v.currentHp = v.maxHp;
                 logs.push({
                   message: `${v.name} が レベル ${v.level} に上がりました！`,

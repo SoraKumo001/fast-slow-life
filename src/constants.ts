@@ -8,6 +8,7 @@ export const BASE_HP = 100;
 export const BASE_STAMINA = 100;
 export const STAT_GROWTH_PER_LEVEL = 2;
 export const HP_GROWTH_PER_LEVEL = 15;
+export const STAMINA_GROWTH_PER_LEVEL = 10;
 export const EXP_NEEDED_PER_LEVEL = 50;
 export const STAMINA_COST_PER_HOUR = 5;
 

@@ -150,10 +150,12 @@ export const VillagerList: React.FC = () => {
                         <div className="w-10 bg-slate-900 rounded-full h-1 overflow-hidden shrink-0">
                           <div
                             className="bg-amber-500 h-full rounded-full transition-all duration-300"
-                            style={{ width: `${v.stamina}%` }}
+                            style={{ width: `${(v.stamina / (v.maxStamina || 100)) * 100}%` }}
                           />
                         </div>
-                        <span className="text-slate-300 font-bold shrink-0">{v.stamina}/100</span>
+                        <span className="text-slate-300 font-bold shrink-0">
+                          {v.stamina}/{v.maxStamina || 100}
+                        </span>
                       </div>
 
                       {/* 回復薬 */}
@@ -195,12 +197,14 @@ export const VillagerList: React.FC = () => {
                       <span className="text-slate-400 flex items-center gap-1">
                         <Zap className="w-3.5 h-3.5 text-amber-500" /> スタミナ
                       </span>
-                      <span className="text-slate-200">{v.stamina} / 100</span>
+                      <span className="text-slate-200">
+                        {v.stamina} / {v.maxStamina || 100}
+                      </span>
                     </div>
                     <div className="w-full bg-slate-900 rounded-full h-1">
                       <div
                         className="bg-amber-500 h-1 rounded-full transition-all duration-300"
-                        style={{ width: `${v.stamina}%` }}
+                        style={{ width: `${(v.stamina / (v.maxStamina || 100)) * 100}%` }}
                       />
                     </div>
                   </div>

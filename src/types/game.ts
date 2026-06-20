@@ -1,6 +1,7 @@
 export type JobType =
   | "無職"
   | "農民"
+  | "木こり"
   | "鉱夫"
   | "薬師"
   | "猟師"
@@ -62,7 +63,8 @@ export interface Villager {
   jobHistory: JobType[];
   maxHp: number;
   currentHp: number;
-  stamina: number; // 0 - 100
+  stamina: number; // 0 - maxStamina
+  maxStamina: number;
   str: number;
   int: number;
   dex: number;

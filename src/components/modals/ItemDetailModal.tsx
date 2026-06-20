@@ -13,7 +13,7 @@ interface ItemDetailModalProps {
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose }) => {
   const { inventory, targetAmounts, facilities, setTargetAmount, sellItem } = useGameStore();
 
-  const maxAmount = inventory[item.id] || 0;
+  const maxAmount = Math.floor(inventory[item.id] || 0);
   const [sellAmount, setSellAmount] = useState<number>(1);
 
   // maxAmount の変化に応じて sellAmount を自動調整する
@@ -72,7 +72,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
           <div className="flex justify-between items-center text-xs">
             <span className="text-slate-400">現在の所持数:</span>
             <span className="text-slate-100 font-bold font-mono text-sm">
-              {inventory[item.id] || 0} 個
+              {Math.floor(inventory[item.id] || 0)} 個
             </span>
           </div>
           <div className="flex flex-col gap-2 border-t border-slate-900 pt-2.5">

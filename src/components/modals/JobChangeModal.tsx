@@ -163,8 +163,14 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 flex flex-col h-[90vh] md:h-auto max-h-[90vh]">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 flex flex-col h-[90vh] md:h-auto max-h-[90vh] cursor-default"
+      >
         {/* ヘッダー */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b border-slate-800 pb-4 mb-4">
           <div>
@@ -193,14 +199,17 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
 
           {/* 系列別の転職フロー */}
           <div className="space-y-4">
-            {/* 1. 農民系 */}
+            {/* 1. 農林系列 */}
             <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
               <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
                 <Star className="w-3.5 h-3.5 text-emerald-400" />
-                農業系列
+                農林系列
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                <div className="md:col-span-1">{renderJobCard("農民")}</div>
+                <div className="md:col-span-1 flex flex-col gap-3">
+                  {renderJobCard("農民")}
+                  {renderJobCard("木こり")}
+                </div>
                 <div className="hidden md:flex justify-center text-slate-700">
                   <ArrowRight className="w-6 h-6 animate-pulse" />
                 </div>

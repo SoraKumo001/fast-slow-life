@@ -22,8 +22,14 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 cursor-default"
+      >
         <div>
           <h3 className="text-lg font-bold text-slate-100">村人を {area.name} へ派遣</h3>
           <p className="text-xs text-slate-400 font-mono">

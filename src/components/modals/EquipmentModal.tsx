@@ -22,8 +22,14 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 cursor-default"
+      >
         <div>
           <h3 className="text-lg font-bold text-slate-100">{villager.name} の装備変更</h3>
           <p className="text-xs text-slate-400">
@@ -60,7 +66,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
               {(Object.entries(ITEMS) as [string, Item][])
                 .filter(([_, item]) => item.category === "gear_weapon")
                 .map(([itemId, item]) => {
-                  const count = inventory[itemId] || 0;
+                  const count = Math.floor(inventory[itemId] || 0);
                   const isEquipped = villager.weaponId === itemId;
 
                   return (
@@ -114,7 +120,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
               {(Object.entries(ITEMS) as [string, Item][])
                 .filter(([_, item]) => item.category === "gear_armor")
                 .map(([itemId, item]) => {
-                  const count = inventory[itemId] || 0;
+                  const count = Math.floor(inventory[itemId] || 0);
                   const isEquipped = villager.armorId === itemId;
 
                   return (

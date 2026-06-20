@@ -69,8 +69,14 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 space-y-6 shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 space-y-6 shadow-2xl cursor-default"
+      >
         <div className="text-center">
           <span className="text-amber-500 font-black tracking-widest text-xs uppercase mb-1 block">
             Boss Decisive Battle

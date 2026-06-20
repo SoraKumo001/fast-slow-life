@@ -56,7 +56,7 @@ export const SoulShop: React.FC = () => {
                   現在補正:{" "}
                   {u.id === "heritage" || u.id === "storage" || u.id === "body"
                     ? `+${currentLvl * u.effectValue}`
-                    : `-${currentLvl * u.effectValue * 100}%`}
+                    : `-${Math.round(currentLvl * u.effectValue * 100)}%`}
                 </span>
 
                 {isMax ? (

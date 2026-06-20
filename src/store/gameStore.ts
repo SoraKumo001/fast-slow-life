@@ -16,6 +16,7 @@ import {
   BUILDING_COST_REDUCTION,
   MAX_LOG_COUNT,
   MAX_POTIONS_PER_VILLAGER,
+  STAMINA_GROWTH_PER_LEVEL,
 } from "../constants";
 import {
   ITEMS,
@@ -183,6 +184,7 @@ export const useGameStore = create<GameState & GameActions>()(
               let preferredCategories: string[] = [];
               const job = v.currentJob;
               if (job === "農民") preferredCategories = ["food"];
+              else if (job === "木こり") preferredCategories = ["material"];
               else if (job === "猟師") preferredCategories = ["food", "material"];
               else if (job === "鉱夫") preferredCategories = ["ore", "material"];
               else if (job === "薬師") preferredCategories = ["herb", "mana_stone"];
@@ -576,6 +578,7 @@ export const useGameStore = create<GameState & GameActions>()(
               agi: Math.floor((baseAgi + lvlBonus * 1.5) * mult.agi),
               vit: Math.floor((baseVit + lvlBonus * 1.5) * mult.vit),
               maxHp: Math.floor((100 + lvlBonus * 10) * mult.vit),
+              maxStamina: 100 + lvlBonus * STAMINA_GROWTH_PER_LEVEL,
             };
           });
 
@@ -822,6 +825,7 @@ export const useGameStore = create<GameState & GameActions>()(
           maxHp: 100 + statBonus * 10,
           currentHp: 100 + statBonus * 10,
           stamina: 100,
+          maxStamina: 100,
           str: 10 + statBonus,
           int: 10 + statBonus,
           dex: 10 + statBonus,
@@ -925,7 +929,7 @@ export const useGameStore = create<GameState & GameActions>()(
           bossDefeated: false,
           gameLimitDays: TIER_LIMIT_DAYS[1],
           gameOver: false,
-          isPaused: !prestige,
+          isPaused: true,
         });
       },
 

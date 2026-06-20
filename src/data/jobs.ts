@@ -35,6 +35,14 @@ export const JOBS: Record<
     adaptability: { food: 2.0 },
     requirements: { level: 1 },
   },
+  木こり: {
+    name: "木こり",
+    description: "原木や石材など、各種素材の採取効率が高い。",
+    cost: 100,
+    statsMultiplier: { str: 1.2, int: 0.8, agi: 1.1, dex: 1.0, vit: 1.0 },
+    adaptability: { material: 2.0 },
+    requirements: { level: 1 },
+  },
   鉱夫: {
     name: "鉱夫",
     description: "鉱石・石材の採取効率が非常に高い。",
