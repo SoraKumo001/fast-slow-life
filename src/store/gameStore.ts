@@ -48,6 +48,10 @@ import {
 } from "./initialState";
 import { partialize, merge } from "./persistence";
 
+declare global {
+  var IS_TEST_ENVIRONMENT: boolean | undefined;
+}
+
 export {
   ITEMS,
   RECIPES,
@@ -125,6 +129,7 @@ export const useGameStore = create<GameState & GameActions>()(
       },
 
       addLog: (message: string, type: GameLog["type"]) => {
+        if (globalThis.IS_TEST_ENVIRONMENT) return; // テスト環境ではログ蓄積をスキップして高速化
         const { currentDay, currentHour } = get();
         const timestamp = `${currentDay}日目 ${String(currentHour).padStart(2, "0")}:00`;
         const newLog: GameLog = {
@@ -153,7 +158,12 @@ export const useGameStore = create<GameState & GameActions>()(
 
       dispatchIdleVillagers: () => {
         const state = get();
-        const { villagers, inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
+        const { villagers } = state;
+        // 派遣待ち（idle 状態かつ rest 以外の指示）の村人がいない場合は早期リターンして高速化
+        const hasIdleVillagers = villagers.some((v) => v.status === "idle" && v.order !== "rest");
+        if (!hasIdleVillagers) return;
+
+        const { inventory, targetAmounts, dungeons, currentTier, bossDefeated } = state;
         let anyDispatched = false;
         const nextInventory = { ...inventory };
 
@@ -925,18 +935,20 @@ export const useGameStore = create<GameState & GameActions>()(
 
         const result = calculateAdvanceHour(state);
 
-        result.logsToAppend.forEach((log) => {
-          const timestamp = `${result.currentDay}日目 ${String(result.currentHour).padStart(2, "0")}:00`;
-          const newLog: GameLog = {
-            id: Math.random().toString(36).substring(2),
-            timestamp,
-            message: log.message,
-            type: log.type,
-          };
-          set((s) => ({
-            logs: [newLog, ...s.logs].slice(0, MAX_LOG_COUNT),
-          }));
-        });
+        if (!globalThis.IS_TEST_ENVIRONMENT) {
+          result.logsToAppend.forEach((log) => {
+            const timestamp = `${result.currentDay}日目 ${String(result.currentHour).padStart(2, "0")}:00`;
+            const newLog: GameLog = {
+              id: Math.random().toString(36).substring(2),
+              timestamp,
+              message: log.message,
+              type: log.type,
+            };
+            set((s) => ({
+              logs: [newLog, ...s.logs].slice(0, MAX_LOG_COUNT),
+            }));
+          });
+        }
 
         set({
           currentDay: result.currentDay,

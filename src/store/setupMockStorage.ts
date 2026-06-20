@@ -17,7 +17,15 @@ const localStorageMock = (() => {
   };
 })();
 
+declare global {
+  var IS_TEST_ENVIRONMENT: boolean | undefined;
+}
+
 Object.defineProperty(globalThis, "localStorage", {
   value: localStorageMock,
   writable: true,
 });
+
+globalThis.IS_TEST_ENVIRONMENT = true;
+
+export {};

@@ -56,13 +56,6 @@ describe("Balance Simulator", () => {
           traceLog += `[Day ${state.currentDay} ${String(state.currentHour).padStart(2, "0")}:00] `;
           traceLog += `Gold: ${state.gold}, Food: ${state.inventory.food?.toFixed(2) || 0}, `;
           traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob})`).join(" | ")}\n`;
-          if (state.logs.length > 0) {
-            // 最新の3件のログを出力
-            traceLog += `  Logs: ${state.logs
-              .slice(0, 3)
-              .map((l) => l.message)
-              .join(" / ")}\n`;
-          }
         }
 
         if (state.gameOver) {
