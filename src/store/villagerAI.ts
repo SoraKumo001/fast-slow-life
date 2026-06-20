@@ -419,36 +419,113 @@ export function processVillagerActivities(
               type: "combat",
             });
 
-            const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
-            const armorDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
-
-            const vAtk = Math.floor(
-              (v.str * 1.5 + weaponAtk) *
-                (v.currentJob === "戦士" ? WARRIOR_DAMAGE_BONUS : 1.0) *
-                efficiency,
-            );
-            const vDef = Math.floor((v.vit + armorDef) * efficiency);
-
             let enemyHp = enemy.hp;
             let battleWon = false;
             let villagerDefeated = false;
 
             for (let turn = 1; turn <= HUNT_MAX_TURNS; turn++) {
-              const damageToEnemy = Math.max(MIN_DAMAGE, vAtk - enemy.def);
-              enemyHp -= damageToEnemy;
+              // 各ターン開始時：HP50%以下なら回復薬を使用
+              if (v.currentHp <= v.maxHp * 0.5 && v.potionCount > 0) {
+                v.potionCount -= 1;
+                const pId = v.potionItemId || "potion";
+                const healAmt = ITEMS[pId]?.healAmount || 50;
+                v.currentHp = Math.min(v.maxHp, v.currentHp + healAmt);
+                logs.push({
+                  message: `[Turn ${turn}] ${v.name} は戦闘中に${ITEMS[pId]?.name || "回復薬"}を使用し、HPを ${healAmt} 回復した。 (残り ${v.potionCount} 個)`,
+                  type: "combat",
+                });
+              }
+
+              // --- 1. 村人の攻撃フェーズ ---
+              // 命中判定
+              const hitRate = Math.max(50, Math.min(100, 85 + (v.dex - enemy.agi) * 1.5));
+              const isHit = Math.random() * 100 < hitRate;
+
+              if (!isHit) {
+                logs.push({
+                  message: `[Turn ${turn}] ${v.name} の攻撃！ しかし ${enemy.name} に回避された。`,
+                  type: "combat",
+                });
+              } else {
+                // クリティカル判定
+                const critRate = Math.min(30, v.dex * 0.1);
+                const isCritical = Math.random() * 100 < critRate;
+
+                // 物理/魔法の分岐
+                const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(v.currentJob);
+                let damage = 0;
+
+                if (isMagicUser) {
+                  // 魔法攻撃
+                  let defenderDef = enemy.mdef + enemy.int * 0.5;
+                  if (isCritical) {
+                    defenderDef = defenderDef * 0.5;
+                  }
+                  const weaponInt = ITEMS[v.weaponId]?.equipment?.bonuses.int || 0;
+                  const baseDamage = v.int * 1.8 + weaponInt - defenderDef;
+                  damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency));
+                } else {
+                  // 物理攻撃
+                  let defenderDef = enemy.def + enemy.vit * 0.5;
+                  if (isCritical) {
+                    defenderDef = defenderDef * 0.5;
+                  }
+                  const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
+                  const isWarrior = v.currentJob === "戦士";
+                  const jobBonus = isWarrior ? WARRIOR_DAMAGE_BONUS : 1.0;
+                  const baseDamage = v.str * 1.5 + weaponAtk - defenderDef;
+                  damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency * jobBonus));
+                }
+
+                if (isCritical) {
+                  damage = Math.floor(damage * 1.5);
+                }
+
+                enemyHp -= damage;
+                logs.push({
+                  message: `[Turn ${turn}] ${v.name} の攻撃！ ${enemy.name} に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
+                  type: "combat",
+                });
+              }
 
               if (enemyHp <= 0) {
                 battleWon = true;
                 break;
               }
 
-              const damageToVillager = Math.max(MIN_DAMAGE, enemy.atk - vDef);
-              v.currentHp = Math.max(0, v.currentHp - damageToVillager);
+              // --- 2. 魔物の反撃フェーズ ---
+              // 命中判定
+              const enemyHitRate = Math.max(50, Math.min(100, 85 + (enemy.dex - v.agi) * 1.5));
+              const isEnemyHit = Math.random() * 100 < enemyHitRate;
 
-              logs.push({
-                message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。`,
-                type: "combat",
-              });
+              if (!isEnemyHit) {
+                logs.push({
+                  message: `[Turn ${turn}] ${enemy.name} の反撃！ しかし ${v.name} は回避した。`,
+                  type: "combat",
+                });
+              } else {
+                // クリティカル判定
+                const enemyCritRate = Math.min(30, enemy.dex * 0.1);
+                const isEnemyCrit = Math.random() * 100 < enemyCritRate;
+
+                const armorDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
+                let defenderDef = v.vit + armorDef;
+                if (isEnemyCrit) {
+                  defenderDef = defenderDef * 0.5;
+                }
+
+                const baseDamage = enemy.atk - defenderDef;
+                let damageToVillager = Math.max(MIN_DAMAGE, Math.floor(baseDamage));
+                if (isEnemyCrit) {
+                  damageToVillager = Math.floor(damageToVillager * 1.5);
+                }
+
+                v.currentHp = Math.max(0, v.currentHp - damageToVillager);
+                logs.push({
+                  message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。${isEnemyCrit ? " (クリティカル！)" : ""}`,
+                  type: "combat",
+                });
+              }
 
               if (v.currentHp <= 0) {
                 villagerDefeated = true;

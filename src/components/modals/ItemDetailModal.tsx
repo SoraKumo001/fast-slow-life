@@ -1,7 +1,13 @@
 import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
-import { useGameStore, ITEMS, RECIPES, getRecipeForItem, getMarketSellBonus } from "../../store/gameStore";
+import {
+  useGameStore,
+  ITEMS,
+  RECIPES,
+  getRecipeForItem,
+  getMarketSellBonus,
+} from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
 

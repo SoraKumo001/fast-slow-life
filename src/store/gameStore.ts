@@ -39,6 +39,7 @@ import {
   OrderType,
   VillagerStatus,
 } from "../types/game";
+import { calculateCraftTime } from "./crafting";
 import { calculateAdvanceHour } from "./gameLoopHelper";
 import {
   getInitialVillagers,
@@ -55,8 +56,8 @@ declare global {
 
 export const getMarketSellBonus = (level: number): number => {
   if (level <= 1) return 0.0;
-  if (level === 2) return 0.10;
-  return 0.20; // Lv3以上
+  if (level === 2) return 0.1;
+  return 0.2; // Lv3以上
 };
 
 export {
@@ -699,10 +700,10 @@ export const useGameStore = create<GameState & GameActions>()(
 
         const jobId = Math.random().toString(36).substring(2);
         const baseTime = recipe.requiredTime;
-        const isCrafter = assignedId
-          ? state.villagers.find((v) => v.id === assignedId)?.currentJob === "職人"
-          : false;
-        const timeNeeded = isCrafter ? Math.max(1, Math.floor(baseTime * 0.8)) : baseTime;
+        const assignedVillager = assignedId
+          ? state.villagers.find((v) => v.id === assignedId)
+          : null;
+        const timeNeeded = calculateCraftTime(baseTime, assignedVillager);
 
         set((state) => {
           const inv = { ...state.inventory };

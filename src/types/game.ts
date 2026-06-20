@@ -117,6 +117,11 @@ export interface Monster {
   atk: number;
   def: number;
   mdef: number;
+  str: number;
+  int: number;
+  dex: number;
+  agi: number;
+  vit: number;
   expReward: number;
   drops: { itemId: string; chance: number }[]; // 0.0 - 1.0
   isBoss?: boolean;

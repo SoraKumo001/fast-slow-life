@@ -3,11 +3,20 @@ import {
   CRAFT_QUEUE_MAX_LENGTH,
   UPGRADE_COST_GOLD_MULTIPLIER,
   UPGRADE_COST_MATERIAL_INCREMENT,
-  CRAFTER_TIME_REDUCTION,
 } from "../constants";
-import { ITEMS, JOBS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
+import { ITEMS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
 import { Villager, Facility, FacilityType } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
+
+export function calculateCraftTime(
+  baseTime: number,
+  villager: Villager | null | undefined,
+): number {
+  if (!villager) return baseTime;
+  const dexFactor = 1 - (villager.dex - 10) * 0.005;
+  const jobFactor = villager.currentJob === "職人" ? 0.8 : 1.0;
+  return Math.max(1, Math.floor(baseTime * dexFactor * jobFactor));
+}
 
 export function processCraftingAndUpgrades(
   facilities: Record<FacilityType, Facility>,
@@ -47,8 +56,17 @@ export function processCraftingAndUpgrades(
       const updatedJob = { ...job };
       updatedJob.timeLeft -= 1;
       if (updatedJob.timeLeft <= 0) {
-        const successBonus =
-          BASE_GREAT_SUCCESS_RATE + JOBS["職人"].statsMultiplier.dex * BASE_GREAT_SUCCESS_RATE;
+        let successBonus = BASE_GREAT_SUCCESS_RATE;
+        if (updatedJob.assignedVillagerId) {
+          const v = nextVillagers.find((villager) => villager.id === updatedJob.assignedVillagerId);
+          if (v) {
+            if (v.currentJob === "職人") {
+              successBonus = 0.12;
+            } else {
+              successBonus = 0.05 + (v.dex - 10) * 0.005;
+            }
+          }
+        }
         const isGreatSuccess = Math.random() < successBonus;
         const recipe = getRecipeForItem(updatedJob.itemId);
         const craftCount = (recipe?.outputCount || 1) * (isGreatSuccess ? 2 : 1);
@@ -129,12 +147,10 @@ export function processAutoCraft(
 
               const jobId = Math.random().toString(36).substring(2);
               const baseTime = recipe.requiredTime;
-              const isCrafter = assignedId
-                ? nextVillagers.find((v) => v.id === assignedId)?.currentJob === "職人"
-                : false;
-              const timeNeeded = isCrafter
-                ? Math.max(1, Math.floor(baseTime * CRAFTER_TIME_REDUCTION))
-                : baseTime;
+              const assignedVillager = assignedId
+                ? nextVillagers.find((v) => v.id === assignedId)
+                : null;
+              const timeNeeded = calculateCraftTime(baseTime, assignedVillager);
 
               fac.craftQueue.push({
                 id: jobId,

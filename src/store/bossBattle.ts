@@ -45,35 +45,132 @@ export function processBossBattle(
 
       for (let t = 0; t < BOSS_BATTLE_ROUNDS; t++) {
         if (nextActiveBoss.currentHp <= 0) break;
-        attackers.forEach((v) => {
-          if (v.currentHp <= 0 || nextActiveBoss!.currentHp <= 0) return;
-          const weaponAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
-          const efficiency =
-            (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
-            (v.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
-          const vAtk = Math.floor(
-            (v.str * 1.5 + weaponAtk) *
-              (v.currentJob === "戦士" ? WARRIOR_DAMAGE_BONUS : 1.0) *
-              efficiency,
-          );
-          const damage = Math.max(MIN_DAMAGE, vAtk - monster.def);
-          nextActiveBoss!.currentHp -= damage;
-        });
 
-        if (nextActiveBoss.currentHp > 0) {
-          const target = attackers[Math.floor(Math.random() * attackers.length)];
-          if (target && target.currentHp > 0) {
-            const vIdx = nextVillagers.findIndex((v) => v.id === target.id);
-            if (vIdx !== -1) {
-              const villager = { ...nextVillagers[vIdx] };
+        // 各アタッカーの行動
+        for (let i = 0; i < nextVillagers.length; i++) {
+          const v = nextVillagers[i];
+          if (
+            !nextActiveBoss.attackerIds.includes(v.id) ||
+            v.status !== "active" ||
+            v.currentHp <= 0
+          )
+            continue;
+          if (nextActiveBoss.currentHp <= 0) break;
+
+          // 1. 各アタッカーの回復薬使用
+          if (v.currentHp <= v.maxHp * 0.5 && v.potionCount > 0) {
+            const updatedV = { ...v };
+            updatedV.potionCount -= 1;
+            const pId = updatedV.potionItemId || "potion";
+            const healAmt = ITEMS[pId]?.healAmount || 50;
+            updatedV.currentHp = Math.min(updatedV.maxHp, updatedV.currentHp + healAmt);
+            nextVillagers[i] = updatedV;
+
+            logs.push({
+              message: `[ボス戦] ${updatedV.name} は回復薬を使用し、HPを ${healAmt} 回復した。 (残り ${updatedV.potionCount} 個)`,
+              type: "info",
+            });
+          }
+
+          // 2. 攻撃処理
+          const currentV = nextVillagers[i];
+          const hitRate = Math.max(50, Math.min(100, 85 + (currentV.dex - monster.agi) * 1.5));
+          const isHit = Math.random() * 100 < hitRate;
+
+          if (!isHit) {
+            logs.push({
+              message: `[ボス戦] ${currentV.name} の攻撃！ しかし【${monster.name}】に回避された。`,
+              type: "combat",
+            });
+          } else {
+            const critRate = Math.min(30, currentV.dex * 0.1);
+            const isCritical = Math.random() * 100 < critRate;
+
+            const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(currentV.currentJob);
+            const efficiency =
+              (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
+              (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
+            let damage = 0;
+
+            if (isMagicUser) {
+              let defenderDef = monster.mdef + monster.int * 0.5;
+              if (isCritical) {
+                defenderDef = defenderDef * 0.5;
+              }
+              const weaponInt = ITEMS[currentV.weaponId]?.equipment?.bonuses.int || 0;
+              const baseDamage = currentV.int * 1.8 + weaponInt - defenderDef;
+              damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency));
+            } else {
+              let defenderDef = monster.def + monster.vit * 0.5;
+              if (isCritical) {
+                defenderDef = defenderDef * 0.5;
+              }
+              const weaponAtk = ITEMS[currentV.weaponId]?.equipment?.bonuses.attack || 0;
+              const isWarrior = currentV.currentJob === "戦士";
+              const jobBonus = isWarrior ? WARRIOR_DAMAGE_BONUS : 1.0;
+              const baseDamage = currentV.str * 1.5 + weaponAtk - defenderDef;
+              damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency * jobBonus));
+            }
+
+            if (isCritical) {
+              damage = Math.floor(damage * 1.5);
+            }
+
+            nextActiveBoss.currentHp = Math.max(0, nextActiveBoss.currentHp - damage);
+            logs.push({
+              message: `[ボス戦] ${currentV.name} の攻撃！【${monster.name}】に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
+              type: "combat",
+            });
+          }
+        }
+
+        // 3. ボスの反撃（アタッカーが生存していれば）
+        const activeAttackers = nextVillagers.filter(
+          (v) =>
+            nextActiveBoss?.attackerIds.includes(v.id) && v.status === "active" && v.currentHp > 0,
+        );
+
+        if (nextActiveBoss.currentHp > 0 && activeAttackers.length > 0) {
+          const target = activeAttackers[Math.floor(Math.random() * activeAttackers.length)];
+          const vIdx = nextVillagers.findIndex((v) => v.id === target.id);
+          if (vIdx !== -1) {
+            const villager = { ...nextVillagers[vIdx] };
+
+            // 命中判定
+            const enemyHitRate = Math.max(
+              50,
+              Math.min(100, 85 + (monster.dex - villager.agi) * 1.5),
+            );
+            const isEnemyHit = Math.random() * 100 < enemyHitRate;
+
+            if (!isEnemyHit) {
+              logs.push({
+                message: `[ボス戦]【${monster.name}】の攻撃！ しかし ${villager.name} は回避した。`,
+                type: "combat",
+              });
+            } else {
+              const enemyCritRate = Math.min(30, monster.dex * 0.1);
+              const isEnemyCrit = Math.random() * 100 < enemyCritRate;
+
               const armorDef = ITEMS[villager.armorId]?.equipment?.bonuses.defense || 0;
-              const efficiency =
-                (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
-                (villager.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
-              const vDef = Math.floor((villager.vit + armorDef) * efficiency);
-              const damage = Math.max(MIN_BOSS_DAMAGE, monster.atk - vDef);
-              villager.currentHp = Math.max(0, villager.currentHp - damage);
+              let defenderDef = villager.vit + armorDef;
+              if (isEnemyCrit) {
+                defenderDef = defenderDef * 0.5;
+              }
+
+              const baseDamage = monster.atk - defenderDef;
+              let damageToVillager = Math.max(MIN_BOSS_DAMAGE, Math.floor(baseDamage));
+              if (isEnemyCrit) {
+                damageToVillager = Math.floor(damageToVillager * 1.5);
+              }
+
+              villager.currentHp = Math.max(0, villager.currentHp - damageToVillager);
               nextVillagers[vIdx] = villager;
+
+              logs.push({
+                message: `[ボス戦]【${monster.name}】の攻撃！ ${villager.name} は ${damageToVillager} ダメージを受けた。${isEnemyCrit ? " (クリティカル！)" : ""}`,
+                type: "combat",
+              });
             }
           }
         }
