@@ -264,20 +264,30 @@ export const DungeonPanel: React.FC = () => {
                               ) : null}
 
                               {/* 前面コンテンツ */}
-                              <span
-                                className="z-10 truncate whitespace-nowrap text-[10px]"
-                                style={{ whiteSpace: "nowrap" }}
+                              <div
+                                className="z-10 flex items-center gap-1.5 min-w-0 flex-1 mr-1"
                                 title={
                                   isMonsUnlocked
-                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}\n入手アイテム: ${m.drops.map((d) => `${ITEMS[d.itemId]?.name || d.itemId} (${Math.round(d.chance * 100)}%)`).join(", ")}`
                                     : undefined
                                 }
                               >
-                                •{" "}
-                                {isMonsUnlocked
-                                  ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
-                                  : `??? (${m.unlockedAtProgress}%で解放)`}
-                              </span>
+                                <span className="truncate text-[10px]">
+                                  •{" "}
+                                  {isMonsUnlocked
+                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                    : `??? (${m.unlockedAtProgress}%で解放)`}
+                                </span>
+                                {isMonsUnlocked && m.drops.length > 0 && (
+                                  <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-[80px]">
+                                    [
+                                    {m.drops
+                                      .map((d) => ITEMS[d.itemId]?.name || d.itemId)
+                                      .join("/")}
+                                    ]
+                                  </span>
+                                )}
+                              </div>
                               {isMonsUnlocked && !m.isBoss && (
                                 <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
                                   {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
