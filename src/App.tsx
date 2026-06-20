@@ -1,4 +1,4 @@
-import { Sparkles, X, HelpCircle } from "lucide-react";
+import { HelpCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { DungeonPanel } from "./components/game/DungeonPanel";
@@ -12,7 +12,6 @@ import { useGameStore } from "./store/gameStore";
 
 export default function App() {
   const { isPaused, playSpeed, gameOver, advanceHour } = useGameStore();
-  const [showSoulShopModal, setShowSoulShopModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
   // ゲーム時間進行ループ
@@ -35,8 +34,7 @@ export default function App() {
       {/* ヘッダー (上部) */}
       <Header />
 
-      {/* サブバー（ヘルプと転生バフボタン） */}
-      <div className="bg-slate-900/40 border-b border-slate-900 px-6 py-2 flex items-center justify-between gap-4 text-xs text-slate-400 shrink-0 select-none">
+      <div className="bg-slate-900/40 border-b border-slate-900 px-6 py-2 flex items-center gap-4 text-xs text-slate-400 shrink-0 select-none">
         <div className="flex items-center gap-1.5">
           <span>村を発展させ、ボス討伐期限までにダンジョンを攻略しましょう。</span>
           <button
@@ -46,14 +44,6 @@ export default function App() {
             <HelpCircle className="w-3.5 h-3.5" /> 遊び方
           </button>
         </div>
-
-        <button
-          onClick={() => setShowSoulShopModal(true)}
-          className="flex items-center gap-1 text-purple-400 hover:text-purple-300 font-bold transition"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          現在の転生バフを確認
-        </button>
       </div>
 
       {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
@@ -99,20 +89,7 @@ export default function App() {
         </div>
       )}
 
-      {/* 手動表示の転生ショップモーダル */}
-      {showSoulShopModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-2xl w-full p-6 relative">
-            <button
-              onClick={() => setShowSoulShopModal(false)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <SoulShop />
-          </div>
-        </div>
-      )}
+      {/* 手動表示の転生ショップモーダルは Header.tsx に移管済み */}
 
       {/* 遊び方ヘルプモーダル */}
       {showHelpModal && (

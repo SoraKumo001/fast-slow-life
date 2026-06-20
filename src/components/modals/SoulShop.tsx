@@ -3,12 +3,13 @@ import React from "react";
 
 import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
 
-export const SoulShop: React.FC = () => {
+export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const { soulPoints, soulUpgrades, buySoulUpgrade, resetGame } = useGameStore();
 
   const handleStartNewGame = () => {
     if (window.confirm("バフを引き継いで新しい周回を開始しますか？")) {
       resetGame(true);
+      onClose?.();
     }
   };
 
