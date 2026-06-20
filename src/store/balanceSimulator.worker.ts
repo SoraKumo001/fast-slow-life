@@ -344,11 +344,11 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         } else if (currentTier === 4) {
           dungeonId = "world_tree";
           bossId = "archdemon";
-          recLvl = 32;
+          recLvl = 22;
         } else if (currentTier === 5) {
           dungeonId = "abyss";
           bossId = "ancient_dragon";
-          recLvl = 48;
+          recLvl = 30;
         }
 
         const dungeon = state.dungeons.find((d) => d.id === dungeonId);

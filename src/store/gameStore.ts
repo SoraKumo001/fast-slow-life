@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create, StateCreator } from "zustand";
 import { persist } from "zustand/middleware";
 
 import {
@@ -93,8 +93,18 @@ interface GameActions {
   withdrawFromBossBattle: () => void;
 }
 
+const maybePersist = <T extends object>(
+  config: StateCreator<T, [], []>,
+  options: unknown,
+): StateCreator<T, [], []> => {
+  if (globalThis.IS_TEST_ENVIRONMENT) {
+    return config;
+  }
+  return persist(config, options as never) as unknown as StateCreator<T, [], []>;
+};
+
 export const useGameStore = create<GameState & GameActions>()(
-  persist<GameState & GameActions, [], [], Partial<GameState & GameActions>>(
+  maybePersist<GameState & GameActions>(
     (set, get) => ({
       currentDay: 1,
       currentHour: 0,
@@ -667,5 +677,5 @@ export const useGameStore = create<GameState & GameActions>()(
       partialize,
       merge,
     },
-  ),
+  ) as unknown as StateCreator<GameState & GameActions, [], []>,
 );
