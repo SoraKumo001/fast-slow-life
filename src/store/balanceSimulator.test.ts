@@ -1,8 +1,8 @@
 import "./setupMockStorage";
-import * as fs from "fs";
+import * as fs from "node:fs";
 import os from "node:os";
+import * as path from "node:path";
 import { Worker } from "node:worker_threads";
-import * as path from "path";
 
 import { describe, it, expect } from "vitest";
 

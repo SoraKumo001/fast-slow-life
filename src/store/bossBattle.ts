@@ -79,7 +79,38 @@ export function processBossBattle(
         }
       }
 
-      if (nextActiveBoss.currentHp <= 0) {
+      // 戦闘不能（HP0）になったアタッカーを強制帰還させ、アタッカーリストから除外
+      nextVillagers = nextVillagers.map((v) => {
+        if (
+          nextActiveBoss?.attackerIds.includes(v.id) &&
+          v.status === "active" &&
+          v.currentHp <= 0
+        ) {
+          const area = _dungeons.find((d) => d.id === v.destinationAreaId);
+          const distance = area ? area.distance : 2;
+          logs.push({
+            message: `${v.name} がボス戦で戦闘不能になりました。村への帰還を開始します（残り時間: ${distance}h）。`,
+            type: "warning",
+          });
+          return {
+            ...v,
+            status: "traveling_back",
+            travelTimeLeft: distance,
+            order: "rest",
+            autoTargetName: null,
+          };
+        }
+        return v;
+      });
+
+      if (nextActiveBoss) {
+        nextActiveBoss.attackerIds = nextActiveBoss.attackerIds.filter((id) => {
+          const v = nextVillagers.find((villager) => villager.id === id);
+          return v && v.currentHp > 0;
+        });
+      }
+
+      if (nextActiveBoss && nextActiveBoss.currentHp <= 0) {
         logs.push({
           message: `エリアボス【${monster.name}】を撃破しました！`,
           type: "system",

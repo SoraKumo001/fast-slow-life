@@ -547,6 +547,92 @@ describe("gameLoopHelper", () => {
       // オークが選ばれて、autoTargetNameが「オーク」になること
       expect(result.villagers[0].autoTargetName).toBe("オーク");
     });
+
+    it("戦闘でHPが0になった村人が、ロストせず強制帰還状態になること", () => {
+      const villagers: Villager[] = [
+        {
+          id: "v1",
+          name: "アルフ",
+          level: 1,
+          exp: 0,
+          currentJob: "戦士",
+          jobHistory: ["戦士"],
+          maxHp: 100,
+          currentHp: 40,
+          stamina: 100,
+          str: 10,
+          int: 10,
+          dex: 10,
+          agi: 100,
+          vit: 1,
+          weaponId: "none",
+          armorId: "none",
+          order: "hunt",
+          status: "active",
+          destinationAreaId: "forest",
+          travelTimeLeft: 0,
+          assignedCraftJobId: null,
+          targetGatherItemId: null,
+          targetMonsterId: "strong_monster",
+          potionCount: 0,
+        },
+      ];
+
+      const dungeons: DungeonArea[] = [
+        {
+          id: "forest",
+          name: "始まりの森",
+          distance: 3,
+          recommendedLevel: 1,
+          unlockedAtTier: 1,
+          gathers: [],
+          monsters: [
+            {
+              id: "strong_monster",
+              name: "強敵",
+              level: 10,
+              hp: 1000,
+              maxHp: 1000,
+              atk: 100,
+              def: 100,
+              mdef: 100,
+              expReward: 100,
+              drops: [],
+              respawnTimeLeft: 0,
+              respawnTimeTotal: 4,
+              currentProgress: 99,
+            },
+          ],
+          explorationProgress: 100,
+          difficulty: 1.0,
+        },
+      ];
+
+      const result = processVillagerActivities(
+        villagers,
+        dungeons,
+        mockFacilities,
+        {},
+        {},
+        null,
+        false,
+        false,
+        {},
+        500,
+      );
+
+      // 村人が削除されていないこと
+      expect(result.villagers.length).toBe(1);
+      const alpha = result.villagers[0];
+      // 状態が強制帰還（traveling_back）になっていること
+      expect(alpha.status).toBe("traveling_back");
+      // 帰還時間がダンジョンの距離（3）になっていること
+      expect(alpha.travelTimeLeft).toBe(3);
+      // 次の行動方針が「休息（rest）」になっていること
+      expect(alpha.order).toBe("rest");
+      // HPが0以下（0）になっていること
+      expect(alpha.currentHp).toBe(0);
+    });
   });
 
   describe("processCraftingAndUpgrades", () => {

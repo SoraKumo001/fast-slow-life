@@ -1,7 +1,8 @@
+/// <reference types="node" />
 import "./setupMockStorage";
-import * as fs from "fs";
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
-import * as path from "path";
 
 import { FacilityType, JobType } from "../types/game";
 import { ITEMS, JOBS, useGameStore } from "./gameStore";
@@ -39,7 +40,11 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
     let bossDefeatDays: Record<number, number> = {};
     let deathsCount = 0;
     let totalHired = 0;
-    let lastVillagersCount = store.villagers.length;
+    let lastVillagersHp: Record<string, number> = {};
+    store.villagers.forEach((v) => {
+      lastVillagersHp[v.id] = v.currentHp;
+    });
+    let lastTier = store.currentTier;
     let traceLog = "";
 
     // 毎時間のアクションログやイベントを追跡
@@ -57,29 +62,30 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         break;
       }
 
-      // ボス撃破状況の記録
-      if (state.bossDefeated && !bossDefeatDays[state.currentTier]) {
-        bossDefeatDays[state.currentTier] = state.currentDay;
-        // ボスが倒されたら次のTierへ自動移行 (Tier 5が最終)
-        if (state.currentTier < 5) {
-          // ストアを次のTierに進める
-          const nextTier = state.currentTier + 1;
-          useGameStore.setState({
-            currentTier: nextTier,
-            bossDefeated: false,
-            gameLimitDays: [0, 30, 70, 120, 180, 250][nextTier],
-          });
-        } else {
-          // Tier 5 のボス (ancient_dragon) を倒した場合はゲームクリア
-          break;
+      // ボス撃破状況の記録 (Tier 1〜4)
+      if (state.currentTier > lastTier) {
+        bossDefeatDays[lastTier] = state.currentDay;
+        lastTier = state.currentTier;
+      }
+      // Tier 5 のボス撃破検知 (クリア時)
+      if (state.currentTier === 5 && state.bossDefeated) {
+        if (!bossDefeatDays[5]) {
+          bossDefeatDays[5] = state.currentDay;
         }
+        break;
       }
 
-      // 村人の死亡検知
-      if (state.villagers.length < lastVillagersCount) {
-        deathsCount += lastVillagersCount - state.villagers.length;
-      }
-      lastVillagersCount = state.villagers.length;
+      // 村人の戦闘不能検知
+      state.villagers.forEach((v) => {
+        const lastHp = lastVillagersHp[v.id];
+        if (lastHp !== undefined && lastHp > 0 && v.currentHp <= 0) {
+          deathsCount++;
+        }
+      });
+      lastVillagersHp = {};
+      state.villagers.forEach((v) => {
+        lastVillagersHp[v.id] = v.currentHp;
+      });
 
       // --- 自動プレイAIの意思決定ポリシー ---
       const currentTier = state.currentTier;
@@ -90,23 +96,28 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         newTargets.wood = 30;
         newTargets.wood_plank = 15; // 交易所やアップグレードに必要な中間素材
         newTargets.herb = 15;
+        newTargets.mushroom = 10;
         newTargets.potion = 5;
       }
       if (currentTier >= 2) {
         newTargets.stone = 25;
+        newTargets.copper_ore = 15;
         newTargets.iron_ore = 20;
+        newTargets.silver_ore = 20;
         newTargets.iron_ingot = 10;
         newTargets.iron_sword = 3;
         newTargets.iron_armor = 3;
       }
       if (currentTier >= 3) {
-        newTargets.silver_ore = 20;
         newTargets.silver_ingot = 10;
         newTargets.silver_rapier = 3;
         newTargets.silver_chainmail = 3;
+        newTargets.crystal_fragment = 10;
+        newTargets.feather = 5;
       }
       if (currentTier >= 4) {
         newTargets.mana_stone = 20;
+        newTargets.ancient_bark = 5;
         newTargets.elixir = 5;
         newTargets.mythril_robe = 2;
         newTargets.mythril_staff = 2;
@@ -114,23 +125,24 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
       if (currentTier >= 5) {
         newTargets.dragon_slayer = 3;
         newTargets.dragon_scale_mail = 3;
+        newTargets.dark_crystal = 5;
       }
 
-      // ボスが未撃破の間は、レベリングと探索のために主要採取アイテムの目標を極大にする
+      // ボスが未撃破の間は、レベリングと探索のために主要採取アイテムの目標を適度に大きくする
       if (!state.bossDefeated) {
         if (currentTier === 1) {
-          newTargets.food = 999;
-          newTargets.wood = 999;
-          newTargets.herb = 999;
+          newTargets.food = 120;
+          newTargets.wood = 100;
+          newTargets.herb = 100;
         } else if (currentTier === 2) {
-          newTargets.stone = 999;
-          newTargets.iron_ore = 999;
+          newTargets.stone = 100;
+          newTargets.iron_ore = 100;
+          newTargets.silver_ore = 100;
         } else if (currentTier === 3) {
-          newTargets.silver_ore = 999;
-          newTargets.mana_stone = 999;
-          newTargets.herb = 999;
+          newTargets.silver_ore = 100;
+          newTargets.crystal_fragment = 100;
         } else if (currentTier === 4) {
-          newTargets.mana_stone = 999;
+          newTargets.mana_stone = 100;
         }
       }
       useGameStore.setState({ targetAmounts: newTargets });
@@ -299,12 +311,14 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         !state.bossDefeated
       ) {
         const livingVillagers = state.villagers;
-        const avgLvl =
-          livingVillagers.reduce((sum, v) => sum + v.level, 0) / livingVillagers.length;
-
         const readyVillagers = livingVillagers.filter(
           (v) => v.currentHp >= v.maxHp * 0.7 && v.stamina >= 20,
         );
+
+        const avgLvl =
+          readyVillagers.length > 0
+            ? readyVillagers.reduce((sum, v) => sum + v.level, 0) / readyVillagers.length
+            : 0;
 
         if (avgLvl >= recLvl && readyVillagers.length >= Math.min(3, livingVillagers.length)) {
           const vIds = readyVillagers.map((v) => v.id);

@@ -39,7 +39,7 @@ export function processVillagerActivities(
   _bossDefeated: boolean,
   hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
-  gold: number,
+  _gold: number,
 ) {
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
@@ -497,22 +497,13 @@ export function processVillagerActivities(
               area.monsters[enemyIdx] = monsterState;
             } else if (villagerDefeated) {
               logs.push({
-                message: `${v.name} が戦闘不能（死亡）になりました…`,
-                type: "error",
+                message: `${v.name} が戦闘不能になりました。村への帰還を開始します（残り時間: ${area.distance}h）。`,
+                type: "warning",
               });
-              nextVillagers.splice(i, 1);
-              i--;
-
-              if (nextVillagers.length === 0 && gold < 100) {
-                logs.push({
-                  message: "すべての村人が死亡し、雇用するゴールドもありません。ゲームオーバー！",
-                  type: "error",
-                });
-                gameOver = true;
-                isPaused = true;
-                break;
-              }
-              continue;
+              v.status = "traveling_back";
+              v.travelTimeLeft = area.distance;
+              v.order = "rest";
+              v.autoTargetName = null;
             } else {
               logs.push({
                 message: `${HUNT_MAX_TURNS}ターン以内に ${enemy.name} を倒しきれず、引き分け（一時撤退）となりました。`,
