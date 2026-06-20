@@ -213,15 +213,33 @@ export const VillagerList: React.FC = () => {
                     <div className="space-y-1 text-[11px] font-mono text-slate-400">
                       <p>
                         STR (腕力): <span className="text-slate-200 font-bold">{v.str}</span>
+                        {(v.bonusStr || 0) > 0 && (
+                          <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusStr}</span>
+                        )}
                       </p>
                       <p>
                         INT (魔力): <span className="text-slate-200 font-bold">{v.int}</span>
+                        {(v.bonusInt || 0) > 0 && (
+                          <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusInt}</span>
+                        )}
                       </p>
                       <p>
                         DEX (器用): <span className="text-slate-200 font-bold">{v.dex}</span>
+                        {(v.bonusDex || 0) > 0 && (
+                          <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusDex}</span>
+                        )}
                       </p>
                       <p>
                         AGI (敏捷): <span className="text-slate-200 font-bold">{v.agi}</span>
+                        {(v.bonusAgi || 0) > 0 && (
+                          <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusAgi}</span>
+                        )}
+                      </p>
+                      <p>
+                        VIT (耐久): <span className="text-slate-200 font-bold">{v.vit}</span>
+                        {(v.bonusVit || 0) > 0 && (
+                          <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusVit}</span>
+                        )}
                       </p>
                     </div>
 

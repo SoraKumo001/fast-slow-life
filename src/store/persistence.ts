@@ -79,6 +79,13 @@ export const merge = <S extends GameState>(persistedState: unknown, currentState
     merged.villagers = persisted.villagers.map((v: Villager) => ({
       ...v,
       potionCount: v.potionCount !== undefined ? v.potionCount : 0,
+      bonusStr: v.bonusStr !== undefined ? v.bonusStr : 0,
+      bonusInt: v.bonusInt !== undefined ? v.bonusInt : 0,
+      bonusDex: v.bonusDex !== undefined ? v.bonusDex : 0,
+      bonusAgi: v.bonusAgi !== undefined ? v.bonusAgi : 0,
+      bonusVit: v.bonusVit !== undefined ? v.bonusVit : 0,
+      bonusMaxHp: v.bonusMaxHp !== undefined ? v.bonusMaxHp : 0,
+      bonusMaxStamina: v.bonusMaxStamina !== undefined ? v.bonusMaxStamina : 0,
     }));
   }
 

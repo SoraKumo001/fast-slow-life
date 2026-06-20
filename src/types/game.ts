@@ -82,6 +82,13 @@ export interface Villager {
   autoTargetName?: string | null; // 追加：自動意思決定で選択されているターゲット名
   potionItemId?: string; // 追加：所持している回復薬のアイテムID
   potionCount: number; // 追加：所持している回復薬の数
+  bonusStr: number; // 追加：累積されたSTRボーナス
+  bonusInt: number; // 追加：累積されたINTボーナス
+  bonusDex: number; // 追加：累積されたDEXボーナス
+  bonusAgi: number; // 追加：累積されたAGIボーナス
+  bonusVit: number; // 追加：累積されたVITボーナス
+  bonusMaxHp: number; // 追加：累積された最大HPボーナス
+  bonusMaxStamina: number; // 追加：累積された最大スタミナボーナス
 }
 
 export interface CraftJob {

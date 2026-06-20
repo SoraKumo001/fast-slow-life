@@ -98,20 +98,54 @@ export function changeVillagerJobHelper(params: {
     const baseAgi = 10 + (soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
     const baseVit = 10 + (soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
 
-    const mult = JOBS[job].statsMultiplier;
+    // 前職のレベルアップによるボーナスを計算して蓄積
     const lvlBonus = v.level - 1;
+    const currMult = JOBS[v.currentJob].statsMultiplier;
+
+    const addStr = Math.floor(lvlBonus * 1.5 * currMult.str);
+    const addInt = Math.floor(lvlBonus * 1.5 * currMult.int);
+    const addDex = Math.floor(lvlBonus * 1.5 * currMult.dex);
+    const addAgi = Math.floor(lvlBonus * 1.5 * currMult.agi);
+    const addVit = Math.floor(lvlBonus * 1.5 * currMult.vit);
+    const addMaxHp = Math.floor(lvlBonus * 10 * currMult.vit);
+    const addMaxStamina = lvlBonus * STAMINA_GROWTH_PER_LEVEL;
+
+    const newBonusStr = (v.bonusStr || 0) + addStr;
+    const newBonusInt = (v.bonusInt || 0) + addInt;
+    const newBonusDex = (v.bonusDex || 0) + addDex;
+    const newBonusAgi = (v.bonusAgi || 0) + addAgi;
+    const newBonusVit = (v.bonusVit || 0) + addVit;
+    const newBonusMaxHp = (v.bonusMaxHp || 0) + addMaxHp;
+    const newBonusMaxStamina = (v.bonusMaxStamina || 0) + addMaxStamina;
+
+    const mult = JOBS[job].statsMultiplier;
+
+    // 転職後の新最大HP・最大スタミナ
+    const newMaxHp = Math.floor(100 * mult.vit) + newBonusMaxHp;
+    const newMaxStamina = 100 + newBonusMaxStamina;
 
     return {
       ...v,
       currentJob: job,
       jobHistory: history,
-      str: Math.floor((baseStr + lvlBonus * 1.5) * mult.str),
-      int: Math.floor((baseInt + lvlBonus * 1.5) * mult.int),
-      dex: Math.floor((baseDex + lvlBonus * 1.5) * mult.dex),
-      agi: Math.floor((baseAgi + lvlBonus * 1.5) * mult.agi),
-      vit: Math.floor((baseVit + lvlBonus * 1.5) * mult.vit),
-      maxHp: Math.floor((100 + lvlBonus * 10) * mult.vit),
-      maxStamina: 100 + lvlBonus * STAMINA_GROWTH_PER_LEVEL,
+      level: 1, // レベル1に戻る
+      exp: 0, // 経験値リセット
+      bonusStr: newBonusStr,
+      bonusInt: newBonusInt,
+      bonusDex: newBonusDex,
+      bonusAgi: newBonusAgi,
+      bonusVit: newBonusVit,
+      bonusMaxHp: newBonusMaxHp,
+      bonusMaxStamina: newBonusMaxStamina,
+      str: Math.floor(baseStr * mult.str) + newBonusStr,
+      int: Math.floor(baseInt * mult.int) + newBonusInt,
+      dex: Math.floor(baseDex * mult.dex) + newBonusDex,
+      agi: Math.floor(baseAgi * mult.agi) + newBonusAgi,
+      vit: Math.floor(baseVit * mult.vit) + newBonusVit,
+      maxHp: newMaxHp,
+      currentHp: newMaxHp, // 転職時に全回復
+      maxStamina: newMaxStamina,
+      stamina: newMaxStamina, // 転職時に全回復
     };
   });
 
@@ -121,7 +155,7 @@ export function changeVillagerJobHelper(params: {
     gold: gold - cost,
     logs: [
       {
-        message: `${villager.name} が ${job} に転職しました。`,
+        message: `${villager.name} が ${job} に転職しました。レベルが 1 に戻り、職業レベルボーナスが累積されました！`,
         type: "info",
       },
     ],

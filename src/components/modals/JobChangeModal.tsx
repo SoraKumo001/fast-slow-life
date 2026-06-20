@@ -184,9 +184,14 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
               所持ゴールド: <strong className="text-amber-400">{gold} G</strong>
             </p>
           </div>
-          <div className="text-[10px] text-slate-500 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800/80 text-right sm:self-center">
-            ※習得済みの職業への転職コストは <span className="text-emerald-400 font-bold">0 G</span>{" "}
-            になります
+          <div className="text-[10px] text-slate-400 bg-slate-950 px-3 py-2 rounded-lg border border-slate-800/80 text-right sm:self-center space-y-1">
+            <div>
+              ※習得済みの職業への転職コストは{" "}
+              <span className="text-emerald-400 font-bold">0 G</span> になります。
+            </div>
+            <div className="text-amber-400 font-bold">
+              ★転職時、前職のレベルに応じたステータスボーナスが永続加算され、レベルは 1 に戻ります。
+            </div>
           </div>
         </div>
 

@@ -113,6 +113,13 @@ export function hireVillagerHelper(params: {
     autoTargetName: null,
     potionItemId: "potion",
     potionCount: 0,
+    bonusStr: 0,
+    bonusInt: 0,
+    bonusDex: 0,
+    bonusAgi: 0,
+    bonusVit: 0,
+    bonusMaxHp: 0,
+    bonusMaxStamina: 0,
   };
 
   return {
