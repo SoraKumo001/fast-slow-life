@@ -28,6 +28,103 @@ describe("gameLoopHelper", () => {
       expect(hasStarvation).toBe(true);
       expect(resultInv.wheat).toBe(0);
     });
+
+    it("有職の村人の所持金に応じて、個別に食べる食料が自動的に切り替わること", () => {
+      const inventory = {
+        food_dragon_hotpot: 10,
+        food_bread: 10,
+      };
+
+      const mockVillagerBase = {
+        level: 1,
+        exp: 0,
+        maxHp: 100,
+        currentHp: 100,
+        stamina: 100,
+        maxStamina: 100,
+        str: 10,
+        int: 10,
+        dex: 10,
+        agi: 10,
+        vit: 10,
+        weaponId: "none",
+        armorId: "none",
+        order: "gather" as const,
+        status: "active" as const,
+        destinationAreaId: "forest",
+        travelTimeLeft: 0,
+        assignedCraftJobId: null,
+        targetGatherItemId: null,
+        targetMonsterId: null,
+        potionCount: 0,
+        staminaDrinkCount: 0,
+        bonusStr: 0,
+        bonusInt: 0,
+        bonusDex: 0,
+        bonusAgi: 0,
+        bonusVit: 0,
+        bonusMaxHp: 0,
+        bonusMaxStamina: 0,
+        pool: {},
+      };
+
+      const villagers: Villager[] = [
+        {
+          ...mockVillagerBase,
+          id: "rich_villager",
+          name: "金持ち村人",
+          currentJob: "戦士",
+          jobHistory: ["戦士"],
+          gold: 500, // 200G以上かつ竜鱗の贅沢鍋(120G)を買える
+          activeFoodBuffId: null,
+        },
+        {
+          ...mockVillagerBase,
+          id: "poor_villager",
+          name: "貧乏村人",
+          currentJob: "農民",
+          jobHistory: ["農民"],
+          gold: 50, // 200G未満、竜鱗の贅沢鍋(120G)は買えないがパン(4G)は買える
+          activeFoodBuffId: null,
+        },
+        {
+          ...mockVillagerBase,
+          id: "unemployed_villager",
+          name: "無職村人",
+          currentJob: "無職",
+          jobHistory: ["無職"],
+          gold: 0, // 無職なので所持金0Gでも高級食料(120G)を食べられる
+          activeFoodBuffId: null,
+        },
+      ];
+
+      const {
+        inventory: resultInv,
+        villagers: resultVillagers,
+        hasStarvation,
+      } = processStarvation(inventory, villagers);
+
+      expect(hasStarvation).toBe(false);
+
+      const rich = (resultVillagers as Villager[]).find((v) => v.id === "rich_villager")!;
+      const poor = (resultVillagers as Villager[]).find((v) => v.id === "poor_villager")!;
+      const unemployed = (resultVillagers as Villager[]).find(
+        (v) => v.id === "unemployed_villager",
+      )!;
+
+      // 金持ち村人と無職村人は竜鱗の贅沢鍋を消費する
+      expect(rich.activeFoodBuffId).toBe("food_dragon_hotpot");
+      expect(unemployed.activeFoodBuffId).toBe("food_dragon_hotpot");
+      // 貧乏村人は竜鱗の贅沢鍋を避け、パンを消費する
+      expect(poor.activeFoodBuffId).toBe("food_bread");
+
+      // 在庫の消費量を確認 (FOOD_CONSUMPTION_PER_VILLAGER = 1/24)
+      const expectedHotpotCost = (1.0 / 24.0) * 2; // rich & unemployed
+      const expectedBreadCost = 1.0 / 24.0; // poor
+
+      expect(resultInv.food_dragon_hotpot).toBeCloseTo(10 - expectedHotpotCost, 5);
+      expect(resultInv.food_bread).toBeCloseTo(10 - expectedBreadCost, 5);
+    });
   });
 
   describe("processExploration", () => {

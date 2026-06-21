@@ -83,7 +83,7 @@ export function processVillagerActivities(
       continue;
     }
 
-    if (hasStarvation) {
+    if (v.isStarving) {
       v.currentHp = Math.max(1, v.currentHp - Math.floor(v.maxHp * STARVATION_HP_LOSS_PERCENT));
     }
 
@@ -171,7 +171,7 @@ export function processVillagerActivities(
       }
 
       const efficiency =
-        (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
+        (v.isStarving ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
         (v.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
 
       if (v.currentHp <= v.maxHp * BATTLE_POTION_HP_RATIO && v.potionCount > 0) {

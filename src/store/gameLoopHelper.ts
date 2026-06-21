@@ -117,16 +117,15 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
   const {
     inventory: starvedInventory,
+    villagers: starvedVillagers,
     hasStarvation,
-    activeFoodBuffId,
+    logs: starvationLogs,
   } = processStarvation(inventory, villagers);
   inventory = starvedInventory;
-
-  // 各村人の activeFoodBuffId を更新
-  villagers = villagers.map((v) => ({
-    ...v,
-    activeFoodBuffId: hasStarvation ? null : activeFoodBuffId,
-  }));
+  villagers = starvedVillagers as Villager[];
+  starvationLogs.forEach((msg) => {
+    logsToAppend.push({ message: msg, type: "warning" });
+  });
 
   if (isNewDay) {
     // 村人全員の食料代を請求
@@ -135,7 +134,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       let foodCost = 0;
       if (v.currentJob === "無職") {
         foodCost = 0;
-      } else if (hasStarvation) {
+      } else if (v.isStarving) {
         foodCost = 0;
       } else if (v.activeFoodBuffId) {
         foodCost = ITEMS[v.activeFoodBuffId]?.sellPrice || 2;
@@ -156,10 +155,13 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     });
   }
 
-  if (activeFoodBuffId && !hasStarvation) {
-    const foodItem = ITEMS[activeFoodBuffId];
+  const fedVillagers = villagers.filter((v) => v.activeFoodBuffId);
+  if (fedVillagers.length > 0) {
+    const foodNames = Array.from(
+      new Set(fedVillagers.map((v) => ITEMS[v.activeFoodBuffId!]?.name || v.activeFoodBuffId)),
+    ).join("、");
     logsToAppend.push({
-      message: `【配給】村人たちは ${foodItem?.name || activeFoodBuffId} を食べ、ステータスが強化されました！`,
+      message: `【配給】村人たちは食料（${foodNames}）を食べ、ステータスが強化されました！`,
       type: "info",
     });
   }

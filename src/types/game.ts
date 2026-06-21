@@ -123,6 +123,7 @@ export interface Villager
   activeFoodBuffId: string | null;
   gold: number;
   pool: Record<string, number>;
+  isStarving?: boolean;
 }
 
 export interface CraftJob {

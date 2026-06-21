@@ -109,6 +109,7 @@ export const merge = <S extends GameState & GameActions>(
       bonusMaxHp: v.bonusMaxHp !== undefined ? v.bonusMaxHp : 0,
       bonusMaxStamina: v.bonusMaxStamina !== undefined ? v.bonusMaxStamina : 0,
       activeFoodBuffId: v.activeFoodBuffId !== undefined ? v.activeFoodBuffId : null,
+      isStarving: v.isStarving !== undefined ? v.isStarving : false,
     }));
   }
 

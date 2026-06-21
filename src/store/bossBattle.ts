@@ -147,7 +147,7 @@ export function processBossBattle(
             const isCritical = Math.random() * 100 < critRate;
             const isMagicUser = isMagicJob(currentV.currentJob);
             const efficiency =
-              (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
+              (currentV.isStarving ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
               (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
 
             const damage = calculatePlayerDamage({
