@@ -22,6 +22,10 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
     "武器・防具の専門店です。建設すると武器・防具の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。また、装備の自動売却を設定できます。",
   pharmacy:
     "ポーションなどの消耗品専門店です。建設するとポーション等の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。また、消耗品の自動売却を設定できます。",
+  farm: "毎時間自動的に食料を生産します。レベルアップで生産効率が向上します。",
+  lumberyard: "毎時間自動的に原木を生産します。開拓に必要な木材を効率よく調達できます。",
+  quarry:
+    "毎時間自動的に石材を生産します。施設のアップグレードやクラフトに必要な石材を調達できます。",
 };
 
 interface FacilityCardProps {
@@ -35,6 +39,7 @@ interface FacilityCardProps {
   onToggleExpand: (id: string) => void;
   onStartUpgrade: (facilityId: FacilityType) => void;
   onHireVillager: () => void;
+  onOpenTradeCaravan?: () => void;
 }
 
 export const FacilityCard: React.FC<FacilityCardProps> = ({
@@ -48,6 +53,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   onToggleExpand,
   onStartUpgrade,
   onHireVillager,
+  onOpenTradeCaravan,
 }) => {
   const isUnlocked = fac.level > 0;
   const canUpgrade = fac.level < fac.maxLevel;
@@ -123,6 +129,18 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
                 {villagers.length}人)
               </span>
+            ) : fac.id === "farm" ? (
+              <span className="text-emerald-500 font-semibold">
+                自動生産中: 食料 +{1 + fac.level * 2}/h
+              </span>
+            ) : fac.id === "lumberyard" ? (
+              <span className="text-emerald-500 font-semibold">
+                自動生産中: 原木 +{1 + fac.level * 1}/h
+              </span>
+            ) : fac.id === "quarry" ? (
+              <span className="text-emerald-500 font-semibold">
+                自動生産中: 石材 +{1 + fac.level * 1}/h
+              </span>
             ) : fac.craftQueue.length > 0 ? (
               <>
                 <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
@@ -163,6 +181,20 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
           <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
             {FACILITY_DESCRIPTIONS[fac.id]}
           </p>
+
+          {fac.id === "market" && isUnlocked && onOpenTradeCaravan && (
+            <div className="pt-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenTradeCaravan();
+                }}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition cursor-pointer"
+              >
+                交易馬車の管理を開く
+              </button>
+            </div>
+          )}
 
           {canUpgrade && fac.upgradeTimeLeft === 0 && (
             <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
@@ -242,6 +274,36 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             <p className="text-[10px] text-slate-400 italic leading-relaxed">
               ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
               {15 + fac.level * 5} 回復します。
+            </p>
+          )}
+
+          {(fac.id === "farm" || fac.id === "lumberyard" || fac.id === "quarry") && (
+            <p className="text-[10px] text-slate-400 italic leading-relaxed">
+              ※この施設は毎時間自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
+              <span className="text-emerald-400 font-bold font-mono">
+                {fac.level === 0
+                  ? "なし"
+                  : fac.id === "farm"
+                    ? `食料 +${1 + fac.level * 2}個`
+                    : fac.id === "lumberyard"
+                      ? `原木 +${1 + fac.level * 1}個`
+                      : `石材 +${1 + fac.level * 1}個`}
+              </span>
+              /時間
+              {fac.level < fac.maxLevel && (
+                <>
+                  {" "}
+                  （建設・強化後:{" "}
+                  <span className="text-emerald-450 font-bold font-mono">
+                    {fac.id === "farm"
+                      ? `食料 +${1 + (fac.level + 1) * 2}個`
+                      : fac.id === "lumberyard"
+                        ? `原木 +${1 + (fac.level + 1) * 1}個`
+                        : `石材 +${1 + (fac.level + 1) * 1}個`}
+                  </span>
+                  /時間）
+                </>
+              )}
             </p>
           )}
 

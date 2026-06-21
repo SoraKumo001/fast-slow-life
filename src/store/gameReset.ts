@@ -14,6 +14,9 @@ import {
   GameLog,
   FacilityType,
   TradeRule,
+  Town,
+  Caravan,
+  MarketTrend,
 } from "../types/game";
 import {
   getInitialVillagers,
@@ -21,6 +24,8 @@ import {
   getInitialDungeons,
   getDefaultTargetAmounts,
   createInitialInventory,
+  getInitialTowns,
+  getInitialCaravans,
 } from "./initialState";
 
 /** ゲーム終了時の獲得SPを計算する共通ヘルパー */
@@ -57,6 +62,9 @@ export interface ResetResult {
   gameLimitDays: number;
   gameOver: boolean;
   isPaused: boolean;
+  towns: Town[];
+  caravans: Caravan[];
+  marketTrend: MarketTrend | null;
 }
 
 export function resetGameHelper(params: {
@@ -122,5 +130,8 @@ export function resetGameHelper(params: {
     gameLimitDays: TIER_LIMIT_DAYS[1],
     gameOver: false,
     isPaused: true,
+    towns: getInitialTowns(),
+    caravans: getInitialCaravans(),
+    marketTrend: null,
   };
 }

@@ -8,6 +8,7 @@ import { VillagerList } from "./components/game/VillagerList";
 import { Header } from "./components/layout/Header";
 import { StatusBar } from "./components/layout/StatusBar";
 import { SoulShop } from "./components/modals/SoulShop";
+import { TradeCaravanModal } from "./components/modals/TradeCaravanModal";
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ToastContainer } from "./components/ui/ToastContainer";
@@ -20,6 +21,7 @@ export default function App() {
   const logs = useLogs();
   const addToast = useToastStore((s) => s.addToast);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showTradeModal, setShowTradeModal] = useState(false);
   const lastLogIdRef = useRef<string | null>(null);
 
   // 新しいログを監視してToast通知
@@ -99,7 +101,7 @@ export default function App() {
 
         {/* 3. 施設・クラフト */}
         <div className="h-125 lg:h-full overflow-hidden">
-          <FacilityList />
+          <FacilityList onOpenTradeCaravan={() => setShowTradeModal(true)} />
         </div>
 
         {/* 4. ダンジョン派遣 */}
@@ -180,6 +182,11 @@ export default function App() {
           </Button>
         </div>
       </Modal>
+
+      {/* 交易管理モーダル */}
+      {showTradeModal && (
+        <TradeCaravanModal isOpen={showTradeModal} onClose={() => setShowTradeModal(false)} />
+      )}
     </div>
   );
 }

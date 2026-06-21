@@ -49,6 +49,7 @@ export function createVillager(options: {
     bonusVit: 0,
     bonusMaxHp: 0,
     bonusMaxStamina: 0,
+    activeFoodBuffId: null,
   };
 }
 

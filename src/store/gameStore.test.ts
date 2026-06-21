@@ -237,7 +237,19 @@ describe("gameStore", () => {
 
 describe("master data references", () => {
   it("レシピが存在するアイテムと施設だけを参照していること", () => {
-    const facilityIds: FacilityType[] = ["inn", "workshop", "blacksmith", "alchemy", "market"];
+    const facilityIds: FacilityType[] = [
+      "inn",
+      "workshop",
+      "blacksmith",
+      "alchemy",
+      "market",
+      "guild",
+      "weapon_shop",
+      "pharmacy",
+      "farm",
+      "lumberyard",
+      "quarry",
+    ];
 
     Object.values(RECIPES).forEach((recipe) => {
       expect(ITEMS[recipe.resultItemId], `${recipe.id}.resultItemId`).toBeDefined();

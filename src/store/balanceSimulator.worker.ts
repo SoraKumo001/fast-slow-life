@@ -306,6 +306,9 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         const upgradeOrder: FacilityType[] = [
           "market",
           "guild",
+          "farm",
+          "lumberyard",
+          "quarry",
           "workshop",
           "inn",
           "blacksmith",

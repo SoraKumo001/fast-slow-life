@@ -23,9 +23,16 @@ const FACILITY_IDS = [
   "guild",
   "weapon_shop",
   "pharmacy",
+  "farm",
+  "lumberyard",
+  "quarry",
 ] as const;
 
-export const FacilityList: React.FC = () => {
+interface FacilityListProps {
+  onOpenTradeCaravan?: () => void;
+}
+
+export const FacilityList: React.FC<FacilityListProps> = ({ onOpenTradeCaravan }) => {
   const facilities = useFacilities();
   const { inventory, tradeRules } = useInventory();
   const { gold } = usePlayerResources();
@@ -56,6 +63,7 @@ export const FacilityList: React.FC = () => {
               onToggleExpand={toggleExpand}
               onStartUpgrade={startFacilityUpgrade}
               onHireVillager={hireVillager}
+              onOpenTradeCaravan={onOpenTradeCaravan}
             />
           ))}
       </div>

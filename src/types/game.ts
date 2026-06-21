@@ -34,6 +34,9 @@ export interface Item {
     slot: "weapon" | "armor";
     bonuses: Partial<Record<"attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit", number>>;
   };
+  foodBuff?: Partial<
+    Record<"str" | "int" | "dex" | "agi" | "vit" | "maxHp" | "maxStamina", number>
+  >;
 }
 
 export interface CraftRecipe {
@@ -117,6 +120,7 @@ export interface Villager
     VillagerBonuses {
   id: string;
   name: string;
+  activeFoodBuffId: string | null;
 }
 
 export interface CraftJob {
@@ -135,7 +139,10 @@ export type FacilityType =
   | "market"
   | "guild"
   | "weapon_shop"
-  | "pharmacy";
+  | "pharmacy"
+  | "farm"
+  | "lumberyard"
+  | "quarry";
 
 export interface Facility {
   id: FacilityType;
@@ -215,6 +222,41 @@ export interface SoulUpgrade {
   effectValue: number; // レベルごとの倍率・加算値
 }
 
+export interface Town {
+  id: string;
+  name: string;
+  distance: number; // 往復にかかる時間 (時間単位)
+  friendship: number; // 0 - 1000 などの友好度
+  level: number; // 友好度レベル 1 - 5
+  description: string;
+  specialties: string[]; // 特産品アイテムID
+  demands: { itemId: string; multiplier: number }[]; // 需要アイテム
+  investCost: number; // 投資費用
+  investLevel: number; // 投資レベル
+  isUnlocked: boolean; // 解放されているか
+}
+
+export interface Caravan {
+  id: string; // "caravan_1", "caravan_2", ...
+  status: "idle" | "trading" | "returned";
+  destinationTownId: string | null;
+  type: "export" | "import" | null;
+  timeLeft: number; // 戻るまでの残り時間 (時間)
+  totalTime: number; // 総時間
+  cargo: { itemId: string; count: number }[]; // 輸出アイテムまたは購入したアイテム
+  goldCost: number; // 輸入の際に支払ったゴールド
+  goldEarned: number; // 輸出の際に得たゴールド
+  friendshipEarned: number; // 獲得した友好度
+  isAuto: boolean; // 自動交易が有効か
+}
+
+export interface MarketTrend {
+  targetTownId: string;
+  itemId: string;
+  type: "demand" | "surplus";
+  multiplier: number;
+}
+
 export interface ActiveBossState {
   monsterId: string;
   currentHp: number;
@@ -261,6 +303,20 @@ export interface GameActions {
   updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => void;
   deleteTradeRule: (ruleId: string) => void;
   toggleTradeRule: (ruleId: string) => void;
+  sendExportCaravan: (
+    caravanId: string,
+    townId: string,
+    cargo: { itemId: string; count: number }[],
+  ) => void;
+  sendImportCaravan: (
+    caravanId: string,
+    townId: string,
+    cargo: { itemId: string; count: number }[],
+    goldCost: number,
+  ) => void;
+  collectCaravan: (caravanId: string) => void;
+  investInTown: (townId: string) => void;
+  toggleCaravanAuto: (caravanId: string) => void;
 }
 
 export interface GameState {
@@ -283,6 +339,9 @@ export interface GameState {
   isPaused: boolean;
   playSpeed: "normal" | "fast" | "super"; // 自動進行のスピード
   soulUpgrades: Record<string, number>; // upgradeId -> 購入レベル
+  towns: Town[];
+  caravans: Caravan[];
+  marketTrend: MarketTrend | null;
 }
 
 export type StoreSet = (

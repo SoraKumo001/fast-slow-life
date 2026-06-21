@@ -7,7 +7,7 @@ import {
   DungeonMonster,
 } from "../types/game";
 import { FacilityType } from "../types/game";
-import { getInitialFacilities } from "./initialState";
+import { getInitialFacilities, getInitialTowns, getInitialCaravans } from "./initialState";
 
 export const partialize = (state: GameState & GameActions): GameState => ({
   currentDay: state.currentDay,
@@ -29,6 +29,9 @@ export const partialize = (state: GameState & GameActions): GameState => ({
   playSpeed: state.playSpeed,
   soulUpgrades: state.soulUpgrades,
   tradeRules: state.tradeRules,
+  towns: state.towns,
+  caravans: state.caravans,
+  marketTrend: state.marketTrend,
 });
 
 export const merge = <S extends GameState & GameActions>(
@@ -102,10 +105,14 @@ export const merge = <S extends GameState & GameActions>(
       bonusVit: v.bonusVit !== undefined ? v.bonusVit : 0,
       bonusMaxHp: v.bonusMaxHp !== undefined ? v.bonusMaxHp : 0,
       bonusMaxStamina: v.bonusMaxStamina !== undefined ? v.bonusMaxStamina : 0,
+      activeFoodBuffId: v.activeFoodBuffId !== undefined ? v.activeFoodBuffId : null,
     }));
   }
 
   merged.tradeRules = persisted.tradeRules || [];
+  merged.towns = persisted.towns || getInitialTowns();
+  merged.caravans = persisted.caravans || getInitialCaravans();
+  merged.marketTrend = persisted.marketTrend !== undefined ? persisted.marketTrend : null;
 
   return merged;
 };

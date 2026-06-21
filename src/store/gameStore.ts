@@ -10,6 +10,7 @@ import { createInventoryActions } from "./actions/inventoryActions";
 import { createLogActions } from "./actions/logActions";
 import { createSoulActions } from "./actions/soulActions";
 import { createTimeActions } from "./actions/timeActions";
+import { createTradeActions } from "./actions/tradeActions";
 import { createTradeRuleActions } from "./actions/tradeRuleActions";
 import { createVillagerActions } from "./actions/villagerActions";
 import {
@@ -18,6 +19,8 @@ import {
   getInitialDungeons,
   getDefaultTargetAmounts,
   DEFAULT_INVENTORY,
+  getInitialTowns,
+  getInitialCaravans,
 } from "./initialState";
 import { partialize, merge } from "./persistence";
 
@@ -61,6 +64,9 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
     building: 0,
     discount: 0,
   },
+  towns: getInitialTowns(),
+  caravans: getInitialCaravans(),
+  marketTrend: null,
 
   ...createLogActions(set as StoreSet, get as StoreGet),
   ...createTimeActions(set as StoreSet, get as StoreGet),
@@ -71,6 +77,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   ...createCraftActions(set as StoreSet, get as StoreGet),
   ...createBossActions(set as StoreSet, get as StoreGet),
   ...createSoulActions(set as StoreSet, get as StoreGet),
+  ...createTradeActions(set as StoreSet, get as StoreGet),
 });
 
 export const useGameStore = globalThis.IS_TEST_ENVIRONMENT

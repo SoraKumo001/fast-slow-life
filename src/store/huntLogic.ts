@@ -16,6 +16,7 @@ import {
   calculatePlayerDamage,
   calculateEnemyDamage,
   useBattlePotion,
+  getFoodBuffBonus,
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
@@ -32,6 +33,16 @@ export function processVillagerHunt(
 ): { logs: LogPayload[]; areaUpdated: boolean } {
   const logs: LogPayload[] = [];
   const progress = area.explorationProgress;
+
+  const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
+  const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
+  const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
+  const buffMaxHp = getFoodBuffBonus(v.activeFoodBuffId || null, "maxHp");
+
+  const effectiveAgi = v.agi + buffAgi;
+  const effectiveDex = v.dex + buffDex;
+  const effectiveInt = v.int + buffInt;
+  const effectiveMaxHp = v.maxHp + buffMaxHp;
   const availableMonsters = area.monsters.filter(
     (m) => progress >= (m.unlockedAtProgress || 0) && !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
   );
@@ -115,7 +126,7 @@ export function processVillagerHunt(
     const monsterState = { ...area.monsters[enemyIdx] };
     const progressSpeed = Math.max(
       5.0,
-      (v.agi * MONSTER_PROGRESS_AGI_FACTOR + GATHER_PROGRESS_BASE) /
+      (effectiveAgi * MONSTER_PROGRESS_AGI_FACTOR + GATHER_PROGRESS_BASE) /
         (enemy.level * MONSTER_PROGRESS_LEVEL_DIVISOR + MONSTER_PROGRESS_BASE),
     );
     monsterState.currentProgress = Math.min(
@@ -149,9 +160,9 @@ export function processVillagerHunt(
         }
 
         let isHealed = false;
-        if (v.currentJob === "僧侶" && v.currentHp <= v.maxHp * 0.5) {
-          const healAmount = Math.max(10, Math.floor(v.int * 1.5 + 10));
-          const actualHeal = Math.min(v.maxHp - v.currentHp, healAmount);
+        if (v.currentJob === "僧侶" && v.currentHp <= effectiveMaxHp * 0.5) {
+          const healAmount = Math.max(10, Math.floor(effectiveInt * 1.5 + 10));
+          const actualHeal = Math.min(effectiveMaxHp - v.currentHp, healAmount);
           v.currentHp += actualHeal;
           logs.push({
             message: `[Turn ${turn}] 僧侶 ${v.name} はヒールを唱え、自身のHPを ${actualHeal} 回復した。`,
@@ -161,7 +172,7 @@ export function processVillagerHunt(
         }
 
         if (!isHealed) {
-          const hitRate = calculateHitRate(v.dex, enemy.agi);
+          const hitRate = calculateHitRate(effectiveDex, enemy.agi);
           const isHit = Math.random() * 100 < hitRate;
 
           if (!isHit) {
@@ -170,7 +181,7 @@ export function processVillagerHunt(
               type: "combat",
             });
           } else {
-            const critRate = calculateCritRate(v.dex);
+            const critRate = calculateCritRate(effectiveDex);
             const isCritical = Math.random() * 100 < critRate;
 
             const damage = calculatePlayerDamage({
@@ -194,7 +205,7 @@ export function processVillagerHunt(
           }
         }
 
-        const enemyHitRate = calculateHitRate(enemy.dex, v.agi);
+        const enemyHitRate = calculateHitRate(enemy.dex, effectiveAgi);
         const isEnemyHit = Math.random() * 100 < enemyHitRate;
 
         if (!isEnemyHit) {

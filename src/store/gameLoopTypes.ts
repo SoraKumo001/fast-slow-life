@@ -5,6 +5,9 @@ import {
   Facility,
   FacilityType,
   ActiveBossState,
+  Town,
+  Caravan,
+  MarketTrend,
 } from "../types/game";
 
 export interface LogPayload {
@@ -27,4 +30,7 @@ export interface AdvanceHourResult {
   gameOver: boolean;
   isPaused: boolean;
   logsToAppend: LogPayload[];
+  towns: Town[];
+  caravans: Caravan[];
+  marketTrend: MarketTrend | null;
 }

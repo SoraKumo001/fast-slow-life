@@ -7,6 +7,7 @@ import {
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
 import { DUNGEONS, ITEMS } from "../data/masterData";
+import { TOWNS_DATA } from "../data/towns";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager } from "../utils/villagerHelpers";
 
@@ -212,5 +213,104 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       },
       craftQueue: [],
     },
+    farm: {
+      id: "farm",
+      name: "農場",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 200,
+        materials: [{ itemId: "wood", count: 10 }],
+      },
+      craftQueue: [],
+    },
+    lumberyard: {
+      id: "lumberyard",
+      name: "伐採所",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 200,
+        materials: [{ itemId: "stone", count: 10 }],
+      },
+      craftQueue: [],
+    },
+    quarry: {
+      id: "quarry",
+      name: "採石場",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 200,
+        materials: [{ itemId: "wood", count: 10 }],
+      },
+      craftQueue: [],
+    },
   };
+}
+
+export function getInitialTowns(): import("../types/game").Town[] {
+  return TOWNS_DATA.map((t) => ({
+    id: t.id,
+    name: t.name,
+    distance: t.distance,
+    description: t.description,
+    specialties: t.specialties,
+    demands: t.demands,
+    friendship: 0,
+    level: 1,
+    investLevel: 1,
+    investCost: 500,
+    isUnlocked: t.unlockedAtTier === 1,
+  }));
+}
+
+export function getInitialCaravans(): import("../types/game").Caravan[] {
+  return [
+    {
+      id: "caravan_1",
+      status: "idle",
+      destinationTownId: null,
+      type: null,
+      timeLeft: 0,
+      totalTime: 0,
+      cargo: [],
+      goldCost: 0,
+      goldEarned: 0,
+      friendshipEarned: 0,
+      isAuto: false,
+    },
+    {
+      id: "caravan_2",
+      status: "idle",
+      destinationTownId: null,
+      type: null,
+      timeLeft: 0,
+      totalTime: 0,
+      cargo: [],
+      goldCost: 0,
+      goldEarned: 0,
+      friendshipEarned: 0,
+      isAuto: false,
+    },
+    {
+      id: "caravan_3",
+      status: "idle",
+      destinationTownId: null,
+      type: null,
+      timeLeft: 0,
+      totalTime: 0,
+      cargo: [],
+      goldCost: 0,
+      goldEarned: 0,
+      friendshipEarned: 0,
+      isAuto: false,
+    },
+  ];
 }

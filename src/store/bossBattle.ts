@@ -16,6 +16,7 @@ import {
   calculatePlayerDamage,
   calculateEnemyDamage,
   useBattlePotion,
+  getFoodBuffBonus,
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
@@ -73,6 +74,10 @@ export function processBossBattle(
 
           // 2. 攻撃処理
           const currentV = nextVillagers[i];
+          const cvBuffInt = getFoodBuffBonus(currentV.activeFoodBuffId || null, "int");
+          const cvBuffDex = getFoodBuffBonus(currentV.activeFoodBuffId || null, "dex");
+          const cvEffectiveInt = currentV.int + cvBuffInt;
+          const cvEffectiveDex = currentV.dex + cvBuffDex;
           let isHealed = false;
 
           if (currentV.currentJob === "僧侶") {
@@ -87,7 +92,9 @@ export function processBossBattle(
                 member.status === "active" &&
                 member.currentHp > 0
               ) {
-                const ratio = member.currentHp / member.maxHp;
+                const mBuffMaxHp = getFoodBuffBonus(member.activeFoodBuffId || null, "maxHp");
+                const mEffectiveMaxHp = member.maxHp + mBuffMaxHp;
+                const ratio = member.currentHp / mEffectiveMaxHp;
                 if (ratio < minHpRatio) {
                   minHpRatio = ratio;
                   targetToHeal = member;
@@ -97,8 +104,10 @@ export function processBossBattle(
             }
 
             if (targetToHeal && minHpRatio <= 0.5 && targetIdx !== -1) {
-              const healAmount = Math.max(10, Math.floor(currentV.int * 1.5 + 10));
-              const actualHeal = Math.min(targetToHeal.maxHp - targetToHeal.currentHp, healAmount);
+              const healAmount = Math.max(10, Math.floor(cvEffectiveInt * 1.5 + 10));
+              const tBuffMaxHp = getFoodBuffBonus(targetToHeal.activeFoodBuffId || null, "maxHp");
+              const tEffectiveMaxHp = targetToHeal.maxHp + tBuffMaxHp;
+              const actualHeal = Math.min(tEffectiveMaxHp - targetToHeal.currentHp, healAmount);
 
               nextVillagers[targetIdx] = {
                 ...targetToHeal,
@@ -117,7 +126,7 @@ export function processBossBattle(
             continue;
           }
 
-          const hitRate = calculateHitRate(currentV.dex, monster.agi);
+          const hitRate = calculateHitRate(cvEffectiveDex, monster.agi);
           const isHit = Math.random() * 100 < hitRate;
 
           if (!isHit) {
@@ -126,7 +135,7 @@ export function processBossBattle(
               type: "combat",
             });
           } else {
-            const critRate = calculateCritRate(currentV.dex);
+            const critRate = calculateCritRate(cvEffectiveDex);
             const isCritical = Math.random() * 100 < critRate;
             const isMagicUser = isMagicJob(currentV.currentJob);
             const efficiency =
@@ -161,7 +170,9 @@ export function processBossBattle(
           if (vIdx !== -1) {
             const villager = { ...nextVillagers[vIdx] };
 
-            const enemyHitRate = calculateHitRate(monster.dex, villager.agi);
+            const vBuffAgi = getFoodBuffBonus(villager.activeFoodBuffId || null, "agi");
+            const vEffectiveAgi = villager.agi + vBuffAgi;
+            const enemyHitRate = calculateHitRate(monster.dex, vEffectiveAgi);
             const isEnemyHit = Math.random() * 100 < enemyHitRate;
 
             if (!isEnemyHit) {

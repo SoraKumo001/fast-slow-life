@@ -16,6 +16,7 @@ import {
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea } from "../types/game";
+import { getFoodBuffBonus } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
 
@@ -32,6 +33,16 @@ export function processVillagerGather(
   const logs: LogPayload[] = [];
   let bestItemId = "";
   const progress = area.explorationProgress;
+
+  const buffStr = getFoodBuffBonus(v.activeFoodBuffId || null, "str");
+  const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
+  const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
+  const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
+
+  const effectiveStr = v.str + buffStr;
+  const effectiveInt = v.int + buffInt;
+  const effectiveDex = v.dex + buffDex;
+  const effectiveAgi = v.agi + buffAgi;
 
   const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
   if (
@@ -63,9 +74,11 @@ export function processVillagerGather(
         item.category === CATEGORY_ORE ||
         item.category === CATEGORY_MATERIAL
       ) {
-        statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+        statVal =
+          effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
       } else {
-        statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+        statVal =
+          effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
       }
 
       const currentCount = nextInventory[gather.itemId] || 0;
@@ -93,7 +106,7 @@ export function processVillagerGather(
         baseMultiplier *
         Math.pow(jobMod, 2) *
         statVal *
-        (1.0 + v.agi * 0.01) *
+        (1.0 + effectiveAgi * 0.01) *
         efficiency *
         targetPenalty *
         dupPenalty;
@@ -111,7 +124,7 @@ export function processVillagerGather(
     if (gatherIdx !== -1) {
       const gather = { ...area.gathers[gatherIdx] };
       const progressSpeed =
-        (v.dex * GATHER_PROGRESS_DEX_FACTOR + GATHER_PROGRESS_BASE) / gather.difficulty;
+        (effectiveDex * GATHER_PROGRESS_DEX_FACTOR + GATHER_PROGRESS_BASE) / gather.difficulty;
       gather.currentProgress = Math.min(
         100,
         (gather.currentProgress || 0) + progressSpeed * efficiency,
@@ -132,9 +145,11 @@ export function processVillagerGather(
           item.category === CATEGORY_ORE ||
           item.category === CATEGORY_MATERIAL
         ) {
-          statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+          statVal =
+            effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
         } else {
-          statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+          statVal =
+            effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
         }
 
         const statMod = 1.0 + statVal * STAT_GATHER_AMOUNT_FACTOR;
