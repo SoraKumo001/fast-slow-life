@@ -9,7 +9,8 @@ export const DUNGEONS: DungeonArea[] = [
     recommendedLevel: 1,
     unlockedAtTier: 1,
     gathers: [
-      { itemId: "food", difficulty: 1.0, unlockedAtProgress: 0 },
+      { itemId: "wheat", difficulty: 1.0, unlockedAtProgress: 0 },
+      { itemId: "vegetable", difficulty: 1.0, unlockedAtProgress: 10 },
       { itemId: "wood", difficulty: 1.0, unlockedAtProgress: 0 },
       { itemId: "mushroom", difficulty: 1.2, unlockedAtProgress: 20 },
       { itemId: "herb", difficulty: 1.5, unlockedAtProgress: 40 },

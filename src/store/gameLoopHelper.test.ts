@@ -13,20 +13,20 @@ describe("gameLoopHelper", () => {
   describe("processStarvation", () => {
     it("十分な食料がある場合、食料が減少し、飢餓状態にならないこと", () => {
       const villagersCount = 3;
-      const inventory = { food: 10 };
+      const inventory = { wheat: 10 };
       const { inventory: resultInv, hasStarvation } = processStarvation(inventory, villagersCount);
 
       expect(hasStarvation).toBe(false);
-      expect(resultInv.food).toBe(10 - villagersCount * (1.0 / 24.0));
+      expect(resultInv.wheat).toBe(10 - villagersCount * (1.0 / 24.0));
     });
 
     it("食料が不足している場合、食料が0になり、飢餓状態になること", () => {
       const villagersCount = 24;
-      const inventory = { food: 0.5 };
+      const inventory = { wheat: 0.5 };
       const { inventory: resultInv, hasStarvation } = processStarvation(inventory, villagersCount);
 
       expect(hasStarvation).toBe(true);
-      expect(resultInv.food).toBe(0);
+      expect(resultInv.wheat).toBe(0);
     });
   });
 
@@ -101,7 +101,7 @@ describe("gameLoopHelper", () => {
           unlockedAtTier: 1,
           gathers: [
             {
-              itemId: "food",
+              itemId: "wheat",
               difficulty: 1.0,
               respawnTimeLeft: 2,
               respawnTimeTotal: 3,
@@ -175,7 +175,7 @@ describe("gameLoopHelper", () => {
           destinationAreaId: "forest",
           travelTimeLeft: 0,
           assignedCraftJobId: null,
-          targetGatherItemId: "food",
+          targetGatherItemId: "wheat",
           targetMonsterId: null,
           potionCount: 0,
         },
@@ -190,7 +190,7 @@ describe("gameLoopHelper", () => {
           unlockedAtTier: 1,
           gathers: [
             {
-              itemId: "food",
+              itemId: "wheat",
               difficulty: 1.0,
               currentProgress: 90,
               respawnTimeLeft: 0,
@@ -299,7 +299,7 @@ describe("gameLoopHelper", () => {
           },
         },
         {},
-        { food: 100 },
+        { wheat: 100 },
         null,
         false,
         false,
@@ -307,7 +307,7 @@ describe("gameLoopHelper", () => {
         500,
       );
 
-      expect(result.inventory["food"]).toBeGreaterThan(0);
+      expect(result.inventory["wheat"]).toBeGreaterThan(0);
       expect(result.dungeons[0].gathers[0].respawnTimeLeft).toBe(3);
       expect(result.dungeons[0].gathers[0].currentProgress).toBe(0);
     });
@@ -482,7 +482,7 @@ describe("gameLoopHelper", () => {
           destinationAreaId: "forest",
           travelTimeLeft: 0,
           assignedCraftJobId: null,
-          targetGatherItemId: "food",
+          targetGatherItemId: "wheat",
           targetMonsterId: null,
           potionCount: 2,
         },
@@ -495,7 +495,7 @@ describe("gameLoopHelper", () => {
           distance: 1,
           recommendedLevel: 1,
           unlockedAtTier: 1,
-          gathers: [{ itemId: "food", difficulty: 1.0, currentProgress: 0 }],
+          gathers: [{ itemId: "wheat", difficulty: 1.0, currentProgress: 0 }],
           monsters: [],
           explorationProgress: 100,
           difficulty: 1.0,

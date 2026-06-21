@@ -13,7 +13,9 @@ describe("gameStore", () => {
   it("初期状態が正しくセットアップされていること", () => {
     const state = useGameStore.getState();
     expect(state.gold).toBe(500);
-    expect(state.inventory.food).toBe(50);
+    expect(state.inventory.wheat).toBe(17);
+    expect(state.inventory.vegetable).toBe(17);
+    expect(state.inventory.raw_meat).toBe(16);
     expect(state.currentDay).toBe(1);
     expect(state.currentHour).toBe(0);
     expect(state.isPaused).toBe(true);

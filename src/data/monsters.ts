@@ -17,7 +17,7 @@ export const MONSTERS: Record<string, Monster> = {
     vit: 2,
     expReward: 10,
     drops: [
-      { itemId: "food", chance: 0.5 },
+      { itemId: "raw_meat", chance: 0.5 },
       { itemId: "wood", chance: 0.3 },
     ],
     unlockedAtProgress: 0,
@@ -120,7 +120,7 @@ export const MONSTERS: Record<string, Monster> = {
     vit: 11,
     expReward: 45,
     drops: [
-      { itemId: "food", chance: 0.6 },
+      { itemId: "raw_meat", chance: 0.6 },
       { itemId: "bone", chance: 0.4 },
       { itemId: "beast_meat", chance: 0.6 },
     ],
@@ -290,7 +290,7 @@ export const MONSTERS: Record<string, Monster> = {
     vit: 3,
     expReward: 12,
     drops: [
-      { itemId: "food", chance: 0.7 },
+      { itemId: "raw_meat", chance: 0.7 },
       { itemId: "leather", chance: 0.3 },
       { itemId: "beast_meat", chance: 0.4 },
     ],
@@ -334,7 +334,7 @@ export const MONSTERS: Record<string, Monster> = {
     expReward: 50,
     drops: [
       { itemId: "feather", chance: 0.8 },
-      { itemId: "food", chance: 0.3 },
+      { itemId: "raw_meat", chance: 0.3 },
       { itemId: "beast_meat", chance: 0.4 },
     ],
     unlockedAtProgress: 30,

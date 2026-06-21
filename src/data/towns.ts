@@ -15,7 +15,17 @@ export const TOWNS_DATA: TownMaster[] = [
     distance: 12, // 往復12時間
     description:
       "自然に囲まれたのどかな集落。木材や薬草の需要が高く、特産果物や木工品を仕入れることができる。",
-    specialties: ["food", "wood", "herb", "wood_plank", "leather_cloak", "ancient_bark", "elixir"],
+    specialties: [
+      "wheat",
+      "vegetable",
+      "raw_meat",
+      "wood",
+      "herb",
+      "wood_plank",
+      "leather_cloak",
+      "ancient_bark",
+      "elixir",
+    ],
     demands: [
       { itemId: "stone", multiplier: 1.4 },
       { itemId: "iron_sword", multiplier: 1.3 },
@@ -91,7 +101,7 @@ export function getFriendshipThreshold(level: number): number {
 
 export function getTownShopItems(townId: string, level: number): string[] {
   if (townId === "komorebi") {
-    const items = ["food", "wood", "herb"];
+    const items = ["wheat", "vegetable", "raw_meat", "wood", "herb"];
     if (level >= 2) items.push("wood_plank");
     if (level >= 3) items.push("leather_cloak");
     if (level >= 4) items.push("ancient_bark");

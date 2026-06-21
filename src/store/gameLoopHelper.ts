@@ -161,13 +161,22 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
   // 資源生産施設による供給（12時間ごと）
   if (currentHour % 12 === 0) {
-    let producedFood = 0;
+    let producedWheat = 0;
+    let producedVegetable = 0;
+    let producedRawMeat = 0;
     let producedWood = 0;
     let producedStone = 0;
 
     if (facilities.farm && facilities.farm.level > 0) {
-      producedFood = Math.floor((1 + facilities.farm.level * 2) / 3);
-      inventory.food = (inventory.food || 0) + producedFood;
+      const lvl = facilities.farm.level;
+      producedWheat = Math.floor((1 + lvl) / 2);
+      producedVegetable = Math.floor(lvl / 2);
+      producedRawMeat = Math.floor((lvl - 1) / 2);
+
+      if (producedWheat > 0) inventory.wheat = (inventory.wheat || 0) + producedWheat;
+      if (producedVegetable > 0)
+        inventory.vegetable = (inventory.vegetable || 0) + producedVegetable;
+      if (producedRawMeat > 0) inventory.raw_meat = (inventory.raw_meat || 0) + producedRawMeat;
     }
     if (facilities.lumberyard && facilities.lumberyard.level > 0) {
       producedWood = Math.floor((1 + facilities.lumberyard.level * 1) / 2);
@@ -178,9 +187,16 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       inventory.stone = (inventory.stone || 0) + producedStone;
     }
 
-    if (producedFood > 0 || producedWood > 0 || producedStone > 0) {
+    const hasFarmProd = producedWheat > 0 || producedVegetable > 0 || producedRawMeat > 0;
+    if (hasFarmProd || producedWood > 0 || producedStone > 0) {
       const prodLogs: string[] = [];
-      if (producedFood > 0) prodLogs.push(`食料+${producedFood}`);
+      if (hasFarmProd) {
+        const farmLogs: string[] = [];
+        if (producedWheat > 0) farmLogs.push(`小麦+${producedWheat}`);
+        if (producedVegetable > 0) farmLogs.push(`野菜+${producedVegetable}`);
+        if (producedRawMeat > 0) farmLogs.push(`生肉+${producedRawMeat}`);
+        prodLogs.push(farmLogs.join("、"));
+      }
       if (producedWood > 0) prodLogs.push(`原木+${producedWood}`);
       if (producedStone > 0) prodLogs.push(`石材+${producedStone}`);
       logsToAppend.push({

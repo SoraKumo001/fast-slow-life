@@ -102,7 +102,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
           traceLog += `[${formatGameTime(state.currentDay, state.currentHour)}] `;
-          traceLog += `Gold: ${state.gold}, Food: ${state.inventory.food?.toFixed(2) || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
+          traceLog += `Gold: ${state.gold}, Wheat: ${state.inventory.wheat || 0}, Veg: ${state.inventory.vegetable || 0}, Meat: ${state.inventory.raw_meat || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
           traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob})`).join(" | ")}\n`;
         }
 
@@ -154,7 +154,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         const currentTier = state.currentTier;
 
         // 1. 目標アイテム設定 of update
-        const newTargets: Record<string, number> = { food: 50 }; // 食料は常にキープ
+        const newTargets: Record<string, number> = { wheat: 20, vegetable: 20, raw_meat: 10 }; // 食材は常にキープ
         if (currentTier >= 1) {
           newTargets.wood = 30;
           newTargets.wood_plank = isMarketBuilt ? 15 : 0; // 交易所やアップグレードに必要な中間素材（交易所が建つまではクラフトしない）
@@ -194,7 +194,9 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         // ボスが未撃破の間は、レベリングと探索のために主要採取アイテムの目標を適度に大きくする
         if (!state.bossDefeated) {
           if (currentTier === 1) {
-            newTargets.food = 120;
+            newTargets.wheat = 50;
+            newTargets.vegetable = 50;
+            newTargets.raw_meat = 30;
             newTargets.wood = 100;
             newTargets.herb = 100;
           } else if (currentTier === 2) {

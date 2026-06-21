@@ -26,7 +26,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "herb", count: 2 },
-      { itemId: "food", count: 1 },
+      { itemId: "vegetable", count: 1 },
     ],
     requiredTime: 2,
     outputCount: 1,
@@ -95,7 +95,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "herb", count: 2 },
-      { itemId: "food", count: 2 },
+      { itemId: "wheat", count: 2 },
     ],
     requiredTime: 2,
     outputCount: 1,
@@ -213,7 +213,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
-      { itemId: "food", count: 2 },
+      { itemId: "raw_meat", count: 2 },
       { itemId: "leather", count: 1 },
     ],
     requiredTime: 2,
@@ -225,7 +225,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
-      { itemId: "food", count: 2 },
+      { itemId: "vegetable", count: 2 },
       { itemId: "herb", count: 1 },
     ],
     requiredTime: 2,
@@ -237,7 +237,8 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
-      { itemId: "food", count: 3 },
+      { itemId: "wheat", count: 2 },
+      { itemId: "vegetable", count: 1 },
       { itemId: "mushroom", count: 1 },
     ],
     requiredTime: 2,
@@ -249,7 +250,8 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 2,
     requiredItems: [
-      { itemId: "food", count: 4 },
+      { itemId: "raw_meat", count: 2 },
+      { itemId: "vegetable", count: 2 },
       { itemId: "herb", count: 2 },
       { itemId: "stamina_drink", count: 1 },
     ],
@@ -262,7 +264,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 2,
     requiredItems: [
-      { itemId: "food", count: 3 },
+      { itemId: "vegetable", count: 3 },
       { itemId: "beast_meat", count: 1 },
       { itemId: "herb", count: 1 },
     ],
@@ -275,7 +277,8 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 3,
     requiredItems: [
-      { itemId: "food", count: 5 },
+      { itemId: "raw_meat", count: 2 },
+      { itemId: "vegetable", count: 3 },
       { itemId: "dragon_meat", count: 1 },
       { itemId: "mana_stone", count: 2 },
     ],

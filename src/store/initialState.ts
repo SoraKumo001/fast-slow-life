@@ -81,10 +81,17 @@ export function getInitialDungeons(): DungeonArea[] {
   }));
 }
 
-export const createInitialInventory = (foodOverride?: number): Record<string, number> => ({
-  ...Object.fromEntries(Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0])),
-  ...(foodOverride === undefined ? {} : { food: foodOverride }),
-});
+export const createInitialInventory = (foodOverride?: number): Record<string, number> => {
+  const base = Object.fromEntries(
+    Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0]),
+  );
+  if (foodOverride !== undefined) {
+    base.wheat = Math.ceil(foodOverride / 3);
+    base.vegetable = Math.floor((foodOverride + 1) / 3);
+    base.raw_meat = Math.floor(foodOverride / 3);
+  }
+  return base;
+};
 
 export const DEFAULT_INVENTORY: Record<string, number> = createInitialInventory();
 
@@ -216,7 +223,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     farm: {
       id: "farm",
       name: "農場",
-      level: 0,
+      level: 1,
       maxLevel: 5,
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
@@ -255,7 +262,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     kitchen: {
       id: "kitchen",
       name: "調理場",
-      level: 0,
+      level: 1,
       maxLevel: 5,
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,

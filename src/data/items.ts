@@ -1,14 +1,32 @@
 import { Item } from "../types/game";
 
 export const ITEMS: Record<string, Item> = {
-  food: {
-    id: "food",
-    name: "食料",
-    category: "food",
+  wheat: {
+    id: "wheat",
+    name: "小麦",
+    category: "material",
     sellPrice: 1,
     difficulty: 1.0,
-    initialCount: 50,
-    description: "生きるために必要な食料。毎時間村人が消費する。",
+    initialCount: 20,
+    description: "農場で収穫される小麦。主食の料理の材料になる。",
+  },
+  vegetable: {
+    id: "vegetable",
+    name: "新鮮な野菜",
+    category: "material",
+    sellPrice: 1,
+    difficulty: 1.0,
+    initialCount: 20,
+    description: "農場で収穫される野菜。サラダや鍋の材料になる。",
+  },
+  raw_meat: {
+    id: "raw_meat",
+    name: "生肉",
+    category: "material",
+    sellPrice: 2,
+    difficulty: 1.0,
+    initialCount: 10,
+    description: "農場で得られる生の肉。干し肉や鍋の材料になる。",
   },
   wood: {
     id: "wood",

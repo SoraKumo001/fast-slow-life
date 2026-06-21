@@ -134,7 +134,9 @@ export function processVillagerGather(
 
       if (gather.currentProgress >= 100) {
         const item = ITEMS[bestItemId];
-        const baseAmount = item.id === "food" ? FOOD_GATHER_AMOUNT : BASE_GATHER_AMOUNT;
+        const baseAmount = ["wheat", "vegetable", "raw_meat"].includes(item.id)
+          ? FOOD_GATHER_AMOUNT
+          : BASE_GATHER_AMOUNT;
 
         let jobMod = 1.0;
         const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];

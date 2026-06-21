@@ -7,7 +7,9 @@ const FOOD_PRIORITY = [
   "food_sandwich",
   "food_dried_meat",
   "food_herb_salad",
-  "food",
+  "raw_meat",
+  "vegetable",
+  "wheat",
 ];
 
 export function processStarvation(inventory: Record<string, number>, villagersCount: number) {
@@ -16,7 +18,7 @@ export function processStarvation(inventory: Record<string, number>, villagersCo
   let activeFoodBuffId: string | null = null;
   const nextInventory = { ...inventory };
 
-  // 優先度順に、人数分きっちり足りる食料を探す
+  // 1. まず人数分足りるアイテムを優先度順に探す（料理および生の食材）
   let consumedId = "";
   for (const foodId of FOOD_PRIORITY) {
     const count = nextInventory[foodId] || 0;
@@ -26,20 +28,30 @@ export function processStarvation(inventory: Record<string, number>, villagersCo
     }
   }
 
+  const rawIngredients = ["raw_meat", "vegetable", "wheat"];
+
   if (consumedId) {
-    // 上位または通常食料が人数分あった場合
     nextInventory[consumedId] -= foodConsumed;
-    if (consumedId !== "food") {
+    if (!rawIngredients.includes(consumedId)) {
       activeFoodBuffId = consumedId;
     }
   } else {
-    // どの食料も人数分足りなかった場合：通常の 'food' を可能な限り消費して飢餓状態へ
-    const currentFood = nextInventory.food || 0;
-    if (currentFood < foodConsumed) {
-      nextInventory.food = 0;
+    // 2. どの単一アイテムも人数分足りなかった場合、生の食材を組み合わせて消費する
+    let needed = foodConsumed;
+    for (const rawId of rawIngredients) {
+      const available = nextInventory[rawId] || 0;
+      if (available >= needed) {
+        nextInventory[rawId] -= needed;
+        needed = 0;
+        break;
+      } else {
+        nextInventory[rawId] = 0;
+        needed -= available;
+      }
+    }
+
+    if (needed > 0) {
       hasStarvation = true;
-    } else {
-      nextInventory.food = currentFood - foodConsumed;
     }
   }
 
