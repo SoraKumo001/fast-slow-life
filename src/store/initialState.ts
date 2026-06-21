@@ -252,6 +252,22 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       },
       craftQueue: [],
     },
+    kitchen: {
+      id: "kitchen",
+      name: "調理場",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 250,
+        materials: [
+          { itemId: "wood_plank", count: 5 },
+          { itemId: "stone", count: 10 },
+        ],
+      },
+      craftQueue: [],
+    },
   };
 }
 

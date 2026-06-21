@@ -240,6 +240,7 @@ describe("master data references", () => {
     const facilityIds: FacilityType[] = [
       "inn",
       "workshop",
+      "kitchen",
       "blacksmith",
       "alchemy",
       "market",

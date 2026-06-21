@@ -330,6 +330,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
           "lumberyard",
           "quarry",
           "workshop",
+          "kitchen",
           "inn",
           "blacksmith",
           "alchemy",

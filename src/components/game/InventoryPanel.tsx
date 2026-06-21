@@ -10,7 +10,9 @@ import {
   getEquipmentBonusString,
 } from "../../utils/itemHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
+import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
+import { SortSelect } from "../ui/SortSelect";
 
 export const InventoryPanel: React.FC = () => {
   const { inventory, targetAmounts } = useInventory();
@@ -108,43 +110,29 @@ export const InventoryPanel: React.FC = () => {
       title="素材・倉庫アイテム"
       icon={<ShoppingBag className="w-5 h-5 text-sky-400 shrink-0" />}
     >
-      <select
+      <SortSelect
         value={sortBy}
-        onChange={(e) => setSortBy(e.target.value as SortOption)}
-        className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer shrink-0"
-      >
-        <option value="count-desc">所持数順 (多)</option>
-        <option value="count-asc">所持数順 (少)</option>
-        <option value="price-desc">売却価格順 (高)</option>
-        <option value="price-asc">売却価格順 (安)</option>
-        <option value="name-asc">名前順</option>
-      </select>
+        onChange={(val) => setSortBy(val as SortOption)}
+        options={[
+          { value: "count-desc", label: "所持数順 (多)" },
+          { value: "count-asc", label: "所持数順 (少)" },
+          { value: "price-desc", label: "売却価格順 (高)" },
+          { value: "price-asc", label: "売却価格順 (安)" },
+          { value: "name-asc", label: "名前順" },
+        ]}
+      />
 
       {/* フィルタータブ */}
-      <div className="flex border-b border-slate-900 pb-2 mb-3 gap-1 overflow-x-auto no-scrollbar">
-        {(["all", "material", "consumable", "gear"] as FilterTab[]).map((tab) => {
-          const label = {
-            all: "すべて",
-            material: "素材",
-            consumable: "消耗品",
-            gear: "装備",
-          }[tab];
-
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition cursor-pointer shrink-0 ${
-                activeTab === tab
-                  ? "bg-sky-600/20 text-sky-400 border border-sky-500/30"
-                  : "text-slate-400 hover:text-slate-200 border border-transparent"
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <FilterTabs
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        tabs={[
+          { id: "all", label: "すべて" },
+          { id: "material", label: "素材" },
+          { id: "consumable", label: "消耗品" },
+          { id: "gear", label: "装備" },
+        ]}
+      />
 
       {/* 倉庫一覧リスト */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">

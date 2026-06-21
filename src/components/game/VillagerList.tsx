@@ -1,14 +1,25 @@
 import { User } from "lucide-react";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 
 import { useVillagers, useDungeons, useVillagerActions, useFacilities } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { useGameStore } from "../../store/gameStore";
-import { Villager } from "../../types/game";
+import { JobType, Villager } from "../../types/game";
 import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";
+import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
+import { SortSelect } from "../ui/SortSelect";
 import { VillagerRow } from "./VillagerRow";
+
+const PRODUCTION_JOBS: JobType[] = ["農民", "木こり", "鉱夫", "薬師", "職人"];
+const COMBAT_JOBS: JobType[] = ["猟師", "戦士", "魔術師", "僧侶"];
+type JobGroup = "all" | "production" | "combat";
+
+const getSalary = (v: Villager) =>
+  v.currentJob === "無職" ? 0 : Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1);
+
+type SortOption = "level-desc" | "level-asc" | "wage-desc" | "wage-asc";
 
 export const VillagerList: React.FC = () => {
   const dungeonsData = useDungeons();
@@ -23,11 +34,36 @@ export const VillagerList: React.FC = () => {
   const paySalaryDebt = useGameStore((state) => state.paySalaryDebt);
   const gold = useGameStore((state) => state.gold);
 
-  const dailySalaryTotal = villagers.reduce((sum, v) => {
-    if (v.currentJob === "無職") return sum;
-    const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
-    return sum + Math.floor(totalStat * 0.1);
-  }, 0);
+  const [jobGroup, setJobGroup] = useState<JobGroup>("all");
+  const [sortBy, setSortBy] = useState<SortOption>("level-desc");
+
+  const dailySalaryTotal = useMemo(
+    () => villagers.reduce((sum, v) => sum + getSalary(v), 0),
+    [villagers],
+  );
+
+  const filteredVillagers = useMemo(() => {
+    let result = [...villagers];
+
+    if (jobGroup === "production") {
+      result = result.filter((v) => PRODUCTION_JOBS.includes(v.currentJob));
+    } else if (jobGroup === "combat") {
+      result = result.filter((v) => COMBAT_JOBS.includes(v.currentJob));
+    }
+
+    result.sort((a, b) => {
+      const [field, dir] = sortBy.split("-") as ["level" | "wage", "asc" | "desc"];
+      let cmp = 0;
+      if (field === "level") {
+        cmp = a.level - b.level;
+      } else {
+        cmp = getSalary(a) - getSalary(b);
+      }
+      return dir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [villagers, jobGroup, sortBy]);
 
   const openJobModal = (v: Villager) => {
     setSelectedVillager(v);
@@ -41,12 +77,33 @@ export const VillagerList: React.FC = () => {
 
   return (
     <Panel
-      title={`村人・AI指示一覧 (${villagers.length}/10)`}
-      icon={<User className="w-5 h-5 text-sky-400" />}
+      title={`村人・AI指示一覧 (${filteredVillagers.length}/${villagers.length})`}
+      icon={<User className="w-5 h-5 text-sky-400 shrink-0" />}
     >
-      <div className="flex-1 overflow-y-auto space-y-4 pr-1">
+      <SortSelect
+        value={sortBy}
+        onChange={(val) => setSortBy(val as SortOption)}
+        options={[
+          { value: "level-desc", label: "Lv順 (降順)" },
+          { value: "level-asc", label: "Lv順 (昇順)" },
+          { value: "wage-desc", label: "賃金順 (降順)" },
+          { value: "wage-asc", label: "賃金順 (昇順)" },
+        ]}
+      />
+
+      <FilterTabs
+        activeTab={jobGroup}
+        onChange={setJobGroup}
+        tabs={[
+          { id: "all", label: "すべて" },
+          { id: "production", label: "生産職" },
+          { id: "combat", label: "戦闘職" },
+        ]}
+      />
+
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {isSalaryUnpaid && (
-          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-2">
+          <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-red-400 flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
@@ -69,19 +126,23 @@ export const VillagerList: React.FC = () => {
           </div>
         )}
 
-        {villagers.map((v) => (
-          <VillagerRow
-            key={v.id}
-            villager={v}
-            isExpanded={isExpandedFn(v.id)}
-            onToggleExpand={toggleExpand}
-            onOpenJobModal={openJobModal}
-            onOpenEquipModal={openEquipModal}
-            onSetOrder={setVillagerOrder}
-            dungeons={dungeonsData.dungeons}
-            facilities={facilities}
-          />
-        ))}
+        {filteredVillagers.length === 0 ? (
+          <p className="text-xs text-slate-500 text-center py-8">条件に一致する村人がいません</p>
+        ) : (
+          filteredVillagers.map((v) => (
+            <VillagerRow
+              key={v.id}
+              villager={v}
+              isExpanded={isExpandedFn(v.id)}
+              onToggleExpand={toggleExpand}
+              onOpenJobModal={openJobModal}
+              onOpenEquipModal={openEquipModal}
+              onSetOrder={setVillagerOrder}
+              dungeons={dungeonsData.dungeons}
+              facilities={facilities}
+            />
+          ))
+        )}
       </div>
 
       {activeModal === "job" && selectedVillager && (

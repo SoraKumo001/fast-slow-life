@@ -134,6 +134,7 @@ export interface CraftJob {
 export type FacilityType =
   | "inn"
   | "workshop"
+  | "kitchen"
   | "blacksmith"
   | "alchemy"
   | "market"

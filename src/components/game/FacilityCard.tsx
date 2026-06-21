@@ -12,6 +12,8 @@ import { TradeRulePanel } from "./TradeRulePanel";
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
   workshop: "採取した原木や鉄鉱石などの素材を、木板や鉄インゴットなどの中間素材へ加工できます。",
+  kitchen:
+    "集めた食料や魔獣の肉などから、村人のステータスを一時的に強化する様々な料理を調理できます。",
   blacksmith:
     "武器や防具などの装備品をクラフトできます。強力な装備を作って村人のステータスを強化しましょう。",
   alchemy: "薬草から回復薬を調合したり、魔法石からより強力なポーションやエリクサーを生産できます。",

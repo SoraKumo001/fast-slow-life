@@ -210,7 +210,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_dried_meat: {
     id: "food_dried_meat",
     resultItemId: "food_dried_meat",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "food", count: 2 },
@@ -222,7 +222,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_herb_salad: {
     id: "food_herb_salad",
     resultItemId: "food_herb_salad",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "food", count: 2 },
@@ -234,7 +234,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_sandwich: {
     id: "food_sandwich",
     resultItemId: "food_sandwich",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "food", count: 3 },
@@ -246,7 +246,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_stamina_stew: {
     id: "food_stamina_stew",
     resultItemId: "food_stamina_stew",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 2,
     requiredItems: [
       { itemId: "food", count: 4 },
@@ -259,7 +259,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_beast_roast: {
     id: "food_beast_roast",
     resultItemId: "food_beast_roast",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 2,
     requiredItems: [
       { itemId: "food", count: 3 },
@@ -272,7 +272,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   food_dragon_hotpot: {
     id: "food_dragon_hotpot",
     resultItemId: "food_dragon_hotpot",
-    facilityId: "workshop",
+    facilityId: "kitchen",
     requiredFacilityLevel: 3,
     requiredItems: [
       { itemId: "food", count: 5 },
