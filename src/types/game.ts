@@ -225,9 +225,8 @@ export interface ActiveBossState {
 export interface TradeRule {
   id: string;
   itemId: string;
-  type: "buy" | "sell";
+  type: "sell";
   threshold: number;
-  amount: number;
   isEnabled: boolean;
 }
 
@@ -258,7 +257,7 @@ export interface GameActions {
   dispatchIdleVillagers: () => void;
   startBossBattle: (monsterId: string, villagerIds: string[]) => void;
   withdrawFromBossBattle: () => void;
-  addTradeRule: (itemId: string, type: "buy" | "sell", threshold: number, amount: number) => void;
+  addTradeRule: (itemId: string, type: "sell", threshold: number) => void;
   updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => void;
   deleteTradeRule: (ruleId: string) => void;
   toggleTradeRule: (ruleId: string) => void;

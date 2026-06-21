@@ -331,12 +331,11 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
     logs.forEach((log) => state.addLog(log, "info"));
   },
 
-  addTradeRule: (itemId: string, type: "buy" | "sell", threshold: number, amount: number) => {
+  addTradeRule: (itemId: string, type: "sell", threshold: number) => {
     const state = get();
     const item = ITEMS[itemId];
     if (!item) return;
 
-    const marketLvl = state.facilities.market.level;
     const weaponShopLvl = state.facilities.weapon_shop?.level || 0;
     const pharmacyLvl = state.facilities.pharmacy?.level || 0;
 
@@ -350,21 +349,7 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
       return 0;
     };
 
-    if (type === "buy") {
-      if (marketLvl === 0) {
-        state.addLog("交易所が建設されていないため、自動購入を設定できません。", "warning");
-        return;
-      }
-      const maxSlots = getSlotsForLevel(marketLvl);
-      const currentBuyRules = state.tradeRules.filter((r) => r.type === "buy");
-      if (currentBuyRules.length >= maxSlots) {
-        state.addLog(
-          `交易所が対応できる自動購入の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
-          "warning",
-        );
-        return;
-      }
-    } else if (type === "sell") {
+    if (type === "sell") {
       if (isGear) {
         if (weaponShopLvl === 0) {
           state.addLog("武器屋が建設されていないため、装備の自動売却を設定できません。", "warning");
@@ -412,12 +397,11 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
       }
     }
 
-    const newRule = {
+    const newRule: TradeRule = {
       id: generateId(),
       itemId,
       type,
       threshold,
-      amount,
       isEnabled: true,
     };
 

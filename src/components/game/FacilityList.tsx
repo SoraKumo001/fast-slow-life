@@ -47,7 +47,6 @@ export const FacilityList: React.FC = () => {
   // 自動取引入力用State
   const [tradeItemId, setTradeItemId] = useState("");
   const [tradeThreshold, setTradeThreshold] = useState<number>(10);
-  const [tradeAmount, setTradeAmount] = useState<number>(5);
 
   const buildLvl = soulUpgrades.building || 0;
   const costReduction = 1 - buildLvl * 0.05;
@@ -330,8 +329,8 @@ export const FacilityList: React.FC = () => {
                       </div>
                     )}
 
-                    {/* 自動取引（交易所・武器屋・薬屋）設定UI */}
-                    {(fac.id === "market" || fac.id === "weapon_shop" || fac.id === "pharmacy") &&
+                    {/* 自動取引（武器屋・薬屋）設定UI */}
+                    {(fac.id === "weapon_shop" || fac.id === "pharmacy") &&
                       (() => {
                         const maxSlots =
                           fac.level === 1 ? 2 : fac.level === 2 ? 4 : fac.level >= 3 ? 8 : 0;
@@ -340,9 +339,6 @@ export const FacilityList: React.FC = () => {
                         const filteredRules = (tradeRules || []).filter((rule) => {
                           const item = ITEMS[rule.itemId];
                           if (!item) return false;
-                          if (fac.id === "market") {
-                            return rule.type === "buy";
-                          }
                           if (fac.id === "weapon_shop") {
                             return (
                               rule.type === "sell" &&
@@ -356,12 +352,7 @@ export const FacilityList: React.FC = () => {
                         });
 
                         const usedSlots = filteredRules.length;
-                        const shopName =
-                          fac.id === "market"
-                            ? "交易所"
-                            : fac.id === "weapon_shop"
-                              ? "武器屋"
-                              : "薬屋";
+                        const shopName = fac.id === "weapon_shop" ? "武器屋" : "薬屋";
 
                         return (
                           <div className="space-y-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800">
@@ -393,9 +384,7 @@ export const FacilityList: React.FC = () => {
                                           {item.name}
                                         </span>
                                         <span className="text-[10px] text-slate-400 font-mono">
-                                          {rule.type === "sell"
-                                            ? `所持数 ${rule.threshold} 個超過時、最大 ${rule.amount} 個売却`
-                                            : `所持数 ${rule.threshold} 個未満時、${rule.amount} 個購入`}
+                                          {`所持数 ${rule.threshold} 個超過時、1個自動売却`}
                                         </span>
                                       </div>
                                       <div className="flex items-center gap-2">
@@ -455,12 +444,6 @@ export const FacilityList: React.FC = () => {
                                       <option value="">アイテムを選択</option>
                                       {Object.values(ITEMS)
                                         .filter((item) => {
-                                          if (fac.id === "market") {
-                                            return (
-                                              item.category !== "gear_weapon" &&
-                                              item.category !== "gear_armor"
-                                            );
-                                          }
                                           if (fac.id === "weapon_shop") {
                                             return (
                                               item.category === "gear_weapon" ||
@@ -480,30 +463,10 @@ export const FacilityList: React.FC = () => {
                                     </select>
                                   </div>
 
-                                  {/* 取引タイプ */}
-                                  <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] text-slate-400 font-medium">
-                                      取引タイプ
-                                    </label>
-                                    <select
-                                      disabled
-                                      value={fac.id === "market" ? "buy" : "sell"}
-                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-slate-200 focus:outline-none cursor-not-allowed opacity-80"
-                                    >
-                                      {fac.id === "market" ? (
-                                        <option value="buy">購入 (不足分を買う)</option>
-                                      ) : (
-                                        <option value="sell">売却 (超過分を売る)</option>
-                                      )}
-                                    </select>
-                                  </div>
-
                                   {/* 閾値 */}
                                   <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-slate-400 font-medium">
-                                      {fac.id === "market"
-                                        ? "閾値 (この個数未満時)"
-                                        : "閾値 (この個数を超過時)"}
+                                      閾値 (この個数を超過時)
                                     </label>
                                     <input
                                       type="number"
@@ -517,40 +480,13 @@ export const FacilityList: React.FC = () => {
                                       className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500/80 font-mono"
                                     />
                                   </div>
-
-                                  {/* 取引量 */}
-                                  <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] text-slate-400 font-medium">
-                                      {fac.id === "market" ? "購入個数" : "売却制限数 (0で無制限)"}
-                                    </label>
-                                    <input
-                                      type="number"
-                                      min={fac.id === "market" ? "1" : "0"}
-                                      value={tradeAmount}
-                                      onChange={(e) =>
-                                        setTradeAmount(
-                                          Math.max(
-                                            fac.id === "market" ? 1 : 0,
-                                            parseInt(e.target.value) || 0,
-                                          ),
-                                        )
-                                      }
-                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500/80 font-mono"
-                                    />
-                                  </div>
                                 </div>
 
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (!tradeItemId) return;
-                                    const typeToUse = fac.id === "market" ? "buy" : "sell";
-                                    addTradeRule(
-                                      tradeItemId,
-                                      typeToUse,
-                                      tradeThreshold,
-                                      tradeAmount,
-                                    );
+                                    addTradeRule(tradeItemId, "sell", tradeThreshold);
                                     // 追加後にリセット
                                     setTradeItemId("");
                                   }}
