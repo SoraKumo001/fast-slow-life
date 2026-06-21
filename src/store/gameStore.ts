@@ -23,8 +23,6 @@ declare global {
   var IS_TEST_ENVIRONMENT: boolean | undefined;
 }
 
-
-
 const maybePersist = <T extends object>(
   config: StateCreator<T, [], []>,
   options: unknown,

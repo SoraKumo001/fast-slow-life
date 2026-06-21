@@ -65,6 +65,7 @@ export const CRIT_RATE_DEX_FACTOR = 0.1;
 
 export const FOOD_GATHER_AMOUNT = 10;
 export const BASE_GATHER_AMOUNT = 1;
+export const STAT_GATHER_AMOUNT_FACTOR = 0.01;
 
 export const CRAFTER_TIME_REDUCTION = 0.8;
 export const CRAFT_QUEUE_MAX_LENGTH = 3;

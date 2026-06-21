@@ -1,5 +1,5 @@
 import { HelpCircle, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { DungeonPanel } from "./components/game/DungeonPanel";
 import { FacilityList } from "./components/game/FacilityList";
@@ -7,13 +7,44 @@ import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
 import { FooterLogTicker } from "./components/layout/FooterLogTicker";
 import { Header } from "./components/layout/Header";
+import { StatusBar } from "./components/layout/StatusBar";
 import { SoulShop } from "./components/modals/SoulShop";
-import { useGameStatus, useGameControls } from "./hooks";
+import { ToastContainer } from "./components/ui/ToastContainer";
+import { useGameStatus, useGameControls, useLogs } from "./hooks";
+import { useToastStore } from "./hooks/useToastStore";
 
 export default function App() {
   const { isPaused, playSpeed, gameOver } = useGameStatus();
   const { advanceHour } = useGameControls();
+  const logs = useLogs();
+  const addToast = useToastStore((s) => s.addToast);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const lastLogIdRef = useRef<string | null>(null);
+
+  // 新しいログを監視してToast通知
+  useEffect(() => {
+    if (logs.length === 0) return;
+    const latest = logs[logs.length - 1];
+    if (latest.id === lastLogIdRef.current) return;
+    lastLogIdRef.current = latest.id;
+
+    const msg = latest.message;
+    if (latest.type === "craft") {
+      addToast(msg, "success");
+    } else if (latest.type === "warning") {
+      addToast(msg, "warning");
+    } else if (latest.type === "error") {
+      addToast(msg, "error");
+    } else if (latest.type === "system" && msg.includes("レベルアップ")) {
+      addToast(msg, "success");
+    } else if (latest.type === "combat" && msg.includes("撃破")) {
+      addToast(msg, "success");
+    } else if (latest.type === "combat" && msg.includes("死亡")) {
+      addToast(msg, "error");
+    } else if (latest.type === "system" && (msg.includes("雇") || msg.includes("転職"))) {
+      addToast(msg, "info");
+    }
+  }, [logs, addToast]);
 
   // ゲーム時間進行ループ
   useEffect(() => {
@@ -34,6 +65,12 @@ export default function App() {
     <div className="flex flex-col h-screen overflow-hidden bg-slate-950 text-slate-100">
       {/* ヘッダー (上部) */}
       <Header />
+
+      {/* クイックステータスバー */}
+      <StatusBar />
+
+      {/* Toast通知 */}
+      <ToastContainer />
 
       <div className="bg-slate-900/40 border-b border-slate-900 px-6 py-2 flex items-center gap-4 text-xs text-slate-400 shrink-0 select-none">
         <div className="flex items-center gap-1.5">

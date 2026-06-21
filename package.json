@@ -2,7 +2,11 @@
   "name": "fast-slow-life",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "SoraKumo <info@croud.jp>",
+  "repository": "https://github.com/SoraKumo001/fast-slow-life",
   "type": "module",
+  "main": "index.js",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",

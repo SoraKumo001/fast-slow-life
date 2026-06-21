@@ -223,7 +223,9 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         );
         state.villagers.forEach((v) => {
           // 武器の自動アサイン
-          const weapons = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_WEAPON);
+          const weapons = inventoryItems.filter(
+            (id) => ITEMS[id]?.category === CATEGORY_GEAR_WEAPON,
+          );
           if (weapons.length > 0) {
             let bestWeaponId = "none";
             let maxAtk = -1;

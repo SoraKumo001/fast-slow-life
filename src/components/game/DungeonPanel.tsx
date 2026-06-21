@@ -6,6 +6,25 @@ import { useDungeons, useVillagers, useBossActions } from "../../hooks";
 import { DungeonArea } from "../../types/game";
 import { BossBattleModal } from "../modals/BossBattleModal";
 
+const RespawnBar: React.FC<{ timeLeft: number; timeTotal?: number }> = ({
+  timeLeft,
+  timeTotal,
+}) => {
+  const total = timeTotal || timeLeft;
+  const pct = total > 0 ? (1 - timeLeft / total) * 100 : 0;
+  return (
+    <span
+      className="inline-flex items-center gap-1"
+      title={`リスポーン残り ${timeLeft}h / ${total}h`}
+    >
+      <span className="w-8 bg-slate-950 rounded-full h-1 overflow-hidden border border-slate-900">
+        <span className="block bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
+      </span>
+      <span className="text-amber-500">{timeLeft}h</span>
+    </span>
+  );
+};
+
 export const DungeonPanel: React.FC = () => {
   const { dungeons, currentTier, bossDefeated, activeBoss } = useDungeons();
   const villagers = useVillagers();
@@ -215,9 +234,10 @@ export const DungeonPanel: React.FC = () => {
                               {isItemUnlocked && (
                                 <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
                                   {g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
-                                    <span className="text-amber-500">
-                                      リスポーン中 ({g.respawnTimeLeft}h)
-                                    </span>
+                                    <RespawnBar
+                                      timeLeft={g.respawnTimeLeft}
+                                      timeTotal={g.respawnTimeTotal}
+                                    />
                                   ) : (
                                     <span className="text-emerald-400">
                                       {Math.floor(g.currentProgress || 0)}%
@@ -292,9 +312,10 @@ export const DungeonPanel: React.FC = () => {
                               {isMonsUnlocked && !m.isBoss && (
                                 <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
                                   {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
-                                    <span className="text-amber-500">
-                                      リスポーン中 ({m.respawnTimeLeft}h)
-                                    </span>
+                                    <RespawnBar
+                                      timeLeft={m.respawnTimeLeft}
+                                      timeTotal={m.respawnTimeTotal}
+                                    />
                                   ) : (
                                     <span className="text-sky-400">
                                       {Math.floor(m.currentProgress || 0)}%

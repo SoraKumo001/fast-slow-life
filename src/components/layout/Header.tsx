@@ -1,6 +1,7 @@
-import { Play, Pause, RefreshCw, AlertTriangle, X } from "lucide-react";
+import { Play, Pause, RefreshCw, AlertTriangle, X, Sparkles } from "lucide-react";
 import React, { useState } from "react";
 
+import { SOUL_UPGRADES } from "../../data/masterData";
 import {
   useGameTime,
   usePlayerResources,
@@ -9,6 +10,7 @@ import {
   useVillagers,
   useInventory,
   useDungeons,
+  useSoulUpgrades,
 } from "../../hooks";
 import { SoulShop } from "../modals/SoulShop";
 
@@ -19,6 +21,7 @@ export const Header: React.FC = () => {
   const { isPaused, playSpeed, gameOver, gameLimitDays } = useGameStatus();
   const { currentTier, bossDefeated } = useDungeons();
   const villagers = useVillagers();
+  const soulUpgrades = useSoulUpgrades();
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
@@ -87,6 +90,25 @@ export const Header: React.FC = () => {
             <span className="text-purple-400 font-mono font-bold text-lg">{soulPoints} SP</span>
           </div>
         </div>
+
+        {/* アクティブバフ (SoulUpgrades) */}
+        {Object.values(soulUpgrades).some((lvl) => lvl > 0) && (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
+            {SOUL_UPGRADES.filter((u) => (soulUpgrades[u.id] || 0) > 0).map((u) => {
+              const lvl = soulUpgrades[u.id] || 0;
+              return (
+                <span
+                  key={u.id}
+                  className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950/60 border border-purple-800/50 text-purple-300 font-medium"
+                  title={`${u.name} Lv.${lvl}: ${u.description}`}
+                >
+                  {u.name} Lv.{lvl}
+                </span>
+              );
+            })}
+          </div>
+        )}
 
         {/* コントロール */}
         <div className="flex items-center gap-2 flex-wrap">

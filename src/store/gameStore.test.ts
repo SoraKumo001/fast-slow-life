@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { FacilityType } from "../types/game";
 import { DUNGEONS, ITEMS, RECIPES } from "../data/masterData";
+import { FacilityType } from "../types/game";
 import { useGameStore } from "./gameStore";
 
 describe("gameStore", () => {

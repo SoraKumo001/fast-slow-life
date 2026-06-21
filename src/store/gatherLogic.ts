@@ -12,6 +12,7 @@ import {
   CATEGORY_FOOD,
   CATEGORY_ORE,
   CATEGORY_MATERIAL,
+  STAT_GATHER_AMOUNT_FACTOR,
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea } from "../types/game";
@@ -57,7 +58,11 @@ export function processVillagerGather(
       if (jobAdapt) jobMod = jobAdapt;
 
       let statVal = 0;
-      if (item.category === CATEGORY_FOOD || item.category === CATEGORY_ORE || item.category === CATEGORY_MATERIAL) {
+      if (
+        item.category === CATEGORY_FOOD ||
+        item.category === CATEGORY_ORE ||
+        item.category === CATEGORY_MATERIAL
+      ) {
         statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
       } else {
         statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
@@ -121,7 +126,19 @@ export function processVillagerGather(
         const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
         if (jobAdapt) jobMod = jobAdapt;
 
-        const amount = Math.max(1, Math.floor(baseAmount * jobMod * efficiency));
+        let statVal = 0;
+        if (
+          item.category === CATEGORY_FOOD ||
+          item.category === CATEGORY_ORE ||
+          item.category === CATEGORY_MATERIAL
+        ) {
+          statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+        } else {
+          statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+        }
+
+        const statMod = 1.0 + statVal * STAT_GATHER_AMOUNT_FACTOR;
+        const amount = Math.max(1, Math.floor(baseAmount * jobMod * statMod * efficiency));
 
         nextInventory[bestItemId] = (nextInventory[bestItemId] || 0) + amount;
 

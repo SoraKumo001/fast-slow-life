@@ -1,5 +1,11 @@
 import { MAX_POTIONS_PER_VILLAGER } from "../constants";
-import { CATEGORY_FOOD, CATEGORY_ORE, CATEGORY_MATERIAL, CATEGORY_HERB, CATEGORY_MANA_STONE } from "../constants";
+import {
+  CATEGORY_FOOD,
+  CATEGORY_ORE,
+  CATEGORY_MATERIAL,
+  CATEGORY_HERB,
+  CATEGORY_MANA_STONE,
+} from "../constants";
 import { ITEMS } from "../data/masterData";
 import { OrderType, Villager, DungeonArea } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";

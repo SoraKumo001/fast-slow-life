@@ -1,11 +1,11 @@
 import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
-import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
 import { ITEMS, RECIPES, getRecipeForItem } from "../../data/masterData";
-import { getMarketSellBonus } from "../../utils/marketHelpers";
+import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
+import { getMarketSellBonus } from "../../utils/marketHelpers";
 
 interface ItemDetailModalProps {
   item: Item;
