@@ -1,5 +1,5 @@
 import { Home, Hammer, ArrowUpCircle } from "lucide-react";
-import React, { useState } from "react";
+import React from "react";
 
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
@@ -11,7 +11,6 @@ import {
   useCraftActions,
   useVillagerActions,
   useInventory,
-  useInventoryActions,
 } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { Panel } from "../ui/Panel";
@@ -41,12 +40,7 @@ export const FacilityList: React.FC = () => {
   const villagers = useVillagers();
   const { startFacilityUpgrade } = useCraftActions();
   const { hireVillager } = useVillagerActions();
-  const { addTradeRule, deleteTradeRule, toggleTradeRule } = useInventoryActions();
   const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
-
-  // 自動取引入力用State
-  const [tradeItemId, setTradeItemId] = useState("");
-  const [tradeThreshold, setTradeThreshold] = useState<number>(10);
 
   const buildLvl = soulUpgrades.building || 0;
   const costReduction = 1 - buildLvl * 0.05;
@@ -377,7 +371,7 @@ export const FacilityList: React.FC = () => {
                                   return (
                                     <div
                                       key={rule.id}
-                                      className="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-lg border border-slate-850/80 hover:border-slate-800 transition-all text-xs"
+                                      className="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-lg border border-slate-850/80 text-xs"
                                     >
                                       <div className="flex flex-col gap-0.5">
                                         <span className="font-bold text-slate-200">
@@ -387,30 +381,15 @@ export const FacilityList: React.FC = () => {
                                           {`所持数 ${rule.threshold} 個超過時、1個自動売却`}
                                         </span>
                                       </div>
-                                      <div className="flex items-center gap-2">
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleTradeRule(rule.id);
-                                          }}
-                                          className={`px-2 py-1 rounded text-[10px] font-bold cursor-pointer transition ${
-                                            rule.isEnabled
-                                              ? "bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600/50"
-                                              : "bg-slate-800 text-slate-500 border border-slate-700 hover:bg-slate-700"
-                                          }`}
-                                        >
-                                          {rule.isEnabled ? "有効" : "無効"}
-                                        </button>
-                                        <button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            deleteTradeRule(rule.id);
-                                          }}
-                                          className="px-2 py-1 rounded text-[10px] font-bold bg-red-950/40 text-red-400 border border-red-900/30 hover:bg-red-900/40 hover:text-red-300 transition cursor-pointer"
-                                        >
-                                          削除
-                                        </button>
-                                      </div>
+                                      <span
+                                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                          rule.isEnabled
+                                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20"
+                                            : "bg-slate-800 text-slate-500 border border-slate-700"
+                                        }`}
+                                      >
+                                        {rule.isEnabled ? "有効" : "無効"}
+                                      </span>
                                     </div>
                                   );
                                 })}
@@ -419,87 +398,6 @@ export const FacilityList: React.FC = () => {
                               <p className="text-[10px] text-slate-500 italic">
                                 自動取引ルールが設定されていません。
                               </p>
-                            )}
-
-                            {/* ルール追加フォーム */}
-                            {usedSlots < maxSlots ? (
-                              <div
-                                onClick={(e) => e.stopPropagation()}
-                                className="space-y-3 pt-3 border-t border-slate-800/60"
-                              >
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                  ルールの新規追加
-                                </p>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  {/* アイテム選択 */}
-                                  <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] text-slate-400 font-medium">
-                                      アイテム
-                                    </label>
-                                    <select
-                                      value={tradeItemId}
-                                      onChange={(e) => setTradeItemId(e.target.value)}
-                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
-                                    >
-                                      <option value="">アイテムを選択</option>
-                                      {Object.values(ITEMS)
-                                        .filter((item) => {
-                                          if (fac.id === "weapon_shop") {
-                                            return (
-                                              item.category === "gear_weapon" ||
-                                              item.category === "gear_armor"
-                                            );
-                                          }
-                                          if (fac.id === "pharmacy") {
-                                            return item.category === "consumable";
-                                          }
-                                          return false;
-                                        })
-                                        .map((item) => (
-                                          <option key={item.id} value={item.id}>
-                                            {item.name}
-                                          </option>
-                                        ))}
-                                    </select>
-                                  </div>
-
-                                  {/* 閾値 */}
-                                  <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] text-slate-400 font-medium">
-                                      閾値 (この個数を超過時)
-                                    </label>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      value={tradeThreshold}
-                                      onChange={(e) =>
-                                        setTradeThreshold(
-                                          Math.max(0, parseInt(e.target.value) || 0),
-                                        )
-                                      }
-                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1 text-slate-200 focus:outline-none focus:border-indigo-500/80 font-mono"
-                                    />
-                                  </div>
-                                </div>
-
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!tradeItemId) return;
-                                    addTradeRule(tradeItemId, "sell", tradeThreshold);
-                                    // 追加後にリセット
-                                    setTradeItemId("");
-                                  }}
-                                  disabled={!tradeItemId}
-                                  className="w-full py-2 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold text-xs rounded-lg transition-all cursor-pointer disabled:cursor-not-allowed"
-                                >
-                                  ルールを追加
-                                </button>
-                              </div>
-                            ) : (
-                              <div className="bg-amber-950/20 border border-amber-900/40 rounded p-2 text-[10px] text-amber-400">
-                                ※スロットが満杯です。新しいルールを追加するには、既存のルールを削除してください。
-                              </div>
                             )}
                           </div>
                         );

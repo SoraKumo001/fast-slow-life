@@ -1,7 +1,6 @@
 import { ITEMS } from "../../data/masterData";
 import { GameState, GameActions, Item, Villager, TradeRule } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
-import { getSellBonus } from "../../utils/marketHelpers";
 
 // ヘルパー関数: 魔法職かどうか
 const isMagicJob = (job: string): boolean => {
@@ -105,20 +104,14 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
     const toSell = Math.min(currentCount, count);
     if (toSell <= 0) return;
 
-    const bonusRate = getSellBonus(item.category, state.facilities);
-    const basePrice = item.sellPrice * toSell;
-    const price = Math.floor(basePrice * (1 + bonusRate));
+    const price = item.sellPrice * toSell;
 
     set((state) => ({
       inventory: { ...state.inventory, [itemId]: currentCount - toSell },
       gold: state.gold + price,
     }));
 
-    const bonusText = bonusRate > 0 ? ` (ボーナス +${Math.round(bonusRate * 100)}% 適用)` : "";
-    state.addLog(
-      `${item.name} を ${toSell} 個売却し、${price} G 獲得しました。${bonusText}`,
-      "info",
-    );
+    state.addLog(`${item.name} を ${toSell} 個売却し、${price} G 獲得しました。`, "info");
   },
 
   equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => {

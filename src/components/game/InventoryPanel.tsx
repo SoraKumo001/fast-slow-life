@@ -176,6 +176,9 @@ export const InventoryPanel: React.FC = () => {
                     <span>
                       所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
                     </span>
+                    <span>
+                      売値: <span className="text-amber-500 font-bold">{item.sellPrice} G</span>
+                    </span>
                     {target > 0 && (
                       <span className="text-sky-400 font-bold">
                         (目標: {target}) {currentCount >= target ? "✓" : "不足"}
