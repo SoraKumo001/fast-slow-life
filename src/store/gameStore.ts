@@ -4,7 +4,6 @@ import { persist } from "zustand/middleware";
 import { STARTING_GOLD, TIER_LIMIT_DAYS } from "../constants";
 import { ITEMS } from "../data/masterData";
 import { GameState, GameActions } from "../types/game";
-import { getMarketSellBonus } from "../utils/marketHelpers";
 import { createBossActions } from "./actions/bossActions";
 import { createCraftActions } from "./actions/craftActions";
 import { createInventoryActions } from "./actions/inventoryActions";
@@ -24,19 +23,7 @@ declare global {
   var IS_TEST_ENVIRONMENT: boolean | undefined;
 }
 
-export { getMarketSellBonus };
-export {
-  ITEMS,
-  RECIPES,
-  MONSTERS,
-  DUNGEONS,
-  SOUL_UPGRADES,
-  JOBS,
-  getRecipeForItem,
-  getRecipesForFacility,
-  getCraftableItemsForFacility,
-} from "../data/masterData";
-export { calculateEarnedSp } from "./gameReset";
+
 
 const maybePersist = <T extends object>(
   config: StateCreator<T, [], []>,

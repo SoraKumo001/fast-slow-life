@@ -9,6 +9,9 @@ import {
   GATHER_STAT_WEIGHT_SECONDARY,
   GATHER_PROGRESS_DEX_FACTOR,
   GATHER_PROGRESS_BASE,
+  CATEGORY_FOOD,
+  CATEGORY_ORE,
+  CATEGORY_MATERIAL,
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea } from "../types/game";
@@ -54,7 +57,7 @@ export function processVillagerGather(
       if (jobAdapt) jobMod = jobAdapt;
 
       let statVal = 0;
-      if (item.category === "food" || item.category === "ore" || item.category === "material") {
+      if (item.category === CATEGORY_FOOD || item.category === CATEGORY_ORE || item.category === CATEGORY_MATERIAL) {
         statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
       } else {
         statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;

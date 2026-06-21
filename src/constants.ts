@@ -101,6 +101,15 @@ export const SPAWN_DAYS_BONUS = 2;
 export const UPGRADE_COST_GOLD_MULTIPLIER = 300;
 export const UPGRADE_COST_MATERIAL_INCREMENT = 5;
 
+export const CATEGORY_FOOD = "food";
+export const CATEGORY_ORE = "ore";
+export const CATEGORY_HERB = "herb";
+export const CATEGORY_MANA_STONE = "mana_stone";
+export const CATEGORY_MATERIAL = "material";
+export const CATEGORY_GEAR_WEAPON = "gear_weapon";
+export const CATEGORY_GEAR_ARMOR = "gear_armor";
+export const CATEGORY_CONSUMABLE = "consumable";
+
 export const STAT_LABEL_MAP: Record<string, string> = {
   attack: "攻撃",
   defense: "防御",

@@ -4,8 +4,10 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
 
+import { CATEGORY_GEAR_WEAPON, CATEGORY_GEAR_ARMOR } from "../constants";
+import { ITEMS, JOBS, SOUL_UPGRADES } from "../data/masterData";
 import { FacilityType, JobType } from "../types/game";
-import { ITEMS, JOBS, useGameStore, SOUL_UPGRADES } from "./gameStore";
+import { useGameStore } from "./gameStore";
 
 interface SimulationResult {
   run: number;
@@ -221,7 +223,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         );
         state.villagers.forEach((v) => {
           // 武器の自動アサイン
-          const weapons = inventoryItems.filter((id) => ITEMS[id]?.category === "gear_weapon");
+          const weapons = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_WEAPON);
           if (weapons.length > 0) {
             let bestWeaponId = "none";
             let maxAtk = -1;
@@ -240,7 +242,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
           }
 
           // 防具の自動アサイン
-          const armors = inventoryItems.filter((id) => ITEMS[id]?.category === "gear_armor");
+          const armors = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_ARMOR);
           if (armors.length > 0) {
             let bestArmorId = "none";
             let maxDef = -1;

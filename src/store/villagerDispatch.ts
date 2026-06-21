@@ -1,6 +1,7 @@
 import { MAX_POTIONS_PER_VILLAGER } from "../constants";
+import { CATEGORY_FOOD, CATEGORY_ORE, CATEGORY_MATERIAL, CATEGORY_HERB, CATEGORY_MANA_STONE } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { Villager, OrderType, DungeonArea } from "../types/game";
+import { OrderType, Villager, DungeonArea } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export interface DispatchResult {
@@ -49,15 +50,15 @@ export function dispatchIdleVillagersHelper(params: {
       if (missingItemIds.length > 0) {
         let preferredCategories: string[] = [];
         const job = v.currentJob;
-        if (job === "農民") preferredCategories = ["food"];
-        else if (job === "木こり") preferredCategories = ["material"];
-        else if (job === "猟師") preferredCategories = ["food", "material"];
-        else if (job === "鉱夫") preferredCategories = ["ore", "material"];
-        else if (job === "薬師") preferredCategories = ["herb", "mana_stone"];
-        else if (job === "魔術師") preferredCategories = ["mana_stone"];
-        else if (job === "僧侶") preferredCategories = ["herb"];
-        else if (job === "職人") preferredCategories = ["ore", "material"];
-        else if (job === "戦士") preferredCategories = ["material"];
+        if (job === "農民") preferredCategories = [CATEGORY_FOOD];
+        else if (job === "木こり") preferredCategories = [CATEGORY_MATERIAL];
+        else if (job === "猟師") preferredCategories = [CATEGORY_FOOD, CATEGORY_MATERIAL];
+        else if (job === "鉱夫") preferredCategories = [CATEGORY_ORE, CATEGORY_MATERIAL];
+        else if (job === "薬師") preferredCategories = [CATEGORY_HERB, CATEGORY_MANA_STONE];
+        else if (job === "魔術師") preferredCategories = [CATEGORY_MANA_STONE];
+        else if (job === "僧侶") preferredCategories = [CATEGORY_HERB];
+        else if (job === "職人") preferredCategories = [CATEGORY_ORE, CATEGORY_MATERIAL];
+        else if (job === "戦士") preferredCategories = [CATEGORY_MATERIAL];
 
         const sortedMissingItemIds = [...missingItemIds].sort((a, b) => {
           const aCategory = ITEMS[a]?.category || "";
