@@ -55,43 +55,68 @@ export type VillagerStatus =
   | "traveling_back" // 村へ帰還中
   | "resting"; // 宿屋で休息中
 
-export interface Villager {
-  id: string;
-  name: string;
+export interface VillagerBaseStats {
   level: number;
   exp: number;
-  currentJob: JobType;
-  jobHistory: JobType[];
   maxHp: number;
   currentHp: number;
-  stamina: number; // 0 - maxStamina
+  stamina: number;
   maxStamina: number;
   str: number;
   int: number;
   dex: number;
   agi: number;
   vit: number;
-  weaponId: string; // 'none' or itemId
-  armorId: string; // 'none' or itemId
+}
+
+export interface VillagerJobInfo {
+  currentJob: JobType;
+  jobHistory: JobType[];
+}
+
+export interface VillagerEquipment {
+  weaponId: string;
+  armorId: string;
+}
+
+export interface VillagerStatusInfo {
   order: OrderType;
   status: VillagerStatus;
-  destinationAreaId: string | null; // 派遣先のエリアID
-  travelTimeLeft: number; // 移動の残り時間
-  assignedCraftJobId: string | null; // 施設でのクラフト担当時のジョブID（自動クラフト等）
-  targetGatherItemId: string | null; // 追加：直接指示された採取アイテムID
-  targetMonsterId: string | null; // 追加：直接指示された討伐対象モンスターID
-  autoTargetName?: string | null; // 追加：自動意思決定で選択されているターゲット名
-  potionItemId?: string; // 追加：所持している回復薬のアイテムID
-  potionCount: number; // 追加：所持している回復薬の数
-  staminaDrinkItemId?: string; // 追加：所持しているスタミナ回復薬のアイテムID
-  staminaDrinkCount: number; // 追加：所持しているスタミナ回復薬の数
-  bonusStr: number; // 追加：累積されたSTRボーナス
-  bonusInt: number; // 追加：累積されたINTボーナス
-  bonusDex: number; // 追加：累積されたDEXボーナス
-  bonusAgi: number; // 追加：累積されたAGIボーナス
-  bonusVit: number; // 追加：累積されたVITボーナス
-  bonusMaxHp: number; // 追加：累積された最大HPボーナス
-  bonusMaxStamina: number; // 追加：累積された最大スタミナボーナス
+  destinationAreaId: string | null;
+  travelTimeLeft: number;
+  assignedCraftJobId: string | null;
+  targetGatherItemId: string | null;
+  targetMonsterId: string | null;
+  autoTargetName?: string | null;
+}
+
+export interface VillagerInventory {
+  potionItemId?: string;
+  potionCount: number;
+  staminaDrinkItemId?: string;
+  staminaDrinkCount: number;
+}
+
+export interface VillagerBonuses {
+  bonusStr: number;
+  bonusInt: number;
+  bonusDex: number;
+  bonusAgi: number;
+  bonusVit: number;
+  bonusMaxHp: number;
+  bonusMaxStamina: number;
+}
+
+export interface Villager
+  extends
+    VillagerBaseStats,
+    VillagerJobInfo,
+    VillagerEquipment,
+    VillagerStatusInfo,
+    VillagerInventory,
+    VillagerBonuses {
+  id: string;
+  name: string;
 }
 
 export interface CraftJob {
@@ -187,6 +212,34 @@ export interface ActiveBossState {
   currentHp: number;
   maxHp: number;
   attackerIds: string[]; // 参加中の村人IDリスト
+}
+
+export interface GameActions {
+  advanceHour: () => void;
+  setVillagerOrder: (
+    id: string,
+    order: OrderType,
+    areaId: string | null,
+    targetGatherItemId?: string | null,
+    targetMonsterId?: string | null,
+  ) => void;
+  changeVillagerJob: (id: string, job: JobType) => void;
+  equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => void;
+  unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
+  startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
+  startFacilityUpgrade: (facilityId: FacilityType) => void;
+  setTargetAmount: (itemId: string, count: number) => void;
+  buySoulUpgrade: (upgradeId: string) => void;
+  hireVillager: () => void;
+  resetGame: (prestige?: boolean) => void;
+  togglePause: () => void;
+  setPlaySpeed: (speed: "normal" | "fast" | "super") => void;
+  addLog: (message: string, type: GameLog["type"]) => void;
+  sellItem: (itemId: string, count: number) => void;
+  advanceDay: () => void;
+  dispatchIdleVillagers: () => void;
+  startBossBattle: (monsterId: string, villagerIds: string[]) => void;
+  withdrawFromBossBattle: () => void;
 }
 
 export interface GameState {

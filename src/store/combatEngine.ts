@@ -8,7 +8,7 @@ import {
   BATTLE_POTION_HP_RATIO,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { Villager } from "../types/game";
+import { Villager, VillagerBaseStats, VillagerEquipment, VillagerJobInfo } from "../types/game";
 
 export function calculateHitRate(attackerDex: number, defenderAgi: number): number {
   return Math.max(
@@ -22,7 +22,9 @@ export function calculateCritRate(attackerDex: number): number {
 }
 
 export interface PlayerAttackParams {
-  attacker: Pick<Villager, "str" | "int" | "dex" | "currentJob" | "weaponId">;
+  attacker: VillagerBaseStats &
+    Pick<VillagerJobInfo, "currentJob"> &
+    Pick<VillagerEquipment, "weaponId">;
   defender: { def: number; mdef: number; vit: number; int: number; agi: number };
   isCritical: boolean;
   efficiency: number;
@@ -55,7 +57,7 @@ export function calculatePlayerDamage(params: PlayerAttackParams): number {
 
 export interface EnemyAttackParams {
   attacker: { dex: number; atk: number };
-  defender: Pick<Villager, "agi" | "vit" | "armorId">;
+  defender: Pick<VillagerBaseStats, "agi" | "vit"> & Pick<VillagerEquipment, "armorId">;
   isCritical: boolean;
   minDamage?: number;
 }
