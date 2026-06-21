@@ -191,6 +191,60 @@ describe("gameStore", () => {
     }
   });
 
+  it("ボス戦でアタッカーが全員戦闘不能になったとき、ボス戦が自動終了すること", () => {
+    const store = useGameStore.getState();
+    globalThis.IS_TEST_ENVIRONMENT = false;
+
+    try {
+      // 非常に弱い村人（HP1）をアタッカーとして設定
+      useGameStore.setState((s) => ({
+        villagers: s.villagers.map((v, idx) => {
+          if (idx === 0) {
+            return {
+              ...v,
+              id: "v_weak",
+              name: "弱い村人",
+              currentJob: "戦士",
+              status: "active",
+              destinationAreaId: "forest",
+              maxHp: 1,
+              currentHp: 1,
+              str: 1,
+              vit: 1,
+              potionCount: 0,
+            };
+          }
+          return { ...v, status: "idle" };
+        }),
+      }));
+
+      store.startBossBattle("goblin_leader", ["v_weak"]);
+
+      // ゲームを進める（弱い村人が全滅するまで）
+      // ボスの攻撃を何度か受けさせる
+      for (let i = 0; i < 20; i++) {
+        const state = useGameStore.getState();
+        // ボス戦が既に終了していたら抜ける
+        if (state.activeBoss === null) break;
+        // アタッカーが全員HPゼロなら抜ける
+        const allDefeated = state.villagers
+          .filter((v) => state.activeBoss?.attackerIds.includes(v.id))
+          .every((v) => v.currentHp <= 0);
+        if (allDefeated) break;
+        store.advanceHour();
+      }
+
+      const finalState = useGameStore.getState();
+      // ボス戦が終了していること
+      expect(finalState.activeBoss).toBeNull();
+      // 終了ログが出力されていること
+      const wipeLog = finalState.logs.find((l) => l.message.includes("ボスとの対決は終了しました"));
+      expect(wipeLog).toBeDefined();
+    } finally {
+      globalThis.IS_TEST_ENVIRONMENT = true;
+    }
+  });
+
   describe("自動取引（Auto Trade）機能", () => {
     beforeEach(() => {
       globalThis.IS_TEST_ENVIRONMENT = false; // ログを記録させるため一時的にテスト環境フラグを解除

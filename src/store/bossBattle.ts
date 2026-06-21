@@ -244,6 +244,15 @@ export function processBossBattle(
           const v = nextVillagers.find((villager) => villager.id === id);
           return v && v.currentHp > 0;
         });
+
+        // 生存しているアタッカーが0人になった場合、ボス戦を自動終了
+        if (nextActiveBoss.attackerIds.length === 0) {
+          logs.push({
+            message: `【ボス戦】戦闘に参加した村人が全員戦闘不能になったため、ボスとの対決は終了しました。`,
+            type: "system",
+          });
+          nextActiveBoss = null;
+        }
       }
 
       if (nextActiveBoss && nextActiveBoss.currentHp <= 0) {
