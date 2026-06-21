@@ -137,6 +137,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
         // --- 自動プレイAIの意思決定ポリシー ---
         const dailySalaryTotal = state.villagers.reduce((sum, v) => {
+          if (v.currentJob === "無職") return sum;
           const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
           return sum + Math.floor(totalStat * 0.1);
         }, 0);

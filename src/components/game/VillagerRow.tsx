@@ -94,7 +94,10 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             className="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded ml-2.5 font-mono inline-flex items-center gap-0.5"
             title="日給 (毎日00:00に自動引き落とし)"
           >
-            🪙 {Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1)} G/日
+            🪙{" "}
+            {v.currentJob === "無職"
+              ? 0
+              : Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1)}
           </span>
           <div className="mt-1 flex gap-0.5 items-center">
             <div>

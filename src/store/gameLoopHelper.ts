@@ -57,6 +57,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
   if (isNewDay) {
     const dailySalaryTotal = villagers.reduce((sum, v) => {
+      if (v.currentJob === "無職") return sum;
       const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
       return sum + Math.floor(totalStat * 0.1);
     }, 0);
