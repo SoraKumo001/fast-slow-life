@@ -7,6 +7,7 @@ import { processBossBattle } from "./bossBattle";
 import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
 import { processExploration } from "./exploration";
 import { AdvanceHourResult } from "./gameLoopTypes";
+import { processItemPoolPurchase } from "./poolPurchase";
 import { processRespawns } from "./respawns";
 import { processStarvation } from "./starvation";
 import { processVillagerActivities } from "./villagerAI";
@@ -56,29 +57,15 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   let isSalaryUnpaidNext = isSalaryUnpaid;
 
   if (isNewDay) {
-    const dailySalaryTotal = villagers.reduce((sum, v) => {
-      if (v.currentJob === "無職") return sum;
-      const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
-      return sum + Math.floor(totalStat * 0.1);
-    }, 0);
-
-    if (gold >= dailySalaryTotal) {
-      gold -= dailySalaryTotal;
-      isSalaryUnpaidNext = false;
-      logsToAppend.push({
-        message: `【給与】村人全員の給与（計 ${dailySalaryTotal} G）を支払いました。`,
-        type: "info",
-      });
-    } else {
-      gold = 0;
-      isSalaryUnpaidNext = true;
-      logsToAppend.push({
-        message: `【警告】ゴールドが不足しているため、村人の給与（計 ${dailySalaryTotal} G）が支払えませんでした。給与未払いデバフ（全ステータス -30%）が発生します！`,
-        type: "warning",
-      });
-    }
+    // プレイヤーのゴールドは毎日100G増える
+    gold += 100;
+    logsToAppend.push({
+      message: `【経済】毎日の資金援助としてプレイヤーのゴールドが 100 G 増加しました。`,
+      type: "info",
+    });
 
     const unlockedTowns = towns.filter((t) => t.isUnlocked);
+
     if (unlockedTowns.length > 0) {
       const randomTown = unlockedTowns[Math.floor(Math.random() * unlockedTowns.length)];
       if (randomTown.demands && randomTown.demands.length > 0) {
@@ -132,7 +119,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     inventory: starvedInventory,
     hasStarvation,
     activeFoodBuffId,
-  } = processStarvation(inventory, villagers.length);
+  } = processStarvation(inventory, villagers);
   inventory = starvedInventory;
 
   // 各村人の activeFoodBuffId を更新
@@ -140,6 +127,34 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     ...v,
     activeFoodBuffId: hasStarvation ? null : activeFoodBuffId,
   }));
+
+  if (isNewDay) {
+    // 村人全員の食料代を請求
+    let totalFoodCost = 0;
+    villagers = villagers.map((v) => {
+      let foodCost = 0;
+      if (v.currentJob === "無職") {
+        foodCost = 0;
+      } else if (hasStarvation) {
+        foodCost = 0;
+      } else if (v.activeFoodBuffId) {
+        foodCost = ITEMS[v.activeFoodBuffId]?.sellPrice || 2;
+      } else {
+        foodCost = 2; // 生の食材の基本価格
+      }
+
+      const nextV = { ...v };
+      nextV.gold -= foodCost;
+      totalFoodCost += foodCost;
+      return nextV;
+    });
+
+    gold += totalFoodCost;
+    logsToAppend.push({
+      message: `【経済】村人全員の食料代（計 ${totalFoodCost} G）が引き落とされ、プレイヤーに支払われました。`,
+      type: "info",
+    });
+  }
 
   if (activeFoodBuffId && !hasStarvation) {
     const foodItem = ITEMS[activeFoodBuffId];
@@ -240,6 +255,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   villagers = actRes.villagers;
   inventory = { ...inventory, ...actRes.inventory };
   dungeons = actRes.dungeons;
+  gold = actRes.gold; // 宿代引き落としや採取・討伐完了による売買が反映される
   logsToAppend.push(...actRes.logs);
   if (actRes.gameOver) {
     return {
@@ -481,6 +497,16 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   gold = tradeRes.gold;
   inventory = tradeRes.inventory;
   logsToAppend.push(...tradeRes.logs);
+
+  // 毎時間のプール自動購入処理
+  const poolRes = processItemPoolPurchase(gold, inventory, villagers);
+  gold = poolRes.gold;
+  inventory = poolRes.inventory;
+  villagers = poolRes.villagers;
+  logsToAppend.push(...poolRes.logs);
+
+  // ツケ（マイナスゴールド）がある村人がいるかどうかで未払いフラグを更新
+  isSalaryUnpaidNext = villagers.some((v) => v.gold < 0);
 
   return {
     currentDay,

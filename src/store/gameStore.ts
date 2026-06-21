@@ -23,7 +23,7 @@ import {
   getInitialTowns,
   getInitialCaravans,
 } from "./initialState";
-import { partialize, merge } from "./persistence";
+import { partialize, merge, customStorage } from "./persistence";
 
 declare global {
   var IS_TEST_ENVIRONMENT: boolean | undefined;
@@ -90,5 +90,6 @@ export const useGameStore = globalThis.IS_TEST_ENVIRONMENT
         name: "fast-slow-life-save-state",
         partialize,
         merge,
+        storage: customStorage,
       }),
     );

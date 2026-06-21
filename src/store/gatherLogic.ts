@@ -19,6 +19,7 @@ import { Villager, DungeonArea } from "../types/game";
 import { getFoodBuffBonus, applySalaryDebuff } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
+import { processItemAcquisition } from "./poolPurchase";
 
 export function processVillagerGather(
   v: Villager,
@@ -29,9 +30,11 @@ export function processVillagerGather(
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
-  isSalaryUnpaid: boolean = false,
-): { logs: LogPayload[]; areaUpdated: boolean } {
+  gold: number,
+  _isSalaryUnpaid: boolean = false,
+): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
   const logs: LogPayload[] = [];
+
   let bestItemId = "";
   const progress = area.explorationProgress;
 
@@ -40,10 +43,10 @@ export function processVillagerGather(
   const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
   const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
 
-  const effectiveStr = applySalaryDebuff(v.str + buffStr, isSalaryUnpaid);
-  const effectiveInt = applySalaryDebuff(v.int + buffInt, isSalaryUnpaid);
-  const effectiveDex = applySalaryDebuff(v.dex + buffDex, isSalaryUnpaid);
-  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, isSalaryUnpaid);
+  const effectiveStr = applySalaryDebuff(v.str + buffStr, v.gold < 0);
+  const effectiveInt = applySalaryDebuff(v.int + buffInt, v.gold < 0);
+  const effectiveDex = applySalaryDebuff(v.dex + buffDex, v.gold < 0);
+  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, v.gold < 0);
 
   const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
   if (
@@ -158,7 +161,12 @@ export function processVillagerGather(
         const statMod = 1.0 + statVal * STAT_GATHER_AMOUNT_FACTOR;
         const amount = Math.max(1, Math.floor(baseAmount * jobMod * statMod * efficiency));
 
-        nextInventory[bestItemId] = (nextInventory[bestItemId] || 0) + amount;
+        const acqRes = processItemAcquisition(v, bestItemId, amount, gold, nextInventory);
+        gold = acqRes.playerGold;
+        // nextInventoryを更新（ミュータブルに反映するため、プロパティを上書き）
+        Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
+        Object.assign(nextInventory, acqRes.inventory);
+        logs.push(...acqRes.logs);
 
         const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
         const itemDiff = item.difficulty || 1.0;
@@ -195,5 +203,5 @@ export function processVillagerGather(
     }
   }
 
-  return { logs, areaUpdated: true };
+  return { logs, areaUpdated: true, gold };
 }

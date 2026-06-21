@@ -3,17 +3,12 @@ import React from "react";
 
 import { ITEMS } from "../../data/masterData";
 import { getFoodBuffBonus, applySalaryDebuff } from "../../store/combatEngine";
-import { useGameStore } from "../../store/gameStore";
 import { Villager } from "../../types/game";
 import { ProgressBar } from "../ui/ProgressBar";
 import { Tooltip } from "../ui/Tooltip";
 
-const computeEffectiveAtk = (
-  v: Villager,
-  buffStr: number,
-  buffInt: number,
-  isSalaryUnpaid: boolean,
-): number => {
+const computeEffectiveAtk = (v: Villager, buffStr: number, buffInt: number): number => {
+  const isSalaryUnpaid = v.gold < 0;
   const weaponAtk = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0;
   const weaponInt = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0;
   const rawStr = v.str + buffStr;
@@ -25,7 +20,8 @@ const computeEffectiveAtk = (
   return Math.max(physical, magical);
 };
 
-const computeEffectiveDef = (v: Villager, buffVit: number, isSalaryUnpaid: boolean): number => {
+const computeEffectiveDef = (v: Villager, buffVit: number): number => {
+  const isSalaryUnpaid = v.gold < 0;
   const armorDef = v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0;
   const rawVit = v.vit + buffVit;
   const effectiveVit = applySalaryDebuff(rawVit, isSalaryUnpaid);
@@ -37,7 +33,7 @@ interface VillagerStatsProps {
 }
 
 export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => {
-  const isSalaryUnpaid = useGameStore((state) => state.isSalaryUnpaid);
+  const isSalaryUnpaid = v.gold < 0;
 
   const buffStr = getFoodBuffBonus(v.activeFoodBuffId || null, "str");
   const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
@@ -100,7 +96,7 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
         <div className="space-y-1 text-[11px] font-mono text-slate-400">
           <p>
             <Tooltip
-              content={`攻撃力: ${computeEffectiveAtk(v, buffStr, buffInt, isSalaryUnpaid)} (STR ${v.str + (v.bonusStr || 0) + buffStr - debuffStr}×1.5 + 武器ATK ${v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0})`}
+              content={`攻撃力: ${computeEffectiveAtk(v, buffStr, buffInt)} (STR ${v.str + (v.bonusStr || 0) + buffStr - debuffStr}×1.5 + 武器ATK ${v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0})`}
             >
               <span className="border-b border-dotted border-slate-600">STR</span>
             </Tooltip>
@@ -142,7 +138,7 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
           </p>
           <p>
             <Tooltip
-              content={`防御力: ${computeEffectiveDef(v, buffVit, isSalaryUnpaid)} (VIT ${v.vit + (v.bonusVit || 0) + buffVit - debuffVit} + 防具DEF ${v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0})`}
+              content={`防御力: ${computeEffectiveDef(v, buffVit)} (VIT ${v.vit + (v.bonusVit || 0) + buffVit - debuffVit} + 防具DEF ${v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0})`}
             >
               <span className="border-b border-dotted border-slate-600">VIT</span>
             </Tooltip>
@@ -154,8 +150,7 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
             {debuffVit > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffVit}</span>}
           </p>
           <p className="pt-1 text-[10px] text-slate-500 font-sans">
-            ATK {computeEffectiveAtk(v, buffStr, buffInt, isSalaryUnpaid)} / DEF{" "}
-            {computeEffectiveDef(v, buffVit, isSalaryUnpaid)}
+            ATK {computeEffectiveAtk(v, buffStr, buffInt)} / DEF {computeEffectiveDef(v, buffVit)}
           </p>
         </div>
       </div>

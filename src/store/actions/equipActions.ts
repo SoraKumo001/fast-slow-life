@@ -55,12 +55,30 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
     const currentCount = state.inventory[itemId] || 0;
     if (currentCount <= 0) return;
 
+    const villager = state.villagers.find((v) => v.id === villagerId);
+    if (!villager) return;
+
+    const oldEquipId = slot === "weapon" ? villager.weaponId : villager.armorId;
+    if (oldEquipId === itemId) return;
+
+    const price = item.sellPrice || 0;
+    if (villager.gold < price) {
+      state.addLog(
+        `【警告】${villager.name} のゴールド不足により、${item.name} を購入できません（必要: ${price}G / 所持: ${villager.gold}G）。`,
+        "warning",
+      );
+      return;
+    }
+
     set((state) => {
       const inv = { ...state.inventory };
+      let playerGold = state.gold;
       const updated = state.villagers.map((v) => {
         if (v.id !== villagerId) return v;
 
-        const oldEquipId = slot === "weapon" ? v.weaponId : v.armorId;
+        v.gold -= price;
+        playerGold += price;
+
         if (oldEquipId && oldEquipId !== "none") {
           inv[oldEquipId] = (inv[oldEquipId] || 0) + 1;
         }
@@ -73,11 +91,11 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         };
       });
 
-      return { villagers: updated, inventory: inv };
+      return { villagers: updated, inventory: inv, gold: playerGold };
     });
 
     const vName = get().villagers.find((v) => v.id === villagerId)?.name;
-    state.addLog(`${vName} に ${ITEMS[itemId].name} を装備しました。`, "info");
+    state.addLog(`${vName} が ${ITEMS[itemId].name} を購入して装備しました。`, "info");
   },
 
   unequipItem: (villagerId: string, slot: "weapon" | "armor") => {
@@ -160,46 +178,71 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
 
     const logs: string[] = [];
 
+    let playerGold = state.gold;
     sortedVillagerIndices.forEach(({ v, index }) => {
+      const villagerObj = villagers[index];
+
       let bestWeaponId = "none";
       let bestWeaponScore = -1;
+      let weaponCost = 0;
 
       Object.entries(weaponPool).forEach(([itemId, count]) => {
         if (count <= 0) return;
         const item = ITEMS[itemId];
-        const score = getWeaponScore(item, v);
-        if (score > bestWeaponScore) {
-          bestWeaponScore = score;
-          bestWeaponId = itemId;
+        const isSame = v.weaponId === itemId;
+        const cost = isSame ? 0 : item.sellPrice || 0;
+
+        if (villagerObj.gold >= cost) {
+          const score = getWeaponScore(item, v);
+          if (score > bestWeaponScore) {
+            bestWeaponScore = score;
+            bestWeaponId = itemId;
+            weaponCost = cost;
+          }
         }
       });
 
       if (bestWeaponId !== "none") {
         weaponPool[bestWeaponId]--;
+        if (weaponCost > 0) {
+          villagerObj.gold -= weaponCost;
+          playerGold += weaponCost;
+        }
       }
 
       let bestArmorId = "none";
       let bestArmorScore = -1;
+      let armorCost = 0;
 
       Object.entries(armorPool).forEach(([itemId, count]) => {
         if (count <= 0) return;
         const item = ITEMS[itemId];
-        const score = getArmorScore(item, v);
-        if (score > bestArmorScore) {
-          bestArmorScore = score;
-          bestArmorId = itemId;
+        const isSame = v.armorId === itemId;
+        const cost = isSame ? 0 : item.sellPrice || 0;
+
+        if (villagerObj.gold >= cost) {
+          const score = getArmorScore(item, v);
+          if (score > bestArmorScore) {
+            bestArmorScore = score;
+            bestArmorId = itemId;
+            armorCost = cost;
+          }
         }
       });
 
       if (bestArmorId !== "none") {
         armorPool[bestArmorId]--;
+        if (armorCost > 0) {
+          villagerObj.gold -= armorCost;
+          playerGold += armorCost;
+        }
       }
 
       const originalWeapon = v.weaponId;
       const originalArmor = v.armorId;
 
       villagers[index] = {
-        ...v,
+        ...villagerObj,
         weaponId: bestWeaponId,
         armorId: bestArmorId,
       };
@@ -207,12 +250,16 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
       if (originalWeapon !== bestWeaponId) {
         const oldName = originalWeapon !== "none" ? ITEMS[originalWeapon].name : "素手";
         const newName = bestWeaponId !== "none" ? ITEMS[bestWeaponId].name : "素手";
-        logs.push(`${v.name} の武器を ${oldName} → ${newName} に自動変更しました。`);
+        logs.push(
+          `${v.name} が ${newName} を購入して装備しました（${oldName} → ${newName}、購入額: ${weaponCost}G）。`,
+        );
       }
       if (originalArmor !== bestArmorId) {
         const oldName = originalArmor !== "none" ? ITEMS[originalArmor].name : "防具なし";
         const newName = bestArmorId !== "none" ? ITEMS[bestArmorId].name : "防具なし";
-        logs.push(`${v.name} の防具を ${oldName} → ${newName} に自動変更しました。`);
+        logs.push(
+          `${v.name} が ${newName} を購入して装備しました（${oldName} → ${newName}、購入額: ${armorCost}G）。`,
+        );
       }
     });
 
@@ -233,6 +280,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
     set({
       villagers,
       inventory,
+      gold: playerGold,
     });
 
     logs.forEach((log) => state.addLog(log, "info"));

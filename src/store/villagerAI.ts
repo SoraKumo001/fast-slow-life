@@ -27,9 +27,11 @@ export function processVillagerActivities(
   _bossDefeated: boolean,
   hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
-  _gold: number,
+  gold: number,
   isSalaryUnpaid: boolean = false,
 ) {
+  let currentGold = gold;
+
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
   const nextInventory = { ...inventory };
@@ -52,6 +54,22 @@ export function processVillagerActivities(
       const maxStamina = v.maxStamina || 100;
       v.currentHp = Math.min(v.maxHp, v.currentHp + hpRecovery);
       v.stamina = Math.min(maxStamina, v.stamina + staminaRecovery);
+
+      // 宿代請求: 1時間あたり 1 + innLvl G を村人からプレイヤーへ（無職の場合は無料）
+      const innCost = v.currentJob === "無職" ? 0 : 1 + innLvl;
+      v.gold -= innCost; // 不足時はツケ払い（マイナス）
+      currentGold += innCost;
+      if (innCost > 0) {
+        logs.push({
+          message: `${v.name} の宿代として ${innCost} G を引き落としました（現在の所持: ${v.gold} G）。`,
+          type: "info",
+        });
+      } else {
+        logs.push({
+          message: `${v.name} は無職のため宿代が無料になりました（現在の所持: ${v.gold} G）。`,
+          type: "info",
+        });
+      }
 
       if (v.currentHp === v.maxHp && v.stamina === maxStamina) {
         v.status = "idle";
@@ -220,8 +238,10 @@ export function processVillagerActivities(
           targetAmounts,
           efficiency,
           soulUpgrades,
+          currentGold,
           isSalaryUnpaid,
         );
+        currentGold = gatherResult.gold;
         logs.push(...gatherResult.logs);
       } else if (v.order === "hunt") {
         const huntResult = processVillagerHunt(
@@ -233,8 +253,10 @@ export function processVillagerActivities(
           targetAmounts,
           efficiency,
           soulUpgrades,
+          currentGold,
           isSalaryUnpaid,
         );
+        currentGold = huntResult.gold;
         logs.push(...huntResult.logs);
         if (v.currentHp <= 0) {
           v.status = "traveling_back";
@@ -251,6 +273,7 @@ export function processVillagerActivities(
     villagers: nextVillagers,
     inventory: nextInventory,
     dungeons: nextDungeons,
+    gold: currentGold,
     logs,
     gameOver,
     isPaused,

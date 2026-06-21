@@ -21,7 +21,7 @@ export const InventoryPanel: React.FC = () => {
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
-  type FilterTab = "all" | "material" | "consumable" | "gear";
+  type FilterTab = "all" | "material" | "food" | "consumable" | "gear";
   type SortOption = "count-desc" | "count-asc" | "price-desc" | "price-asc" | "name-asc";
 
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
@@ -30,7 +30,10 @@ export const InventoryPanel: React.FC = () => {
   const filterItem = (item: Item) => {
     if (activeTab === "all") return true;
     if (activeTab === "material") {
-      return ["food", "ore", "herb", "mana_stone", "material"].includes(item.category);
+      return ["ore", "herb", "mana_stone", "material"].includes(item.category);
+    }
+    if (activeTab === "food") {
+      return item.category === "food";
     }
     if (activeTab === "consumable") {
       return item.category === "consumable";
@@ -129,6 +132,7 @@ export const InventoryPanel: React.FC = () => {
         tabs={[
           { id: "all", label: "すべて" },
           { id: "material", label: "素材" },
+          { id: "food", label: "食料" },
           { id: "consumable", label: "消耗品" },
           { id: "gear", label: "装備" },
         ]}

@@ -364,4 +364,13 @@ export const ITEMS: Record<string, Item> = {
       "竜の肉を使用した贅沢な極上鍋。村人の全能力、最大HP、最大スタミナを爆発的に上昇させる。",
     foodBuff: { str: 20, int: 20, vit: 20, dex: 15, agi: 15, maxHp: 50, maxStamina: 30 },
   },
+  food_bread: {
+    id: "food_bread",
+    name: "パン",
+    category: "food",
+    sellPrice: 4,
+    difficulty: 1.0,
+    description: "小麦をこねて焼き上げた素朴なパン。村人のVITを少し上昇させる。",
+    foodBuff: { vit: 2 },
+  },
 };

@@ -20,12 +20,14 @@ export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
       targetMonsterId,
       villagers: state.villagers,
       inventory: state.inventory,
+      gold: state.gold,
     });
 
     result.logs.forEach((log) => state.addLog(log.message, log.type));
     set({
       villagers: result.villagers,
       inventory: result.inventory,
+      gold: result.gold,
     });
   },
 

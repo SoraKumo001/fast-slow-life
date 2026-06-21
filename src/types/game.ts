@@ -121,6 +121,8 @@ export interface Villager
   id: string;
   name: string;
   activeFoodBuffId: string | null;
+  gold: number;
+  pool: Record<string, number>;
 }
 
 export interface CraftJob {
@@ -318,7 +320,7 @@ export interface GameActions {
   collectCaravan: (caravanId: string) => void;
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
-  paySalaryDebt: () => void;
+  payVillagerDebts: () => void;
 }
 
 export interface GameState {

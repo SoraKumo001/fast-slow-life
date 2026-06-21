@@ -3,6 +3,8 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { DUNGEONS, ITEMS, RECIPES } from "../data/masterData";
 import { FacilityType } from "../types/game";
 import { useGameStore } from "./gameStore";
+import { processVillagerGather } from "./gatherLogic";
+import { processItemPoolPurchase } from "./poolPurchase";
 
 describe("gameStore", () => {
   beforeEach(() => {
@@ -50,9 +52,11 @@ describe("gameStore", () => {
   it("自動装備 (autoEquipAll) が正しく機能すること", () => {
     useGameStore.setState((s) => ({
       villagers: s.villagers.map((v, idx) => {
-        if (idx === 0) return { ...v, currentJob: "戦士", weaponId: "none", armorId: "none" };
-        if (idx === 1) return { ...v, currentJob: "魔術師", weaponId: "none", armorId: "none" };
-        return { ...v, weaponId: "none", armorId: "none" };
+        if (idx === 0)
+          return { ...v, currentJob: "戦士", weaponId: "none", armorId: "none", gold: 1000 };
+        if (idx === 1)
+          return { ...v, currentJob: "魔術師", weaponId: "none", armorId: "none", gold: 1000 };
+        return { ...v, weaponId: "none", armorId: "none", gold: 1000 };
       }),
       inventory: {
         ...s.inventory,
@@ -233,6 +237,158 @@ describe("gameStore", () => {
 
       const tradeLog = state.logs.find((l) => l.message.includes("回復薬 を 1 個自動売却（薬屋）"));
       expect(tradeLog).toBeDefined();
+    });
+
+    it("新しい経済システム：自動買取、プール処理、宿代の引き落とし、ツケ肩代わりが動作すること", () => {
+      const store = useGameStore.getState();
+
+      // 初期ゴールドの設定
+      useGameStore.setState((s) => ({
+        gold: 10, // プレイヤーゴールドは10G
+        villagers: s.villagers.map((v, idx) => {
+          if (idx === 0) {
+            return {
+              ...v,
+              gold: 50,
+              pool: {},
+              status: "active",
+              order: "gather",
+              destinationAreaId: "forest",
+            };
+          }
+          return { ...v, status: "idle" };
+        }),
+      }));
+
+      // 1. 採取を行い、プレイヤーのゴールドが不足してプールされることを確認
+      // 小麦 (sellPrice = 1G) を 15 個採取しようとすると、15G 必要。
+      // プレイヤーは 10G しか持っていないため、10個は買い取り、5個はプールされる。
+      // プレイヤーゴールド: 10G -> 0G
+      // 村人ゴールド: 50G -> 60G
+      // 倉庫小麦: 0 -> 10個
+      // プール小麦: 5個
+      const stateBefore = useGameStore.getState();
+      const forestOriginal = stateBefore.dungeons.find((d) => d.id === "forest")!;
+      const forest = {
+        ...forestOriginal,
+        gathers: forestOriginal.gathers.map((g) => {
+          if (g.itemId === "wheat") {
+            return { ...g, currentProgress: 95, respawnTimeLeft: 0 };
+          }
+          return g;
+        }),
+      };
+
+      const nextInventory = { ...stateBefore.inventory, wheat: 0 };
+      const villagersCopy = [...stateBefore.villagers];
+      const v = villagersCopy[0];
+
+      const res = processVillagerGather(
+        v,
+        0,
+        forest,
+        villagersCopy,
+        nextInventory,
+        { wheat: 999 },
+        1.0,
+        {},
+        10, // プレイヤーゴールド 10G
+      );
+
+      expect(res.gold).toBe(0); // プレイヤーゴールドは 0G に減少
+      expect(v.gold).toBe(60); // 村人のゴールドは 50 + 10 = 60G に増加
+      expect(v.pool.wheat).toBe(1); // 買えなかった1個がプールされる (採取量: 11)
+      expect(nextInventory.wheat).toBe(10); // 買えた10個が倉庫に入る
+
+      // 2. プレイヤーのゴールドが増えたときに、プールから自動精算されることを検証
+      // プレイヤーが 100G を手に入れたとする
+      const poolPurchaseResult = processItemPoolPurchase(100, nextInventory, [v]);
+      expect(poolPurchaseResult.gold).toBe(99); // プール小麦 1個 x 1G = 1G が支払われ、 100 - 1 = 99G になる
+      expect(poolPurchaseResult.inventory.wheat).toBe(11); // プールされていた小麦が倉庫に移り、計 11 個になる
+      expect(poolPurchaseResult.villagers[0].gold).toBe(61); // 村人に 1G 支払われて 60 + 1 = 61G になる
+      expect(poolPurchaseResult.villagers[0].pool.wheat).toBeUndefined(); // プール小麦は完済して消滅
+
+      // 3. 宿代の差し引きとツケ払いの確認
+      // 村人が resting の場合、宿代が差し引かれてプレイヤーへ支払われる
+      useGameStore.setState(() => ({
+        gold: 100,
+        villagers: [
+          {
+            ...v,
+            currentJob: "農民",
+            status: "resting",
+            gold: 1, // 村人の所持金は 1G
+            pool: {}, // 自動買取が走らないように空にする
+          },
+        ],
+
+        facilities: {
+          ...stateBefore.facilities,
+          inn: { ...stateBefore.facilities.inn, level: 1 }, // 宿レベル 1 -> 宿代は 1+1 = 2G
+        },
+      }));
+
+      // 1時間進める (advanceHour)
+      // 宿代 2G が引き落とされる。村人のゴールドは 1 -> -1 (ツケ払い)
+      // プレイヤーゴールドは 100 -> 102
+      globalThis.IS_TEST_ENVIRONMENT = false;
+      try {
+        store.advanceHour();
+      } finally {
+        globalThis.IS_TEST_ENVIRONMENT = true;
+      }
+
+      const stateResting = useGameStore.getState();
+      const restingVillager = stateResting.villagers[0];
+      expect(restingVillager.gold).toBe(-1); // ツケ払いになりマイナス
+      expect(stateResting.gold).toBe(102); // 宿代 2G がプレイヤーに入る
+
+      // 4. ツケの肩代わり（一括返済）
+      // プレイヤーゴールド 102G から村人のツケ 1G を肩代わりする
+      // プレイヤーゴールド: 102 -> 101
+      // 村人ゴールド: -1 -> 0
+      store.payVillagerDebts();
+      const statePaid = useGameStore.getState();
+      expect(statePaid.villagers[0].gold).toBe(0);
+      expect(statePaid.gold).toBe(101);
+    });
+
+    it("小麦を消費してパンをクラフトできること", () => {
+      const store = useGameStore.getState();
+
+      // 小麦を10個に設定
+      useGameStore.setState((s) => ({
+        inventory: {
+          ...s.inventory,
+          wheat: 10,
+          food_bread: 0,
+        },
+        facilities: {
+          ...s.facilities,
+          kitchen: { ...s.facilities.kitchen, level: 1 },
+        },
+      }));
+
+      // クラフト開始
+      store.startCraft("kitchen", "food_bread");
+
+      let state = useGameStore.getState();
+      // 小麦が2個消費されていることを確認
+      expect(state.inventory.wheat).toBe(8);
+      // クラフトキューに1つ追加されていることを確認
+      expect(state.facilities.kitchen.craftQueue.length).toBe(1);
+      expect(state.facilities.kitchen.craftQueue[0].itemId).toBe("food_bread");
+
+      // クラフトに必要な時間が経過するまで時間を進める
+      const timeNeeded = state.facilities.kitchen.craftQueue[0].timeLeft;
+      for (let i = 0; i < timeNeeded; i++) {
+        store.advanceHour();
+      }
+
+      state = useGameStore.getState();
+      // パンが完成していることを確認
+      expect(state.inventory.food_bread).toBeGreaterThanOrEqual(1);
+      expect(state.facilities.kitchen.craftQueue.length).toBe(0);
     });
   });
 });

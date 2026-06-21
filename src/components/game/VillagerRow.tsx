@@ -91,14 +91,27 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             </span>
           </span>
           <span
-            className="text-[10px] text-amber-400 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded ml-2.5 font-mono inline-flex items-center gap-0.5"
-            title="日給 (毎日00:00に自動引き落とし)"
+            className={`text-[10px] px-1.5 py-0.5 rounded ml-2.5 font-mono inline-flex items-center gap-0.5 ${
+              v.gold < 0
+                ? "text-red-400 bg-red-950/40 border border-red-900/60"
+                : "text-amber-400 bg-amber-950/40 border border-amber-900/60"
+            }`}
+            title={
+              v.gold < 0 ? `ツケ（未払い宿代・食料代）: ${-v.gold} G` : `所持ゴールド: ${v.gold} G`
+            }
           >
-            🪙{" "}
-            {v.currentJob === "無職"
-              ? 0
-              : Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1)}
+            🪙 {v.gold || 0} G
           </span>
+
+          {v.pool && Object.keys(v.pool).length > 0 && (
+            <span
+              className="text-[10px] text-sky-400 bg-sky-950/40 border border-sky-900/60 px-1.5 py-0.5 rounded ml-2 font-mono inline-flex items-center gap-0.5"
+              title="プレイヤーのゴールド不足により仮置きされているアイテム（ゴールドが出来次第自動買取）"
+            >
+              📦 {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個プール
+            </span>
+          )}
+
           <div className="mt-1 flex gap-0.5 items-center">
             <div>
               <span
@@ -182,6 +195,31 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
       {isExpanded && (
         <div className="mt-3 pt-3 border-t border-slate-900 space-y-3">
           <VillagerStats villager={v} />
+
+          {v.pool && Object.keys(v.pool).length > 0 && (
+            <div className="bg-slate-900/60 border border-slate-800 rounded p-2.5 space-y-1">
+              <p className="text-[10px] font-bold text-sky-400 flex items-center gap-1.5">
+                📦 仮置き場（プール中アイテム）:
+              </p>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px] font-mono text-slate-300">
+                {Object.entries(v.pool).map(([itemId, count]) => {
+                  const item = ITEMS[itemId];
+                  return (
+                    <div
+                      key={itemId}
+                      className="flex justify-between border-b border-slate-800/40 pb-0.5"
+                    >
+                      <span>{item?.name || itemId}</span>
+                      <span className="text-slate-400">
+                        x{count} (計 {(item?.sellPrice || 0) * count}G)
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col gap-1.5 justify-center">
             <button
               onClick={(e) => {

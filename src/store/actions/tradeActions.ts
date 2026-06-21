@@ -2,6 +2,7 @@ import { ITEMS } from "../../data/masterData";
 import { getFriendshipLevel, getInvestCost } from "../../data/towns";
 import { StoreGet, StoreSet } from "../../types/game";
 import { getMarketSellBonus } from "../../utils/marketHelpers";
+import { processItemPoolPurchase } from "../poolPurchase";
 
 export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
   sendExportCaravan: (
@@ -201,6 +202,11 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       );
     }
 
+    const poolRes = processItemPoolPurchase(nextGold, nextInventory, state.villagers);
+    nextGold = poolRes.gold;
+    Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
+    Object.assign(nextInventory, poolRes.inventory);
+
     // 馬車の状態リセット
     const updatedCaravans = [...state.caravans];
     updatedCaravans[caravanIndex] = {
@@ -222,7 +228,10 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       inventory: nextInventory,
       towns: nextTowns,
       caravans: updatedCaravans,
+      villagers: poolRes.villagers,
     });
+
+    poolRes.logs.forEach((log) => state.addLog(log.message, log.type));
   },
 
   investInTown: (townId: string) => {

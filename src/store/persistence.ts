@@ -1,3 +1,5 @@
+import { StateStorage, createJSONStorage } from "zustand/middleware";
+
 import {
   GameState,
   GameActions,
@@ -118,3 +120,88 @@ export const merge = <S extends GameState & GameActions>(
 
   return merged;
 };
+
+// ==========================================
+// デバウンス付き永続化ストレージの実装
+// ==========================================
+const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+
+const createDebouncedLocalStorage = (delayMs: number): StateStorage => {
+  const storage = window.localStorage;
+  const pendingWrites = new Map<string, string>();
+  const timeouts = new Map<string, ReturnType<typeof setTimeout>>();
+
+  const flush = (name: string) => {
+    if (pendingWrites.has(name)) {
+      try {
+        storage.setItem(name, pendingWrites.get(name)!);
+      } catch (e) {
+        console.error(e);
+      }
+      pendingWrites.delete(name);
+      if (timeouts.has(name)) {
+        clearTimeout(timeouts.get(name));
+        timeouts.delete(name);
+      }
+    }
+  };
+
+  const flushAll = () => {
+    Array.from(pendingWrites.keys()).forEach(flush);
+  };
+
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", flushAll);
+    window.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        flushAll();
+      }
+    });
+  }
+
+  return {
+    getItem: (name) => {
+      if (pendingWrites.has(name)) {
+        return pendingWrites.get(name)!;
+      }
+      return storage.getItem(name);
+    },
+    setItem: (name, value) => {
+      pendingWrites.set(name, value);
+      if (timeouts.has(name)) {
+        clearTimeout(timeouts.get(name));
+      }
+      timeouts.set(
+        name,
+        setTimeout(() => {
+          flush(name);
+        }, delayMs),
+      );
+    },
+    removeItem: (name) => {
+      pendingWrites.delete(name);
+      if (timeouts.has(name)) {
+        clearTimeout(timeouts.get(name));
+        timeouts.delete(name);
+      }
+      storage.removeItem(name);
+    },
+  };
+};
+
+const createDummyStorage = (): StateStorage => {
+  const map = new Map<string, string>();
+  return {
+    getItem: (name) => map.get(name) || null,
+    setItem: (name, value) => {
+      map.set(name, value);
+    },
+    removeItem: (name) => {
+      map.delete(name);
+    },
+  };
+};
+
+const storageImpl = isBrowser ? createDebouncedLocalStorage(1000) : createDummyStorage();
+
+export const customStorage = createJSONStorage(() => storageImpl);

@@ -21,6 +21,7 @@ import {
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
+import { processItemAcquisition } from "./poolPurchase";
 
 export function processVillagerHunt(
   v: Villager,
@@ -31,9 +32,12 @@ export function processVillagerHunt(
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
-  isSalaryUnpaid: boolean = false,
-): { logs: LogPayload[]; areaUpdated: boolean } {
+  gold: number,
+  _isSalaryUnpaid: boolean = false,
+): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
   const logs: LogPayload[] = [];
+  let currentGold = gold;
+
   const progress = area.explorationProgress;
 
   const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
@@ -41,10 +45,11 @@ export function processVillagerHunt(
   const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
   const buffMaxHp = getFoodBuffBonus(v.activeFoodBuffId || null, "maxHp");
 
-  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, isSalaryUnpaid);
-  const effectiveDex = applySalaryDebuff(v.dex + buffDex, isSalaryUnpaid);
-  const effectiveInt = applySalaryDebuff(v.int + buffInt, isSalaryUnpaid);
-  const effectiveMaxHp = applySalaryDebuff(v.maxHp + buffMaxHp, isSalaryUnpaid);
+  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, v.gold < 0);
+  const effectiveDex = applySalaryDebuff(v.dex + buffDex, v.gold < 0);
+  const effectiveInt = applySalaryDebuff(v.int + buffInt, v.gold < 0);
+  const effectiveMaxHp = applySalaryDebuff(v.maxHp + buffMaxHp, v.gold < 0);
+
   const availableMonsters = area.monsters.filter(
     (m) => progress >= (m.unlockedAtProgress || 0) && !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
   );
@@ -150,11 +155,13 @@ export function processVillagerHunt(
       const isMagicUser = isMagicJob(v.currentJob);
 
       for (let turn = 1; turn <= HUNT_MAX_TURNS; turn++) {
-        const potionResult = useBattlePotion(v, isSalaryUnpaid);
+        const potionResult = useBattlePotion(v, v.gold < 0);
+
         if (potionResult.used) {
           v.potionCount = potionResult.updated.potionCount;
           v.currentHp = potionResult.updated.currentHp;
           const pId = v.potionItemId || "potion";
+          // 探索時のポーション使用は村人本人が持つポーションなので、購入処理は発生しない
           logs.push({
             message: `[Turn ${turn}] ${v.name} は戦闘中に${ITEMS[pId]?.name || "回復薬"}を使用し、HPを ${potionResult.healed} 回復した。 (残り ${v.potionCount} 個)`,
             type: "combat",
@@ -192,7 +199,7 @@ export function processVillagerHunt(
               isCritical,
               efficiency,
               isMagicUser,
-              isSalaryUnpaid,
+              isSalaryUnpaid: v.gold < 0,
             });
 
             enemyHp -= damage;
@@ -224,7 +231,7 @@ export function processVillagerHunt(
             attacker: enemy,
             defender: v,
             isCritical: isEnemyCrit,
-            isSalaryUnpaid,
+            isSalaryUnpaid: v.gold < 0,
           });
 
           v.currentHp = Math.max(0, v.currentHp - damageToVillager);
@@ -271,11 +278,11 @@ export function processVillagerHunt(
         enemy.drops.forEach((drop) => {
           const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
           if (Math.random() < drop.chance * hunterBonus) {
-            nextInventory[drop.itemId] = (nextInventory[drop.itemId] || 0) + 1;
-            logs.push({
-              message: `敵から ${ITEMS[drop.itemId]?.name || drop.itemId} を獲得しました。`,
-              type: "combat",
-            });
+            const acqRes = processItemAcquisition(v, drop.itemId, 1, currentGold, nextInventory);
+            currentGold = acqRes.playerGold;
+            Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
+            Object.assign(nextInventory, acqRes.inventory);
+            logs.push(...acqRes.logs);
           }
         });
 
@@ -299,5 +306,5 @@ export function processVillagerHunt(
     }
   }
 
-  return { logs, areaUpdated: true };
+  return { logs, areaUpdated: true, gold: currentGold };
 }

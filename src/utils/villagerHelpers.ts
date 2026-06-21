@@ -1,3 +1,4 @@
+import { VILLAGER_STARTING_GOLD } from "../constants";
 import { Villager } from "../types/game";
 
 export function createVillager(options: {
@@ -50,6 +51,8 @@ export function createVillager(options: {
     bonusMaxHp: 0,
     bonusMaxStamina: 0,
     activeFoodBuffId: null,
+    gold: VILLAGER_STARTING_GOLD,
+    pool: {},
   };
 }
 

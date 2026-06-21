@@ -16,6 +16,7 @@ export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
 
 export const STARTING_GOLD = 500;
 export const STARTING_FOOD = 50;
+export const VILLAGER_STARTING_GOLD = 50;
 
 export const HIRE_COST = 100;
 export const BASE_MAX_VILLAGERS = 3;

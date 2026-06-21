@@ -285,4 +285,13 @@ export const RECIPES: Record<string, CraftRecipe> = {
     requiredTime: 5,
     outputCount: 1,
   },
+  food_bread: {
+    id: "food_bread",
+    resultItemId: "food_bread",
+    facilityId: "kitchen",
+    requiredFacilityLevel: 1,
+    requiredItems: [{ itemId: "wheat", count: 2 }],
+    requiredTime: 2,
+    outputCount: 1,
+  },
 };

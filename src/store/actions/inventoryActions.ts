@@ -1,5 +1,6 @@
 import { ITEMS } from "../../data/masterData";
 import { StoreSet, StoreGet } from "../../types/game";
+import { processItemPoolPurchase } from "../poolPurchase";
 
 export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
   setTargetAmount: (itemId: string, count: number) => {
@@ -46,12 +47,18 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
     if (toSell <= 0) return;
 
     const price = item.sellPrice * toSell;
+    const baseInventory = { ...state.inventory, [itemId]: currentCount - toSell };
+    const baseGold = state.gold + price;
 
-    set((state) => ({
-      inventory: { ...state.inventory, [itemId]: currentCount - toSell },
-      gold: state.gold + price,
-    }));
+    const poolRes = processItemPoolPurchase(baseGold, baseInventory, state.villagers);
+
+    set({
+      inventory: poolRes.inventory,
+      gold: poolRes.gold,
+      villagers: poolRes.villagers,
+    });
 
     state.addLog(`${item.name} を ${toSell} 個売却し、${price} G 獲得しました。`, "info");
+    poolRes.logs.forEach((log) => state.addLog(log.message, log.type));
   },
 });

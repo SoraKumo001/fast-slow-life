@@ -30,15 +30,14 @@ export const VillagerList: React.FC = () => {
   const [activeModal, setActiveModal] = useState<"job" | "equip" | null>(null);
   const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
 
-  const isSalaryUnpaid = useGameStore((state) => state.isSalaryUnpaid);
-  const paySalaryDebt = useGameStore((state) => state.paySalaryDebt);
+  const payVillagerDebts = useGameStore((state) => state.payVillagerDebts);
   const gold = useGameStore((state) => state.gold);
 
   const [jobGroup, setJobGroup] = useState<JobGroup>("all");
   const [sortBy, setSortBy] = useState<SortOption>("level-desc");
 
-  const dailySalaryTotal = useMemo(
-    () => villagers.reduce((sum, v) => sum + getSalary(v), 0),
+  const totalDebts = useMemo(
+    () => villagers.reduce((sum, v) => sum + (v.gold < 0 ? -v.gold : 0), 0),
     [villagers],
   );
 
@@ -102,26 +101,26 @@ export const VillagerList: React.FC = () => {
       />
 
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-        {isSalaryUnpaid && (
+        {totalDebts > 0 && (
           <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="space-y-0.5">
               <p className="text-xs font-bold text-red-400 flex items-center gap-1.5">
                 <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                給与未払いデバフ発生中！
+                ツケ（未払い）のある村人がいます！
               </p>
               <p className="text-[10px] text-slate-400">
-                村人全員の全能力値が 30% 低下しています。
+                ツケを抱える村人は全能力値が 30% 低下しています。
               </p>
             </div>
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                paySalaryDebt();
+                payVillagerDebts();
               }}
-              disabled={gold < dailySalaryTotal}
+              disabled={gold <= 0}
               className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[11px] font-semibold transition cursor-pointer disabled:cursor-not-allowed text-center whitespace-nowrap"
             >
-              給与を支払う ({dailySalaryTotal} G)
+              ツケを肩代わりする (計 {totalDebts} G)
             </button>
           </div>
         )}

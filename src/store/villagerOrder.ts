@@ -7,6 +7,7 @@ export interface OrderChangeResult {
   villagers: Villager[];
   inventory: Record<string, number>;
   logs: LogPayload[];
+  gold: number;
 }
 
 export function setVillagerOrderHelper(params: {
@@ -17,6 +18,7 @@ export function setVillagerOrderHelper(params: {
   targetMonsterId?: string | null;
   villagers: Villager[];
   inventory: Record<string, number>;
+  gold: number;
 }): OrderChangeResult {
   const {
     villagerId,
@@ -26,10 +28,12 @@ export function setVillagerOrderHelper(params: {
     targetMonsterId = null,
     villagers,
     inventory,
+    gold,
   } = params;
 
   const nextInventory = { ...inventory };
   const logs: LogPayload[] = [];
+  let nextGold = gold;
 
   const updatedVillagers = villagers.map((v) => {
     if (v.id !== villagerId) return v;
@@ -103,10 +107,17 @@ export function setVillagerOrderHelper(params: {
         for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
-            assignedId = pId;
-            assignedCount = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv);
-            nextInventory[pId] = countInInv - assignedCount;
-            break;
+            const price = ITEMS[pId]?.sellPrice || 0;
+            const maxCanBuy = Math.floor(v.gold / price);
+            const toBuy = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv, maxCanBuy);
+            if (toBuy > 0) {
+              assignedId = pId;
+              assignedCount = toBuy;
+              v.gold -= toBuy * price;
+              nextGold += toBuy * price;
+              nextInventory[pId] = countInInv - toBuy;
+              break;
+            }
           }
         }
 
@@ -115,7 +126,7 @@ export function setVillagerOrderHelper(params: {
           nextPotionItemId = assignedId;
           const pName = ITEMS[assignedId]?.name || "回復薬";
           logs.push({
-            message: `【準備】${v.name} は${pName}を ${assignedCount} 個所持しました。`,
+            message: `【準備】${v.name} は${pName}を ${assignedCount} 個購入しました（計 ${assignedCount * (ITEMS[assignedId]?.sellPrice || 0)} G）。`,
             type: "info",
           });
         }
@@ -125,8 +136,15 @@ export function setVillagerOrderHelper(params: {
         const staminaDrinkId = "stamina_drink";
         const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
         if (staminaDrinkInInv > 0) {
-          assignedStaminaCount = Math.min(2, staminaDrinkInInv);
-          nextInventory[staminaDrinkId] = staminaDrinkInInv - assignedStaminaCount;
+          const price = ITEMS[staminaDrinkId]?.sellPrice || 0;
+          const maxCanBuy = Math.floor(v.gold / price);
+          const toBuy = Math.min(2, staminaDrinkInInv, maxCanBuy);
+          if (toBuy > 0) {
+            assignedStaminaCount = toBuy;
+            v.gold -= toBuy * price;
+            nextGold += toBuy * price;
+            nextInventory[staminaDrinkId] = staminaDrinkInInv - toBuy;
+          }
         }
 
         if (assignedStaminaCount > 0) {
@@ -134,7 +152,7 @@ export function setVillagerOrderHelper(params: {
           nextStaminaDrinkItemId = staminaDrinkId;
           const staminaName = ITEMS[staminaDrinkId]?.name || "スタミナポーション";
           logs.push({
-            message: `【準備】${v.name} は${staminaName}を ${assignedStaminaCount} 個所持しました。`,
+            message: `【準備】${v.name} は${staminaName}を ${assignedStaminaCount} 個購入しました（計 ${assignedStaminaCount * (ITEMS[staminaDrinkId]?.sellPrice || 0)} G）。`,
             type: "info",
           });
         }
@@ -182,5 +200,6 @@ export function setVillagerOrderHelper(params: {
     villagers: updatedVillagers,
     inventory: nextInventory,
     logs,
+    gold: nextGold,
   };
 }
