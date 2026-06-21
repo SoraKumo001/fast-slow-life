@@ -1,0 +1,64 @@
+name: Cleanup Branch Preview
+
+on:
+  delete:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 0
+
+      - name: Cleanup preview folder
+        id: cleanup
+        run: |
+          CLEAN_NAME=$(echo "${{ github.event.ref }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-zA-Z0-9_-]/-/g')
+          if [ -d "preview/$CLEAN_NAME" ]; then
+            rm -rf "preview/$CLEAN_NAME"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add .
+            if git diff --staged --quiet; then
+              echo "No changes to commit"
+              echo "changed=false" >> $GITHUB_OUTPUT
+            else
+              git commit -m "chore: cleanup preview for branch $CLEAN_NAME"
+              git push origin gh-pages
+              echo "changed=true" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No preview folder found for branch $CLEAN_NAME"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Pages
+        if: steps.cleanup.outputs.changed == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        if: steps.cleanup.outputs.changed == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "."
+
+      - name: Deploy to GitHub Pages
+        if: steps.cleanup.outputs.changed == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4

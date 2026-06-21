@@ -45,6 +45,7 @@ export const useGameStore = create<GameState & GameActions>()(
       dungeons: getInitialDungeons(),
       inventory: { ...DEFAULT_INVENTORY },
       targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
+      tradeRules: [],
       logs: [
         {
           id: "init",

@@ -214,6 +214,15 @@ export interface ActiveBossState {
   attackerIds: string[]; // 参加中の村人IDリスト
 }
 
+export interface TradeRule {
+  id: string;
+  itemId: string;
+  type: "buy" | "sell";
+  threshold: number;
+  amount: number;
+  isEnabled: boolean;
+}
+
 export interface GameActions {
   advanceHour: () => void;
   setVillagerOrder: (
@@ -241,6 +250,10 @@ export interface GameActions {
   dispatchIdleVillagers: () => void;
   startBossBattle: (monsterId: string, villagerIds: string[]) => void;
   withdrawFromBossBattle: () => void;
+  addTradeRule: (itemId: string, type: "buy" | "sell", threshold: number, amount: number) => void;
+  updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => void;
+  deleteTradeRule: (ruleId: string) => void;
+  toggleTradeRule: (ruleId: string) => void;
 }
 
 export interface GameState {
@@ -253,6 +266,7 @@ export interface GameState {
   dungeons: DungeonArea[];
   inventory: Record<string, number>; // itemId -> 所持数
   targetAmounts: Record<string, number>; // itemId -> 目標個数
+  tradeRules: TradeRule[];
   logs: GameLog[];
   currentTier: number; // 1 to 5
   activeBoss: ActiveBossState | null; // 現在対峙中のボス。nullなら不在

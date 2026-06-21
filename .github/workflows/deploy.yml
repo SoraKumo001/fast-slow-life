@@ -2,16 +2,17 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes targeting branches except gh-pages
   push:
-    branches: ["master"]
+    branches-ignore:
+      - "gh-pages"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -31,6 +32,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get branch name
+        shell: bash
+        run: |
+          CLEAN_NAME=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-zA-Z0-9_-]/-/g')
+          echo "BRANCH_NAME=$CLEAN_NAME" >> $GITHUB_ENV
 
       - name: Install pnpm
         uses: pnpm/action-setup@v4
@@ -48,6 +57,48 @@ jobs:
 
       - name: Build
         run: pnpm run build
+        env:
+          BASE_PATH: ${{ github.ref_name == 'master' && '/fast-slow-life/' || format('/fast-slow-life/preview/{0}/', env.BRANCH_NAME) }}
+
+      - name: Sync with gh-pages branch
+        shell: bash
+        run: |
+          # 1. 成果物を一時フォルダに退避
+          mv dist ${{ runner.temp }}/dist-temp
+
+          # 2. git設定
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # 3. gh-pagesブランチの取得/初期化
+          if git fetch origin gh-pages; then
+            git checkout gh-pages
+            git pull origin gh-pages
+          else
+            git checkout --orphan gh-pages
+            git rm -rf .
+          fi
+
+          # 4. 成果物のマージ
+          if [ "${{ github.ref_name }}" = "master" ]; then
+            # masterの場合はルートを更新。ただしpreviewフォルダは維持する
+            find . -maxdepth 1 ! -name '.' ! -name '..' ! -name 'preview' ! -name '.git' -exec rm -rf {} +
+            cp -r ${{ runner.temp }}/dist-temp/* .
+          else
+            # master以外の場合はpreview/<branch>にコピー
+            mkdir -p preview/${{ env.BRANCH_NAME }}
+            rm -rf preview/${{ env.BRANCH_NAME }}/*
+            cp -r ${{ runner.temp }}/dist-temp/* preview/${{ env.BRANCH_NAME }}/
+          fi
+
+          # 5. コミットしてプッシュ
+          git add .
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Deploy: ${{ github.ref_name }}@${{ github.sha }}"
+            git push origin gh-pages
+          fi
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -55,8 +106,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Vite builds to 'dist' directory by default
-          path: "./dist"
+          # gh-pagesブランチに切り替わっているので、現在のディレクトリ（gh-pagesの中身）をアップロードする
+          path: "."
 
       - name: Deploy to GitHub Pages
         id: deployment

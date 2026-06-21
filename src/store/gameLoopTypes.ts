@@ -15,6 +15,7 @@ export interface LogPayload {
 export interface AdvanceHourResult {
   currentDay: number;
   currentHour: number;
+  gold: number;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];

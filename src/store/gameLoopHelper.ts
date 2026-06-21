@@ -1,4 +1,5 @@
 import { GameState } from "../types/game";
+import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";
 import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
 import { processExploration } from "./exploration";
@@ -51,6 +52,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     return {
       currentDay,
       currentHour,
+      gold,
       villagers,
       facilities,
       dungeons,
@@ -120,6 +122,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     return {
       currentDay,
       currentHour,
+      gold,
       villagers,
       facilities,
       dungeons,
@@ -140,9 +143,21 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   inventory = { ...inventory, ...autoRes.inventory };
   logsToAppend.push(...autoRes.logs);
 
+  // 自動取引の実行
+  const tradeRes = processAutoTrade({
+    facilities,
+    tradeRules: state.tradeRules,
+    inventory,
+    gold,
+  });
+  gold = tradeRes.gold;
+  inventory = tradeRes.inventory;
+  logsToAppend.push(...tradeRes.logs);
+
   return {
     currentDay,
     currentHour,
+    gold,
     villagers,
     facilities,
     dungeons,

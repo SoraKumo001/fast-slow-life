@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
 import { DUNGEONS, ITEMS, RECIPES } from "../data/masterData";
 import { FacilityType } from "../types/game";
@@ -183,6 +183,158 @@ describe("gameStore", () => {
     } finally {
       globalThis.IS_TEST_ENVIRONMENT = true;
     }
+  });
+
+  describe("自動取引（Auto Trade）機能", () => {
+    beforeEach(() => {
+      globalThis.IS_TEST_ENVIRONMENT = false; // ログを記録させるため一時的にテスト環境フラグを解除
+    });
+
+    afterEach(() => {
+      globalThis.IS_TEST_ENVIRONMENT = true;
+    });
+
+    it("自動売却ルールにより、閾値超過分が自動で売却されてゴールドが増加し、在庫が減少すること", () => {
+      const store = useGameStore.getState();
+
+      // 交易所をレベル1にする
+      useGameStore.setState((s) => ({
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
+        inventory: {
+          ...s.inventory,
+          wood: 15,
+        },
+        gold: 100,
+        tradeRules: [
+          {
+            id: "rule_1",
+            itemId: "wood",
+            type: "sell",
+            threshold: 10,
+            amount: 5,
+            isEnabled: true,
+          },
+        ],
+      }));
+
+      // 木の売却価格は 1G。レベル1はボーナス +0%。
+      // 15 - 10 = 5 個超過。売却制限は 5 なので、5個売却して 5G 獲得。
+      // inventory: 15 -> 10, gold: 100 -> 105
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      expect(state.inventory.wood).toBe(10);
+      expect(state.gold).toBe(105);
+
+      const tradeLog = state.logs.find((l) => l.message.includes("原木 を 5 個自動売却"));
+      expect(tradeLog).toBeDefined();
+    });
+
+    it("自動購入ルールにより、閾値未満のときに自動でゴールドを消費してアイテムが増加すること", () => {
+      const store = useGameStore.getState();
+
+      useGameStore.setState((s) => ({
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
+        inventory: {
+          ...s.inventory,
+          herb: 2,
+        },
+        gold: 100,
+        tradeRules: [
+          {
+            id: "rule_2",
+            itemId: "herb",
+            type: "buy",
+            threshold: 5,
+            amount: 3,
+            isEnabled: true,
+          },
+        ],
+      }));
+
+      // 薬草の売却価格は 2G。購入価格は売却価格の 2 倍なので 4G。
+      // 2 < 5 なので、3個購入する。
+      // 必要額: 4G * 3 = 12G。
+      // inventory: 2 -> 5, gold: 100 -> 88
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      expect(state.inventory.herb).toBe(5);
+      expect(state.gold).toBe(88);
+
+      const tradeLog = state.logs.find((l) => l.message.includes("薬草 を 3 個自動購入"));
+      expect(tradeLog).toBeDefined();
+    });
+
+    it("ゴールドが不足している場合、購入処理がスキップされ警告ログが記録されること", () => {
+      const store = useGameStore.getState();
+
+      useGameStore.setState((s) => ({
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
+        inventory: {
+          ...s.inventory,
+          herb: 2,
+        },
+        gold: 5, // 必要な12Gに満たない
+        tradeRules: [
+          {
+            id: "rule_3",
+            itemId: "herb",
+            type: "buy",
+            threshold: 5,
+            amount: 3,
+            isEnabled: true,
+          },
+        ],
+      }));
+
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      expect(state.inventory.herb).toBe(2); // 変化なし
+      expect(state.gold).toBe(5); // 変化なし
+
+      const warningLog = state.logs.find((l) => l.message.includes("ゴールド不足のため"));
+      expect(warningLog).toBeDefined();
+    });
+
+    it("交易所レベルに応じた設定枠数の上限を超えてルールが追加できないこと", () => {
+      const store = useGameStore.getState();
+
+      // 交易所レベル1 (上限2スロット)
+      useGameStore.setState((s) => ({
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
+        tradeRules: [
+          { id: "rule_1", itemId: "wood", type: "sell", threshold: 10, amount: 5, isEnabled: true },
+          {
+            id: "rule_2",
+            itemId: "stone",
+            type: "sell",
+            threshold: 10,
+            amount: 5,
+            isEnabled: true,
+          },
+        ],
+      }));
+
+      // 3つ目を追加しようとする
+      store.addTradeRule("herb", "buy", 5, 2);
+
+      const state = useGameStore.getState();
+      expect(state.tradeRules.length).toBe(2); // 追加されないはず
+    });
   });
 });
 

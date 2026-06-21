@@ -1,5 +1,6 @@
 import { ITEMS } from "../../data/masterData";
-import { GameState, GameActions, Item, Villager } from "../../types/game";
+import { GameState, GameActions, Item, Villager, TradeRule } from "../../types/game";
+import { generateId } from "../../utils/craftHelpers";
 import { getMarketSellBonus } from "../../utils/marketHelpers";
 
 // ヘルパー関数: 魔法職かどうか
@@ -306,5 +307,71 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
 
     // 変更ログを追加
     logs.forEach((log) => state.addLog(log, "info"));
+  },
+
+  addTradeRule: (itemId: string, type: "buy" | "sell", threshold: number, amount: number) => {
+    const state = get();
+    const marketLvl = state.facilities.market.level;
+    if (marketLvl === 0) {
+      state.addLog("交易所が建設されていないため、自動取引を設定できません。", "warning");
+      return;
+    }
+
+    const maxSlots = marketLvl === 1 ? 2 : marketLvl === 2 ? 4 : marketLvl >= 3 ? 8 : 0;
+    if (state.tradeRules.length >= maxSlots) {
+      state.addLog(`自動取引の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`, "warning");
+      return;
+    }
+
+    const newRule = {
+      id: generateId(),
+      itemId,
+      type,
+      threshold,
+      amount,
+      isEnabled: true,
+    };
+
+    set((state) => ({
+      tradeRules: [...state.tradeRules, newRule],
+    }));
+
+    state.addLog(`自動取引ルール（${ITEMS[itemId]?.name || itemId}）を追加しました。`, "info");
+  },
+
+  updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => {
+    set((state) => ({
+      tradeRules: state.tradeRules.map((rule) => {
+        if (rule.id !== ruleId) return rule;
+        return {
+          ...rule,
+          ...updates,
+        };
+      }),
+    }));
+  },
+
+  deleteTradeRule: (ruleId: string) => {
+    const state = get();
+    const rule = state.tradeRules.find((r) => r.id === ruleId);
+    set((state) => ({
+      tradeRules: state.tradeRules.filter((r) => r.id !== ruleId),
+    }));
+    if (rule) {
+      const itemName = ITEMS[rule.itemId]?.name || rule.itemId;
+      state.addLog(`自動取引ルール（${itemName}）を削除しました。`, "info");
+    }
+  },
+
+  toggleTradeRule: (ruleId: string) => {
+    set((state) => ({
+      tradeRules: state.tradeRules.map((rule) => {
+        if (rule.id !== ruleId) return rule;
+        return {
+          ...rule,
+          isEnabled: !rule.isEnabled,
+        };
+      }),
+    }));
   },
 });

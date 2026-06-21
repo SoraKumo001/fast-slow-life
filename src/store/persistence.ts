@@ -19,6 +19,7 @@ export const partialize = (state: GameState): Partial<GameState> => ({
   gameLimitDays: state.gameLimitDays,
   gameOver: state.gameOver,
   soulUpgrades: state.soulUpgrades,
+  tradeRules: state.tradeRules,
 });
 
 export const merge = <S extends GameState>(persistedState: unknown, currentState: S): S => {
@@ -91,6 +92,8 @@ export const merge = <S extends GameState>(persistedState: unknown, currentState
       bonusMaxStamina: v.bonusMaxStamina !== undefined ? v.bonusMaxStamina : 0,
     }));
   }
+
+  merged.tradeRules = persisted.tradeRules || [];
 
   return merged;
 };

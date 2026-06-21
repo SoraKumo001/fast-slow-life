@@ -76,6 +76,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
     set({
       currentDay: result.currentDay,
       currentHour: result.currentHour,
+      gold: result.gold,
       villagers: result.villagers,
       facilities: result.facilities,
       dungeons: result.dungeons,

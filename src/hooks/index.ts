@@ -9,7 +9,23 @@ export const usePlayerResources = () =>
   useGameStore((s) => ({ gold: s.gold, soulPoints: s.soulPoints }), shallow);
 
 export const useInventory = () =>
-  useGameStore((s) => ({ inventory: s.inventory, targetAmounts: s.targetAmounts }), shallow);
+  useGameStore(
+    (s) => ({ inventory: s.inventory, targetAmounts: s.targetAmounts, tradeRules: s.tradeRules }),
+    shallow,
+  );
+
+export const useInventoryActions = () =>
+  useGameStore(
+    (s) => ({
+      setTargetAmount: s.setTargetAmount,
+      sellItem: s.sellItem,
+      addTradeRule: s.addTradeRule,
+      updateTradeRule: s.updateTradeRule,
+      deleteTradeRule: s.deleteTradeRule,
+      toggleTradeRule: s.toggleTradeRule,
+    }),
+    shallow,
+  );
 
 export const useVillagers = () => useGameStore((s) => s.villagers);
 
@@ -82,6 +98,3 @@ export const useBossActions = () =>
 
 export const useSoulActions = () =>
   useGameStore((s) => ({ buySoulUpgrade: s.buySoulUpgrade, resetGame: s.resetGame }), shallow);
-
-export const useInventoryActions = () =>
-  useGameStore((s) => ({ setTargetAmount: s.setTargetAmount, sellItem: s.sellItem }), shallow);

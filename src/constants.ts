@@ -1,4 +1,4 @@
-export const TIER_LIMIT_DAYS = [0, 60, 180, 320, 550, 850];
+export const TIER_LIMIT_DAYS = [0, 30, 70, 120, 180, 250];
 
 export const HOURS_PER_DAY = 24;
 export const MAX_LOG_COUNT = 100;
