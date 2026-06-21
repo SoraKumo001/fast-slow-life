@@ -1,7 +1,9 @@
 import React from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, ITEMS } from "../../store/gameStore";
+import { STAT_LABEL_MAP } from "../../constants";
+import { ITEMS } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { Villager, Item } from "../../types/game";
 import { getEquipmentBonusString } from "../../utils/itemHelpers";
 
@@ -43,23 +45,13 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
       ...Object.keys(currentItem?.equipment?.bonuses || {}),
     ] as BonusKey[]);
 
-    const labelMap: Record<BonusKey, string> = {
-      attack: "攻撃",
-      defense: "防御",
-      str: "STR",
-      int: "INT",
-      dex: "DEX",
-      agi: "AGI",
-      vit: "VIT",
-    };
-
     allStats.forEach((stat) => {
       const before = currentItem?.equipment?.bonuses?.[stat] || 0;
       const after = item.equipment?.bonuses?.[stat] || 0;
       const diff = after - before;
       if (before !== 0 || after !== 0) {
         diffs.push({
-          stat: labelMap[stat] || stat.toUpperCase(),
+          stat: STAT_LABEL_MAP[stat] || stat.toUpperCase(),
           before,
           after,
           diff,
@@ -127,18 +119,9 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                     <div className="flex flex-wrap gap-x-2 text-[10px] font-mono mt-0.5">
                       {Object.entries(currentWeapon.equipment?.bonuses || {}).map(([stat, val]) => {
                         if (!val) return null;
-                        const labelMap: Record<string, string> = {
-                          attack: "攻撃",
-                          defense: "防御",
-                          str: "STR",
-                          int: "INT",
-                          dex: "DEX",
-                          agi: "AGI",
-                          vit: "VIT",
-                        };
                         return (
                           <span key={stat} className="text-slate-500">
-                            {labelMap[stat] || stat.toUpperCase()}: {val} → 0{" "}
+                            {STAT_LABEL_MAP[stat] || stat.toUpperCase()}: {val} → 0{" "}
                             <span className="text-red-400 font-bold">(-{val})</span>
                           </span>
                         );
@@ -235,18 +218,9 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                     <div className="flex flex-wrap gap-x-2 text-[10px] font-mono mt-0.5">
                       {Object.entries(currentArmor.equipment?.bonuses || {}).map(([stat, val]) => {
                         if (!val) return null;
-                        const labelMap: Record<string, string> = {
-                          attack: "攻撃",
-                          defense: "防御",
-                          str: "STR",
-                          int: "INT",
-                          dex: "DEX",
-                          agi: "AGI",
-                          vit: "VIT",
-                        };
                         return (
                           <span key={stat} className="text-slate-500">
-                            {labelMap[stat] || stat.toUpperCase()}: {val} → 0{" "}
+                            {STAT_LABEL_MAP[stat] || stat.toUpperCase()}: {val} → 0{" "}
                             <span className="text-red-400 font-bold">(-{val})</span>
                           </span>
                         );

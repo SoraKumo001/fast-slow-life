@@ -2,7 +2,8 @@ import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "l
 import React, { useState } from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, ITEMS } from "../../store/gameStore";
+import { ITEMS } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { DungeonArea } from "../../types/game";
 import { BossBattleModal } from "../modals/BossBattleModal";
 

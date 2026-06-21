@@ -1,3 +1,4 @@
+import { STAT_LABEL_MAP } from "../constants";
 import { ItemCategory, Item } from "../types/game";
 
 export const getCategoryBadgeColor = (cat: ItemCategory) => {
@@ -49,19 +50,9 @@ export const getEquipmentBonusString = (item: Item): string => {
   const parts: string[] = [];
   const bonuses = item.equipment.bonuses;
 
-  const labelMap: Record<string, string> = {
-    attack: "攻撃",
-    defense: "防御",
-    str: "STR",
-    int: "INT",
-    dex: "DEX",
-    agi: "AGI",
-    vit: "VIT",
-  };
-
   for (const [key, val] of Object.entries(bonuses)) {
     if (val !== undefined && val !== 0) {
-      const label = labelMap[key] || key.toUpperCase();
+      const label = STAT_LABEL_MAP[key] || key.toUpperCase();
       parts.push(`${label}+${val}`);
     }
   }

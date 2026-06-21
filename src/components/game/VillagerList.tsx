@@ -2,7 +2,8 @@ import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import React, { useState } from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, ITEMS, MONSTERS } from "../../store/gameStore";
+import { ITEMS, MONSTERS } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { Villager } from "../../types/game";
 import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";

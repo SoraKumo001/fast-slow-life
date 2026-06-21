@@ -100,3 +100,13 @@ export const SPAWN_DAYS_BONUS = 2;
 
 export const UPGRADE_COST_GOLD_MULTIPLIER = 300;
 export const UPGRADE_COST_MATERIAL_INCREMENT = 5;
+
+export const STAT_LABEL_MAP: Record<string, string> = {
+  attack: "攻撃",
+  defense: "防御",
+  str: "STR",
+  int: "INT",
+  dex: "DEX",
+  agi: "AGI",
+  vit: "VIT",
+};

@@ -2,7 +2,8 @@ import { CheckCircle, ArrowRight, ShieldAlert, Award, Star } from "lucide-react"
 import React from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, JOBS } from "../../store/gameStore";
+import { JOBS } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { JobType, Villager } from "../../types/game";
 
 interface JobChangeModalProps {

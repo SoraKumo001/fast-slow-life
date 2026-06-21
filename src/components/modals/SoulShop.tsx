@@ -2,7 +2,8 @@ import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import React, { useState } from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
+import { SOUL_UPGRADES } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 
 export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const { soulPoints, soulUpgrades } = useGameStore(

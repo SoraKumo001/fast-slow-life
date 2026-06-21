@@ -2,7 +2,8 @@ import { ShoppingBag } from "lucide-react";
 import React, { useState } from "react";
 import { shallow } from "zustand/shallow";
 
-import { useGameStore, ITEMS, getRecipeForItem } from "../../store/gameStore";
+import { ITEMS, getRecipeForItem } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { Item } from "../../types/game";
 import {
   getCategoryBadgeColor,
