@@ -227,7 +227,11 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         // 3. 村人の自動雇用 (ゴールドに余裕があり、かつ交易所が建っている場合)
         const guild = state.facilities.guild;
         const maxVillagers = 3 + guild.level * 2;
-        if (isMarketBuilt && state.gold >= 150 + goldReserve && state.villagers.length < Math.min(10, maxVillagers)) {
+        if (
+          isMarketBuilt &&
+          state.gold >= 150 + goldReserve &&
+          state.villagers.length < Math.min(10, maxVillagers)
+        ) {
           store.hireVillager();
           totalHired++;
         }
