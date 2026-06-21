@@ -6,34 +6,37 @@
 
 ## 1. 村人のステータス設計
 
-各村人は、以下のプロパティを持ちます。Godotでは `Resource` またはカスタムの `RefCounted` クラスとして実装します。
+各村人は、以下のプロパティを持ちます（TypeScriptの `Villager` 型として定義）。
 
-```gdscript
-# villager_data.gd (イメージ)
-class_name VillagerData
-extends Resource
+```typescript
+export interface Villager {
+  id: string;
+  name: string;
+  level: number;
+  exp: number;
+  currentJob: JobType;
+  jobHistory: JobType[];
 
-@export var name: String
-@export var level: int = 1
-@export var exp: int = 0
-@export var current_job: String = "無職"
-@export var job_history: Array[String] = ["無職"] # 転職済みの職業（コスト不要で復帰可能）
+  // 基本能力値
+  str: number; // 物理攻撃、鉱石採取に影響
+  int: number; // 魔法攻撃、薬草・魔石採取に影響
+  dex: number; // 命中率、クラフト時の大成功確率に影響
+  agi: number; // 回避率、行動順、採取効率に影響
+  vit: number; // 物理防御力、最大HPに影響
 
-# 基本能力値
-@export var max_hp: int = 100
-@export var current_hp: int = 100
-@export var str: int = 10  # 物理攻撃、鉱石採取に影響
-@export var int: int = 10  # 魔法攻撃、薬草・魔石採取に影響
-@export var dex: int = 10  # 命中率、クラフト時の大成功確率に影響
-@export var agi: int = 10  # 回避率、行動順、採取効率に影響
-@export var vit: int = 10  # 物理防御力、最大HPに影響
+  maxHp: number;
+  currentHp: number;
+  maxStamina: number;
+  stamina: number;
 
-# 現在の装備
-@export var weapon_id: String = "none"
-@export var armor_id: String = "none"
+  // 現在の装備
+  weaponId: string;
+  armorId: string;
 
-# プレイヤーからの現在の方針指示 ("gather" または "hunt")
-@export var order: String = "gather"
+  // プレイヤーからの現在の方針指示
+  status: "idle" | "resting" | "traveling_to" | "traveling_back" | "active";
+  order: OrderType;
+}
 ```
 
 ---
@@ -111,32 +114,35 @@ $$\text{Score} = (\text{アイテムの基本採取難易度による逆数}) \t
   - 食料系・鉱石系：`STR * 0.7 + DEX * 0.3`
   - 薬草系・魔法石系：`INT * 0.7 + DEX * 0.3`
 
-#### 実装アルゴリズム（擬似コード）
+#### 実装アルゴリズム（TypeScriptイメージ）
 
-```gdscript
-func select_best_gather_target(area: AreaData) -> ItemData:
-	var best_item: ItemData = null
-	var max_score: float = -1.0
+```typescript
+// 採取ターゲットの自動選定スコア
+availableGathers.forEach((gather) => {
+  const item = ITEMS[gather.itemId];
+  const baseMultiplier = 1.0 / gather.difficulty;
 
-	for item in area.gathers:
-		var score = calculate_gather_score(item)
-		if score > max_score:
-			max_score = score
-			best_item = item
+  let jobMod = 1.0;
+  const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
+  if (jobAdapt) jobMod = jobAdapt;
 
-	return best_item
+  let statVal = 0;
+  if (["food", "ore", "material"].includes(item.category)) {
+    statVal = v.str * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+  } else {
+    statVal = v.int * GATHER_STAT_WEIGHT_PRIMARY + v.dex * GATHER_STAT_WEIGHT_SECONDARY;
+  }
 
-func calculate_gather_score(item: ItemData) -> float:
-	var base_multiplier = 1.0 / item.difficulty # 難易度が高いほど基本スコアは下がるが…
-	var job_mod = get_job_multiplier_for_category(item.category)
-
-	var stat_val = 0.0
-	if item.category in ["food", "ore"]:
-		stat_val = self.str * 0.7 + self.dex * 0.3
-	elif item.category in ["herb", "mana_stone"]:
-		stat_val = self.int * 0.7 + self.dex * 0.3
-
-	return base_multiplier * job_mod * stat_val * (1.0 + self.agi * 0.01)
+  const score =
+    baseMultiplier *
+    jobMod *
+    statVal *
+    (1.0 + v.agi * 0.01) *
+    efficiency *
+    targetPenalty *
+    dupPenalty;
+  // (最高スコアのアイテムを選択)
+});
 ```
 
 ---
@@ -157,4 +163,4 @@ func calculate_gather_score(item: ItemData) -> float:
 2. 範囲内に収まる敵の中から、以下の「相性スコア」が最も高い敵を選択。
    - **物理アタッカー（戦士・猟師）**：敵の物理防御力が低いほどスコアUP。
    - **魔法アタッカー（魔術師）**：敵の魔法防御力が低いほどスコアUP。
-   - **ヒーラー（僧侶）**：自身や同伴している村人のHPが減っている場合、攻撃よりも「回復アクション」のスコアが跳ね上がり、最優先で回復を行う。
+   - **ヒーラー（僧侶）**：戦闘中（通常戦闘・ボス戦）にHPが減っているメンバー（自身を含む）がいる場合、攻撃の代わりに回復スキル「ヒール」を使用します。詳細は[職業特性・仕様まとめ](jobs.md)を参照。

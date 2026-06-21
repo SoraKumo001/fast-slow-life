@@ -73,6 +73,117 @@ describe("gameStore", () => {
     expect(updatedState.inventory.mythril_staff).toBe(0);
     expect(updatedState.inventory.wooden_staff).toBe(1);
   });
+
+  it("僧侶が通常戦闘でHP50%以下のときに自己ヒールを使用すること", () => {
+    const store = useGameStore.getState();
+    globalThis.IS_TEST_ENVIRONMENT = false;
+
+    try {
+      useGameStore.setState((s) => ({
+        villagers: s.villagers.map((v, idx) => {
+          if (idx === 0) {
+            return {
+              ...v,
+              name: "僧侶テスト",
+              currentJob: "僧侶",
+              status: "active",
+              order: "hunt",
+              targetMonsterId: "goblin",
+              destinationAreaId: "forest",
+              maxHp: 100,
+              currentHp: 40,
+              int: 20,
+              str: 10,
+              dex: 10,
+              agi: 10,
+              vit: 10,
+              potionCount: 0,
+            };
+          }
+          return { ...v, status: "idle" };
+        }),
+        dungeons: s.dungeons.map((d) => {
+          if (d.id === "forest") {
+            return {
+              ...d,
+              explorationProgress: 50,
+              monsters: d.monsters.map((m) => ({
+                ...m,
+                currentProgress: 99,
+                respawnTimeLeft: 0,
+              })),
+            };
+          }
+          return d;
+        }),
+      }));
+
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      const cleric = state.villagers[0];
+
+      const healLog = state.logs.find((l) => l.message.includes("はヒールを唱え"));
+      expect(healLog).toBeDefined();
+      expect(cleric.currentHp).toBeGreaterThan(40);
+    } finally {
+      globalThis.IS_TEST_ENVIRONMENT = true;
+    }
+  });
+
+  it("僧侶がボス戦で最もHP割合の低いアタッカー（50%以下）をヒールすること", () => {
+    const store = useGameStore.getState();
+    globalThis.IS_TEST_ENVIRONMENT = false;
+
+    try {
+      useGameStore.setState((s) => ({
+        villagers: s.villagers.map((v, idx) => {
+          if (idx === 0) {
+            return {
+              ...v,
+              id: "v_cleric",
+              name: "僧侶テスト",
+              currentJob: "僧侶",
+              status: "active",
+              destinationAreaId: "forest",
+              maxHp: 100,
+              currentHp: 100,
+              int: 30,
+              potionCount: 0,
+            };
+          }
+          if (idx === 1) {
+            return {
+              ...v,
+              id: "v_warrior",
+              name: "戦士テスト",
+              currentJob: "戦士",
+              status: "active",
+              destinationAreaId: "forest",
+              maxHp: 200,
+              currentHp: 80,
+              potionCount: 0,
+            };
+          }
+          return { ...v, status: "idle" };
+        }),
+      }));
+
+      store.startBossBattle("goblin_leader", ["v_cleric", "v_warrior"]);
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      const warrior = state.villagers.find((v) => v.id === "v_warrior")!;
+
+      const healLog = state.logs.find(
+        (l) => l.message.includes("はヒールを唱え") && l.message.includes("戦士テスト"),
+      );
+      expect(healLog).toBeDefined();
+      expect(warrior.currentHp).toBeGreaterThan(80);
+    } finally {
+      globalThis.IS_TEST_ENVIRONMENT = true;
+    }
+  });
 });
 
 describe("master data references", () => {

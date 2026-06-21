@@ -8,34 +8,32 @@
 
 ゲームは「1時間」を最小単位として進行します。時間の自動進行中、または手動で「1時間進める」操作が行われるごとに、裏側で以下のステップが順番に処理されます。
 
-### 処理フロー（GDScript実装イメージ）
+### 処理フロー（TypeScript/Zustand実装イメージ）
 
-```gdscript
-# game_manager.gd の一部として実装するイメージ
-var current_day: int = 1
-var current_hour: int = 0  # 0 〜 23
+```typescript
+// useGameStore (Zustand) の一部として実装するイメージ
+const advanceHour = () => {
+  const state = get();
+  if (state.gameOver) return;
 
-func advance_hour():
-	current_hour += 1
-	if current_hour >= 24:
-		current_hour = 0
-		current_day += 1
-		check_game_limits() # 1日の終わりに制限期限をチェック
+  // 1時間進行させる計算（calculateAdvanceHour）
+  const result = calculateAdvanceHour(state);
 
-	# 1. 食料の消費と飢餓判定（1時間単位）
-	consume_food_hourly()
+  // 状態のセット
+  set({
+    currentDay: result.currentDay,
+    currentHour: result.currentHour,
+    villagers: result.villagers,
+    facilities: result.facilities,
+    dungeons: result.dungeons,
+    inventory: result.inventory,
+    // (中略)
+  });
 
-	# 2. 施設のクラフト・アップグレード進捗処理
-	process_facility_crafting_progress()
-
-	# 3. 村人の行動処理（1時間ごとの進捗更新、スタミナ消費）
-	process_villager_hourly_actions()
-
-	# 4. HP・スタミナの回復（宿屋滞在者の処理）
-	process_hourly_recovery()
-
-	# 5. UIの更新通知
-	emit_signal("hour_advanced", current_day, current_hour)
+  // 自動装備と自動派遣の実行
+  get().autoEquipAll();
+  get().dispatchIdleVillagers();
+};
 ```
 
 ### 各ステップの詳細

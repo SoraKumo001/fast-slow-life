@@ -130,36 +130,50 @@ export function processVillagerHunt(
           });
         }
 
-        const hitRate = calculateHitRate(v.dex, enemy.agi);
-        const isHit = Math.random() * 100 < hitRate;
-
-        if (!isHit) {
+        let isHealed = false;
+        if (v.currentJob === "僧侶" && v.currentHp <= v.maxHp * 0.5) {
+          const healAmount = Math.max(10, Math.floor(v.int * 1.5 + 10));
+          const actualHeal = Math.min(v.maxHp - v.currentHp, healAmount);
+          v.currentHp += actualHeal;
           logs.push({
-            message: `[Turn ${turn}] ${v.name} の攻撃！ しかし ${enemy.name} に回避された。`,
+            message: `[Turn ${turn}] 僧侶 ${v.name} はヒールを唱え、自身のHPを ${actualHeal} 回復した。`,
             type: "combat",
           });
-        } else {
-          const critRate = calculateCritRate(v.dex);
-          const isCritical = Math.random() * 100 < critRate;
-
-          const damage = calculatePlayerDamage({
-            attacker: v,
-            defender: enemy,
-            isCritical,
-            efficiency,
-            isMagicUser,
-          });
-
-          enemyHp -= damage;
-          logs.push({
-            message: `[Turn ${turn}] ${v.name} の攻撃！ ${enemy.name} に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
-            type: "combat",
-          });
+          isHealed = true;
         }
 
-        if (enemyHp <= 0) {
-          battleWon = true;
-          break;
+        if (!isHealed) {
+          const hitRate = calculateHitRate(v.dex, enemy.agi);
+          const isHit = Math.random() * 100 < hitRate;
+
+          if (!isHit) {
+            logs.push({
+              message: `[Turn ${turn}] ${v.name} の攻撃！ しかし ${enemy.name} に回避された。`,
+              type: "combat",
+            });
+          } else {
+            const critRate = calculateCritRate(v.dex);
+            const isCritical = Math.random() * 100 < critRate;
+
+            const damage = calculatePlayerDamage({
+              attacker: v,
+              defender: enemy,
+              isCritical,
+              efficiency,
+              isMagicUser,
+            });
+
+            enemyHp -= damage;
+            logs.push({
+              message: `[Turn ${turn}] ${v.name} の攻撃！ ${enemy.name} に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
+              type: "combat",
+            });
+          }
+
+          if (enemyHp <= 0) {
+            battleWon = true;
+            break;
+          }
         }
 
         const enemyHitRate = calculateHitRate(enemy.dex, v.agi);

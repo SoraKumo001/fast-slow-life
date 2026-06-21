@@ -72,6 +72,50 @@ export function processBossBattle(
 
           // 2. 攻撃処理
           const currentV = nextVillagers[i];
+          let isHealed = false;
+
+          if (currentV.currentJob === "僧侶") {
+            let targetToHeal: Villager | null = null;
+            let targetIdx = -1;
+            let minHpRatio = Infinity;
+
+            for (let j = 0; j < nextVillagers.length; j++) {
+              const member = nextVillagers[j];
+              if (
+                nextActiveBoss.attackerIds.includes(member.id) &&
+                member.status === "active" &&
+                member.currentHp > 0
+              ) {
+                const ratio = member.currentHp / member.maxHp;
+                if (ratio < minHpRatio) {
+                  minHpRatio = ratio;
+                  targetToHeal = member;
+                  targetIdx = j;
+                }
+              }
+            }
+
+            if (targetToHeal && minHpRatio <= 0.5 && targetIdx !== -1) {
+              const healAmount = Math.max(10, Math.floor(currentV.int * 1.5 + 10));
+              const actualHeal = Math.min(targetToHeal.maxHp - targetToHeal.currentHp, healAmount);
+
+              nextVillagers[targetIdx] = {
+                ...targetToHeal,
+                currentHp: targetToHeal.currentHp + actualHeal,
+              };
+
+              logs.push({
+                message: `[ボス戦] 僧侶 ${currentV.name} はヒールを唱え、${targetToHeal.name} のHPを ${actualHeal} 回復した。`,
+                type: "combat",
+              });
+              isHealed = true;
+            }
+          }
+
+          if (isHealed) {
+            continue;
+          }
+
           const hitRate = calculateHitRate(currentV.dex, monster.agi);
           const isHit = Math.random() * 100 < hitRate;
 
