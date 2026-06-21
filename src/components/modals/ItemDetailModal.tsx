@@ -6,6 +6,9 @@ import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
 import { getMarketSellBonus } from "../../utils/marketHelpers";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
 
 interface ItemDetailModalProps {
   item: Item;
@@ -49,22 +52,14 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-slate-900 border border-slate-800 rounded-xl max-w-sm w-full p-6 space-y-4 relative"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Modal onClose={onClose} size="sm">
+      <div className="space-y-4 relative">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-lg font-bold text-slate-100">{item.name}</h3>
-            <span
-              className={`text-[10px] px-2 py-0.5 rounded font-semibold ${getCategoryBadgeColor(item.category)}`}
-            >
+            <Badge variant="custom" className={getCategoryBadgeColor(item.category)}>
               {getCategoryLabel(item.category)}
-            </span>
+            </Badge>
           </div>
           {item.description && (
             <p className="text-xs text-slate-400 leading-relaxed mt-2 bg-slate-950 p-2.5 rounded border border-slate-850">
@@ -99,39 +94,42 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
             </div>
             {/* 目標数調整ボタン */}
             <div className="flex gap-1.5 justify-end">
-              <button
-                onClick={() => setTargetAmount(item.id, 0)}
-                className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded text-[10px] font-medium transition cursor-pointer"
-              >
+              <Button onClick={() => setTargetAmount(item.id, 0)} variant="secondary" size="xs">
                 リセット
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   const cur = targetAmounts[item.id] || 0;
                   setTargetAmount(item.id, cur + 1);
                 }}
-                className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                variant="custom"
+                size="xs"
+                className="bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 font-bold"
               >
                 +1
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   const cur = targetAmounts[item.id] || 0;
                   setTargetAmount(item.id, cur + 10);
                 }}
-                className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                variant="custom"
+                size="xs"
+                className="bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 font-bold"
               >
                 +10
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   const cur = targetAmounts[item.id] || 0;
                   setTargetAmount(item.id, cur + 100);
                 }}
-                className="px-2 py-1 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 rounded text-[10px] font-bold transition cursor-pointer"
+                variant="custom"
+                size="xs"
+                className="bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/20 text-sky-400 font-bold"
               >
                 +100
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -207,12 +205,9 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
               </span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {getUsageRecipes(item.id).map((r) => (
-                  <span
-                    key={r.id}
-                    className="text-[10px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300"
-                  >
+                  <Badge key={r.id} variant="default">
                     {r.name}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>
@@ -247,58 +242,56 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
             {/* ショートカットと売却ボタン */}
             <div className="flex items-center justify-between gap-2 border-t border-slate-900/60 pt-2">
               <div className="flex gap-1">
-                <button
-                  type="button"
+                <Button
                   onClick={() => setSellAmount(maxAmount > 0 ? 1 : 0)}
                   disabled={maxAmount === 0}
-                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                  variant="secondary"
+                  size="xs"
                 >
                   1
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => setSellAmount(Math.max(1, Math.floor(maxAmount / 2)))}
                   disabled={maxAmount < 2}
-                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                  variant="secondary"
+                  size="xs"
                 >
                   1/2
-                </button>
-                <button
-                  type="button"
+                </Button>
+                <Button
                   onClick={() => setSellAmount(maxAmount)}
                   disabled={maxAmount === 0}
-                  className="px-2 py-1 bg-slate-800 hover:bg-slate-700 disabled:bg-slate-900 disabled:text-slate-600 text-slate-300 rounded text-[10px] font-medium transition cursor-pointer"
+                  variant="secondary"
+                  size="xs"
                 >
                   MAX
-                </button>
+                </Button>
               </div>
 
-              <button
-                type="button"
+              <Button
                 onClick={() => {
                   sellItem(item.id, sellAmount);
                 }}
                 disabled={sellAmount <= 0}
-                className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 disabled:bg-slate-850 disabled:text-slate-600 text-white font-semibold text-xs rounded transition flex items-center gap-1 cursor-pointer"
+                variant="warning"
+                size="sm"
+                className="flex items-center gap-1"
               >
                 <span>売却</span>
                 <span className="font-bold font-mono">
                   ({Math.floor(sellAmount * item.sellPrice * (1 + bonusRate))} G)
                 </span>
-              </button>
+              </Button>
             </div>
           </div>
         )}
 
         <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition cursor-pointer"
-          >
+          <Button onClick={onClose} variant="secondary" size="md">
             閉じる
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

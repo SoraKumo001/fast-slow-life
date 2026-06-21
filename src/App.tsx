@@ -1,4 +1,4 @@
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { DungeonPanel } from "./components/game/DungeonPanel";
@@ -8,6 +8,8 @@ import { VillagerList } from "./components/game/VillagerList";
 import { Header } from "./components/layout/Header";
 import { StatusBar } from "./components/layout/StatusBar";
 import { SoulShop } from "./components/modals/SoulShop";
+import { Button } from "./components/ui/Button";
+import { Modal } from "./components/ui/Modal";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
 import { useToastStore } from "./hooks/useToastStore";
@@ -126,66 +128,58 @@ export default function App() {
       {/* 手動表示の転生ショップモーダルは Header.tsx に移管済み */}
 
       {/* 遊び方ヘルプモーダル */}
-      {showHelpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-lg w-full p-6 space-y-4 relative">
-            <button
-              onClick={() => setShowHelpModal(false)}
-              className="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-1.5">
-              <HelpCircle className="w-5 h-5 text-sky-400" />
-              Fast Slow Life の遊び方
-            </h3>
-
-            <div className="text-xs text-slate-300 space-y-3 leading-relaxed max-h-96 overflow-y-auto pr-1">
-              <p>
-                <strong>1. 素材と目標（第1カラム）:</strong>
-                <br />
-                倉庫内のアイテム一覧が表示されます。目標個数を設定すると、そのアイテムが不足している場合に、村人が自動で採取エリアへ派遣されたり、施設で自動的にクラフトが始まります。
-                クリックするとアイテムの詳細（売却額やレシピ）が見られ、交易所が解放されていれば売却できます。
-              </p>
-              <p>
-                <strong>2. キャラクターとAI指示（第2カラム）:</strong>
-                <br />
-                村人のステータス（HP・スタミナ・基本能力）や、現在の行動状態が表示されます。
-                「転職」で異なる職業（得意分野が異なる）にチェンジさせたり、倉庫にある武器・防具を「装備」させて能力を向上させることができます。
-              </p>
-              <p>
-                <strong>3. 施設とクラフト（第3カラム）:</strong>
-                <br />
-                各施設（宿屋、工房、鍛冶屋、錬金工房、交易所）のレベルやアップグレード、現在行われているクラフトキューが表示されます。
-                アップグレードやクラフトを指示すると、時間経過で進行します。
-              </p>
-              <p>
-                <strong>4. ダンジョンと派遣（第4カラム）:</strong>
-                <br />
-                探索可能なエリアと、推奨レベルや出現する魔物が確認できます。
-                村人を選んで「採取派遣」または「討伐派遣」を行うことができます。活動中はスタミナを消費し、HPやスタミナが減ると自動で村に帰還します。
-              </p>
-              <p>
-                <strong>5. ボス討伐と転生:</strong>
-                <br />
-                一定の日数までにエリアボスを倒せないとゲームオーバーになります。
-                ゲームオーバー時にはそれまでの進行度に応じた「ソウルポイント
-                (SP)」が獲得でき、これを使って次回プレイが有利になる永続バフを購入できます（いつでも「転生」して次の周回に挑むことも可能です）。
-              </p>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setShowHelpModal(false)}
-                className="px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs font-semibold transition"
-              >
-                了解
-              </button>
-            </div>
-          </div>
+      <Modal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        className="max-w-lg"
+        showCloseButton
+        title={
+          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-1.5">
+            <HelpCircle className="w-5 h-5 text-sky-400" />
+            Fast Slow Life の遊び方
+          </h3>
+        }
+      >
+        <div className="text-xs text-slate-300 space-y-3 leading-relaxed max-h-96 overflow-y-auto pr-1">
+          <p>
+            <strong>1. 素材と目標（第1カラム）:</strong>
+            <br />
+            倉庫内のアイテム一覧が表示されます。目標個数を設定すると、そのアイテムが不足している場合に、村人が自動で採取エリアへ派遣されたり、施設で自動的にクラフトが始まります。
+            クリックするとアイテムの詳細（売却額やレシピ）が見られ、交易所が解放されていれば売却できます。
+          </p>
+          <p>
+            <strong>2. キャラクターとAI指示（第2カラム）:</strong>
+            <br />
+            村人のステータス（HP・スタミナ・基本能力）や、現在の行動状態が表示されます。
+            「転職」で異なる職業（得意分野が異なる）にチェンジさせたり、倉庫にある武器・防具を「装備」させて能力を向上させることができます。
+          </p>
+          <p>
+            <strong>3. 施設とクラフト（第3カラム）:</strong>
+            <br />
+            各施設（宿屋、工房、鍛冶屋、錬金工房、交易所）のレベルやアップグレード、現在行われているクラフトキューが表示されます。
+            アップグレードやクラフトを指示すると、時間経過で進行します。
+          </p>
+          <p>
+            <strong>4. ダンジョンと派遣（第4カラム）:</strong>
+            <br />
+            探索可能なエリアと、推奨レベルや出現する魔物が確認できます。
+            村人を選んで「採取派遣」または「討伐派遣」を行うことができます。活動中はスタミナを消費し、HPやスタミナが減ると自動で村に帰還します。
+          </p>
+          <p>
+            <strong>5. ボス討伐と転生:</strong>
+            <br />
+            一定の日数までにエリアボスを倒せないとゲームオーバーになります。
+            ゲームオーバー時にはそれまでの進行度に応じた「ソウルポイント
+            (SP)」が獲得でき、これを使って次回プレイが有利になる永続バフを購入できます（いつでも「転生」して次の周回に挑むことも可能です）。
+          </p>
         </div>
-      )}
+
+        <div className="flex justify-end pt-2 border-t border-slate-850">
+          <Button onClick={() => setShowHelpModal(false)} variant="primary" size="md">
+            了解
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

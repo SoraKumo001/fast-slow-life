@@ -3,6 +3,9 @@ import React, { useState } from "react";
 
 import { useVillagers, useDungeons, useBossActions } from "../../hooks";
 import { DungeonArea, Villager } from "../../types/game";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
 
 interface BossBattleModalProps {
   area: DungeonArea;
@@ -71,14 +74,8 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
   };
 
   return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 cursor-pointer"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 space-y-6 shadow-2xl cursor-default"
-      >
+    <Modal onClose={onClose} size="md">
+      <div className="space-y-6">
         <div className="text-center">
           <span className="text-amber-500 font-black tracking-widest text-xs uppercase mb-1 block">
             Boss Decisive Battle
@@ -128,14 +125,15 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
                         >
                           {v.name}
                         </span>
-                        <span
+                        <Badge
+                          variant="custom"
                           className={`text-[9px] px-1.5 py-0.5 rounded font-semibold ${getStatusColor(
                             v.status,
                             Boolean(v.assignedCraftJobId),
                           )}`}
                         >
                           {getStatusLabel(v)}
-                        </span>
+                        </Badge>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-[10px] text-slate-500 font-mono">
@@ -160,22 +158,26 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
         </div>
 
         <div className="flex flex-col gap-3">
-          <button
+          <Button
             onClick={handleStartBossBattle}
             disabled={selectedAttackerIds.length === 0}
+            variant="custom"
+            size="lg"
             className="w-full py-4 bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 disabled:from-slate-800 disabled:to-slate-800 text-white font-black text-sm rounded-xl transition-all shadow-lg shadow-amber-900/20 disabled:shadow-none flex items-center justify-center gap-2 uppercase tracking-wider"
           >
             <Sword className="w-5 h-5" />
             決戦を開始する ({selectedAttackerIds.length} / 4)
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={onClose}
-            className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition"
+            variant="secondary"
+            size="md"
+            className="w-full py-3 text-xs font-bold"
           >
             今はやめておく
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

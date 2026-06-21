@@ -3,6 +3,8 @@ import React from "react";
 
 import { useVillagers, useVillagerActions } from "../../hooks";
 import { DungeonArea, Villager } from "../../types/game";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
 
 interface DungeonAssignModalProps {
   area: DungeonArea;
@@ -23,14 +25,8 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
   };
 
   return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 cursor-pointer"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 space-y-4 cursor-default"
-      >
+    <Modal onClose={onClose} size="md">
+      <div className="space-y-4">
         <div>
           <h3 className="text-lg font-bold text-slate-100">村人を {area.name} へ派遣</h3>
           <p className="text-xs text-slate-400 font-mono">
@@ -65,18 +61,22 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
                   </div>
 
                   <div className="flex gap-1.5">
-                    <button
+                    <Button
                       onClick={() => handleAssign(v.id, "gather")}
-                      className="px-2.5 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-[10px] transition"
+                      variant="success"
+                      size="sm"
+                      className="px-2.5 py-1.5 text-[10px]"
                     >
                       採取派遣
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => handleAssign(v.id, "hunt")}
-                      className="px-2.5 py-1.5 rounded bg-red-600 hover:bg-red-500 text-white font-medium text-[10px] transition"
+                      variant="danger"
+                      size="sm"
+                      className="px-2.5 py-1.5 text-[10px]"
                     >
                       討伐派遣
-                    </button>
+                    </Button>
                   </div>
                 </div>
               );
@@ -85,14 +85,11 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
         </div>
 
         <div className="flex justify-end pt-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition"
-          >
+          <Button onClick={onClose} variant="secondary" size="md">
             キャンセル
-          </button>
+          </Button>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };

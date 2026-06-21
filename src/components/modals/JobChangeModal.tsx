@@ -4,6 +4,9 @@ import React from "react";
 import { JOBS } from "../../data/masterData";
 import { usePlayerResources, useSoulUpgrades, useVillagerActions } from "../../hooks";
 import { JobType, Villager } from "../../types/game";
+import { Badge } from "../ui/Badge";
+import { Button } from "../ui/Button";
+import { Modal } from "../ui/Modal";
 
 interface JobChangeModalProps {
   villager: Villager;
@@ -81,15 +84,18 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
             <div className="min-w-0">
               <span className="font-bold text-slate-100 text-sm truncate block">{jobKey}</span>
               {isHistory && (
-                <span className="inline-block mt-0.5 text-[8.5px] px-1 py-0.2 rounded bg-slate-850 text-slate-400 font-mono">
+                <Badge variant="default" className="mt-0.5 text-[8.5px]">
                   習得済
-                </span>
+                </Badge>
               )}
             </div>
             {isCurrent && (
-              <span className="shrink-0 text-[9px] text-sky-400 font-bold bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20 flex items-center gap-0.5">
+              <Badge
+                variant="sky"
+                className="shrink-0 px-2 py-0.5 rounded-full flex items-center gap-0.5 text-[9px]"
+              >
                 <CheckCircle className="w-3 h-3" /> 現在
-              </span>
+              </Badge>
             )}
           </div>
 
@@ -100,12 +106,9 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
           {statsHighlights.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {statsHighlights.map((hl) => (
-                <span
-                  key={hl}
-                  className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono font-semibold"
-                >
+                <Badge key={hl} variant="amber" className="px-1.5 py-0.2 font-mono font-semibold">
                   {hl}
-                </span>
+                </Badge>
               ))}
             </div>
           )}
@@ -138,9 +141,11 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
               現在の職業
             </div>
           ) : (
-            <button
+            <Button
               onClick={() => handleJobChange(jobKey)}
               disabled={!canChange}
+              variant="custom"
+              size="xs"
               className={`w-full py-1.5 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-1 cursor-pointer disabled:cursor-not-allowed ${
                 !isReqMet
                   ? "bg-slate-800 text-slate-500 border border-slate-850"
@@ -158,7 +163,7 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
               ) : (
                 `${cost} G`
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -166,136 +171,125 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
   };
 
   return (
-    <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 cursor-pointer"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="bg-slate-900 border border-slate-800 rounded-2xl max-w-4xl w-full p-6 flex flex-col h-[90vh] md:h-auto max-h-[90vh] cursor-default"
-      >
-        {/* ヘッダー */}
-        <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b border-slate-800 pb-4 mb-4">
+    <Modal onClose={onClose} size="xl" className="flex flex-col h-[90vh] md:h-auto max-h-[90vh]">
+      {/* ヘッダー */}
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b border-slate-800 pb-4 mb-4">
+        <div>
+          <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <Award className="w-5 h-5 text-sky-400" />
+            {villager.name} の転職系統図
+          </h3>
+          <p className="text-xs text-slate-400 mt-1">
+            現在の職業: <strong className="text-sky-400">{villager.currentJob}</strong> (Lv.
+            {villager.level})<span className="mx-2 text-slate-700">|</span>
+            所持ゴールド: <strong className="text-amber-400">{gold} G</strong>
+          </p>
+        </div>
+        <div className="text-[10px] text-slate-400 bg-slate-950 px-3 py-2 rounded-lg border border-slate-800/80 text-right sm:self-center space-y-1">
           <div>
-            <h3 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <Award className="w-5 h-5 text-sky-400" />
-              {villager.name} の転職系統図
-            </h3>
-            <p className="text-xs text-slate-400 mt-1">
-              現在の職業: <strong className="text-sky-400">{villager.currentJob}</strong> (Lv.
-              {villager.level})<span className="mx-2 text-slate-700">|</span>
-              所持ゴールド: <strong className="text-amber-400">{gold} G</strong>
-            </p>
+            ※習得済みの職業への転職コストは <span className="text-emerald-400 font-bold">0 G</span>{" "}
+            になります。
           </div>
-          <div className="text-[10px] text-slate-400 bg-slate-950 px-3 py-2 rounded-lg border border-slate-800/80 text-right sm:self-center space-y-1">
-            <div>
-              ※習得済みの職業への転職コストは{" "}
-              <span className="text-emerald-400 font-bold">0 G</span> になります。
-            </div>
-            <div className="text-amber-400 font-bold">
-              ★転職時、前職のレベルに応じたステータスボーナスが永続加算され、レベルは 1 に戻ります。
-            </div>
+          <div className="text-amber-400 font-bold">
+            ★転職時、前職のレベルに応じたステータスボーナスが永続加算され、レベルは 1 に戻ります。
           </div>
-        </div>
-
-        {/* 系統図ツリーエリア */}
-        <div className="flex-1 overflow-y-auto space-y-5 pr-1 py-1">
-          {/* 初期基本職 (無職) */}
-          <div className="flex justify-center mb-1">
-            <div className="w-64 max-w-full">{renderJobCard("無職")}</div>
-          </div>
-
-          {/* 系列別の転職フロー */}
-          <div className="space-y-4">
-            {/* 1. 農林系列 */}
-            <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
-              <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                <Star className="w-3.5 h-3.5 text-emerald-400" />
-                農林系列
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                <div className="md:col-span-1 flex flex-col gap-3">
-                  {renderJobCard("農民")}
-                  {renderJobCard("木こり")}
-                </div>
-                <div className="hidden md:flex justify-center text-slate-700">
-                  <ArrowRight className="w-6 h-6 animate-pulse" />
-                </div>
-                <div className="md:col-span-1 bg-slate-900/20 border border-dashed border-slate-800/40 rounded-xl p-5 text-center text-xs text-slate-500 italic">
-                  (将来の上位職アップデートをお楽しみに)
-                </div>
-              </div>
-            </div>
-
-            {/* 2. 戦闘系 */}
-            <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
-              <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                <Star className="w-3.5 h-3.5 text-rose-400" />
-                武芸系列
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                <div className="md:col-span-1">{renderJobCard("猟師")}</div>
-                <div className="flex justify-center text-slate-700">
-                  <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
-                </div>
-                <div className="md:col-span-1">{renderJobCard("戦士")}</div>
-              </div>
-            </div>
-
-            {/* 3. 工芸系 */}
-            <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
-              <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                <Star className="w-3.5 h-3.5 text-amber-400" />
-                工芸系列
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                <div className="md:col-span-1">{renderJobCard("鉱夫")}</div>
-                <div className="flex justify-center text-slate-700">
-                  <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
-                </div>
-                <div className="md:col-span-1">{renderJobCard("職人")}</div>
-              </div>
-            </div>
-
-            {/* 4. 学術・回復系 */}
-            <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
-              <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
-                <Star className="w-3.5 h-3.5 text-purple-400" />
-                学術・医療系列
-              </h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
-                {/* 起点 (薬師) */}
-                <div className="md:col-span-1">{renderJobCard("薬師")}</div>
-
-                {/* 矢印 (分岐派生表示) */}
-                <div className="flex flex-col items-center justify-center text-slate-700 gap-1.5">
-                  <span className="text-[9px] font-mono text-slate-500">分岐派生</span>
-                  <div className="flex md:flex-col gap-8 md:gap-2">
-                    <ArrowRight className="w-5 h-5 rotate-90 md:rotate-[-20deg]" />
-                    <ArrowRight className="w-5 h-5 rotate-90 md:rotate-20" />
-                  </div>
-                </div>
-
-                {/* 分岐先 (魔術師 & 僧侶) */}
-                <div className="md:col-span-1 flex flex-col gap-4">
-                  {renderJobCard("魔術師")}
-                  {renderJobCard("僧侶")}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* フッター閉じるボタン */}
-        <div className="flex justify-end pt-4 border-t border-slate-805/80 mt-4">
-          <button
-            onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition cursor-pointer"
-          >
-            閉じる
-          </button>
         </div>
       </div>
-    </div>
+
+      {/* 系統図ツリーエリア */}
+      <div className="flex-1 overflow-y-auto space-y-5 pr-1 py-1">
+        {/* 初期基本職 (無職) */}
+        <div className="flex justify-center mb-1">
+          <div className="w-64 max-w-full">{renderJobCard("無職")}</div>
+        </div>
+
+        {/* 系列別の転職フロー */}
+        <div className="space-y-4">
+          {/* 1. 農林系列 */}
+          <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+              <Star className="w-3.5 h-3.5 text-emerald-400" />
+              農林系列
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+              <div className="md:col-span-1 flex flex-col gap-3">
+                {renderJobCard("農民")}
+                {renderJobCard("木こり")}
+              </div>
+              <div className="hidden md:flex justify-center text-slate-700">
+                <ArrowRight className="w-6 h-6 animate-pulse" />
+              </div>
+              <div className="md:col-span-1 bg-slate-900/20 border border-dashed border-slate-800/40 rounded-xl p-5 text-center text-xs text-slate-500 italic">
+                (将来の上位職アップデートをお楽しみに)
+              </div>
+            </div>
+          </div>
+
+          {/* 2. 戦闘系 */}
+          <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+              <Star className="w-3.5 h-3.5 text-rose-400" />
+              武芸系列
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+              <div className="md:col-span-1">{renderJobCard("猟師")}</div>
+              <div className="flex justify-center text-slate-700">
+                <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
+              </div>
+              <div className="md:col-span-1">{renderJobCard("戦士")}</div>
+            </div>
+          </div>
+
+          {/* 3. 工芸系 */}
+          <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+              <Star className="w-3.5 h-3.5 text-amber-400" />
+              工芸系列
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+              <div className="md:col-span-1">{renderJobCard("鉱夫")}</div>
+              <div className="flex justify-center text-slate-700">
+                <ArrowRight className="w-6 h-6 rotate-90 md:rotate-0" />
+              </div>
+              <div className="md:col-span-1">{renderJobCard("職人")}</div>
+            </div>
+          </div>
+
+          {/* 4. 学術・回復系 */}
+          <div className="bg-slate-950/20 border border-slate-800/60 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5 font-mono uppercase tracking-wider">
+              <Star className="w-3.5 h-3.5 text-purple-400" />
+              学術・医療系列
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-4">
+              {/* 起点 (薬師) */}
+              <div className="md:col-span-1">{renderJobCard("薬師")}</div>
+
+              {/* 矢印 (分岐派生表示) */}
+              <div className="flex flex-col items-center justify-center text-slate-700 gap-1.5">
+                <span className="text-[9px] font-mono text-slate-500">分岐派生</span>
+                <div className="flex md:flex-col gap-8 md:gap-2">
+                  <ArrowRight className="w-5 h-5 rotate-90 md:rotate-[-20deg]" />
+                  <ArrowRight className="w-5 h-5 rotate-90 md:rotate-20" />
+                </div>
+              </div>
+
+              {/* 分岐先 (魔術師 & 僧侶) */}
+              <div className="md:col-span-1 flex flex-col gap-4">
+                {renderJobCard("魔術師")}
+                {renderJobCard("僧侶")}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* フッター閉じるボタン */}
+      <div className="flex justify-end pt-4 border-t border-slate-805/80 mt-4">
+        <Button onClick={onClose} variant="secondary" size="md">
+          閉じる
+        </Button>
+      </div>
+    </Modal>
   );
 };
