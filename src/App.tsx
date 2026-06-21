@@ -5,7 +5,6 @@ import { DungeonPanel } from "./components/game/DungeonPanel";
 import { FacilityList } from "./components/game/FacilityList";
 import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
-import { FooterLogTicker } from "./components/layout/FooterLogTicker";
 import { Header } from "./components/layout/Header";
 import { StatusBar } from "./components/layout/StatusBar";
 import { SoulShop } from "./components/modals/SoulShop";
@@ -106,9 +105,6 @@ export default function App() {
           <DungeonPanel />
         </div>
       </main>
-
-      {/* ログエリア (下部) */}
-      <FooterLogTicker />
 
       {/* ゲームオーバー時の強制転生ショップオーバーレイ */}
       {gameOver && (

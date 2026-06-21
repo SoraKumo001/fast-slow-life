@@ -1,5 +1,5 @@
-import { Play, Pause, RefreshCw, AlertTriangle, X, Sparkles } from "lucide-react";
-import React, { useState } from "react";
+import { Play, Pause, RefreshCw, AlertTriangle, X, Sparkles, Terminal } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 
 import { SOUL_UPGRADES } from "../../data/masterData";
 import {
@@ -11,7 +11,9 @@ import {
   useInventory,
   useDungeons,
   useSoulUpgrades,
+  useLogs,
 } from "../../hooks";
+import { GameLog } from "../../types/game";
 import { SoulShop } from "../modals/SoulShop";
 
 export const Header: React.FC = () => {
@@ -25,6 +27,80 @@ export const Header: React.FC = () => {
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
+
+  const logs = useLogs();
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
+
+  // 可動式ウィンドウ用の位置・ドラッグ制御
+  const [windowPos, setWindowPos] = useState({ x: 100, y: 120 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (showHistoryModal) {
+      const initialX = Math.max(20, window.innerWidth / 2 - 288);
+      const initialY = 120;
+      setWindowPos({ x: initialX, y: initialY });
+    }
+  }, [showHistoryModal]);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setWindowPos({
+        x: e.clientX - dragStart.current.x,
+        y: e.clientY - dragStart.current.y,
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
+  const handleHeaderMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if ((e.target as HTMLElement).closest("button")) {
+      return;
+    }
+    setIsDragging(true);
+    dragStart.current = {
+      x: e.clientX - windowPos.x,
+      y: e.clientY - windowPos.y,
+    };
+  };
+
+  const getLogColorClass = (type: GameLog["type"]) => {
+    switch (type) {
+      case "combat":
+        return "text-red-400";
+      case "gather":
+        return "text-emerald-400";
+      case "craft":
+        return "text-sky-400";
+      case "upgrade":
+        return "text-amber-400";
+      case "system":
+        return "text-purple-400 font-bold";
+      case "warning":
+        return "text-yellow-400 font-semibold";
+      case "error":
+        return "text-red-500 font-bold";
+      default:
+        return "text-slate-300";
+    }
+  };
+
+  const filteredHistoryLogs = filter === "all" ? logs : logs.filter((log) => log.type === filter);
 
   const dailyFoodConsumption = villagers.length;
   const foodAmount = inventory.food || 0;
@@ -153,6 +229,16 @@ export const Header: React.FC = () => {
             ))}
           </div>
 
+          {/* ログ履歴 */}
+          <button
+            onClick={() => setShowHistoryModal(true)}
+            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-medium text-xs px-3.5 py-2 rounded-lg transition duration-200 border border-slate-700 hover:border-slate-650 cursor-pointer"
+            title="過去のログ履歴を表示"
+          >
+            <Terminal className="w-4 h-4 text-sky-400" />
+            ログ履歴
+          </button>
+
           {/* 転生 */}
           <button
             onClick={() => setShowSoulShopModal(true)}
@@ -185,6 +271,89 @@ export const Header: React.FC = () => {
               <X className="w-5 h-5" />
             </button>
             <SoulShop onClose={() => setShowSoulShopModal(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* ログ履歴可動式ウィンドウ */}
+      {showHistoryModal && (
+        <div
+          style={{
+            left: `${windowPos.x}px`,
+            top: `${windowPos.y}px`,
+          }}
+          className="fixed z-50 bg-slate-900 border border-slate-800 rounded-xl w-[90vw] md:w-[576px] p-5 space-y-4 flex flex-col max-h-[75vh] shadow-2xl select-none"
+        >
+          {/* ドラッグ可能なヘッダー */}
+          <div
+            onMouseDown={handleHeaderMouseDown}
+            className="flex justify-between items-center border-b border-slate-800 pb-3 cursor-move active:cursor-grabbing"
+          >
+            <h3 className="text-sm font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider pointer-events-none select-none">
+              <Terminal className="w-4 h-4 text-sky-400" />
+              過去のログ履歴 (ドラッグ移動可能)
+            </h3>
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="text-slate-500 hover:text-slate-300 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* カテゴリフィルター */}
+          <div className="flex flex-wrap gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-slate-800 self-start">
+            {(["all", "combat", "gather", "craft", "upgrade", "system"] as const).map((type) => (
+              <button
+                key={type}
+                onClick={() => setFilter(type)}
+                className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer ${
+                  filter === type
+                    ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                    : "text-slate-400 border border-transparent hover:text-slate-200"
+                }`}
+              >
+                {type === "all"
+                  ? "すべて"
+                  : type === "combat"
+                    ? "戦闘"
+                    : type === "gather"
+                      ? "採取"
+                      : type === "craft"
+                        ? "加工"
+                        : type === "upgrade"
+                          ? "施設"
+                          : "システム"}
+              </button>
+            ))}
+          </div>
+
+          {/* スクロール可能な履歴 */}
+          <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[11px] leading-relaxed min-h-[300px] max-h-[45vh] select-text">
+            {filteredHistoryLogs.length === 0 ? (
+              <p className="text-slate-500 text-center py-10 italic">該当するログはありません</p>
+            ) : (
+              filteredHistoryLogs.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-start gap-2 hover:bg-slate-950/40 py-0.5 rounded px-1"
+                >
+                  <span className="text-slate-500 font-bold shrink-0">{log.timestamp}</span>
+                  <span className={`wrap-break-word ${getLogColorClass(log.type)}`}>
+                    {log.message}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex justify-end pt-2 border-t border-slate-800">
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs transition font-semibold cursor-pointer"
+            >
+              閉じる
+            </button>
           </div>
         </div>
       )}

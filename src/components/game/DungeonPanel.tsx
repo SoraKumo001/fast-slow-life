@@ -111,269 +111,273 @@ export const DungeonPanel: React.FC = () => {
       )}
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {dungeons.map((area) => {
-          const isUnlocked = area.unlockedAtTier <= currentTier;
-          const activeInArea = getActiveVillagersInArea(area.id);
-          const boss = area.monsters.find((m) => m.isBoss);
-          const isBossAvailable = area.explorationProgress >= 100;
-          const isBossDefeatedInThisArea =
-            currentTier > area.unlockedAtTier ||
-            (currentTier === area.unlockedAtTier && bossDefeated);
+        {dungeons
+          .filter((area) => area.unlockedAtTier <= currentTier)
+          .sort((a, b) => b.recommendedLevel - a.recommendedLevel)
+          .map((area) => {
+            const isUnlocked = true;
+            const activeInArea = getActiveVillagersInArea(area.id);
+            const boss = area.monsters.find((m) => m.isBoss);
+            const isBossAvailable = area.explorationProgress >= 100;
+            const isBossDefeatedInThisArea =
+              currentTier > area.unlockedAtTier ||
+              (currentTier === area.unlockedAtTier && bossDefeated);
 
-          return (
-            <div
-              key={area.id}
-              onClick={() => isUnlocked && toggleAreaExpand(area.id)}
-              className={`border rounded-xl p-4 transition-all duration-200 ${
-                isUnlocked
-                  ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
-                  : "bg-slate-950/10 border-dashed border-slate-900 opacity-50"
-              }`}
-            >
-              {/* ダンジョン基本情報 */}
-              <div className="flex justify-between items-start mb-2 select-none">
-                <div>
-                  <h3 className="font-bold text-slate-100 flex items-center gap-1.5">
-                    {area.name}
-                    {!isUnlocked && (
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950 border border-red-900 text-red-400 font-bold uppercase">
-                        未解放
-                      </span>
-                    )}
-                  </h3>
-                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                    推奨Lv.{area.recommendedLevel} • 片道 {area.distance}時間
-                  </p>
-                </div>
-
-                {isUnlocked && (
-                  <div className="flex items-center gap-2">
-                    {isBossAvailable && !isBossDefeatedInThisArea && !activeBoss && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleOpenBossBattle(area);
-                        }}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white rounded-lg transition animate-pulse-slow shadow-lg shadow-amber-900/20"
-                      >
-                        <Sword className="w-3.5 h-3.5" />
-                        ボスと対決
-                      </button>
-                    )}
-                    <div className="text-slate-400 hover:text-slate-200 p-1 transition ml-1 shrink-0">
-                      {expandedAreaIds[area.id] ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
+            return (
+              <div
+                key={area.id}
+                onClick={() => isUnlocked && toggleAreaExpand(area.id)}
+                className={`border rounded-xl p-4 transition-all duration-200 ${
+                  isUnlocked
+                    ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
+                    : "bg-slate-950/10 border-dashed border-slate-900 opacity-50"
+                }`}
+              >
+                {/* ダンジョン基本情報 */}
+                <div className="flex justify-between items-start mb-2 select-none">
+                  <div>
+                    <h3 className="font-bold text-slate-100 flex items-center gap-1.5">
+                      {area.name}
+                      {!isUnlocked && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-red-950 border border-red-900 text-red-400 font-bold uppercase">
+                          未解放
+                        </span>
                       )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 探索度プログレスバー */}
-              {isUnlocked && (
-                <div className="mt-2 mb-3">
-                  <div className="flex justify-between text-[10px] mb-1">
-                    <span className="text-slate-400 font-medium">探索度</span>
-                    <span className="text-sky-400 font-bold font-mono">
-                      {Math.floor(area.explorationProgress)}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
-                    <div
-                      className="bg-sky-500 h-full transition-all duration-300 rounded-full"
-                      style={{ width: `${area.explorationProgress}%` }}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {isUnlocked && expandedAreaIds[area.id] && (
-                <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
-                  {/* 採取可能アイテム & 出現モンスター */}
-                  <div className="grid grid-cols-2 gap-3 text-[10px]">
-                    <div>
-                      <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
-                      <ul className="space-y-1 text-slate-300 font-mono">
-                        {area.gathers.map((g) => {
-                          const isItemUnlocked =
-                            area.explorationProgress >= (g.unlockedAtProgress || 0);
-                          return (
-                            <li
-                              key={g.itemId}
-                              className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
-                                isItemUnlocked ? "" : "text-slate-600 font-normal"
-                              }`}
-                            >
-                              {/* 背景の進行ゲージ */}
-                              {isItemUnlocked && !(g.respawnTimeLeft && g.respawnTimeLeft > 0) && (
-                                <div
-                                  className="absolute left-0 top-0 bottom-0 bg-emerald-500/15 transition-all duration-300 pointer-events-none"
-                                  style={{ width: `${g.currentProgress || 0}%` }}
-                                />
-                              )}
-                              {/* リスポーン中の背景 */}
-                              {isItemUnlocked && g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
-                                <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
-                              ) : null}
-
-                              {/* 前面コンテンツ */}
-                              <span
-                                className="z-10 truncate whitespace-nowrap text-[10px]"
-                                style={{ whiteSpace: "nowrap" }}
-                                title={
-                                  isItemUnlocked ? ITEMS[g.itemId]?.name || g.itemId : undefined
-                                }
-                              >
-                                •{" "}
-                                {isItemUnlocked
-                                  ? `${ITEMS[g.itemId]?.name || g.itemId}`
-                                  : `??? (${g.unlockedAtProgress}%で解放)`}
-                              </span>
-                              {isItemUnlocked && (
-                                <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
-                                  {g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
-                                    <RespawnBar
-                                      timeLeft={g.respawnTimeLeft}
-                                      timeTotal={g.respawnTimeTotal}
-                                    />
-                                  ) : (
-                                    <span className="text-emerald-400">
-                                      {Math.floor(g.currentProgress || 0)}%
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
-                      <ul className="space-y-1 text-slate-300 font-mono">
-                        {area.monsters.map((m) => {
-                          const isMonsUnlocked =
-                            area.explorationProgress >= (m.unlockedAtProgress || 0);
-                          return (
-                            <li
-                              key={m.id}
-                              className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
-                                isMonsUnlocked
-                                  ? m.isBoss
-                                    ? "text-amber-400 font-bold bg-amber-500/5 border border-amber-500/10"
-                                    : ""
-                                  : "text-slate-600 font-normal"
-                              }`}
-                            >
-                              {/* 背景の進行ゲージ */}
-                              {isMonsUnlocked &&
-                                !m.isBoss &&
-                                !(m.respawnTimeLeft && m.respawnTimeLeft > 0) && (
-                                  <div
-                                    className="absolute left-0 top-0 bottom-0 bg-sky-500/15 transition-all duration-300 pointer-events-none"
-                                    style={{ width: `${m.currentProgress || 0}%` }}
-                                  />
-                                )}
-                              {/* リスポーン中の背景 */}
-                              {isMonsUnlocked &&
-                              !m.isBoss &&
-                              m.respawnTimeLeft &&
-                              m.respawnTimeLeft > 0 ? (
-                                <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
-                              ) : null}
-
-                              {/* 前面コンテンツ */}
-                              <div
-                                className="z-10 flex items-center gap-1.5 min-w-0 flex-1 mr-1"
-                                title={
-                                  isMonsUnlocked
-                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}\n入手アイテム: ${m.drops.map((d) => `${ITEMS[d.itemId]?.name || d.itemId} (${Math.round(d.chance * 100)}%)`).join(", ")}`
-                                    : undefined
-                                }
-                              >
-                                <span className="truncate text-[10px]">
-                                  •{" "}
-                                  {isMonsUnlocked
-                                    ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
-                                    : `??? (${m.unlockedAtProgress}%で解放)`}
-                                </span>
-                                {isMonsUnlocked && m.drops.length > 0 && (
-                                  <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-20">
-                                    [
-                                    {m.drops
-                                      .map((d) => ITEMS[d.itemId]?.name || d.itemId)
-                                      .join("/")}
-                                    ]
-                                  </span>
-                                )}
-                              </div>
-                              {isMonsUnlocked && !m.isBoss && (
-                                <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
-                                  {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
-                                    <RespawnBar
-                                      timeLeft={m.respawnTimeLeft}
-                                      timeTotal={m.respawnTimeTotal}
-                                    />
-                                  ) : (
-                                    <span className="text-sky-400">
-                                      {Math.floor(m.currentProgress || 0)}%
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
+                    </h3>
+                    <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                      推奨Lv.{area.recommendedLevel} • 片道 {area.distance}時間
+                    </p>
                   </div>
 
-                  {/* 現在派遣中の村人 */}
-                  <div className="flex flex-wrap items-center gap-1.5 mt-2 bg-slate-900/40 p-2 rounded border border-slate-900">
-                    <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mr-1 flex items-center gap-1">
-                      <Users className="w-3 h-3 text-sky-400" />
-                      派遣中:
-                    </span>
-                    {activeInArea.length === 0 ? (
-                      <span className="text-[10px] text-slate-500 italic">なし</span>
-                    ) : (
-                      activeInArea.map((v) => (
-                        <span
-                          key={v.id}
-                          className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
-                            v.status === "active"
-                              ? "bg-sky-950/40 border-sky-850 text-sky-400"
-                              : "bg-amber-955/20 border-amber-900 text-amber-400"
-                          }`}
-                          title={`現在方針: ${v.order === "gather" ? "採取" : "討伐"}`}
+                  {isUnlocked && (
+                    <div className="flex items-center gap-2">
+                      {isBossAvailable && !isBossDefeatedInThisArea && !activeBoss && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenBossBattle(area);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-[10px] font-black text-white rounded-lg transition animate-pulse-slow shadow-lg shadow-amber-900/20"
                         >
-                          {v.name} ({v.order === "gather" ? "採" : "討"})
-                        </span>
-                      ))
-                    )}
-                  </div>
-
-                  {/* エリアボス撃破状況 */}
-                  {boss && (
-                    <div className="flex items-center gap-2 mt-1 text-[10px]">
-                      <span className="text-slate-400">エリアボス:</span>
-                      {currentTier > area.unlockedAtTier ||
-                      (currentTier === area.unlockedAtTier && bossDefeated) ? (
-                        <span className="text-emerald-400 font-bold">撃破済</span>
-                      ) : (
-                        <span className="text-amber-505 font-bold flex items-center gap-1">
-                          <ShieldAlert className="w-3.5 h-3.5" /> 未撃破
-                        </span>
+                          <Sword className="w-3.5 h-3.5" />
+                          ボスと対決
+                        </button>
                       )}
+                      <div className="text-slate-400 hover:text-slate-200 p-1 transition ml-1 shrink-0">
+                        {expandedAreaIds[area.id] ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {/* 探索度プログレスバー */}
+                {isUnlocked && (
+                  <div className="mt-2 mb-3">
+                    <div className="flex justify-between text-[10px] mb-1">
+                      <span className="text-slate-400 font-medium">探索度</span>
+                      <span className="text-sky-400 font-bold font-mono">
+                        {Math.floor(area.explorationProgress)}%
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
+                      <div
+                        className="bg-sky-500 h-full transition-all duration-300 rounded-full"
+                        style={{ width: `${area.explorationProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {isUnlocked && expandedAreaIds[area.id] && (
+                  <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
+                    {/* 採取可能アイテム & 出現モンスター */}
+                    <div className="grid grid-cols-2 gap-3 text-[10px]">
+                      <div>
+                        <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
+                        <ul className="space-y-1 text-slate-300 font-mono">
+                          {area.gathers.map((g) => {
+                            const isItemUnlocked =
+                              area.explorationProgress >= (g.unlockedAtProgress || 0);
+                            return (
+                              <li
+                                key={g.itemId}
+                                className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
+                                  isItemUnlocked ? "" : "text-slate-600 font-normal"
+                                }`}
+                              >
+                                {/* 背景の進行ゲージ */}
+                                {isItemUnlocked &&
+                                  !(g.respawnTimeLeft && g.respawnTimeLeft > 0) && (
+                                    <div
+                                      className="absolute left-0 top-0 bottom-0 bg-emerald-500/15 transition-all duration-300 pointer-events-none"
+                                      style={{ width: `${g.currentProgress || 0}%` }}
+                                    />
+                                  )}
+                                {/* リスポーン中の背景 */}
+                                {isItemUnlocked && g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
+                                  <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
+                                ) : null}
+
+                                {/* 前面コンテンツ */}
+                                <span
+                                  className="z-10 truncate whitespace-nowrap text-[10px]"
+                                  style={{ whiteSpace: "nowrap" }}
+                                  title={
+                                    isItemUnlocked ? ITEMS[g.itemId]?.name || g.itemId : undefined
+                                  }
+                                >
+                                  •{" "}
+                                  {isItemUnlocked
+                                    ? `${ITEMS[g.itemId]?.name || g.itemId}`
+                                    : `??? (${g.unlockedAtProgress}%で解放)`}
+                                </span>
+                                {isItemUnlocked && (
+                                  <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
+                                    {g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
+                                      <RespawnBar
+                                        timeLeft={g.respawnTimeLeft}
+                                        timeTotal={g.respawnTimeTotal}
+                                      />
+                                    ) : (
+                                      <span className="text-emerald-400">
+                                        {Math.floor(g.currentProgress || 0)}%
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
+                        <ul className="space-y-1 text-slate-300 font-mono">
+                          {area.monsters.map((m) => {
+                            const isMonsUnlocked =
+                              area.explorationProgress >= (m.unlockedAtProgress || 0);
+                            return (
+                              <li
+                                key={m.id}
+                                className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
+                                  isMonsUnlocked
+                                    ? m.isBoss
+                                      ? "text-amber-400 font-bold bg-amber-500/5 border border-amber-500/10"
+                                      : ""
+                                    : "text-slate-600 font-normal"
+                                }`}
+                              >
+                                {/* 背景の進行ゲージ */}
+                                {isMonsUnlocked &&
+                                  !m.isBoss &&
+                                  !(m.respawnTimeLeft && m.respawnTimeLeft > 0) && (
+                                    <div
+                                      className="absolute left-0 top-0 bottom-0 bg-sky-500/15 transition-all duration-300 pointer-events-none"
+                                      style={{ width: `${m.currentProgress || 0}%` }}
+                                    />
+                                  )}
+                                {/* リスポーン中の背景 */}
+                                {isMonsUnlocked &&
+                                !m.isBoss &&
+                                m.respawnTimeLeft &&
+                                m.respawnTimeLeft > 0 ? (
+                                  <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
+                                ) : null}
+
+                                {/* 前面コンテンツ */}
+                                <div
+                                  className="z-10 flex items-center gap-1.5 min-w-0 flex-1 mr-1"
+                                  title={
+                                    isMonsUnlocked
+                                      ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}\n入手アイテム: ${m.drops.map((d) => `${ITEMS[d.itemId]?.name || d.itemId} (${Math.round(d.chance * 100)}%)`).join(", ")}`
+                                      : undefined
+                                  }
+                                >
+                                  <span className="truncate text-[10px]">
+                                    •{" "}
+                                    {isMonsUnlocked
+                                      ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
+                                      : `??? (${m.unlockedAtProgress}%で解放)`}
+                                  </span>
+                                  {isMonsUnlocked && m.drops.length > 0 && (
+                                    <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-20">
+                                      [
+                                      {m.drops
+                                        .map((d) => ITEMS[d.itemId]?.name || d.itemId)
+                                        .join("/")}
+                                      ]
+                                    </span>
+                                  )}
+                                </div>
+                                {isMonsUnlocked && !m.isBoss && (
+                                  <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
+                                    {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
+                                      <RespawnBar
+                                        timeLeft={m.respawnTimeLeft}
+                                        timeTotal={m.respawnTimeTotal}
+                                      />
+                                    ) : (
+                                      <span className="text-sky-400">
+                                        {Math.floor(m.currentProgress || 0)}%
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    </div>
+
+                    {/* 現在派遣中の村人 */}
+                    <div className="flex flex-wrap items-center gap-1.5 mt-2 bg-slate-900/40 p-2 rounded border border-slate-900">
+                      <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mr-1 flex items-center gap-1">
+                        <Users className="w-3 h-3 text-sky-400" />
+                        派遣中:
+                      </span>
+                      {activeInArea.length === 0 ? (
+                        <span className="text-[10px] text-slate-500 italic">なし</span>
+                      ) : (
+                        activeInArea.map((v) => (
+                          <span
+                            key={v.id}
+                            className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
+                              v.status === "active"
+                                ? "bg-sky-950/40 border-sky-850 text-sky-400"
+                                : "bg-amber-955/20 border-amber-900 text-amber-400"
+                            }`}
+                            title={`現在方針: ${v.order === "gather" ? "採取" : "討伐"}`}
+                          >
+                            {v.name} ({v.order === "gather" ? "採" : "討"})
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* エリアボス撃破状況 */}
+                    {boss && (
+                      <div className="flex items-center gap-2 mt-1 text-[10px]">
+                        <span className="text-slate-400">エリアボス:</span>
+                        {currentTier > area.unlockedAtTier ||
+                        (currentTier === area.unlockedAtTier && bossDefeated) ? (
+                          <span className="text-emerald-400 font-bold">撃破済</span>
+                        ) : (
+                          <span className="text-amber-505 font-bold flex items-center gap-1">
+                            <ShieldAlert className="w-3.5 h-3.5" /> 未撃破
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
       </div>
 
       {/* ボス討伐編成モーダル */}
