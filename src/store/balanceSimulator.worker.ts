@@ -144,7 +144,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
         if (state.isSalaryUnpaid) {
           if (state.gold >= dailySalaryTotal) {
-            store.paySalaryDebt();
+            store.payVillagerDebts();
           }
         }
 

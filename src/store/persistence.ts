@@ -204,4 +204,4 @@ const createDummyStorage = (): StateStorage => {
 
 const storageImpl = isBrowser ? createDebouncedLocalStorage(1000) : createDummyStorage();
 
-export const customStorage = createJSONStorage(() => storageImpl);
+export const customStorage = createJSONStorage<GameState>(() => storageImpl);
