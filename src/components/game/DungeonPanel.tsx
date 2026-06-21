@@ -1,24 +1,15 @@
 import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { ITEMS } from "../../data/masterData";
-import { useGameStore } from "../../store/gameStore";
+import { useDungeons, useVillagers, useBossActions } from "../../hooks";
 import { DungeonArea } from "../../types/game";
 import { BossBattleModal } from "../modals/BossBattleModal";
 
 export const DungeonPanel: React.FC = () => {
-  const { dungeons, villagers, currentTier, bossDefeated, activeBoss } = useGameStore(
-    (s) => ({
-      dungeons: s.dungeons,
-      villagers: s.villagers,
-      currentTier: s.currentTier,
-      bossDefeated: s.bossDefeated,
-      activeBoss: s.activeBoss,
-    }),
-    shallow,
-  );
-  const withdrawFromBossBattle = useGameStore((s) => s.withdrawFromBossBattle);
+  const { dungeons, currentTier, bossDefeated, activeBoss } = useDungeons();
+  const villagers = useVillagers();
+  const { withdrawFromBossBattle } = useBossActions();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
   const [expandedAreaIds, setExpandedAreaIds] = useState<Record<string, boolean>>({});
@@ -56,9 +47,8 @@ export const DungeonPanel: React.FC = () => {
               </span>
               <h3 className="text-lg font-black text-white italic">
                 VS{" "}
-                {useGameStore
-                  .getState()
-                  .dungeons.find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId))
+                {dungeons
+                  .find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId))
                   ?.monsters.find((m) => m.id === activeBoss.monsterId)?.name || "Boss"}
               </h3>
             </div>

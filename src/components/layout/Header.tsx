@@ -1,45 +1,25 @@
 import { Play, Pause, RefreshCw, AlertTriangle, X } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
-import { useGameStore } from "../../store/gameStore";
+import {
+  useGameTime,
+  usePlayerResources,
+  useGameStatus,
+  useGameControls,
+  useVillagers,
+  useInventory,
+  useDungeons,
+} from "../../hooks";
 import { SoulShop } from "../modals/SoulShop";
 
 export const Header: React.FC = () => {
-  const {
-    currentDay,
-    currentHour,
-    gold,
-    inventory,
-    soulPoints,
-    isPaused,
-    playSpeed,
-    gameOver,
-    currentTier,
-    gameLimitDays,
-    bossDefeated,
-    villagers,
-  } = useGameStore(
-    (s) => ({
-      currentDay: s.currentDay,
-      currentHour: s.currentHour,
-      gold: s.gold,
-      inventory: s.inventory,
-      soulPoints: s.soulPoints,
-      isPaused: s.isPaused,
-      playSpeed: s.playSpeed,
-      gameOver: s.gameOver,
-      currentTier: s.currentTier,
-      gameLimitDays: s.gameLimitDays,
-      bossDefeated: s.bossDefeated,
-      villagers: s.villagers,
-    }),
-    shallow,
-  );
-  const { togglePause, setPlaySpeed, advanceDay } = useGameStore(
-    (s) => ({ togglePause: s.togglePause, setPlaySpeed: s.setPlaySpeed, advanceDay: s.advanceDay }),
-    shallow,
-  );
+  const { currentDay, currentHour } = useGameTime();
+  const { gold, soulPoints } = usePlayerResources();
+  const inventory = useInventory().inventory;
+  const { isPaused, playSpeed, gameOver, gameLimitDays } = useGameStatus();
+  const { currentTier, bossDefeated } = useDungeons();
+  const villagers = useVillagers();
+  const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
 

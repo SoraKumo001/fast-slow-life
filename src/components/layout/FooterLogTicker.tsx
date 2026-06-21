@@ -1,11 +1,11 @@
 import { Terminal, X } from "lucide-react";
 import React, { useState } from "react";
 
-import { useGameStore } from "../../store/gameStore";
+import { useLogs } from "../../hooks";
 import { GameLog } from "../../types/game";
 
 export const FooterLogTicker: React.FC = () => {
-  const logs = useGameStore((s) => s.logs);
+  const logs = useLogs();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
 

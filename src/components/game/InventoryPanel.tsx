@@ -1,9 +1,8 @@
 import { ShoppingBag } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { ITEMS, getRecipeForItem } from "../../data/masterData";
-import { useGameStore } from "../../store/gameStore";
+import { useInventory, useFacilities, useDungeons } from "../../hooks";
 import { Item } from "../../types/game";
 import {
   getCategoryBadgeColor,
@@ -13,16 +12,9 @@ import {
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 
 export const InventoryPanel: React.FC = () => {
-  const { inventory, targetAmounts, facilities, currentTier, dungeons } = useGameStore(
-    (s) => ({
-      inventory: s.inventory,
-      targetAmounts: s.targetAmounts,
-      facilities: s.facilities,
-      currentTier: s.currentTier,
-      dungeons: s.dungeons,
-    }),
-    shallow,
-  );
+  const { inventory, targetAmounts } = useInventory();
+  const facilities = useFacilities();
+  const { currentTier, dungeons } = useDungeons();
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 

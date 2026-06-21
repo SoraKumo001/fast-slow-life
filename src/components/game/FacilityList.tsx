@@ -1,14 +1,17 @@
 import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
+import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
 import {
-  useGameStore,
-  ITEMS,
-  getCraftableItemsForFacility,
-  getRecipeForItem,
-} from "../../store/gameStore";
+  useFacilities,
+  usePlayerResources,
+  useSoulUpgrades,
+  useVillagers,
+  useCraftActions,
+  useVillagerActions,
+  useInventory,
+} from "../../hooks";
 
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
@@ -23,20 +26,13 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const FacilityList: React.FC = () => {
-  const { facilities, inventory, gold, soulUpgrades, villagers } = useGameStore(
-    (s) => ({
-      facilities: s.facilities,
-      inventory: s.inventory,
-      gold: s.gold,
-      soulUpgrades: s.soulUpgrades,
-      villagers: s.villagers,
-    }),
-    shallow,
-  );
-  const { startFacilityUpgrade, hireVillager } = useGameStore(
-    (s) => ({ startFacilityUpgrade: s.startFacilityUpgrade, hireVillager: s.hireVillager }),
-    shallow,
-  );
+  const facilities = useFacilities();
+  const { inventory } = useInventory();
+  const { gold } = usePlayerResources();
+  const soulUpgrades = useSoulUpgrades();
+  const villagers = useVillagers();
+  const { startFacilityUpgrade } = useCraftActions();
+  const { hireVillager } = useVillagerActions();
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {

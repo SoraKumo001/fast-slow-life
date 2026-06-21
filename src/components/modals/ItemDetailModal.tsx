@@ -1,14 +1,8 @@
 import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import { shallow } from "zustand/shallow";
 
-import {
-  useGameStore,
-  ITEMS,
-  RECIPES,
-  getRecipeForItem,
-  getMarketSellBonus,
-} from "../../store/gameStore";
+import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
+import { ITEMS, RECIPES, getRecipeForItem, getMarketSellBonus } from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
 
@@ -18,14 +12,9 @@ interface ItemDetailModalProps {
 }
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose }) => {
-  const { inventory, targetAmounts, facilities } = useGameStore(
-    (s) => ({ inventory: s.inventory, targetAmounts: s.targetAmounts, facilities: s.facilities }),
-    shallow,
-  );
-  const { setTargetAmount, sellItem } = useGameStore(
-    (s) => ({ setTargetAmount: s.setTargetAmount, sellItem: s.sellItem }),
-    shallow,
-  );
+  const { inventory, targetAmounts } = useInventory();
+  const facilities = useFacilities();
+  const { setTargetAmount, sellItem } = useInventoryActions();
 
   const maxAmount = Math.floor(inventory[item.id] || 0);
   const [sellAmount, setSellAmount] = useState<number>(1);

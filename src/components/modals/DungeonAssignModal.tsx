@@ -1,7 +1,7 @@
 import { AlertCircle } from "lucide-react";
 import React from "react";
 
-import { useGameStore } from "../../store/gameStore";
+import { useVillagers, useVillagerActions } from "../../hooks";
 import { DungeonArea, Villager } from "../../types/game";
 
 interface DungeonAssignModalProps {
@@ -10,7 +10,8 @@ interface DungeonAssignModalProps {
 }
 
 export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, onClose }) => {
-  const { villagers, setVillagerOrder } = useGameStore();
+  const villagers = useVillagers();
+  const { setVillagerOrder } = useVillagerActions();
 
   const getIdleVillagers = () => {
     return villagers.filter((v: Villager) => v.status === "idle");

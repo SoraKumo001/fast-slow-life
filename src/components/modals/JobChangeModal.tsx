@@ -1,9 +1,8 @@
 import { CheckCircle, ArrowRight, ShieldAlert, Award, Star } from "lucide-react";
 import React from "react";
-import { shallow } from "zustand/shallow";
 
 import { JOBS } from "../../data/masterData";
-import { useGameStore } from "../../store/gameStore";
+import { usePlayerResources, useSoulUpgrades, useVillagerActions } from "../../hooks";
 import { JobType, Villager } from "../../types/game";
 
 interface JobChangeModalProps {
@@ -12,11 +11,9 @@ interface JobChangeModalProps {
 }
 
 export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClose }) => {
-  const { gold, soulUpgrades } = useGameStore(
-    (s) => ({ gold: s.gold, soulUpgrades: s.soulUpgrades }),
-    shallow,
-  );
-  const changeVillagerJob = useGameStore((s) => s.changeVillagerJob);
+  const { gold } = usePlayerResources();
+  const soulUpgrades = useSoulUpgrades();
+  const { changeVillagerJob } = useVillagerActions();
 
   const discountLvl = soulUpgrades.discount || 0;
   const discountRate = 1 - discountLvl * 0.1;

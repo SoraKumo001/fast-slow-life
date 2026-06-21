@@ -1,19 +1,17 @@
 import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { ITEMS, MONSTERS } from "../../data/masterData";
-import { useGameStore } from "../../store/gameStore";
+import { useVillagers, useDungeons, useVillagerActions, useFacilities } from "../../hooks";
 import { Villager } from "../../types/game";
 import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";
 
 export const VillagerList: React.FC = () => {
-  const { dungeons, villagers } = useGameStore(
-    (s) => ({ dungeons: s.dungeons, villagers: s.villagers }),
-    shallow,
-  );
-  const setVillagerOrder = useGameStore((s) => s.setVillagerOrder);
+  const { dungeons } = useDungeons();
+  const villagers = useVillagers();
+  const facilities = useFacilities();
+  const { setVillagerOrder } = useVillagerActions();
   const [selectedVillager, setSelectedVillager] = useState<Villager | null>(null);
   const [activeModal, setActiveModal] = useState<"job" | "equip" | null>(null);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
@@ -26,7 +24,6 @@ export const VillagerList: React.FC = () => {
     if (v.status === "resting") return "宿屋で休息中";
     if (v.assignedCraftJobId) {
       let craftItemName = "";
-      const { facilities } = useGameStore.getState();
       Object.values(facilities).forEach((f) => {
         const job = f.craftQueue.find((j) => j.id === v.assignedCraftJobId);
         if (job) {
