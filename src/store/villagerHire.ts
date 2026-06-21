@@ -3,11 +3,11 @@ import {
   VILLAGERS_PER_GUILD_LEVEL,
   MAX_VILLAGERS_ABSOLUTE,
   HIRE_COST,
-  BODY_STAT_PER_LEVEL,
 } from "../constants";
 import { VILLAGER_NAMES } from "../data/masterData";
 import { Villager, Facility } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
+import { createVillager } from "../utils/villagerHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export interface HireResult {
@@ -85,45 +85,8 @@ export function hireVillagerHelper(params: {
   }
 
   const name = VILLAGER_NAMES[villagers.length % VILLAGER_NAMES.length] + " (新人)";
-  const statBonus = (soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
-  const newVillager: Villager = {
-    id: "v_" + generateId(),
-    name,
-    level: 1,
-    exp: 0,
-    currentJob: "無職",
-    jobHistory: ["無職"],
-    maxHp: 100 + statBonus * 10,
-    currentHp: 100 + statBonus * 10,
-    stamina: 100,
-    maxStamina: 100,
-    str: 10 + statBonus,
-    int: 10 + statBonus,
-    dex: 10 + statBonus,
-    agi: 10 + statBonus,
-    vit: 10 + statBonus,
-    weaponId: "none",
-    armorId: "none",
-    order: "gather",
-    status: "idle",
-    destinationAreaId: null,
-    travelTimeLeft: 0,
-    assignedCraftJobId: null,
-    targetGatherItemId: null,
-    targetMonsterId: null,
-    autoTargetName: null,
-    potionItemId: "potion",
-    potionCount: 0,
-    staminaDrinkItemId: "stamina_drink",
-    staminaDrinkCount: 0,
-    bonusStr: 0,
-    bonusInt: 0,
-    bonusDex: 0,
-    bonusAgi: 0,
-    bonusVit: 0,
-    bonusMaxHp: 0,
-    bonusMaxStamina: 0,
-  };
+  const sb = (soulUpgrades.body || 0) * 2;
+  const newVillager = createVillager({ id: "v_" + generateId(), name, statBonus: sb });
 
   return {
     success: true,

@@ -52,7 +52,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
   };
 
   return (
-    <Modal onClose={onClose} size="sm">
+    <Modal onClose={onClose} size="sm" showCloseButton>
       <div className="space-y-4 relative">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -285,12 +285,6 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
             </div>
           </div>
         )}
-
-        <div className="flex justify-end pt-2">
-          <Button onClick={onClose} variant="secondary" size="md">
-            閉じる
-          </Button>
-        </div>
       </div>
     </Modal>
   );

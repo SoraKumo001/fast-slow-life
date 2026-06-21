@@ -1,4 +1,4 @@
-import { MAX_POTIONS_PER_VILLAGER } from "../constants";
+import { MAX_POTIONS_PER_VILLAGER, POTION_PRIORITY } from "../constants";
 import { ITEMS, DUNGEONS, MONSTERS } from "../data/masterData";
 import { Villager, OrderType } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
@@ -100,8 +100,7 @@ export function setVillagerOrderHelper(params: {
         // 強いポーションから優先してアサイン
         let assignedCount = 0;
         let assignedId = "potion";
-        const potionPriority = ["elixir", "high_potion", "mid_potion", "potion"];
-        for (const pId of potionPriority) {
+        for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
             assignedId = pId;

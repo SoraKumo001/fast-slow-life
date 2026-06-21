@@ -1,6 +1,7 @@
 import { MAX_LOG_COUNT } from "../../constants";
 import { GameLog, GameState, GameActions } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
+import { formatGameTime } from "../../utils/timeHelpers";
 import { calculateAdvanceHour } from "../gameLoopHelper";
 import { calculateEarnedSp } from "../gameReset";
 import { dispatchIdleVillagersHelper } from "../villagerDispatch";
@@ -60,7 +61,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
 
     if (!globalThis.IS_TEST_ENVIRONMENT) {
       result.logsToAppend.forEach((log) => {
-        const timestamp = `${result.currentDay}日目 ${String(result.currentHour).padStart(2, "0")}:00`;
+        const timestamp = formatGameTime(result.currentDay, result.currentHour);
         const newLog: GameLog = {
           id: generateId(),
           timestamp,

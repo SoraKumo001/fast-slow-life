@@ -1,4 +1,4 @@
-import { MAX_POTIONS_PER_VILLAGER } from "../constants";
+import { MAX_POTIONS_PER_VILLAGER, POTION_PRIORITY } from "../constants";
 import {
   CATEGORY_FOOD,
   CATEGORY_ORE,
@@ -169,8 +169,7 @@ export function dispatchIdleVillagersHelper(params: {
 
         let assignedPotionCount = 0;
         let assignedPotionId = "potion";
-        const potionPriority = ["elixir", "high_potion", "mid_potion", "potion"];
-        for (const pId of potionPriority) {
+        for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
             assignedPotionId = pId;

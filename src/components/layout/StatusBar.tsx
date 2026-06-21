@@ -8,6 +8,7 @@ import {
   usePlayerResources,
   useVillagers,
 } from "../../hooks";
+import { ProgressBar } from "../ui/ProgressBar";
 
 export const StatusBar: React.FC = () => {
   const { currentDay } = useGameTime();
@@ -52,12 +53,12 @@ export const StatusBar: React.FC = () => {
 
       <span className="flex items-center gap-1.5 shrink-0">
         <span className="text-slate-500">進行度</span>
-        <div className="w-16 bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-300 ${
-              bossDefeated ? "bg-emerald-500" : "bg-sky-500"
-            }`}
-            style={{ width: `${progressPct}%` }}
+        <div className="w-16">
+          <ProgressBar
+            value={progressPct}
+            height={1.5}
+            color={bossDefeated ? "emerald" : "sky"}
+            className="border border-slate-900"
           />
         </div>
         <span

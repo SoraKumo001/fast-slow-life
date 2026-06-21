@@ -171,7 +171,12 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
   };
 
   return (
-    <Modal onClose={onClose} size="xl" className="flex flex-col h-[90vh] md:h-auto max-h-[90vh]">
+    <Modal
+      onClose={onClose}
+      size="xl"
+      showCloseButton
+      className="flex flex-col h-[90vh] md:h-auto max-h-[90vh]"
+    >
       {/* ヘッダー */}
       <div className="flex flex-col sm:flex-row justify-between items-start gap-3 border-b border-slate-800 pb-4 mb-4">
         <div>
@@ -282,13 +287,6 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
             </div>
           </div>
         </div>
-      </div>
-
-      {/* フッター閉じるボタン */}
-      <div className="flex justify-end pt-4 border-t border-slate-805/80 mt-4">
-        <Button onClick={onClose} variant="secondary" size="md">
-          閉じる
-        </Button>
       </div>
     </Modal>
   );

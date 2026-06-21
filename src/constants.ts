@@ -111,6 +111,8 @@ export const CATEGORY_GEAR_WEAPON = "gear_weapon";
 export const CATEGORY_GEAR_ARMOR = "gear_armor";
 export const CATEGORY_CONSUMABLE = "consumable";
 
+export const POTION_PRIORITY = ["elixir", "high_potion", "mid_potion", "potion"];
+
 export const STAT_LABEL_MAP: Record<string, string> = {
   attack: "攻撃",
   defense: "防御",

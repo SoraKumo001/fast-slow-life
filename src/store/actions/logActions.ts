@@ -1,6 +1,7 @@
 import { MAX_LOG_COUNT } from "../../constants";
 import { GameLog, GameState, GameActions } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
+import { formatGameTime } from "../../utils/timeHelpers";
 
 type StoreSet = (
   partial:
@@ -13,7 +14,7 @@ export const createLogActions = (set: StoreSet, get: StoreGet) => ({
   addLog: (message: string, type: GameLog["type"]) => {
     if (globalThis.IS_TEST_ENVIRONMENT) return;
     const { currentDay, currentHour } = get();
-    const timestamp = `${currentDay}日目 ${String(currentHour).padStart(2, "0")}:00`;
+    const timestamp = formatGameTime(currentDay, currentHour);
     const newLog: GameLog = {
       id: generateId(),
       timestamp,

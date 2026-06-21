@@ -3,27 +3,12 @@ import React, { useState } from "react";
 
 import { ITEMS } from "../../data/masterData";
 import { useDungeons, useVillagers, useBossActions } from "../../hooks";
+import { useExpandedState } from "../../hooks/useExpandedState";
 import { DungeonArea } from "../../types/game";
 import { BossBattleModal } from "../modals/BossBattleModal";
-
-const RespawnBar: React.FC<{ timeLeft: number; timeTotal?: number }> = ({
-  timeLeft,
-  timeTotal,
-}) => {
-  const total = timeTotal || timeLeft;
-  const pct = total > 0 ? (1 - timeLeft / total) * 100 : 0;
-  return (
-    <span
-      className="inline-flex items-center gap-1"
-      title={`リスポーン残り ${timeLeft}h / ${total}h`}
-    >
-      <span className="w-8 bg-slate-950 rounded-full h-1 overflow-hidden border border-slate-900">
-        <span className="block bg-amber-500 h-full rounded-full" style={{ width: `${pct}%` }} />
-      </span>
-      <span className="text-amber-500">{timeLeft}h</span>
-    </span>
-  );
-};
+import { Panel } from "../ui/Panel";
+import { ProgressBar } from "../ui/ProgressBar";
+import { DungeonResourceItem } from "./DungeonResourceItem";
 
 export const DungeonPanel: React.FC = () => {
   const { dungeons, currentTier, bossDefeated, activeBoss } = useDungeons();
@@ -31,14 +16,7 @@ export const DungeonPanel: React.FC = () => {
   const { withdrawFromBossBattle } = useBossActions();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
-  const [expandedAreaIds, setExpandedAreaIds] = useState<Record<string, boolean>>({});
-
-  const toggleAreaExpand = (areaId: string) => {
-    setExpandedAreaIds((prev) => ({
-      ...prev,
-      [areaId]: !prev[areaId],
-    }));
-  };
+  const { isExpanded: isAreaExpanded, toggleExpand: toggleAreaExpand } = useExpandedState();
 
   const getActiveVillagersInArea = (areaId: string) => {
     return villagers.filter((v) => v.destinationAreaId === areaId);
@@ -50,12 +28,7 @@ export const DungeonPanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full relative">
-      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2 shrink-0">
-        <Compass className="w-5 h-5 text-sky-400" />
-        ダンジョン・探索派遣
-      </h2>
-
+    <Panel title="ダンジョン・探索派遣" icon={<Compass className="w-5 h-5 text-sky-400" />}>
       {/* アクティブなボス戦表示 */}
       {activeBoss && (
         <div className="mb-6 p-4 bg-red-950/30 border border-red-900/50 rounded-xl animate-pulse-slow">
@@ -164,7 +137,7 @@ export const DungeonPanel: React.FC = () => {
                         </button>
                       )}
                       <div className="text-slate-400 hover:text-slate-200 p-1 transition ml-1 shrink-0">
-                        {expandedAreaIds[area.id] ? (
+                        {isAreaExpanded(area.id) ? (
                           <ChevronUp className="w-4 h-4" />
                         ) : (
                           <ChevronDown className="w-4 h-4" />
@@ -183,16 +156,16 @@ export const DungeonPanel: React.FC = () => {
                         {Math.floor(area.explorationProgress)}%
                       </span>
                     </div>
-                    <div className="w-full bg-slate-950 rounded-full h-1.5 border border-slate-900 overflow-hidden">
-                      <div
-                        className="bg-sky-500 h-full transition-all duration-300 rounded-full"
-                        style={{ width: `${area.explorationProgress}%` }}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={area.explorationProgress}
+                      height={1.5}
+                      color="sky"
+                      className="border border-slate-900"
+                    />
                   </div>
                 )}
 
-                {isUnlocked && expandedAreaIds[area.id] && (
+                {isUnlocked && isAreaExpanded(area.id) && (
                   <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
                     {/* 採取可能アイテム & 出現モンスター */}
                     <div className="grid grid-cols-2 gap-3 text-[10px]">
@@ -200,56 +173,20 @@ export const DungeonPanel: React.FC = () => {
                         <span className="font-bold text-slate-400 block mb-1">採れる素材:</span>
                         <ul className="space-y-1 text-slate-300 font-mono">
                           {area.gathers.map((g) => {
-                            const isItemUnlocked =
+                            const unlocked =
                               area.explorationProgress >= (g.unlockedAtProgress || 0);
                             return (
-                              <li
+                              <DungeonResourceItem
                                 key={g.itemId}
-                                className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
-                                  isItemUnlocked ? "" : "text-slate-600 font-normal"
-                                }`}
-                              >
-                                {/* 背景の進行ゲージ */}
-                                {isItemUnlocked &&
-                                  !(g.respawnTimeLeft && g.respawnTimeLeft > 0) && (
-                                    <div
-                                      className="absolute left-0 top-0 bottom-0 bg-emerald-500/15 transition-all duration-300 pointer-events-none"
-                                      style={{ width: `${g.currentProgress || 0}%` }}
-                                    />
-                                  )}
-                                {/* リスポーン中の背景 */}
-                                {isItemUnlocked && g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
-                                  <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
-                                ) : null}
-
-                                {/* 前面コンテンツ */}
-                                <span
-                                  className="z-10 truncate whitespace-nowrap text-[10px]"
-                                  style={{ whiteSpace: "nowrap" }}
-                                  title={
-                                    isItemUnlocked ? ITEMS[g.itemId]?.name || g.itemId : undefined
-                                  }
-                                >
-                                  •{" "}
-                                  {isItemUnlocked
-                                    ? `${ITEMS[g.itemId]?.name || g.itemId}`
-                                    : `??? (${g.unlockedAtProgress}%で解放)`}
-                                </span>
-                                {isItemUnlocked && (
-                                  <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
-                                    {g.respawnTimeLeft && g.respawnTimeLeft > 0 ? (
-                                      <RespawnBar
-                                        timeLeft={g.respawnTimeLeft}
-                                        timeTotal={g.respawnTimeTotal}
-                                      />
-                                    ) : (
-                                      <span className="text-emerald-400">
-                                        {Math.floor(g.currentProgress || 0)}%
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </li>
+                                keyId={g.itemId}
+                                isUnlocked={unlocked}
+                                unlockedAtProgress={g.unlockedAtProgress || 0}
+                                name={ITEMS[g.itemId]?.name || g.itemId}
+                                progress={g.currentProgress || 0}
+                                respawnTimeLeft={g.respawnTimeLeft}
+                                respawnTimeTotal={g.respawnTimeTotal}
+                                gaugeColor="emerald"
+                              />
                             );
                           })}
                         </ul>
@@ -258,76 +195,39 @@ export const DungeonPanel: React.FC = () => {
                         <span className="font-bold text-slate-400 block mb-1">主な魔物:</span>
                         <ul className="space-y-1 text-slate-300 font-mono">
                           {area.monsters.map((m) => {
-                            const isMonsUnlocked =
+                            const unlocked =
                               area.explorationProgress >= (m.unlockedAtProgress || 0);
+                            const name = `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`;
+                            const tooltip = unlocked
+                              ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}\n入手アイテム: ${m.drops.map((d) => `${ITEMS[d.itemId]?.name || d.itemId} (${Math.round(d.chance * 100)}%)`).join(", ")}`
+                              : undefined;
+                            const dropsLabel =
+                              unlocked && m.drops.length > 0 ? (
+                                <span className="z-10 text-[9px] text-slate-500 truncate shrink-0 max-w-20 ml-1">
+                                  [{m.drops.map((d) => ITEMS[d.itemId]?.name || d.itemId).join("/")}
+                                  ]
+                                </span>
+                              ) : null;
                             return (
-                              <li
+                              <DungeonResourceItem
                                 key={m.id}
-                                className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${
-                                  isMonsUnlocked
-                                    ? m.isBoss
-                                      ? "text-amber-400 font-bold bg-amber-500/5 border border-amber-500/10"
-                                      : ""
-                                    : "text-slate-600 font-normal"
-                                }`}
-                              >
-                                {/* 背景の進行ゲージ */}
-                                {isMonsUnlocked &&
-                                  !m.isBoss &&
-                                  !(m.respawnTimeLeft && m.respawnTimeLeft > 0) && (
-                                    <div
-                                      className="absolute left-0 top-0 bottom-0 bg-sky-500/15 transition-all duration-300 pointer-events-none"
-                                      style={{ width: `${m.currentProgress || 0}%` }}
-                                    />
-                                  )}
-                                {/* リスポーン中の背景 */}
-                                {isMonsUnlocked &&
-                                !m.isBoss &&
-                                m.respawnTimeLeft &&
-                                m.respawnTimeLeft > 0 ? (
-                                  <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />
-                                ) : null}
-
-                                {/* 前面コンテンツ */}
-                                <div
-                                  className="z-10 flex items-center gap-1.5 min-w-0 flex-1 mr-1"
-                                  title={
-                                    isMonsUnlocked
-                                      ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}\n入手アイテム: ${m.drops.map((d) => `${ITEMS[d.itemId]?.name || d.itemId} (${Math.round(d.chance * 100)}%)`).join(", ")}`
-                                      : undefined
-                                  }
-                                >
-                                  <span className="truncate text-[10px]">
-                                    •{" "}
-                                    {isMonsUnlocked
-                                      ? `${m.name} ${m.isBoss ? "(ボス)" : `(Lv.${m.level})`}`
-                                      : `??? (${m.unlockedAtProgress}%で解放)`}
-                                  </span>
-                                  {isMonsUnlocked && m.drops.length > 0 && (
-                                    <span className="text-[9px] text-slate-500 truncate shrink-0 max-w-20">
-                                      [
-                                      {m.drops
-                                        .map((d) => ITEMS[d.itemId]?.name || d.itemId)
-                                        .join("/")}
-                                      ]
-                                    </span>
-                                  )}
-                                </div>
-                                {isMonsUnlocked && !m.isBoss && (
-                                  <div className="z-10 flex items-center shrink-0 font-mono text-[8px] font-bold ml-1">
-                                    {m.respawnTimeLeft && m.respawnTimeLeft > 0 ? (
-                                      <RespawnBar
-                                        timeLeft={m.respawnTimeLeft}
-                                        timeTotal={m.respawnTimeTotal}
-                                      />
-                                    ) : (
-                                      <span className="text-sky-400">
-                                        {Math.floor(m.currentProgress || 0)}%
-                                      </span>
-                                    )}
-                                  </div>
-                                )}
-                              </li>
+                                keyId={m.id}
+                                isUnlocked={unlocked}
+                                unlockedAtProgress={m.unlockedAtProgress || 0}
+                                name={name}
+                                progress={m.currentProgress || 0}
+                                respawnTimeLeft={m.respawnTimeLeft}
+                                respawnTimeTotal={m.respawnTimeTotal}
+                                gaugeColor="sky"
+                                showProgress={!m.isBoss}
+                                className={
+                                  m.isBoss
+                                    ? "text-amber-400 font-bold bg-amber-500/5 border border-amber-500/10"
+                                    : ""
+                                }
+                                extraContent={dropsLabel}
+                                tooltip={tooltip}
+                              />
                             );
                           })}
                         </ul>
@@ -390,6 +290,6 @@ export const DungeonPanel: React.FC = () => {
           }}
         />
       )}
-    </div>
+    </Panel>
   );
 };

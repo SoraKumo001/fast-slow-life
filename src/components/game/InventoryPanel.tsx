@@ -10,6 +10,7 @@ import {
   getEquipmentBonusString,
 } from "../../utils/itemHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
+import { Panel } from "../ui/Panel";
 
 export const InventoryPanel: React.FC = () => {
   const { inventory, targetAmounts } = useInventory();
@@ -103,26 +104,21 @@ export const InventoryPanel: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2 whitespace-nowrap">
-          <ShoppingBag className="w-5 h-5 text-sky-400 shrink-0" />
-          素材・倉庫アイテム
-        </h2>
-
-        {/* ソートセレクター */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SortOption)}
-          className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer shrink-0"
-        >
-          <option value="count-desc">所持数順 (多)</option>
-          <option value="count-asc">所持数順 (少)</option>
-          <option value="price-desc">売却価格順 (高)</option>
-          <option value="price-asc">売却価格順 (安)</option>
-          <option value="name-asc">名前順</option>
-        </select>
-      </div>
+    <Panel
+      title="素材・倉庫アイテム"
+      icon={<ShoppingBag className="w-5 h-5 text-sky-400 shrink-0" />}
+    >
+      <select
+        value={sortBy}
+        onChange={(e) => setSortBy(e.target.value as SortOption)}
+        className="bg-slate-950 border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:border-sky-500 font-medium cursor-pointer shrink-0"
+      >
+        <option value="count-desc">所持数順 (多)</option>
+        <option value="count-asc">所持数順 (少)</option>
+        <option value="price-desc">売却価格順 (高)</option>
+        <option value="price-asc">売却価格順 (安)</option>
+        <option value="name-asc">名前順</option>
+      </select>
 
       {/* フィルタータブ */}
       <div className="flex border-b border-slate-900 pb-2 mb-3 gap-1 overflow-x-auto no-scrollbar">
@@ -201,6 +197,6 @@ export const InventoryPanel: React.FC = () => {
       {selectedItem && (
         <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
-    </div>
+    </Panel>
   );
 };

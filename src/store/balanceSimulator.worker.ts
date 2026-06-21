@@ -7,6 +7,7 @@ import { isMainThread, parentPort, workerData } from "node:worker_threads";
 import { CATEGORY_GEAR_WEAPON, CATEGORY_GEAR_ARMOR } from "../constants";
 import { ITEMS, JOBS, SOUL_UPGRADES } from "../data/masterData";
 import { FacilityType, JobType } from "../types/game";
+import { formatGameTime } from "../utils/timeHelpers";
 import { useGameStore } from "./gameStore";
 
 interface SimulationResult {
@@ -100,7 +101,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
-          traceLog += `[Day ${state.currentDay} ${String(state.currentHour).padStart(2, "0")}:00] `;
+          traceLog += `[${formatGameTime(state.currentDay, state.currentHour)}] `;
           traceLog += `Gold: ${state.gold}, Food: ${state.inventory.food?.toFixed(2) || 0}, `;
           traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob})`).join(" | ")}\n`;
         }

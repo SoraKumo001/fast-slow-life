@@ -1,0 +1,420 @@
+import { Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
+import React from "react";
+
+import { ITEMS, MONSTERS } from "../../data/masterData";
+import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
+import { ProgressBar } from "../ui/ProgressBar";
+import { Tooltip } from "../ui/Tooltip";
+
+const computeEffectiveAtk = (v: Villager): number => {
+  const weaponAtk = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0;
+  const weaponInt = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0;
+  const physical = Math.floor(v.str * 1.5 + weaponAtk);
+  const magical = Math.floor(v.int * 1.8 + weaponInt);
+  return Math.max(physical, magical);
+};
+
+const computeEffectiveDef = (v: Villager): number => {
+  const armorDef = v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0;
+  return Math.floor(v.vit + armorDef);
+};
+
+interface VillagerRowProps {
+  villager: Villager;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
+  onOpenJobModal: (v: Villager) => void;
+  onOpenEquipModal: (v: Villager) => void;
+  onSetOrder: (
+    villagerId: string,
+    order: OrderType,
+    areaId: string | null,
+    targetGatherItemId?: string | null,
+    targetMonsterId?: string | null,
+  ) => void;
+  dungeons: DungeonArea[];
+  facilities: Record<FacilityType, Facility>;
+  dungeonsData: { dungeons: DungeonArea[] };
+}
+
+export const VillagerRow: React.FC<VillagerRowProps> = ({
+  villager: v,
+  isExpanded,
+  onToggleExpand,
+  onOpenJobModal,
+  onOpenEquipModal,
+  onSetOrder,
+  dungeons,
+  facilities,
+  dungeonsData,
+}) => {
+  const getVillagerPurpose = (villager: Villager) => {
+    if (villager.status === "resting") return "宿屋で休息中";
+    if (villager.assignedCraftJobId) {
+      let craftItemName = "";
+      Object.values(facilities).forEach((f) => {
+        const job = f.craftQueue.find((j) => j.id === villager.assignedCraftJobId);
+        if (job) {
+          craftItemName = ITEMS[job.itemId]?.name || "";
+        }
+      });
+      return `クラフト中: ${craftItemName || "加工"}`;
+    }
+    if (villager.destinationAreaId) {
+      const area = dungeons.find((d) => d.id === villager.destinationAreaId);
+      const areaName = area?.name || "ダンジョン";
+      let actionStr = "";
+      if (villager.order === "gather") {
+        const targetName = villager.targetGatherItemId
+          ? ITEMS[villager.targetGatherItemId]?.name
+          : villager.autoTargetName;
+        actionStr = targetName ? `採取 [${targetName}]` : "採取";
+      } else if (villager.order === "hunt") {
+        const targetName = villager.targetMonsterId
+          ? MONSTERS[villager.targetMonsterId]?.name
+          : villager.autoTargetName;
+        actionStr = targetName ? `討伐 [${targetName}]` : "討伐";
+      }
+      return `${areaName} : ${actionStr}`;
+    }
+    return "待機中 (方針なし)";
+  };
+
+  return (
+    <div className="bg-slate-950/80 border border-slate-800/80 hover:border-slate-700/80 rounded-lg p-3 transition duration-200">
+      <div
+        onClick={() => onToggleExpand(v.id)}
+        className="flex justify-between items-center cursor-pointer select-none"
+      >
+        <div>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenJobModal(v);
+            }}
+            className="mr-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-sky-500/50 text-sky-400 font-medium cursor-pointer transition-all duration-200"
+            title="クリックして職業変更"
+          >
+            {v.currentJob}
+          </span>
+          <span className="font-bold text-slate-100 text-sm">{v.name}</span>
+          <span className="text-xs text-slate-400 font-mono ml-2">
+            Lv.{v.level}{" "}
+            <span className="text-[10px] text-slate-500 font-normal">
+              <CheckCircle className="w-2.5 h-2.5 text-sky-400 inline" /> {v.exp}/{v.level * 100}
+            </span>
+          </span>
+          <div className="mt-1 flex gap-0.5 items-center">
+            <div>
+              <span
+                className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${
+                  v.status === "idle"
+                    ? "bg-slate-800 text-slate-400"
+                    : v.status === "resting"
+                      ? "bg-emerald-950/80 border border-emerald-900 text-emerald-400"
+                      : v.status === "active"
+                        ? "bg-red-950/80 border border-red-900 text-red-400"
+                        : "bg-amber-950/80 border border-amber-900 text-amber-400"
+                }`}
+              >
+                {v.status === "idle"
+                  ? "待機"
+                  : v.status === "resting"
+                    ? "休息中"
+                    : v.status === "active"
+                      ? "活動中"
+                      : v.status === "traveling_to"
+                        ? "移動中"
+                        : "帰還中"}
+                {v.travelTimeLeft}h
+              </span>
+            </div>
+            <span className="text-[10px] text-slate-300 font-medium mt-0.5 block">
+              {getVillagerPurpose(v)}
+            </span>
+          </div>
+          {!isExpanded && (
+            <div className="mt-2 flex items-center gap-x-4 text-[10px] text-slate-400 font-mono whitespace-nowrap overflow-x-auto no-scrollbar">
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Heart className="w-3 h-3 text-red-500 shrink-0" />
+                <div className="w-10 shrink-0">
+                  <ProgressBar value={v.currentHp} max={v.maxHp} height={1} color="red" />
+                </div>
+                <span className="text-slate-300 font-bold shrink-0">
+                  {v.currentHp}/{v.maxHp}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Zap className="w-3 h-3 text-amber-500 shrink-0" />
+                <div className="w-10 shrink-0">
+                  <ProgressBar
+                    value={v.stamina}
+                    max={v.maxStamina || 100}
+                    height={1}
+                    color="amber"
+                  />
+                </div>
+                <span className="text-slate-300 font-bold shrink-0">
+                  {v.stamina}/{v.maxStamina || 100}
+                </span>
+              </div>
+              {v.potionCount > 0 && (
+                <div
+                  title={ITEMS[v.potionItemId || "potion"]?.name || "回復薬"}
+                  className="flex items-center gap-1 shrink-0 bg-indigo-950/40 border border-indigo-900/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-400 font-bold"
+                >
+                  🧪 x{v.potionCount}
+                </div>
+              )}
+              {v.staminaDrinkCount > 0 && (
+                <div
+                  title={
+                    ITEMS[v.staminaDrinkItemId || "stamina_drink"]?.name || "スタミナポーション"
+                  }
+                  className="flex items-center gap-1 shrink-0 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded text-[9px] text-amber-400 font-bold"
+                >
+                  ⚡️ x{v.staminaDrinkCount}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-slate-500 font-mono">{isExpanded ? "▲" : "▼"}</span>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="mt-3 pt-3 border-t border-slate-900 space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-slate-400 flex items-center gap-1">
+                <Heart className="w-3.5 h-3.5 text-red-500" /> HP
+              </span>
+              <span className="text-slate-200">
+                {v.currentHp} / {v.maxHp}
+              </span>
+            </div>
+            <ProgressBar value={v.currentHp} max={v.maxHp} height={1} color="red" />
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-slate-400 flex items-center gap-1">
+                <Zap className="w-3.5 h-3.5 text-amber-500" /> スタミナ
+              </span>
+              <span className="text-slate-200">
+                {v.stamina} / {v.maxStamina || 100}
+              </span>
+            </div>
+            <ProgressBar value={v.stamina} max={v.maxStamina || 100} height={1} color="amber" />
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+            <div className="space-y-1 text-[11px] font-mono text-slate-400">
+              <p>
+                <Tooltip
+                  content={`攻撃力: ${computeEffectiveAtk(v)} (STR ${v.str + (v.bonusStr || 0)}×1.5 + 武器ATK ${v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0})`}
+                >
+                  <span className="border-b border-dotted border-slate-600">STR</span>
+                </Tooltip>
+                : <span className="text-slate-200 font-bold">{v.str}</span>
+                {(v.bonusStr || 0) > 0 && (
+                  <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusStr}</span>
+                )}
+              </p>
+              <p>
+                <Tooltip
+                  content={`魔法攻撃力: ${Math.floor(v.int * 1.8 + (v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0))} (INT ${v.int + (v.bonusInt || 0)}×1.8 + 武器INT)`}
+                >
+                  <span className="border-b border-dotted border-slate-600">INT</span>
+                </Tooltip>
+                : <span className="text-slate-200 font-bold">{v.int}</span>
+                {(v.bonusInt || 0) > 0 && (
+                  <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusInt}</span>
+                )}
+              </p>
+              <p>
+                DEX: <span className="text-slate-200 font-bold">{v.dex}</span>
+                {(v.bonusDex || 0) > 0 && (
+                  <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusDex}</span>
+                )}
+              </p>
+              <p>
+                AGI: <span className="text-slate-200 font-bold">{v.agi}</span>
+                {(v.bonusAgi || 0) > 0 && (
+                  <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusAgi}</span>
+                )}
+              </p>
+              <p>
+                <Tooltip
+                  content={`防御力: ${computeEffectiveDef(v)} (VIT ${v.vit + (v.bonusVit || 0)} + 防具DEF ${v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0})`}
+                >
+                  <span className="border-b border-dotted border-slate-600">VIT</span>
+                </Tooltip>
+                : <span className="text-slate-200 font-bold">{v.vit}</span>
+                {(v.bonusVit || 0) > 0 && (
+                  <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusVit}</span>
+                )}
+              </p>
+              <p className="pt-1 text-[10px] text-slate-500">
+                ATK {computeEffectiveAtk(v)} / DEF {computeEffectiveDef(v)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5 justify-center">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEquipModal(v);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
+              >
+                <Sword className="w-3 h-3 text-amber-500" />
+                {v.weaponId !== "none" ? ITEMS[v.weaponId].name : "武器なし"}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpenEquipModal(v);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
+              >
+                <Shield className="w-3 h-3 text-sky-400" />
+                {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
+              </button>
+              {v.potionCount > 0 && (
+                <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">
+                  <span className="flex items-center gap-1 text-[10px]">
+                    <span className="text-[11px] leading-none shrink-0 font-sans">🧪</span>
+                    {ITEMS[v.potionItemId || "potion"]?.name || "回復薬"} x{v.potionCount}
+                  </span>
+                </div>
+              )}
+              {v.staminaDrinkCount > 0 && (
+                <div className="flex items-center justify-between px-2 py-1 rounded bg-amber-950/20 border border-amber-900/40 text-[10px] text-amber-400">
+                  <span className="flex items-center gap-1 text-[10px]">
+                    <span className="text-[11.5px] leading-none shrink-0 font-sans">⚡️</span>
+                    {ITEMS[v.staminaDrinkItemId || "stamina_drink"]?.name ||
+                      "スタミナポーション"} x
+                    {v.staminaDrinkCount}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {v.status === "idle" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetOrder(v.id, "rest", null);
+              }}
+              className="w-full py-1 text-center rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition"
+            >
+              宿屋で休ませる
+            </button>
+          )}
+          {v.status === "resting" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onSetOrder(v.id, "gather", null);
+              }}
+              className="w-full py-1 text-center rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition"
+            >
+              休息を切り上げて待機にする
+            </button>
+          )}
+
+          {(v.status === "active" || v.status === "traveling_to") && v.destinationAreaId && (
+            <div className="mt-2.5 pt-2 border-t border-slate-900 space-y-2">
+              <div className="grid grid-cols-3 gap-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetOrder(v.id, "gather", v.destinationAreaId, null, null);
+                  }}
+                  disabled={v.order === "gather"}
+                  className="py-1 text-center rounded bg-emerald-950/40 hover:bg-emerald-900 border border-emerald-900 text-[9px] font-bold text-emerald-400 hover:text-emerald-200 transition disabled:opacity-40"
+                >
+                  採取に変更
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetOrder(v.id, "hunt", v.destinationAreaId, null, null);
+                  }}
+                  disabled={v.order === "hunt"}
+                  className="py-1 text-center rounded bg-red-950/40 hover:bg-red-900 border border-red-900 text-[9px] font-bold text-red-400 hover:text-red-200 transition disabled:opacity-40"
+                >
+                  討伐に変更
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSetOrder(v.id, "rest", v.destinationAreaId);
+                  }}
+                  className="py-1 text-center rounded bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[9px] font-bold text-slate-400 hover:text-slate-200 transition"
+                >
+                  帰還させる
+                </button>
+              </div>
+
+              {v.order === "gather" && (
+                <div className="flex items-center justify-between gap-2 text-[10px]">
+                  <span className="text-slate-400">個別採取ターゲット:</span>
+                  <select
+                    value={v.targetGatherItemId || ""}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? null : e.target.value;
+                      onSetOrder(v.id, v.order, v.destinationAreaId, val, null);
+                    }}
+                    className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
+                  >
+                    <option value="">自動選択 (AI)</option>
+                    {dungeonsData.dungeons
+                      .find((d) => d.id === v.destinationAreaId)
+                      ?.gathers.filter(
+                        (g) =>
+                          (dungeonsData.dungeons.find((d) => d.id === v.destinationAreaId)
+                            ?.explorationProgress || 0) >= (g.unlockedAtProgress || 0),
+                      )
+                      .map((g) => (
+                        <option key={g.itemId} value={g.itemId}>
+                          {ITEMS[g.itemId].name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              {v.order === "hunt" && (
+                <div className="flex items-center justify-between gap-2 text-[10px]">
+                  <span className="text-slate-400">個別討伐ターゲット:</span>
+                  <select
+                    value={v.targetMonsterId || ""}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? null : e.target.value;
+                      onSetOrder(v.id, v.order, v.destinationAreaId, null, val);
+                    }}
+                    className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
+                  >
+                    <option value="">自動選択 (AI)</option>
+                    {dungeonsData.dungeons
+                      .find((d) => d.id === v.destinationAreaId)
+                      ?.monsters.filter(
+                        (m) =>
+                          (dungeonsData.dungeons.find((d) => d.id === v.destinationAreaId)
+                            ?.explorationProgress || 0) >= (m.unlockedAtProgress || 0),
+                      )
+                      .map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} {m.isBoss ? "(ボス)" : ""}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};

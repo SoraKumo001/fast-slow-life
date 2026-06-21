@@ -59,7 +59,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
   };
 
   return (
-    <Modal onClose={onClose} size="lg">
+    <Modal onClose={onClose} size="lg" showCloseButton>
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-bold text-slate-100">{currentVillager.name} の装備変更</h3>
@@ -288,12 +288,6 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                 })}
             </div>
           </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button onClick={onClose} variant="secondary" size="md">
-            閉じる
-          </Button>
         </div>
       </div>
     </Modal>

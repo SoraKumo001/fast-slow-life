@@ -13,6 +13,9 @@ import {
   useInventory,
   useInventoryActions,
 } from "../../hooks";
+import { useExpandedState } from "../../hooks/useExpandedState";
+import { Panel } from "../ui/Panel";
+import { ProgressBar } from "../ui/ProgressBar";
 
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
@@ -35,7 +38,7 @@ export const FacilityList: React.FC = () => {
   const { startFacilityUpgrade } = useCraftActions();
   const { hireVillager } = useVillagerActions();
   const { addTradeRule, deleteTradeRule, toggleTradeRule } = useInventoryActions();
-  const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
 
   // 自動取引入力用State
   const [tradeItemId, setTradeItemId] = useState("");
@@ -43,20 +46,11 @@ export const FacilityList: React.FC = () => {
   const [tradeThreshold, setTradeThreshold] = useState<number>(10);
   const [tradeAmount, setTradeAmount] = useState<number>(5);
 
-  const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const buildLvl = soulUpgrades.building || 0;
   const costReduction = 1 - buildLvl * 0.05;
 
   return (
-    <div className="bg-slate-900/40 border border-slate-800 rounded-xl p-5 flex flex-col h-full">
-      <h2 className="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
-        <Home className="w-5 h-5 text-sky-400" />
-        村の施設・クラフト
-      </h2>
-
+    <Panel title="村の施設・クラフト" icon={<Home className="w-5 h-5 text-sky-400" />}>
       {/* 施設一覧 */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {(["inn", "market", "workshop", "blacksmith", "alchemy", "guild"] as const)
@@ -79,7 +73,7 @@ export const FacilityList: React.FC = () => {
               fac.id,
               fac.level > 0 ? fac.level : 1,
             );
-            const isExpanded = !!expandedIds[fac.id];
+            const expanded = isExpandedFn(fac.id);
 
             return (
               <div
@@ -118,7 +112,7 @@ export const FacilityList: React.FC = () => {
                       </button>
                     )}
                     <span className="text-xs text-slate-500 font-mono ml-1">
-                      {isExpanded ? "▲" : "▼"}
+                      {expanded ? "▲" : "▼"}
                     </span>
                   </div>
                 </div>
@@ -130,19 +124,17 @@ export const FacilityList: React.FC = () => {
                       <span>アップグレード進行中...</span>
                       <span>残り {fac.upgradeTimeLeft}時間</span>
                     </div>
-                    <div className="w-full bg-slate-900 h-1.5 rounded-full">
-                      <div
-                        className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
-                        style={{
-                          width: `${((fac.upgradeTotalTime - fac.upgradeTimeLeft) / fac.upgradeTotalTime) * 100}%`,
-                        }}
-                      />
-                    </div>
+                    <ProgressBar
+                      value={fac.upgradeTotalTime - fac.upgradeTimeLeft}
+                      max={fac.upgradeTotalTime}
+                      height={1.5}
+                      color="amber"
+                    />
                   </div>
                 )}
 
                 {/* 通常表示（折りたたみ時）の簡易ステータス表示 */}
-                {!isExpanded && (
+                {!expanded && (
                   <div className="mt-2 text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-1.5">
                     {isUnlocked ? (
                       fac.id === "inn" ? (
@@ -190,7 +182,7 @@ export const FacilityList: React.FC = () => {
                 )}
 
                 {/* 拡張表示 (展開された時の詳細コンテンツ) */}
-                {isExpanded && (
+                {expanded && (
                   <div className="mt-3 pt-3 border-t border-slate-900 space-y-3.5">
                     {/* 施設の概要説明 */}
                     <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
@@ -265,14 +257,12 @@ export const FacilityList: React.FC = () => {
                               <span>{ITEMS[job.itemId].name}</span>
                               <span>残り {job.timeLeft}時間</span>
                             </div>
-                            <div className="w-full bg-slate-950 h-1 rounded-full overflow-hidden">
-                              <div
-                                className="bg-sky-400 h-1 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${((job.totalTime - job.timeLeft) / job.totalTime) * 100}%`,
-                                }}
-                              />
-                            </div>
+                            <ProgressBar
+                              value={job.totalTime - job.timeLeft}
+                              max={job.totalTime}
+                              height={1}
+                              color="sky"
+                            />
                           </div>
                         ))}
                       </div>
@@ -526,6 +516,6 @@ export const FacilityList: React.FC = () => {
             );
           })}
       </div>
-    </div>
+    </Panel>
   );
 };
