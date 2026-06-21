@@ -1,13 +1,6 @@
 import { SOUL_UPGRADES } from "../../data/masterData";
-import { GameState, GameActions } from "../../types/game";
+import { StoreSet, StoreGet } from "../../types/game";
 import { resetGameHelper } from "../gameReset";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
 
 export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
   buySoulUpgrade: (upgradeId: string) => {

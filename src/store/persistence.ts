@@ -1,8 +1,15 @@
-import { GameState, Villager, DungeonArea, DungeonGather, DungeonMonster } from "../types/game";
+import {
+  GameState,
+  GameActions,
+  Villager,
+  DungeonArea,
+  DungeonGather,
+  DungeonMonster,
+} from "../types/game";
 import { FacilityType } from "../types/game";
 import { getInitialFacilities } from "./initialState";
 
-export const partialize = (state: GameState): Partial<GameState> => ({
+export const partialize = (state: GameState & GameActions): GameState => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,
@@ -18,11 +25,16 @@ export const partialize = (state: GameState): Partial<GameState> => ({
   bossDefeated: state.bossDefeated,
   gameLimitDays: state.gameLimitDays,
   gameOver: state.gameOver,
+  isPaused: state.isPaused,
+  playSpeed: state.playSpeed,
   soulUpgrades: state.soulUpgrades,
   tradeRules: state.tradeRules,
 });
 
-export const merge = <S extends GameState>(persistedState: unknown, currentState: S): S => {
+export const merge = <S extends GameState & GameActions>(
+  persistedState: unknown,
+  currentState: S,
+): S => {
   if (!persistedState) return currentState;
   const persisted = persistedState as Partial<GameState>;
 

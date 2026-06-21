@@ -1,4 +1,4 @@
-import { Play, Pause, RefreshCw, AlertTriangle, Sparkles, Terminal } from "lucide-react";
+import { Play, Pause, RefreshCw, Sparkles, Terminal } from "lucide-react";
 import React, { useState } from "react";
 
 import { SOUL_UPGRADES } from "../../data/masterData";
@@ -13,12 +13,11 @@ import {
   useSoulUpgrades,
   useLogs,
 } from "../../hooks";
-import { GameLog } from "../../types/game";
 import { SoulShop } from "../modals/SoulShop";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { DraggableWindow } from "../ui/DraggableWindow";
 import { Modal } from "../ui/Modal";
+import { LogHistoryWindow } from "./LogHistoryWindow";
 
 export const Header: React.FC = () => {
   const { currentDay, currentHour } = useGameTime();
@@ -29,35 +28,10 @@ export const Header: React.FC = () => {
   const villagers = useVillagers();
   const soulUpgrades = useSoulUpgrades();
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
+  const logs = useLogs();
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
-
-  const logs = useLogs();
   const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
-
-  const getLogColorClass = (type: GameLog["type"]) => {
-    switch (type) {
-      case "combat":
-        return "text-red-400";
-      case "gather":
-        return "text-emerald-400";
-      case "craft":
-        return "text-sky-400";
-      case "upgrade":
-        return "text-amber-400";
-      case "system":
-        return "text-purple-400 font-bold";
-      case "warning":
-        return "text-yellow-400 font-semibold";
-      case "error":
-        return "text-red-500 font-bold";
-      default:
-        return "text-slate-300";
-    }
-  };
-
-  const filteredHistoryLogs = filter === "all" ? logs : logs.filter((log) => log.type === filter);
 
   const dailyFoodConsumption = villagers.length;
   const foodAmount = inventory.food || 0;
@@ -66,7 +40,6 @@ export const Header: React.FC = () => {
   return (
     <>
       <header className="bg-slate-900/80 backdrop-blur border-b border-slate-800 sticky top-0 z-30 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-        {/* タイトルと時間 */}
         <div className="flex items-center gap-6">
           <div>
             <h1 className="text-xl font-extrabold bg-linear-to-r from-sky-400 to-indigo-400 bg-clip-text text-transparent tracking-wider">
@@ -86,7 +59,6 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* リソース情報 */}
         <div className="flex items-center gap-6 flex-wrap">
           <div className="flex items-center gap-2">
             <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
@@ -109,14 +81,6 @@ export const Header: React.FC = () => {
                 (-{dailyFoodConsumption}/日, あと{foodDaysLeft}日分)
               </span>
             </span>
-            {foodAmount === 0 && (
-              <Badge
-                variant="error"
-                className="text-[10px] px-1.5 py-0.5 flex items-center gap-1 font-bold"
-              >
-                <AlertTriangle className="w-3 h-3" /> 飢餓
-              </Badge>
-            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -127,7 +91,6 @@ export const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* アクティブバフ (SoulUpgrades) */}
         {Object.values(soulUpgrades).some((lvl) => lvl > 0) && (
           <div className="flex items-center gap-1.5 flex-wrap">
             <Sparkles className="w-3 h-3 text-purple-400 shrink-0" />
@@ -147,9 +110,7 @@ export const Header: React.FC = () => {
           </div>
         )}
 
-        {/* コントロール */}
         <div className="flex items-center gap-2 flex-wrap">
-          {/* 再生/一時停止 */}
           <Button
             onClick={togglePause}
             disabled={gameOver}
@@ -165,7 +126,6 @@ export const Header: React.FC = () => {
             {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
           </Button>
 
-          {/* 1日スキップ (+24h) */}
           <Button
             onClick={advanceDay}
             disabled={!isPaused || gameOver}
@@ -177,7 +137,6 @@ export const Header: React.FC = () => {
             +24h
           </Button>
 
-          {/* スピード */}
           <div className="bg-slate-950/60 p-0.5 rounded-lg border border-slate-800 flex gap-1">
             {(["normal", "fast", "super"] as const).map((speed) => (
               <Button
@@ -196,7 +155,6 @@ export const Header: React.FC = () => {
             ))}
           </div>
 
-          {/* ログ履歴 */}
           <Button
             onClick={() => setShowHistoryModal(true)}
             variant="secondary"
@@ -208,7 +166,6 @@ export const Header: React.FC = () => {
             ログ履歴
           </Button>
 
-          {/* 転生 */}
           <Button
             onClick={() => setShowSoulShopModal(true)}
             variant="custom"
@@ -220,7 +177,6 @@ export const Header: React.FC = () => {
           </Button>
         </div>
 
-        {/* 制限期限のアラート */}
         <div className="w-full text-center mt-2 md:mt-0 md:w-auto">
           <span className="text-xs text-slate-400">
             次の期限: <strong className="text-red-400">{gameLimitDays}日目</strong> までにボスを討伐
@@ -231,7 +187,6 @@ export const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* 転生バフショップ モーダル */}
       <Modal
         isOpen={showSoulShopModal}
         onClose={() => setShowSoulShopModal(false)}
@@ -241,75 +196,8 @@ export const Header: React.FC = () => {
         <SoulShop onClose={() => setShowSoulShopModal(false)} />
       </Modal>
 
-      {/* ログ履歴可動式ウィンドウ */}
       {showHistoryModal && (
-        <DraggableWindow
-          onClose={() => setShowHistoryModal(false)}
-          title={
-            <span className="flex items-center gap-1.5 uppercase tracking-wider text-slate-200">
-              <Terminal className="w-4 h-4 text-sky-400" />
-              過去のログ履歴 (ドラッグ移動可能)
-            </span>
-          }
-          widthClass="w-[90vw] md:w-[576px]"
-          maxHeightClass="max-h-[75vh]"
-        >
-          <div className="space-y-4 flex flex-col flex-1 min-h-0 mt-4">
-            {/* カテゴリフィルター */}
-            <div className="flex flex-wrap gap-1 bg-slate-950/60 p-0.5 rounded-lg border border-slate-800 self-start">
-              {(["all", "combat", "gather", "craft", "upgrade", "system"] as const).map((type) => (
-                <Button
-                  key={type}
-                  onClick={() => setFilter(type)}
-                  variant="custom"
-                  size="custom"
-                  className={`px-2 py-0.5 rounded text-[10px] font-semibold transition cursor-pointer ${
-                    filter === type
-                      ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
-                      : "text-slate-400 border border-transparent hover:text-slate-200"
-                  }`}
-                >
-                  {type === "all"
-                    ? "すべて"
-                    : type === "combat"
-                      ? "戦闘"
-                      : type === "gather"
-                        ? "採取"
-                        : type === "craft"
-                          ? "加工"
-                          : type === "upgrade"
-                            ? "施設"
-                            : "システム"}
-                </Button>
-              ))}
-            </div>
-
-            {/* スクロール可能な履歴 */}
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-[11px] leading-relaxed min-h-[300px] max-h-[45vh] select-text">
-              {filteredHistoryLogs.length === 0 ? (
-                <p className="text-slate-500 text-center py-10 italic">該当するログはありません</p>
-              ) : (
-                filteredHistoryLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="flex items-start gap-2 hover:bg-slate-950/40 py-0.5 rounded px-1"
-                  >
-                    <span className="text-slate-500 font-bold shrink-0">{log.timestamp}</span>
-                    <span className={`wrap-break-word ${getLogColorClass(log.type)}`}>
-                      {log.message}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-slate-800">
-              <Button onClick={() => setShowHistoryModal(false)} variant="secondary" size="md">
-                閉じる
-              </Button>
-            </div>
-          </div>
-        </DraggableWindow>
+        <LogHistoryWindow logs={logs} onClose={() => setShowHistoryModal(false)} />
       )}
     </>
   );

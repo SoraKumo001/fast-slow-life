@@ -1,17 +1,10 @@
 import { MAX_LOG_COUNT } from "../../constants";
-import { GameLog, GameState, GameActions } from "../../types/game";
+import { GameLog, StoreSet, StoreGet } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
 import { formatGameTime } from "../../utils/timeHelpers";
 import { calculateAdvanceHour } from "../gameLoopHelper";
 import { calculateEarnedSp } from "../gameReset";
 import { dispatchIdleVillagersHelper } from "../villagerDispatch";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
 
 export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
   togglePause: () => set((state) => ({ isPaused: !state.isPaused })),

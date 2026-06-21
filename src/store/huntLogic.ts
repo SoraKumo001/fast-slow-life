@@ -9,6 +9,7 @@ import {
 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import { Villager, DungeonArea, DungeonMonster } from "../types/game";
+import { isMagicJob } from "../utils/villagerHelpers";
 import {
   calculateHitRate,
   calculateCritRate,
@@ -55,7 +56,7 @@ export function processVillagerHunt(
       let selectedMonster = normalMonsters[0];
       let bestTargetRatio = Infinity;
 
-      const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(v.currentJob);
+      const isMagicUser = isMagicJob(v.currentJob);
 
       normalMonsters.forEach((monster) => {
         // 職業（物理/魔法）と敵の防御・攻撃に基づく有利度計算
@@ -133,7 +134,7 @@ export function processVillagerHunt(
       let battleWon = false;
       let villagerDefeated = false;
 
-      const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(v.currentJob);
+      const isMagicUser = isMagicJob(v.currentJob);
 
       for (let turn = 1; turn <= HUNT_MAX_TURNS; turn++) {
         const potionResult = useBattlePotion(v);

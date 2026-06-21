@@ -45,7 +45,6 @@ export const VillagerList: React.FC = () => {
             onSetOrder={setVillagerOrder}
             dungeons={dungeonsData.dungeons}
             facilities={facilities}
-            dungeonsData={dungeonsData}
           />
         ))}
       </div>

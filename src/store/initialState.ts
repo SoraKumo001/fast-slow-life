@@ -87,6 +87,10 @@ export const createInitialInventory = (foodOverride?: number): Record<string, nu
 
 export const DEFAULT_INVENTORY: Record<string, number> = createInitialInventory();
 
+export function getDefaultTargetAmounts(): Record<string, number> {
+  return Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {});
+}
+
 export function getInitialFacilities(): Record<FacilityType, Facility> {
   return {
     inn: {

@@ -1,14 +1,7 @@
 import { MAX_LOG_COUNT } from "../../constants";
-import { GameLog, GameState, GameActions } from "../../types/game";
+import { GameLog, StoreSet, StoreGet } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
 import { formatGameTime } from "../../utils/timeHelpers";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
 
 export const createLogActions = (set: StoreSet, get: StoreGet) => ({
   addLog: (message: string, type: GameLog["type"]) => {

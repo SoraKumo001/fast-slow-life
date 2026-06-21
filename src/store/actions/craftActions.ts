@@ -1,14 +1,7 @@
 import { BUILDING_COST_REDUCTION } from "../../constants";
 import { ITEMS, getRecipeForItem } from "../../data/masterData";
-import { GameState, GameActions, FacilityType, Villager } from "../../types/game";
+import { FacilityType, Villager, StoreSet, StoreGet } from "../../types/game";
 import { calculateCraftTime, generateId } from "../../utils/craftHelpers";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
 
 export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => {

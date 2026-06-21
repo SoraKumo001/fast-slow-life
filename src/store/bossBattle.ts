@@ -9,6 +9,7 @@ import {
 } from "../constants";
 import { MONSTERS } from "../data/masterData";
 import { Villager, DungeonArea, ActiveBossState } from "../types/game";
+import { isMagicJob } from "../utils/villagerHelpers";
 import {
   calculateHitRate,
   calculateCritRate,
@@ -127,7 +128,7 @@ export function processBossBattle(
           } else {
             const critRate = calculateCritRate(currentV.dex);
             const isCritical = Math.random() * 100 < critRate;
-            const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(currentV.currentJob);
+            const isMagicUser = isMagicJob(currentV.currentJob);
             const efficiency =
               (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
               (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);

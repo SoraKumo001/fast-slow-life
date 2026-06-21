@@ -19,6 +19,7 @@ import {
   getInitialVillagers,
   getInitialFacilities,
   getInitialDungeons,
+  getDefaultTargetAmounts,
   createInitialInventory,
 } from "./initialState";
 
@@ -112,7 +113,7 @@ export function resetGameHelper(params: {
     facilities: getInitialFacilities(),
     dungeons: getInitialDungeons(),
     inventory: createInitialInventory(startFood),
-    targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
+    targetAmounts: getDefaultTargetAmounts(),
     tradeRules: [],
     logs,
     currentTier: 1,

@@ -1,14 +1,7 @@
-import { GameState, GameActions, OrderType, JobType } from "../../types/game";
+import { OrderType, JobType, StoreSet, StoreGet } from "../../types/game";
 import { hireVillagerHelper } from "../villagerHire";
 import { changeVillagerJobHelper } from "../villagerJob";
 import { setVillagerOrderHelper } from "../villagerOrder";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
 
 export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
   setVillagerOrder: (

@@ -284,3 +284,11 @@ export interface GameState {
   playSpeed: "normal" | "fast" | "super"; // 自動進行のスピード
   soulUpgrades: Record<string, number>; // upgradeId -> 購入レベル
 }
+
+export type StoreSet = (
+  partial:
+    | Partial<GameState & GameActions>
+    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
+) => void;
+
+export type StoreGet = () => GameState & GameActions;

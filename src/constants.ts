@@ -92,11 +92,6 @@ export const BOSS_MONSTER_RESPAWN_HOURS = 16;
 export const AUTO_GATHER_TARGET_PENALTY = 0.1;
 export const AUTO_GATHER_EXCEED_PENALTY = 0.01;
 
-export const SP_PER_1000_GOLD = 1;
-export const SP_PER_100_INV_VALUE = 1;
-export const SP_PER_BOSS = 50;
-export const SP_PER_DAY = 2;
-
 export const SPAWN_DAYS_BONUS = 2;
 
 export const UPGRADE_COST_GOLD_MULTIPLIER = 300;
@@ -109,7 +104,6 @@ export const CATEGORY_MANA_STONE = "mana_stone";
 export const CATEGORY_MATERIAL = "material";
 export const CATEGORY_GEAR_WEAPON = "gear_weapon";
 export const CATEGORY_GEAR_ARMOR = "gear_armor";
-export const CATEGORY_CONSUMABLE = "consumable";
 
 export const POTION_PRIORITY = ["elixir", "high_potion", "mid_potion", "potion"];
 

@@ -1,6 +1,6 @@
 import { ITEMS } from "../data/masterData";
 import { GameState } from "../types/game";
-import { getSellBonus } from "../utils/marketHelpers";
+import { getSellBonus, getSlotsForLevel } from "../utils/marketHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processAutoTrade(
@@ -19,13 +19,6 @@ export function processAutoTrade(
 
   const weaponShopLvl = weaponShop?.level || 0;
   const pharmacyLvl = pharmacy?.level || 0;
-
-  const getSlotsForLevel = (lvl: number) => {
-    if (lvl === 1) return 2;
-    if (lvl === 2) return 4;
-    if (lvl >= 3) return 8;
-    return 0;
-  };
 
   // 各施設の枠内ルールを抽出
   // 1. 武器屋（武器・防具の自動売却ルール）

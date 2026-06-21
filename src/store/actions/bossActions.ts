@@ -1,12 +1,5 @@
 import { MONSTERS } from "../../data/masterData";
-import { GameState, GameActions, FacilityType, VillagerStatus, OrderType } from "../../types/game";
-
-type StoreSet = (
-  partial:
-    | Partial<GameState & GameActions>
-    | ((state: GameState & GameActions) => Partial<GameState & GameActions>),
-) => void;
-type StoreGet = () => GameState & GameActions;
+import { FacilityType, VillagerStatus, OrderType, StoreSet, StoreGet } from "../../types/game";
 
 export const createBossActions = (set: StoreSet, get: StoreGet) => ({
   startBossBattle: (monsterId: string, villagerIds: string[]) => {
