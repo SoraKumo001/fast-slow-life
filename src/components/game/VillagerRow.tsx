@@ -34,6 +34,11 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
   dungeons,
   facilities,
 }) => {
+  const poolTotalValue = Object.entries(v.pool || {}).reduce((sum, [itemId, count]) => {
+    const price = ITEMS[itemId]?.sellPrice || 0;
+    return sum + price * count;
+  }, 0);
+
   const getVillagerPurpose = (villager: Villager) => {
     if (villager.status === "resting") return "宿屋で休息中";
     if (villager.assignedCraftJobId) {
@@ -100,15 +105,16 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               v.gold < 0 ? `ツケ（未払い宿代・食料代）: ${-v.gold} G` : `所持ゴールド: ${v.gold} G`
             }
           >
-            🪙 {v.gold || 0} G
+            🪙 {v.gold < 0 ? `0 G (ツケ: ${-v.gold} G)` : `${v.gold} G`}
           </span>
 
           {v.pool && Object.keys(v.pool).length > 0 && (
             <span
               className="text-[10px] text-sky-400 bg-sky-950/40 border border-sky-900/60 px-1.5 py-0.5 rounded ml-2 font-mono inline-flex items-center gap-0.5"
-              title="プレイヤーのゴールド不足により仮置きされているアイテム（ゴールドが出来次第自動買取）"
+              title={`プレイヤーのゴールド不足により仮置きされているアイテム（見込み買取額: ${poolTotalValue} G）`}
             >
-              📦 {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個プール
+              📦 {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個 (未払:{" "}
+              {poolTotalValue} G)
             </span>
           )}
 

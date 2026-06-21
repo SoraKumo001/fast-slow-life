@@ -3,6 +3,7 @@ import React from "react";
 
 import { ITEMS } from "../../data/masterData";
 import { getFoodBuffBonus, applySalaryDebuff } from "../../store/combatEngine";
+import { useGameStore } from "../../store/gameStore";
 import { Villager } from "../../types/game";
 import { ProgressBar } from "../ui/ProgressBar";
 import { Tooltip } from "../ui/Tooltip";
@@ -59,6 +60,25 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
   const effectiveMaxStamina = (v.maxStamina || 100) + buffMaxStamina;
 
   const activeBuffItem = v.activeFoodBuffId ? ITEMS[v.activeFoodBuffId] : null;
+
+  const facilities = useGameStore((s) => s.facilities);
+  const innLvl = facilities.inn?.level || 1;
+
+  const poolTotalValue = Object.entries(v.pool || {}).reduce((sum, [itemId, count]) => {
+    const price = ITEMS[itemId]?.sellPrice || 0;
+    return sum + price * count;
+  }, 0);
+
+  let dailyFoodCost = 0;
+  if (v.currentJob !== "無職") {
+    if (v.activeFoodBuffId) {
+      dailyFoodCost = ITEMS[v.activeFoodBuffId]?.sellPrice || 2;
+    } else {
+      dailyFoodCost = 2;
+    }
+  }
+
+  const hourlyInnCost = v.currentJob === "無職" ? 0 : 1 + innLvl;
 
   return (
     <div className="space-y-1.5">
@@ -152,6 +172,53 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
           <p className="pt-1 text-[10px] text-slate-500 font-sans">
             ATK {computeEffectiveAtk(v, buffStr, buffInt)} / DEF {computeEffectiveDef(v, buffVit)}
           </p>
+        </div>
+      </div>
+
+      {/* 経済ステータス / 家計簿 */}
+      <div className="mt-3 pt-3 border-t border-slate-900 space-y-1.5">
+        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider font-sans">
+          家計・収支情報
+        </div>
+        <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
+          <div className="bg-slate-900/60 border border-slate-850 p-2 rounded space-y-1 flex flex-col justify-between">
+            <div>
+              <div className="text-[9px] text-slate-500 font-sans font-semibold mb-0.5">
+                資産状況
+              </div>
+              <p className="flex justify-between">
+                <span className="text-slate-400">所持金:</span>
+                <span className="text-amber-400 font-bold">{Math.max(0, v.gold)} G</span>
+              </p>
+              {v.gold < 0 && (
+                <p className="flex justify-between">
+                  <span className="text-red-400">ツケ(宿・食):</span>
+                  <span className="text-red-400 font-bold">{-v.gold} G</span>
+                </p>
+              )}
+            </div>
+            <p className="flex justify-between border-t border-slate-800/40 pt-1 mt-1">
+              <span className="text-slate-400">未払買取(プール):</span>
+              <span className="text-sky-400 font-bold">{poolTotalValue} G</span>
+            </p>
+          </div>
+          <div className="bg-slate-900/60 border border-slate-850 p-2 rounded space-y-1">
+            <div className="text-[9px] text-slate-500 font-sans font-semibold mb-0.5">
+              見込み支出
+            </div>
+            <p className="flex justify-between">
+              <span className="text-slate-400">日々の食費:</span>
+              <span className="text-slate-200 font-bold">
+                {v.currentJob === "無職" ? "無料" : `${dailyFoodCost} G/日`}
+              </span>
+            </p>
+            <p className="flex justify-between">
+              <span className="text-slate-400">宿泊費(休息時):</span>
+              <span className="text-slate-200 font-bold">
+                {v.currentJob === "無職" ? "無料" : `${hourlyInnCost} G/h`}
+              </span>
+            </p>
+          </div>
         </div>
       </div>
     </div>
