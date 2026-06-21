@@ -46,6 +46,8 @@ export default function App() {
       addToast(msg, "error");
     } else if (latest.type === "system" && (msg.includes("雇") || msg.includes("転職"))) {
       addToast(msg, "info");
+    } else if (latest.type === "system" && msg.includes("解放")) {
+      addToast(msg, "success");
     }
   }, [logs, addToast]);
 

@@ -1,9 +1,10 @@
 import { Hammer, ArrowUpCircle } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
-import { Facility, FacilityType, Villager } from "../../types/game";
+import { Facility, FacilityType, Item, Villager } from "../../types/game";
+import { ItemDetailModal } from "../modals/ItemDetailModal";
 import { ProgressBar } from "../ui/ProgressBar";
 import { GuildPanel } from "./GuildPanel";
 import { TradeRulePanel } from "./TradeRulePanel";
@@ -55,6 +56,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   onHireVillager,
   onOpenTradeCaravan,
 }) => {
+  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const isUnlocked = fac.level > 0;
   const canUpgrade = fac.level < fac.maxLevel;
   const goldCost = Math.floor(fac.upgradeCost.gold * costReduction);
@@ -68,260 +70,285 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   const craftableItems = getCraftableItemsForFacility(fac.id, fac.level > 0 ? fac.level : 1);
 
   return (
-    <div
-      onClick={() => onToggleExpand(fac.id)}
-      className={`border rounded-xl p-4 transition-all duration-200 ${
-        isUnlocked
-          ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
-          : "bg-slate-950/40 border-dashed border-slate-800 hover:border-slate-700/60 cursor-pointer"
-      }`}
-    >
-      <div className="flex justify-between items-start">
-        <div>
-          <h3 className="font-bold text-slate-100 flex items-center gap-1.5 text-sm sm:text-base">
-            {fac.name}
-            <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700 text-slate-400">
-              {isUnlocked ? `Lv.${fac.level}` : "未建設"}
-            </span>
-          </h3>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {canUpgrade && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onStartUpgrade(fac.id);
-              }}
-              disabled={!canAffordUpgrade}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-amber-600/90 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[10px] font-semibold transition cursor-pointer disabled:cursor-not-allowed"
-            >
-              <ArrowUpCircle className="w-3.5 h-3.5" />
-              {fac.upgradeTimeLeft > 0 ? "工事中" : isUnlocked ? "強化" : "建設"}
-            </button>
-          )}
-          <span className="text-xs text-slate-500 font-mono ml-1">{expanded ? "▲" : "▼"}</span>
-        </div>
-      </div>
-
-      {fac.upgradeTimeLeft > 0 && (
-        <div className="mt-3 space-y-1">
-          <div className="flex justify-between text-[10px] font-mono text-slate-400">
-            <span>アップグレード進行中...</span>
-            <span>残り {fac.upgradeTimeLeft}時間</span>
+    <>
+      <div
+        onClick={() => onToggleExpand(fac.id)}
+        className={`border rounded-xl p-4 transition-all duration-200 ${
+          isUnlocked
+            ? "bg-slate-950/70 border-slate-800 hover:border-slate-700/80 cursor-pointer"
+            : "bg-slate-950/40 border-dashed border-slate-800 hover:border-slate-700/60 cursor-pointer"
+        }`}
+      >
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-bold text-slate-100 flex items-center gap-1.5 text-sm sm:text-base">
+              {fac.name}
+              <span className="text-[10px] font-mono font-medium px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700 text-slate-400">
+                {isUnlocked ? `Lv.${fac.level}` : "未建設"}
+              </span>
+            </h3>
           </div>
-          <ProgressBar
-            value={fac.upgradeTotalTime - fac.upgradeTimeLeft}
-            max={fac.upgradeTotalTime}
-            height={1.5}
-            color="amber"
-          />
-        </div>
-      )}
 
-      {!expanded && (
-        <div className="mt-2 text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-1.5">
-          {isUnlocked ? (
-            fac.id === "inn" ? (
-              <span className="text-slate-500">休息機能利用可能</span>
-            ) : fac.id === "guild" ? (
-              <span className="text-slate-500">
-                雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
-                {villagers.length}人)
-              </span>
-            ) : fac.id === "farm" ? (
-              <span className="text-emerald-500 font-semibold">
-                自動生産中: 食料 +{1 + fac.level * 2}/h
-              </span>
-            ) : fac.id === "lumberyard" ? (
-              <span className="text-emerald-500 font-semibold">
-                自動生産中: 原木 +{1 + fac.level * 1}/h
-              </span>
-            ) : fac.id === "quarry" ? (
-              <span className="text-emerald-500 font-semibold">
-                自動生産中: 石材 +{1 + fac.level * 1}/h
-              </span>
-            ) : fac.craftQueue.length > 0 ? (
-              <>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                <span className="text-sky-400 font-bold">加工中 ({fac.craftQueue.length}/3)</span>
-                <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
-                  • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
-                  {fac.craftQueue[0].timeLeft}h)
-                </span>
-              </>
-            ) : (
-              <span className="text-slate-500">生産停止中 (待機)</span>
-            )
-          ) : (
-            <>
-              <span className="text-slate-500 font-semibold">建設条件: </span>
-              <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
-                {goldCost}G
-              </span>
-              {fac.upgradeCost.materials.map((m) => {
-                const reqCount = Math.floor(m.count * costReduction);
-                const current = Math.floor(inventory[m.itemId] || 0);
-                return (
-                  <span
-                    key={m.itemId}
-                    className={current >= reqCount ? "text-slate-400" : "text-red-400"}
-                  >
-                    {ITEMS[m.itemId].name}({current}/{reqCount})
-                  </span>
-                );
-              })}
-            </>
-          )}
-        </div>
-      )}
-
-      {expanded && (
-        <div className="mt-3 pt-3 border-t border-slate-900 space-y-3.5">
-          <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
-            {FACILITY_DESCRIPTIONS[fac.id]}
-          </p>
-
-          {fac.id === "market" && isUnlocked && onOpenTradeCaravan && (
-            <div className="pt-1">
+          <div className="flex items-center gap-2">
+            {canUpgrade && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  onOpenTradeCaravan();
+                  onStartUpgrade(fac.id);
                 }}
-                className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition cursor-pointer"
+                disabled={!canAffordUpgrade}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-amber-600/90 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[10px] font-semibold transition cursor-pointer disabled:cursor-not-allowed"
               >
-                交易馬車の管理を開く
+                <ArrowUpCircle className="w-3.5 h-3.5" />
+                {fac.upgradeTimeLeft > 0 ? "工事中" : isUnlocked ? "強化" : "建設"}
               </button>
-            </div>
-          )}
+            )}
+            <span className="text-xs text-slate-500 font-mono ml-1">{expanded ? "▲" : "▼"}</span>
+          </div>
+        </div>
 
-          {canUpgrade && fac.upgradeTimeLeft === 0 && (
-            <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
-              <span className="font-semibold text-slate-300">必要: </span>
-              <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
-                {goldCost} G
-              </span>
-              {fac.upgradeCost.materials.map((m) => {
-                const reqCount = Math.floor(m.count * costReduction);
-                const current = Math.floor(inventory[m.itemId] || 0);
-                return (
-                  <span
-                    key={m.itemId}
-                    className={`ml-2 whitespace-nowrap ${current >= reqCount ? "text-slate-300" : "text-red-400"}`}
-                  >
-                    {ITEMS[m.itemId].name}({current}/{reqCount})
+        {fac.upgradeTimeLeft > 0 && (
+          <div className="mt-3 space-y-1">
+            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <span>アップグレード進行中...</span>
+              <span>残り {fac.upgradeTimeLeft}時間</span>
+            </div>
+            <ProgressBar
+              value={fac.upgradeTotalTime - fac.upgradeTimeLeft}
+              max={fac.upgradeTotalTime}
+              height={1.5}
+              color="amber"
+            />
+          </div>
+        )}
+
+        {!expanded && (
+          <div className="mt-2 text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-1.5">
+            {isUnlocked ? (
+              fac.id === "inn" ? (
+                <span className="text-slate-500">休息機能利用可能</span>
+              ) : fac.id === "guild" ? (
+                <span className="text-slate-500">
+                  雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
+                  {villagers.length}人)
+                </span>
+              ) : fac.id === "farm" ? (
+                <span className="text-emerald-500 font-semibold">
+                  自動生産中: 食料 +{Math.floor((1 + fac.level * 2) / 3)}/12h
+                </span>
+              ) : fac.id === "lumberyard" ? (
+                <span className="text-emerald-500 font-semibold">
+                  自動生産中: 原木 +{Math.floor((1 + fac.level * 1) / 2)}/12h
+                </span>
+              ) : fac.id === "quarry" ? (
+                <span className="text-emerald-500 font-semibold">
+                  自動生産中: 石材 +{Math.floor((1 + fac.level * 1) / 2)}/12h
+                </span>
+              ) : fac.craftQueue.length > 0 ? (
+                <>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
+                  <span className="text-sky-400 font-bold">加工中 ({fac.craftQueue.length}/3)</span>
+                  <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
+                    • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
+                    {fac.craftQueue[0].timeLeft}h)
                   </span>
-                );
-              })}
-            </div>
-          )}
-
-          {craftableItems.length > 0 && (
-            <div className="space-y-2.5">
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                <Hammer className="w-3 h-3 text-sky-400" />
-                {isUnlocked ? "生産レシピ (最大3枠)" : "解放される生産レシピ"}
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {craftableItems.map((item) => {
-                  const recipe = getRecipeForItem(item.id)!;
+                </>
+              ) : (
+                <span className="text-slate-500">生産停止中 (待機)</span>
+              )
+            ) : (
+              <>
+                <span className="text-slate-500 font-semibold">建設条件: </span>
+                <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
+                  {goldCost}G
+                </span>
+                {fac.upgradeCost.materials.map((m) => {
+                  const reqCount = Math.floor(m.count * costReduction);
+                  const current = Math.floor(inventory[m.itemId] || 0);
                   return (
-                    <div
-                      key={item.id}
-                      className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-850 flex flex-col gap-1"
+                    <span
+                      key={m.itemId}
+                      className={current >= reqCount ? "text-slate-400" : "text-red-400"}
                     >
-                      <p className="text-xs font-bold text-slate-200">{item.name}</p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        必要:{" "}
-                        {recipe.requiredItems
-                          .map((r) => `${ITEMS[r.itemId].name}x${r.count}`)
-                          .join(", ")}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-mono">
-                        所要時間: {recipe.requiredTime}時間
-                      </p>
-                    </div>
+                      {ITEMS[m.itemId].name}({current}/{reqCount})
+                    </span>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+
+        {expanded && (
+          <div className="mt-3 pt-3 border-t border-slate-900 space-y-3.5">
+            <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
+              {FACILITY_DESCRIPTIONS[fac.id]}
+            </p>
+
+            {fac.id === "market" && isUnlocked && onOpenTradeCaravan && (
+              <div className="pt-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenTradeCaravan();
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition cursor-pointer"
+                >
+                  交易馬車の管理を開く
+                </button>
+              </div>
+            )}
+
+            {canUpgrade && fac.upgradeTimeLeft === 0 && (
+              <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
+                <span className="font-semibold text-slate-300">必要: </span>
+                <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
+                  {goldCost} G
+                </span>
+                {fac.upgradeCost.materials.map((m) => {
+                  const reqCount = Math.floor(m.count * costReduction);
+                  const current = Math.floor(inventory[m.itemId] || 0);
+                  return (
+                    <span
+                      key={m.itemId}
+                      className={`ml-2 whitespace-nowrap ${current >= reqCount ? "text-slate-300" : "text-red-400"}`}
+                    >
+                      {ITEMS[m.itemId].name}({current}/{reqCount})
+                    </span>
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
 
-          {fac.craftQueue.length > 0 && (
-            <div className="space-y-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-900">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                進行中のキュー ({fac.craftQueue.length}/3)
-              </p>
-              {fac.craftQueue.map((job) => (
-                <div key={job.id} className="space-y-0.5">
-                  <div className="flex justify-between text-[10px] font-mono text-slate-300">
-                    <span>{ITEMS[job.itemId].name}</span>
-                    <span>残り {job.timeLeft}時間</span>
-                  </div>
-                  <ProgressBar
-                    value={job.totalTime - job.timeLeft}
-                    max={job.totalTime}
-                    height={1}
-                    color="sky"
-                  />
+            {craftableItems.length > 0 && (
+              <div className="space-y-2.5">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Hammer className="w-3 h-3 text-sky-400" />
+                  {isUnlocked ? "生産レシピ (最大3枠)" : "解放される生産レシピ"}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {craftableItems.map((item) => {
+                    const recipe = getRecipeForItem(item.id)!;
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-850 flex flex-col gap-1"
+                      >
+                        <p
+                          className="text-xs font-bold text-sky-300 hover:text-sky-200 cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedItem(item);
+                          }}
+                        >
+                          {item.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          必要:{" "}
+                          {recipe.requiredItems.map((r, i) => (
+                            <React.Fragment key={r.itemId}>
+                              {i > 0 && <span>, </span>}
+                              <span
+                                className="text-sky-300 hover:text-sky-200 cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  const reqItem = ITEMS[r.itemId];
+                                  if (reqItem) setSelectedItem(reqItem);
+                                }}
+                              >
+                                {ITEMS[r.itemId]?.name}x{r.count}
+                              </span>
+                            </React.Fragment>
+                          ))}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          所要時間: {recipe.requiredTime}時間
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
-          )}
+              </div>
+            )}
 
-          {fac.id === "inn" && (
-            <p className="text-[10px] text-slate-400 italic leading-relaxed">
-              ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
-              {15 + fac.level * 5} 回復します。
-            </p>
-          )}
+            {fac.craftQueue.length > 0 && (
+              <div className="space-y-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-900">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                  進行中のキュー ({fac.craftQueue.length}/3)
+                </p>
+                {fac.craftQueue.map((job) => (
+                  <div key={job.id} className="space-y-0.5">
+                    <div className="flex justify-between text-[10px] font-mono text-slate-300">
+                      <span>{ITEMS[job.itemId].name}</span>
+                      <span>残り {job.timeLeft}時間</span>
+                    </div>
+                    <ProgressBar
+                      value={job.totalTime - job.timeLeft}
+                      max={job.totalTime}
+                      height={1}
+                      color="sky"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
-          {(fac.id === "farm" || fac.id === "lumberyard" || fac.id === "quarry") && (
-            <p className="text-[10px] text-slate-400 italic leading-relaxed">
-              ※この施設は毎時間自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
-              <span className="text-emerald-400 font-bold font-mono">
-                {fac.level === 0
-                  ? "なし"
-                  : fac.id === "farm"
-                    ? `食料 +${1 + fac.level * 2}個`
-                    : fac.id === "lumberyard"
-                      ? `原木 +${1 + fac.level * 1}個`
-                      : `石材 +${1 + fac.level * 1}個`}
-              </span>
-              /時間
-              {fac.level < fac.maxLevel && (
-                <>
-                  {" "}
-                  （建設・強化後:{" "}
-                  <span className="text-emerald-450 font-bold font-mono">
-                    {fac.id === "farm"
-                      ? `食料 +${1 + (fac.level + 1) * 2}個`
+            {fac.id === "inn" && (
+              <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
+                {15 + fac.level * 5} 回復します。
+              </p>
+            )}
+
+            {(fac.id === "farm" || fac.id === "lumberyard" || fac.id === "quarry") && (
+              <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                ※この施設は12時間ごとに自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
+                <span className="text-emerald-400 font-bold font-mono">
+                  {fac.level === 0
+                    ? "なし"
+                    : fac.id === "farm"
+                      ? `食料 +${Math.floor((1 + fac.level * 2) / 3)}個`
                       : fac.id === "lumberyard"
-                        ? `原木 +${1 + (fac.level + 1) * 1}個`
-                        : `石材 +${1 + (fac.level + 1) * 1}個`}
-                  </span>
-                  /時間）
-                </>
-              )}
-            </p>
-          )}
+                        ? `原木 +${Math.floor((1 + fac.level * 1) / 2)}個`
+                        : `石材 +${Math.floor((1 + fac.level * 1) / 2)}個`}
+                </span>
+                /12時間
+                {fac.level < fac.maxLevel && (
+                  <>
+                    {" "}
+                    （建設・強化後:{" "}
+                    <span className="text-emerald-450 font-bold font-mono">
+                      {fac.id === "farm"
+                        ? `食料 +${Math.floor((1 + (fac.level + 1) * 2) / 3)}個`
+                        : fac.id === "lumberyard"
+                          ? `原木 +${Math.floor((1 + (fac.level + 1) * 1) / 2)}個`
+                          : `石材 +${Math.floor((1 + (fac.level + 1) * 1) / 2)}個`}
+                    </span>
+                    /12時間）
+                  </>
+                )}
+              </p>
+            )}
 
-          {fac.id === "guild" && (
-            <GuildPanel
-              fac={fac}
-              villagers={villagers}
-              gold={gold}
-              isUnlocked={isUnlocked}
-              onHireVillager={onHireVillager}
-            />
-          )}
+            {fac.id === "guild" && (
+              <GuildPanel
+                fac={fac}
+                villagers={villagers}
+                gold={gold}
+                isUnlocked={isUnlocked}
+                onHireVillager={onHireVillager}
+              />
+            )}
 
-          {(fac.id === "weapon_shop" || fac.id === "pharmacy") && (
-            <TradeRulePanel fac={fac} tradeRules={tradeRules} />
-          )}
-        </div>
+            {(fac.id === "weapon_shop" || fac.id === "pharmacy") && (
+              <TradeRulePanel fac={fac} tradeRules={tradeRules} />
+            )}
+          </div>
+        )}
+      </div>
+      {selectedItem && (
+        <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
-    </div>
+    </>
   );
 };

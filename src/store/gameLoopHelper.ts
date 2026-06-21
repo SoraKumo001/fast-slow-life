@@ -159,33 +159,35 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   inventory = { ...inventory, ...craftRes.inventory };
   logsToAppend.push(...craftRes.logs);
 
-  // 資源生産施設による供給
-  let producedFood = 0;
-  let producedWood = 0;
-  let producedStone = 0;
+  // 資源生産施設による供給（12時間ごと）
+  if (currentHour % 12 === 0) {
+    let producedFood = 0;
+    let producedWood = 0;
+    let producedStone = 0;
 
-  if (facilities.farm && facilities.farm.level > 0) {
-    producedFood = 1 + facilities.farm.level * 2;
-    inventory.food = (inventory.food || 0) + producedFood;
-  }
-  if (facilities.lumberyard && facilities.lumberyard.level > 0) {
-    producedWood = 1 + facilities.lumberyard.level * 1;
-    inventory.wood = (inventory.wood || 0) + producedWood;
-  }
-  if (facilities.quarry && facilities.quarry.level > 0) {
-    producedStone = 1 + facilities.quarry.level * 1;
-    inventory.stone = (inventory.stone || 0) + producedStone;
-  }
+    if (facilities.farm && facilities.farm.level > 0) {
+      producedFood = Math.floor((1 + facilities.farm.level * 2) / 3);
+      inventory.food = (inventory.food || 0) + producedFood;
+    }
+    if (facilities.lumberyard && facilities.lumberyard.level > 0) {
+      producedWood = Math.floor((1 + facilities.lumberyard.level * 1) / 2);
+      inventory.wood = (inventory.wood || 0) + producedWood;
+    }
+    if (facilities.quarry && facilities.quarry.level > 0) {
+      producedStone = Math.floor((1 + facilities.quarry.level * 1) / 2);
+      inventory.stone = (inventory.stone || 0) + producedStone;
+    }
 
-  if (producedFood > 0 || producedWood > 0 || producedStone > 0) {
-    const prodLogs: string[] = [];
-    if (producedFood > 0) prodLogs.push(`食料+${producedFood}`);
-    if (producedWood > 0) prodLogs.push(`原木+${producedWood}`);
-    if (producedStone > 0) prodLogs.push(`石材+${producedStone}`);
-    logsToAppend.push({
-      message: `【生産】資源施設が稼働しました（${prodLogs.join("、")}）。`,
-      type: "info",
-    });
+    if (producedFood > 0 || producedWood > 0 || producedStone > 0) {
+      const prodLogs: string[] = [];
+      if (producedFood > 0) prodLogs.push(`食料+${producedFood}`);
+      if (producedWood > 0) prodLogs.push(`原木+${producedWood}`);
+      if (producedStone > 0) prodLogs.push(`石材+${producedStone}`);
+      logsToAppend.push({
+        message: `【生産】資源施設が稼働しました（${prodLogs.join("、")}）。`,
+        type: "info",
+      });
+    }
   }
 
   const bossRes = processBossBattle(
