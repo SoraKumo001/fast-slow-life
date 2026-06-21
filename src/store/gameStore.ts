@@ -8,6 +8,7 @@ import { createCraftActions } from "./actions/craftActions";
 import { createEquipActions } from "./actions/equipActions";
 import { createInventoryActions } from "./actions/inventoryActions";
 import { createLogActions } from "./actions/logActions";
+import { createSalaryActions } from "./actions/salaryActions";
 import { createSoulActions } from "./actions/soulActions";
 import { createTimeActions } from "./actions/timeActions";
 import { createTradeActions } from "./actions/tradeActions";
@@ -67,6 +68,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   towns: getInitialTowns(),
   caravans: getInitialCaravans(),
   marketTrend: null,
+  isSalaryUnpaid: false,
 
   ...createLogActions(set as StoreSet, get as StoreGet),
   ...createTimeActions(set as StoreSet, get as StoreGet),
@@ -78,6 +80,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   ...createBossActions(set as StoreSet, get as StoreGet),
   ...createSoulActions(set as StoreSet, get as StoreGet),
   ...createTradeActions(set as StoreSet, get as StoreGet),
+  ...createSalaryActions(set as StoreSet, get as StoreGet),
 });
 
 export const useGameStore = globalThis.IS_TEST_ENVIRONMENT

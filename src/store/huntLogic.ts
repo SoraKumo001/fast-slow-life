@@ -17,6 +17,7 @@ import {
   calculateEnemyDamage,
   useBattlePotion,
   getFoodBuffBonus,
+  applySalaryDebuff,
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
@@ -30,6 +31,7 @@ export function processVillagerHunt(
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
+  isSalaryUnpaid: boolean = false,
 ): { logs: LogPayload[]; areaUpdated: boolean } {
   const logs: LogPayload[] = [];
   const progress = area.explorationProgress;
@@ -39,10 +41,10 @@ export function processVillagerHunt(
   const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
   const buffMaxHp = getFoodBuffBonus(v.activeFoodBuffId || null, "maxHp");
 
-  const effectiveAgi = v.agi + buffAgi;
-  const effectiveDex = v.dex + buffDex;
-  const effectiveInt = v.int + buffInt;
-  const effectiveMaxHp = v.maxHp + buffMaxHp;
+  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, isSalaryUnpaid);
+  const effectiveDex = applySalaryDebuff(v.dex + buffDex, isSalaryUnpaid);
+  const effectiveInt = applySalaryDebuff(v.int + buffInt, isSalaryUnpaid);
+  const effectiveMaxHp = applySalaryDebuff(v.maxHp + buffMaxHp, isSalaryUnpaid);
   const availableMonsters = area.monsters.filter(
     (m) => progress >= (m.unlockedAtProgress || 0) && !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
   );
@@ -148,7 +150,7 @@ export function processVillagerHunt(
       const isMagicUser = isMagicJob(v.currentJob);
 
       for (let turn = 1; turn <= HUNT_MAX_TURNS; turn++) {
-        const potionResult = useBattlePotion(v);
+        const potionResult = useBattlePotion(v, isSalaryUnpaid);
         if (potionResult.used) {
           v.potionCount = potionResult.updated.potionCount;
           v.currentHp = potionResult.updated.currentHp;
@@ -190,6 +192,7 @@ export function processVillagerHunt(
               isCritical,
               efficiency,
               isMagicUser,
+              isSalaryUnpaid,
             });
 
             enemyHp -= damage;
@@ -221,6 +224,7 @@ export function processVillagerHunt(
             attacker: enemy,
             defender: v,
             isCritical: isEnemyCrit,
+            isSalaryUnpaid,
           });
 
           v.currentHp = Math.max(0, v.currentHp - damageToVillager);

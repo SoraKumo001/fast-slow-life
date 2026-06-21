@@ -19,6 +19,11 @@ export function getFoodBuffBonus(
   return foodItem?.foodBuff?.[stat] || 0;
 }
 
+export function applySalaryDebuff(value: number, isUnpaid: boolean): number {
+  if (!isUnpaid) return value;
+  return Math.floor(value * 0.7);
+}
+
 export function calculateHitRate(attackerDex: number, defenderAgi: number): number {
   return Math.max(
     50,
@@ -38,10 +43,18 @@ export interface PlayerAttackParams {
   isCritical: boolean;
   efficiency: number;
   isMagicUser: boolean;
+  isSalaryUnpaid?: boolean;
 }
 
 export function calculatePlayerDamage(params: PlayerAttackParams): number {
-  const { attacker, defender, isCritical, efficiency, isMagicUser } = params;
+  const {
+    attacker,
+    defender,
+    isCritical,
+    efficiency,
+    isMagicUser,
+    isSalaryUnpaid = false,
+  } = params;
 
   let damage: number;
   if (isMagicUser) {
@@ -49,7 +62,9 @@ export function calculatePlayerDamage(params: PlayerAttackParams): number {
     if (isCritical) defenderDef *= 0.5;
     const weaponInt = ITEMS[attacker.weaponId || ""]?.equipment?.bonuses.int || 0;
     const buffInt = getFoodBuffBonus(attacker.activeFoodBuffId || null, "int");
-    const baseDamage = (attacker.int + buffInt) * 1.8 + weaponInt - defenderDef;
+    const rawInt = attacker.int + buffInt;
+    const effectiveInt = applySalaryDebuff(rawInt, isSalaryUnpaid);
+    const baseDamage = effectiveInt * 1.8 + weaponInt - defenderDef;
     damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency));
   } else {
     let defenderDef = defender.def + defender.vit * 0.5;
@@ -58,7 +73,9 @@ export function calculatePlayerDamage(params: PlayerAttackParams): number {
     const isWarrior = attacker.currentJob === "戦士";
     const jobBonus = isWarrior ? WARRIOR_DAMAGE_BONUS : 1.0;
     const buffStr = getFoodBuffBonus(attacker.activeFoodBuffId || null, "str");
-    const baseDamage = (attacker.str + buffStr) * 1.5 + weaponAtk - defenderDef;
+    const rawStr = attacker.str + buffStr;
+    const effectiveStr = applySalaryDebuff(rawStr, isSalaryUnpaid);
+    const baseDamage = effectiveStr * 1.5 + weaponAtk - defenderDef;
     damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency * jobBonus));
   }
 
@@ -72,14 +89,17 @@ export interface EnemyAttackParams {
     Pick<VillagerEquipment, "armorId"> & { activeFoodBuffId?: string | null };
   isCritical: boolean;
   minDamage?: number;
+  isSalaryUnpaid?: boolean;
 }
 
 export function calculateEnemyDamage(params: EnemyAttackParams): number {
-  const { attacker, defender, isCritical, minDamage = MIN_DAMAGE } = params;
+  const { attacker, defender, isCritical, minDamage = MIN_DAMAGE, isSalaryUnpaid = false } = params;
 
   const armorDef = ITEMS[defender.armorId || ""]?.equipment?.bonuses.defense || 0;
   const buffVit = getFoodBuffBonus(defender.activeFoodBuffId || null, "vit");
-  let defenderDef = defender.vit + buffVit + armorDef;
+  const rawVit = defender.vit + buffVit;
+  const effectiveVit = applySalaryDebuff(rawVit, isSalaryUnpaid);
+  let defenderDef = effectiveVit + armorDef;
   if (isCritical) defenderDef *= 0.5;
 
   const baseDamage = attacker.atk - defenderDef;
@@ -89,13 +109,17 @@ export function calculateEnemyDamage(params: EnemyAttackParams): number {
   return damage;
 }
 
-export function useBattlePotion(villager: Villager): {
+export function useBattlePotion(
+  villager: Villager,
+  isSalaryUnpaid: boolean = false,
+): {
   updated: Villager;
   healed: number;
   used: boolean;
 } {
   const buffMaxHp = getFoodBuffBonus(villager.activeFoodBuffId || null, "maxHp");
-  const effectiveMaxHp = villager.maxHp + buffMaxHp;
+  const rawMaxHp = villager.maxHp + buffMaxHp;
+  const effectiveMaxHp = applySalaryDebuff(rawMaxHp, isSalaryUnpaid);
   if (villager.currentHp > effectiveMaxHp * BATTLE_POTION_HP_RATIO || villager.potionCount <= 0) {
     return { updated: villager, healed: 0, used: false };
   }

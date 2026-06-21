@@ -17,6 +17,7 @@ import {
   calculateEnemyDamage,
   useBattlePotion,
   getFoodBuffBonus,
+  applySalaryDebuff,
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
@@ -30,6 +31,7 @@ export function processBossBattle(
   gameLimitDays: number,
   hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
+  isSalaryUnpaid: boolean = false,
 ) {
   const logs: LogPayload[] = [];
   let nextActiveBoss = activeBoss ? { ...activeBoss } : null;
@@ -63,7 +65,7 @@ export function processBossBattle(
           if (nextActiveBoss.currentHp <= 0) break;
 
           // 1. 各アタッカーの回復薬使用
-          const potionResult = useBattlePotion(v);
+          const potionResult = useBattlePotion(v, isSalaryUnpaid);
           if (potionResult.used) {
             nextVillagers[i] = potionResult.updated;
             logs.push({
@@ -76,8 +78,8 @@ export function processBossBattle(
           const currentV = nextVillagers[i];
           const cvBuffInt = getFoodBuffBonus(currentV.activeFoodBuffId || null, "int");
           const cvBuffDex = getFoodBuffBonus(currentV.activeFoodBuffId || null, "dex");
-          const cvEffectiveInt = currentV.int + cvBuffInt;
-          const cvEffectiveDex = currentV.dex + cvBuffDex;
+          const cvEffectiveInt = applySalaryDebuff(currentV.int + cvBuffInt, isSalaryUnpaid);
+          const cvEffectiveDex = applySalaryDebuff(currentV.dex + cvBuffDex, isSalaryUnpaid);
           let isHealed = false;
 
           if (currentV.currentJob === "僧侶") {
@@ -93,7 +95,10 @@ export function processBossBattle(
                 member.currentHp > 0
               ) {
                 const mBuffMaxHp = getFoodBuffBonus(member.activeFoodBuffId || null, "maxHp");
-                const mEffectiveMaxHp = member.maxHp + mBuffMaxHp;
+                const mEffectiveMaxHp = applySalaryDebuff(
+                  member.maxHp + mBuffMaxHp,
+                  isSalaryUnpaid,
+                );
                 const ratio = member.currentHp / mEffectiveMaxHp;
                 if (ratio < minHpRatio) {
                   minHpRatio = ratio;
@@ -106,7 +111,10 @@ export function processBossBattle(
             if (targetToHeal && minHpRatio <= 0.5 && targetIdx !== -1) {
               const healAmount = Math.max(10, Math.floor(cvEffectiveInt * 1.5 + 10));
               const tBuffMaxHp = getFoodBuffBonus(targetToHeal.activeFoodBuffId || null, "maxHp");
-              const tEffectiveMaxHp = targetToHeal.maxHp + tBuffMaxHp;
+              const tEffectiveMaxHp = applySalaryDebuff(
+                targetToHeal.maxHp + tBuffMaxHp,
+                isSalaryUnpaid,
+              );
               const actualHeal = Math.min(tEffectiveMaxHp - targetToHeal.currentHp, healAmount);
 
               nextVillagers[targetIdx] = {
@@ -148,6 +156,7 @@ export function processBossBattle(
               isCritical,
               efficiency,
               isMagicUser,
+              isSalaryUnpaid,
             });
 
             nextActiveBoss.currentHp = Math.max(0, nextActiveBoss.currentHp - damage);
@@ -171,7 +180,7 @@ export function processBossBattle(
             const villager = { ...nextVillagers[vIdx] };
 
             const vBuffAgi = getFoodBuffBonus(villager.activeFoodBuffId || null, "agi");
-            const vEffectiveAgi = villager.agi + vBuffAgi;
+            const vEffectiveAgi = applySalaryDebuff(villager.agi + vBuffAgi, isSalaryUnpaid);
             const enemyHitRate = calculateHitRate(monster.dex, vEffectiveAgi);
             const isEnemyHit = Math.random() * 100 < enemyHitRate;
 
@@ -189,6 +198,7 @@ export function processBossBattle(
                 defender: villager,
                 isCritical: isEnemyCrit,
                 minDamage: MIN_BOSS_DAMAGE,
+                isSalaryUnpaid,
               });
 
               villager.currentHp = Math.max(0, villager.currentHp - damageToVillager);

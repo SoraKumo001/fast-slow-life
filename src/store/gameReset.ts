@@ -65,6 +65,7 @@ export interface ResetResult {
   towns: Town[];
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
+  isSalaryUnpaid: boolean;
 }
 
 export function resetGameHelper(params: {
@@ -133,5 +134,6 @@ export function resetGameHelper(params: {
     towns: getInitialTowns(),
     caravans: getInitialCaravans(),
     marketTrend: null,
+    isSalaryUnpaid: false,
   };
 }

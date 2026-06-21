@@ -16,7 +16,7 @@ import {
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea } from "../types/game";
-import { getFoodBuffBonus } from "./combatEngine";
+import { getFoodBuffBonus, applySalaryDebuff } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
 
@@ -29,6 +29,7 @@ export function processVillagerGather(
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
+  isSalaryUnpaid: boolean = false,
 ): { logs: LogPayload[]; areaUpdated: boolean } {
   const logs: LogPayload[] = [];
   let bestItemId = "";
@@ -39,10 +40,10 @@ export function processVillagerGather(
   const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
   const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
 
-  const effectiveStr = v.str + buffStr;
-  const effectiveInt = v.int + buffInt;
-  const effectiveDex = v.dex + buffDex;
-  const effectiveAgi = v.agi + buffAgi;
+  const effectiveStr = applySalaryDebuff(v.str + buffStr, isSalaryUnpaid);
+  const effectiveInt = applySalaryDebuff(v.int + buffInt, isSalaryUnpaid);
+  const effectiveDex = applySalaryDebuff(v.dex + buffDex, isSalaryUnpaid);
+  const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, isSalaryUnpaid);
 
   const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
   if (

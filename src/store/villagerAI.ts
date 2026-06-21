@@ -28,6 +28,7 @@ export function processVillagerActivities(
   hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   _gold: number,
+  isSalaryUnpaid: boolean = false,
 ) {
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
@@ -219,6 +220,7 @@ export function processVillagerActivities(
           targetAmounts,
           efficiency,
           soulUpgrades,
+          isSalaryUnpaid,
         );
         logs.push(...gatherResult.logs);
       } else if (v.order === "hunt") {
@@ -231,6 +233,7 @@ export function processVillagerActivities(
           targetAmounts,
           efficiency,
           soulUpgrades,
+          isSalaryUnpaid,
         );
         logs.push(...huntResult.logs);
         if (v.currentHp <= 0) {

@@ -102,7 +102,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
           traceLog += `[${formatGameTime(state.currentDay, state.currentHour)}] `;
-          traceLog += `Gold: ${state.gold}, Food: ${state.inventory.food?.toFixed(2) || 0}, `;
+          traceLog += `Gold: ${state.gold}, Food: ${state.inventory.food?.toFixed(2) || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
           traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob})`).join(" | ")}\n`;
         }
 
@@ -136,13 +136,27 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         });
 
         // --- 自動プレイAIの意思決定ポリシー ---
+        const dailySalaryTotal = state.villagers.reduce((sum, v) => {
+          const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
+          return sum + Math.floor(totalStat * 0.1);
+        }, 0);
+
+        if (state.isSalaryUnpaid) {
+          if (state.gold >= dailySalaryTotal) {
+            store.paySalaryDebt();
+          }
+        }
+
+        const isMarketBuilt = state.facilities.market.level > 0;
+        const goldReserve = isMarketBuilt ? Math.max(150, dailySalaryTotal * 3) : 500;
+
         const currentTier = state.currentTier;
 
-        // 1. 目標アイテム設定の更新
+        // 1. 目標アイテム設定 of update
         const newTargets: Record<string, number> = { food: 50 }; // 食料は常にキープ
         if (currentTier >= 1) {
           newTargets.wood = 30;
-          newTargets.wood_plank = 15; // 交易所やアップグレードに必要な中間素材
+          newTargets.wood_plank = isMarketBuilt ? 15 : 0; // 交易所やアップグレードに必要な中間素材（交易所が建つまではクラフトしない）
           newTargets.herb = 15;
           newTargets.mushroom = 10;
           newTargets.potion = 5;
@@ -210,10 +224,10 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
           });
         }
 
-        // 3. 村人の自動雇用 (ゴールドに余裕があれば)
+        // 3. 村人の自動雇用 (ゴールドに余裕があり、かつ交易所が建っている場合)
         const guild = state.facilities.guild;
         const maxVillagers = 3 + guild.level * 2;
-        if (state.gold >= 150 && state.villagers.length < Math.min(10, maxVillagers)) {
+        if (isMarketBuilt && state.gold >= 150 + goldReserve && state.villagers.length < Math.min(10, maxVillagers)) {
           store.hireVillager();
           totalHired++;
         }
@@ -266,6 +280,8 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
         // 5. 自動転職
         state.villagers.forEach((v, index) => {
+          if (!isMarketBuilt) return; // 交易所が建つまでは転職を保留してゴールドを温存
+
           let desiredJob: JobType = "無職";
           if (index === 0) desiredJob = "職人";
           else if (index === 1) desiredJob = "戦士";
@@ -289,13 +305,12 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
               }
             }
 
-            const reserve = 50;
-            if (reqLevelMet && reqPrevJobsMet && state.gold >= cost + reserve) {
+            if (reqLevelMet && reqPrevJobsMet && state.gold >= cost + goldReserve) {
               store.changeVillagerJob(v.id, desiredJob);
             } else if (!reqPrevJobsMet) {
               const parentJob = requirements!.jobs![0];
               const parentCost = v.jobHistory.includes(parentJob) ? 0 : JOBS[parentJob].cost;
-              if (v.currentJob !== parentJob && state.gold >= parentCost + reserve) {
+              if (v.currentJob !== parentJob && state.gold >= parentCost + goldReserve) {
                 store.changeVillagerJob(v.id, parentJob);
               }
             }
@@ -323,9 +338,12 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
             const hasUpgradeMaterials = fac.upgradeCost.materials.every((req) => {
               return (state.inventory[req.itemId] || 0) >= req.count;
             });
+            // 交易所が建っていない間は、他の施設（ゴールドが必要なもの）は一切アップグレードしない。
+            if (!isMarketBuilt && facId !== "market") continue;
+
             const requiredReserve = facId === "market" || facId === "guild" ? 0 : 150;
             if (
-              (goldCost === 0 || state.gold >= goldCost + requiredReserve) &&
+              (goldCost === 0 || state.gold >= goldCost + requiredReserve + goldReserve) &&
               hasUpgradeMaterials
             ) {
               store.startFacilityUpgrade(facId);

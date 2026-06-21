@@ -32,6 +32,7 @@ export const partialize = (state: GameState & GameActions): GameState => ({
   towns: state.towns,
   caravans: state.caravans,
   marketTrend: state.marketTrend,
+  isSalaryUnpaid: state.isSalaryUnpaid,
 });
 
 export const merge = <S extends GameState & GameActions>(
@@ -113,6 +114,7 @@ export const merge = <S extends GameState & GameActions>(
   merged.towns = persisted.towns || getInitialTowns();
   merged.caravans = persisted.caravans || getInitialCaravans();
   merged.marketTrend = persisted.marketTrend !== undefined ? persisted.marketTrend : null;
+  merged.isSalaryUnpaid = persisted.isSalaryUnpaid !== undefined ? persisted.isSalaryUnpaid : false;
 
   return merged;
 };

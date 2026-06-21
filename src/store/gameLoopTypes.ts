@@ -33,4 +33,5 @@ export interface AdvanceHourResult {
   towns: Town[];
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
+  isSalaryUnpaid: boolean;
 }

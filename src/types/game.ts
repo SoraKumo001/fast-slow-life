@@ -317,6 +317,7 @@ export interface GameActions {
   collectCaravan: (caravanId: string) => void;
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
+  paySalaryDebt: () => void;
 }
 
 export interface GameState {
@@ -342,6 +343,7 @@ export interface GameState {
   towns: Town[];
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
+  isSalaryUnpaid: boolean;
 }
 
 export type StoreSet = (

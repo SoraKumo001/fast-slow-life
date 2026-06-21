@@ -40,6 +40,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     towns,
     caravans,
     marketTrend,
+    isSalaryUnpaid,
   } = state;
 
   const logsToAppend: import("./gameLoopTypes").LogPayload[] = [];
@@ -52,7 +53,30 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     isNewDay = true;
   }
 
+  let isSalaryUnpaidNext = isSalaryUnpaid;
+
   if (isNewDay) {
+    const dailySalaryTotal = villagers.reduce((sum, v) => {
+      const totalStat = v.str + v.int + v.dex + v.agi + v.vit;
+      return sum + Math.floor(totalStat * 0.1);
+    }, 0);
+
+    if (gold >= dailySalaryTotal) {
+      gold -= dailySalaryTotal;
+      isSalaryUnpaidNext = false;
+      logsToAppend.push({
+        message: `【給与】村人全員の給与（計 ${dailySalaryTotal} G）を支払いました。`,
+        type: "info",
+      });
+    } else {
+      gold = 0;
+      isSalaryUnpaidNext = true;
+      logsToAppend.push({
+        message: `【警告】ゴールドが不足しているため、村人の給与（計 ${dailySalaryTotal} G）が支払えませんでした。給与未払いデバフ（全ステータス -30%）が発生します！`,
+        type: "warning",
+      });
+    }
+
     const unlockedTowns = towns.filter((t) => t.isUnlocked);
     if (unlockedTowns.length > 0) {
       const randomTown = unlockedTowns[Math.floor(Math.random() * unlockedTowns.length)];
@@ -97,6 +121,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       towns,
       caravans,
       marketTrend,
+      isSalaryUnpaid: isSalaryUnpaidNext,
     };
   }
 
@@ -171,6 +196,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     gameLimitDays,
     hasStarvation,
     soulUpgrades,
+    isSalaryUnpaidNext,
   );
   activeBoss = bossRes.activeBoss;
   villagers = bossRes.villagers;
@@ -190,6 +216,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     hasStarvation,
     soulUpgrades,
     gold,
+    isSalaryUnpaidNext,
   );
   villagers = actRes.villagers;
   inventory = { ...inventory, ...actRes.inventory };
@@ -214,6 +241,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       towns,
       caravans,
       marketTrend,
+      isSalaryUnpaid: isSalaryUnpaidNext,
     };
   }
 
@@ -453,5 +481,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     towns,
     caravans,
     marketTrend,
+    isSalaryUnpaid: isSalaryUnpaidNext,
   };
 }
