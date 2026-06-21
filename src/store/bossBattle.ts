@@ -4,17 +4,20 @@ import {
   BOSS_REGEN_PERCENT,
   STARVATION_EFFICIENCY_PENALTY,
   ZERO_STAMINA_PENALTY,
-  WARRIOR_DAMAGE_BONUS,
-  MIN_DAMAGE,
   MIN_BOSS_DAMAGE,
   EDUCATION_EXP_BONUS,
-  STAT_GROWTH_PER_LEVEL,
-  HP_GROWTH_PER_LEVEL,
-  EXP_NEEDED_PER_LEVEL,
 } from "../constants";
-import { ITEMS, MONSTERS } from "../data/masterData";
+import { MONSTERS } from "../data/masterData";
 import { Villager, DungeonArea, ActiveBossState } from "../types/game";
+import {
+  calculateHitRate,
+  calculateCritRate,
+  calculatePlayerDamage,
+  calculateEnemyDamage,
+  useBattlePotion,
+} from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
+import { tryLevelUp } from "./levelUpHelper";
 
 export function processBossBattle(
   activeBoss: ActiveBossState | null,
@@ -58,23 +61,18 @@ export function processBossBattle(
           if (nextActiveBoss.currentHp <= 0) break;
 
           // 1. 各アタッカーの回復薬使用
-          if (v.currentHp <= v.maxHp * 0.5 && v.potionCount > 0) {
-            const updatedV = { ...v };
-            updatedV.potionCount -= 1;
-            const pId = updatedV.potionItemId || "potion";
-            const healAmt = ITEMS[pId]?.healAmount || 50;
-            updatedV.currentHp = Math.min(updatedV.maxHp, updatedV.currentHp + healAmt);
-            nextVillagers[i] = updatedV;
-
+          const potionResult = useBattlePotion(v);
+          if (potionResult.used) {
+            nextVillagers[i] = potionResult.updated;
             logs.push({
-              message: `[ボス戦] ${updatedV.name} は回復薬を使用し、HPを ${healAmt} 回復した。 (残り ${updatedV.potionCount} 個)`,
+              message: `[ボス戦] ${v.name} は回復薬を使用し、HPを ${potionResult.healed} 回復した。 (残り ${potionResult.updated.potionCount} 個)`,
               type: "info",
             });
           }
 
           // 2. 攻撃処理
           const currentV = nextVillagers[i];
-          const hitRate = Math.max(50, Math.min(100, 85 + (currentV.dex - monster.agi) * 1.5));
+          const hitRate = calculateHitRate(currentV.dex, monster.agi);
           const isHit = Math.random() * 100 < hitRate;
 
           if (!isHit) {
@@ -83,38 +81,20 @@ export function processBossBattle(
               type: "combat",
             });
           } else {
-            const critRate = Math.min(30, currentV.dex * 0.1);
+            const critRate = calculateCritRate(currentV.dex);
             const isCritical = Math.random() * 100 < critRate;
-
             const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(currentV.currentJob);
             const efficiency =
               (hasStarvation ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
               (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
-            let damage = 0;
 
-            if (isMagicUser) {
-              let defenderDef = monster.mdef + monster.int * 0.5;
-              if (isCritical) {
-                defenderDef = defenderDef * 0.5;
-              }
-              const weaponInt = ITEMS[currentV.weaponId]?.equipment?.bonuses.int || 0;
-              const baseDamage = currentV.int * 1.8 + weaponInt - defenderDef;
-              damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency));
-            } else {
-              let defenderDef = monster.def + monster.vit * 0.5;
-              if (isCritical) {
-                defenderDef = defenderDef * 0.5;
-              }
-              const weaponAtk = ITEMS[currentV.weaponId]?.equipment?.bonuses.attack || 0;
-              const isWarrior = currentV.currentJob === "戦士";
-              const jobBonus = isWarrior ? WARRIOR_DAMAGE_BONUS : 1.0;
-              const baseDamage = currentV.str * 1.5 + weaponAtk - defenderDef;
-              damage = Math.max(MIN_DAMAGE, Math.floor(baseDamage * efficiency * jobBonus));
-            }
-
-            if (isCritical) {
-              damage = Math.floor(damage * 1.5);
-            }
+            const damage = calculatePlayerDamage({
+              attacker: currentV,
+              defender: monster,
+              isCritical,
+              efficiency,
+              isMagicUser,
+            });
 
             nextActiveBoss.currentHp = Math.max(0, nextActiveBoss.currentHp - damage);
             logs.push({
@@ -136,11 +116,7 @@ export function processBossBattle(
           if (vIdx !== -1) {
             const villager = { ...nextVillagers[vIdx] };
 
-            // 命中判定
-            const enemyHitRate = Math.max(
-              50,
-              Math.min(100, 85 + (monster.dex - villager.agi) * 1.5),
-            );
+            const enemyHitRate = calculateHitRate(monster.dex, villager.agi);
             const isEnemyHit = Math.random() * 100 < enemyHitRate;
 
             if (!isEnemyHit) {
@@ -149,20 +125,15 @@ export function processBossBattle(
                 type: "combat",
               });
             } else {
-              const enemyCritRate = Math.min(30, monster.dex * 0.1);
+              const enemyCritRate = calculateCritRate(monster.dex);
               const isEnemyCrit = Math.random() * 100 < enemyCritRate;
 
-              const armorDef = ITEMS[villager.armorId]?.equipment?.bonuses.defense || 0;
-              let defenderDef = villager.vit + armorDef;
-              if (isEnemyCrit) {
-                defenderDef = defenderDef * 0.5;
-              }
-
-              const baseDamage = monster.atk - defenderDef;
-              let damageToVillager = Math.max(MIN_BOSS_DAMAGE, Math.floor(baseDamage));
-              if (isEnemyCrit) {
-                damageToVillager = Math.floor(damageToVillager * 1.5);
-              }
+              const damageToVillager = calculateEnemyDamage({
+                attacker: monster,
+                defender: villager,
+                isCritical: isEnemyCrit,
+                minDamage: MIN_BOSS_DAMAGE,
+              });
 
               villager.currentHp = Math.max(0, villager.currentHp - damageToVillager);
               nextVillagers[vIdx] = villager;
@@ -223,21 +194,23 @@ export function processBossBattle(
               const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
               const expGained = Math.floor(monster.expReward * eduBonus);
               updatedV.exp += expGained;
-              const expNeeded = updatedV.level * EXP_NEEDED_PER_LEVEL;
-              if (updatedV.exp >= expNeeded) {
-                updatedV.level += 1;
-                updatedV.exp -= expNeeded;
-                updatedV.str += STAT_GROWTH_PER_LEVEL;
-                updatedV.int += STAT_GROWTH_PER_LEVEL;
-                updatedV.dex += STAT_GROWTH_PER_LEVEL;
-                updatedV.agi += STAT_GROWTH_PER_LEVEL;
-                updatedV.vit += STAT_GROWTH_PER_LEVEL;
-                updatedV.maxHp += HP_GROWTH_PER_LEVEL;
-                updatedV.currentHp = updatedV.maxHp;
+
+              const { leveled, updated: leveledV } = tryLevelUp(updatedV);
+              if (leveled) {
                 logs.push({
-                  message: `${updatedV.name} が レベル ${updatedV.level} に上がりました！`,
+                  message: `${leveledV.name} が レベル ${leveledV.level} に上がりました！`,
                   type: "info",
                 });
+                updatedV.exp = leveledV.exp;
+                updatedV.level = leveledV.level;
+                updatedV.str = leveledV.str;
+                updatedV.int = leveledV.int;
+                updatedV.dex = leveledV.dex;
+                updatedV.agi = leveledV.agi;
+                updatedV.vit = leveledV.vit;
+                updatedV.maxHp = leveledV.maxHp;
+                updatedV.maxStamina = leveledV.maxStamina;
+                updatedV.currentHp = leveledV.currentHp;
               }
             }
             updatedV.status = "idle";

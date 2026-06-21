@@ -1,5 +1,6 @@
 import { HelpCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { DungeonPanel } from "./components/game/DungeonPanel";
 import { FacilityList } from "./components/game/FacilityList";
@@ -11,7 +12,11 @@ import { SoulShop } from "./components/modals/SoulShop";
 import { useGameStore } from "./store/gameStore";
 
 export default function App() {
-  const { isPaused, playSpeed, gameOver, advanceHour } = useGameStore();
+  const { isPaused, playSpeed, gameOver } = useGameStore(
+    (s) => ({ isPaused: s.isPaused, playSpeed: s.playSpeed, gameOver: s.gameOver }),
+    shallow,
+  );
+  const advanceHour = useGameStore((s) => s.advanceHour);
   const [showHelpModal, setShowHelpModal] = useState(false);
 
   // ゲーム時間進行ループ

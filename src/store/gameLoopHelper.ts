@@ -80,7 +80,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   const craftRes = processCraftingAndUpgrades(facilities, villagers, inventory, soulUpgrades);
   facilities = craftRes.facilities;
   villagers = craftRes.villagers;
-  Object.assign(inventory, craftRes.inventory);
+  inventory = { ...inventory, ...craftRes.inventory };
   logsToAppend.push(...craftRes.logs);
 
   const bossRes = processBossBattle(
@@ -113,7 +113,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     gold,
   );
   villagers = actRes.villagers;
-  Object.assign(inventory, actRes.inventory);
+  inventory = { ...inventory, ...actRes.inventory };
   dungeons = actRes.dungeons;
   logsToAppend.push(...actRes.logs);
   if (actRes.gameOver) {
@@ -137,7 +137,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   const autoRes = processAutoCraft(facilities, villagers, inventory, targetAmounts);
   facilities = autoRes.facilities;
   villagers = autoRes.villagers;
-  Object.assign(inventory, autoRes.inventory);
+  inventory = { ...inventory, ...autoRes.inventory };
   logsToAppend.push(...autoRes.logs);
 
   return {

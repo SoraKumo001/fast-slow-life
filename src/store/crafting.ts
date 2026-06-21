@@ -3,20 +3,12 @@ import {
   CRAFT_QUEUE_MAX_LENGTH,
   UPGRADE_COST_GOLD_MULTIPLIER,
   UPGRADE_COST_MATERIAL_INCREMENT,
+  CRAFT_DEX_FACTOR,
 } from "../constants";
 import { ITEMS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
 import { Villager, Facility, FacilityType } from "../types/game";
+import { calculateCraftTime, generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
-
-export function calculateCraftTime(
-  baseTime: number,
-  villager: Villager | null | undefined,
-): number {
-  if (!villager) return baseTime;
-  const dexFactor = 1 - (villager.dex - 10) * 0.005;
-  const jobFactor = villager.currentJob === "職人" ? 0.8 : 1.0;
-  return Math.max(1, Math.floor(baseTime * dexFactor * jobFactor));
-}
 
 export function processCraftingAndUpgrades(
   facilities: Record<FacilityType, Facility>,
@@ -63,7 +55,7 @@ export function processCraftingAndUpgrades(
             if (v.currentJob === "職人") {
               successBonus = 0.12;
             } else {
-              successBonus = 0.05 + (v.dex - 10) * 0.005;
+              successBonus = 0.05 + (v.dex - 10) * CRAFT_DEX_FACTOR;
             }
           }
         }
@@ -145,7 +137,7 @@ export function processAutoCraft(
               const idleAny = nextVillagers.find((v) => v.status === "idle");
               const assignedId = (idleCrafter || idleAny)?.id || null;
 
-              const jobId = Math.random().toString(36).substring(2);
+              const jobId = generateId();
               const baseTime = recipe.requiredTime;
               const assignedVillager = assignedId
                 ? nextVillagers.find((v) => v.id === assignedId)

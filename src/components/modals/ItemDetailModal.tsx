@@ -1,5 +1,6 @@
 import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
+import { shallow } from "zustand/shallow";
 
 import {
   useGameStore,
@@ -17,7 +18,14 @@ interface ItemDetailModalProps {
 }
 
 export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose }) => {
-  const { inventory, targetAmounts, facilities, setTargetAmount, sellItem } = useGameStore();
+  const { inventory, targetAmounts, facilities } = useGameStore(
+    (s) => ({ inventory: s.inventory, targetAmounts: s.targetAmounts, facilities: s.facilities }),
+    shallow,
+  );
+  const { setTargetAmount, sellItem } = useGameStore(
+    (s) => ({ setTargetAmount: s.setTargetAmount, sellItem: s.sellItem }),
+    shallow,
+  );
 
   const maxAmount = Math.floor(inventory[item.id] || 0);
   const [sellAmount, setSellAmount] = useState<number>(1);

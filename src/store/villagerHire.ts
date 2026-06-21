@@ -7,6 +7,7 @@ import {
 } from "../constants";
 import { VILLAGER_NAMES } from "../data/masterData";
 import { Villager, Facility } from "../types/game";
+import { generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export interface HireResult {
@@ -86,7 +87,7 @@ export function hireVillagerHelper(params: {
   const name = VILLAGER_NAMES[villagers.length % VILLAGER_NAMES.length] + " (新人)";
   const statBonus = (soulUpgrades.body || 0) * BODY_STAT_PER_LEVEL;
   const newVillager: Villager = {
-    id: "v_" + Math.random().toString(36).substring(2),
+    id: "v_" + generateId(),
     name,
     level: 1,
     exp: 0,

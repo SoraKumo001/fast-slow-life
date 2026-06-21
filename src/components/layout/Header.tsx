@@ -1,5 +1,6 @@
 import { Play, Pause, RefreshCw, AlertTriangle, X } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore } from "../../store/gameStore";
 import { SoulShop } from "../modals/SoulShop";
@@ -17,11 +18,28 @@ export const Header: React.FC = () => {
     currentTier,
     gameLimitDays,
     bossDefeated,
-    togglePause,
-    setPlaySpeed,
     villagers,
-    advanceDay,
-  } = useGameStore();
+  } = useGameStore(
+    (s) => ({
+      currentDay: s.currentDay,
+      currentHour: s.currentHour,
+      gold: s.gold,
+      inventory: s.inventory,
+      soulPoints: s.soulPoints,
+      isPaused: s.isPaused,
+      playSpeed: s.playSpeed,
+      gameOver: s.gameOver,
+      currentTier: s.currentTier,
+      gameLimitDays: s.gameLimitDays,
+      bossDefeated: s.bossDefeated,
+      villagers: s.villagers,
+    }),
+    shallow,
+  );
+  const { togglePause, setPlaySpeed, advanceDay } = useGameStore(
+    (s) => ({ togglePause: s.togglePause, setPlaySpeed: s.setPlaySpeed, advanceDay: s.advanceDay }),
+    shallow,
+  );
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
 

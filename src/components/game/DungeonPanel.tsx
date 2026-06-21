@@ -1,13 +1,23 @@
 import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore, ITEMS } from "../../store/gameStore";
 import { DungeonArea } from "../../types/game";
 import { BossBattleModal } from "../modals/BossBattleModal";
 
 export const DungeonPanel: React.FC = () => {
-  const { dungeons, villagers, currentTier, bossDefeated, activeBoss, withdrawFromBossBattle } =
-    useGameStore();
+  const { dungeons, villagers, currentTier, bossDefeated, activeBoss } = useGameStore(
+    (s) => ({
+      dungeons: s.dungeons,
+      villagers: s.villagers,
+      currentTier: s.currentTier,
+      bossDefeated: s.bossDefeated,
+      activeBoss: s.activeBoss,
+    }),
+    shallow,
+  );
+  const withdrawFromBossBattle = useGameStore((s) => s.withdrawFromBossBattle);
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
   const [expandedAreaIds, setExpandedAreaIds] = useState<Record<string, boolean>>({});

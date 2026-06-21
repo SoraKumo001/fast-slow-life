@@ -1,5 +1,6 @@
 import { User, Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore, ITEMS, MONSTERS } from "../../store/gameStore";
 import { Villager } from "../../types/game";
@@ -7,7 +8,11 @@ import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";
 
 export const VillagerList: React.FC = () => {
-  const { dungeons, villagers, setVillagerOrder } = useGameStore();
+  const { dungeons, villagers } = useGameStore(
+    (s) => ({ dungeons: s.dungeons, villagers: s.villagers }),
+    shallow,
+  );
+  const setVillagerOrder = useGameStore((s) => s.setVillagerOrder);
   const [selectedVillager, setSelectedVillager] = useState<Villager | null>(null);
   const [activeModal, setActiveModal] = useState<"job" | "equip" | null>(null);
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});

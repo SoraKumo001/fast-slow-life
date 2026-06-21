@@ -1,5 +1,6 @@
 import { AlertCircle, Sword } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore } from "../../store/gameStore";
 import { DungeonArea, Villager } from "../../types/game";
@@ -10,7 +11,11 @@ interface BossBattleModalProps {
 }
 
 export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose }) => {
-  const { villagers, dungeons, startBossBattle } = useGameStore();
+  const { villagers, dungeons } = useGameStore(
+    (s) => ({ villagers: s.villagers, dungeons: s.dungeons }),
+    shallow,
+  );
+  const startBossBattle = useGameStore((s) => s.startBossBattle);
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
 
   const getSelectableVillagers = () => {

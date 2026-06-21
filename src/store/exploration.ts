@@ -1,3 +1,4 @@
+import { EXPLORATION_UNLOCK_1, EXPLORATION_UNLOCK_2, EXPLORATION_UNLOCK_3 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import { DungeonArea, Villager } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
@@ -32,7 +33,7 @@ export function processExploration(
         type: "system",
       });
     } else {
-      const thresholds = [40, 50, 70];
+      const thresholds = [EXPLORATION_UNLOCK_1, EXPLORATION_UNLOCK_2, EXPLORATION_UNLOCK_3];
       thresholds.forEach((th) => {
         if (prevProgress < th && nextProgress >= th) {
           const unlockedItems = d.gathers

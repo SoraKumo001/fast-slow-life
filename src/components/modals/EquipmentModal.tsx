@@ -1,4 +1,5 @@
 import React from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore, ITEMS } from "../../store/gameStore";
 import { Villager, Item } from "../../types/game";
@@ -10,7 +11,14 @@ interface EquipmentModalProps {
 }
 
 export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClose }) => {
-  const { villagers, inventory, equipItem, unequipItem } = useGameStore();
+  const { villagers, inventory } = useGameStore(
+    (s) => ({ villagers: s.villagers, inventory: s.inventory }),
+    shallow,
+  );
+  const { equipItem, unequipItem } = useGameStore(
+    (s) => ({ equipItem: s.equipItem, unequipItem: s.unequipItem }),
+    shallow,
+  );
 
   // ストアから常に最新の村人データを取得（装備変更後にリアルタイムで反映される）
   const currentVillager = villagers.find((v) => v.id === villager.id) ?? villager;

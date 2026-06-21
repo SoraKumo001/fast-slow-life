@@ -1,10 +1,18 @@
 import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { useGameStore, SOUL_UPGRADES } from "../../store/gameStore";
 
 export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-  const { soulPoints, soulUpgrades, buySoulUpgrade, resetGame } = useGameStore();
+  const { soulPoints, soulUpgrades } = useGameStore(
+    (s) => ({ soulPoints: s.soulPoints, soulUpgrades: s.soulUpgrades }),
+    shallow,
+  );
+  const { buySoulUpgrade, resetGame } = useGameStore(
+    (s) => ({ buySoulUpgrade: s.buySoulUpgrade, resetGame: s.resetGame }),
+    shallow,
+  );
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleStartNewGame = () => {

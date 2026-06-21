@@ -27,7 +27,7 @@ import {
   OrderType,
   VillagerStatus,
 } from "../types/game";
-import { calculateCraftTime } from "./crafting";
+import { calculateCraftTime, generateId } from "../utils/craftHelpers";
 import { calculateAdvanceHour } from "./gameLoopHelper";
 import { resetGameHelper, calculateEarnedSp } from "./gameReset";
 import {
@@ -144,7 +144,7 @@ export const useGameStore = create<GameState & GameActions>()(
         const { currentDay, currentHour } = get();
         const timestamp = `${currentDay}日目 ${String(currentHour).padStart(2, "0")}:00`;
         const newLog: GameLog = {
-          id: Math.random().toString(36).substring(2),
+          id: generateId(),
           timestamp,
           message,
           type,
@@ -439,7 +439,7 @@ export const useGameStore = create<GameState & GameActions>()(
           assignedId = (idleCrafter || idleAny)?.id || null;
         }
 
-        const jobId = Math.random().toString(36).substring(2);
+        const jobId = generateId();
         const baseTime = recipe.requiredTime;
         const assignedVillager = assignedId
           ? state.villagers.find((v) => v.id === assignedId)
@@ -629,7 +629,7 @@ export const useGameStore = create<GameState & GameActions>()(
           result.logsToAppend.forEach((log) => {
             const timestamp = `${result.currentDay}日目 ${String(result.currentHour).padStart(2, "0")}:00`;
             const newLog: GameLog = {
-              id: Math.random().toString(36).substring(2),
+              id: generateId(),
               timestamp,
               message: log.message,
               type: log.type,

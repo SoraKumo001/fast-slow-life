@@ -40,6 +40,29 @@ export const WARRIOR_DAMAGE_BONUS = 1.3;
 export const MIN_DAMAGE = 2;
 export const MIN_BOSS_DAMAGE = 5;
 
+export const BATTLE_POTION_HP_RATIO = 0.5;
+export const RETREAT_HP_RATIO = 0.3;
+export const STAMINA_DRINK_THRESHOLD = 30;
+
+export const GATHER_STAT_WEIGHT_PRIMARY = 0.7;
+export const GATHER_STAT_WEIGHT_SECONDARY = 0.3;
+export const GATHER_PROGRESS_DEX_FACTOR = 0.8;
+export const GATHER_PROGRESS_BASE = 10;
+export const MONSTER_PROGRESS_AGI_FACTOR = 0.8;
+export const MONSTER_PROGRESS_LEVEL_DIVISOR = 0.4;
+export const MONSTER_PROGRESS_BASE = 2;
+
+export const EXPLORATION_UNLOCK_1 = 40;
+export const EXPLORATION_UNLOCK_2 = 50;
+export const EXPLORATION_UNLOCK_3 = 70;
+
+export const CRAFT_DEX_FACTOR = 0.005;
+
+export const HIT_RATE_BASE = 85;
+export const HIT_RATE_DEX_FACTOR = 1.5;
+export const CRIT_RATE_CAP = 30;
+export const CRIT_RATE_DEX_FACTOR = 0.1;
+
 export const FOOD_GATHER_AMOUNT = 10;
 export const BASE_GATHER_AMOUNT = 1;
 

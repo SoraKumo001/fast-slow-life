@@ -1,5 +1,6 @@
 import { Home, Hammer, ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import {
@@ -22,15 +23,20 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
 };
 
 export const FacilityList: React.FC = () => {
-  const {
-    facilities,
-    inventory,
-    gold,
-    soulUpgrades,
-    startFacilityUpgrade,
-    villagers,
-    hireVillager,
-  } = useGameStore();
+  const { facilities, inventory, gold, soulUpgrades, villagers } = useGameStore(
+    (s) => ({
+      facilities: s.facilities,
+      inventory: s.inventory,
+      gold: s.gold,
+      soulUpgrades: s.soulUpgrades,
+      villagers: s.villagers,
+    }),
+    shallow,
+  );
+  const { startFacilityUpgrade, hireVillager } = useGameStore(
+    (s) => ({ startFacilityUpgrade: s.startFacilityUpgrade, hireVillager: s.hireVillager }),
+    shallow,
+  );
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {

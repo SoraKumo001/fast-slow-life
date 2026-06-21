@@ -1,18 +1,20 @@
-import { CRAFTER_TIME_REDUCTION } from "../constants";
+import { CRAFTER_TIME_REDUCTION, CRAFT_DEX_FACTOR } from "../constants";
 import { Villager } from "../types/game";
-import { CraftRecipe } from "../types/game";
 
-export function generateCraftJobId(): string {
+export function generateId(): string {
   return Math.random().toString(36).substring(2);
 }
 
+export const generateCraftJobId = generateId;
+
 export function calculateCraftTime(
-  recipe: CraftRecipe,
-  assignedVillager: Villager | undefined,
+  baseTime: number,
+  villager: Villager | null | undefined,
 ): number {
-  const baseTime = recipe.requiredTime;
-  const isCrafter = assignedVillager?.currentJob === "職人";
-  return isCrafter ? Math.max(1, Math.floor(baseTime * CRAFTER_TIME_REDUCTION)) : baseTime;
+  if (!villager) return baseTime;
+  const dexFactor = 1 - (villager.dex - 10) * CRAFT_DEX_FACTOR;
+  const jobFactor = villager.currentJob === "職人" ? CRAFTER_TIME_REDUCTION : 1.0;
+  return Math.max(1, Math.floor(baseTime * dexFactor * jobFactor));
 }
 
 export function findAvailableCrafter(villagers: Villager[]): string | null {

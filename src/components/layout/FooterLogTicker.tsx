@@ -5,7 +5,7 @@ import { useGameStore } from "../../store/gameStore";
 import { GameLog } from "../../types/game";
 
 export const FooterLogTicker: React.FC = () => {
-  const { logs } = useGameStore();
+  const logs = useGameStore((s) => s.logs);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [filter, setFilter] = useState<GameLog["type"] | "all">("all");
 
