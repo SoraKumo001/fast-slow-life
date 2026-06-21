@@ -91,7 +91,7 @@ export function processVillagerGather(
 
       const score =
         baseMultiplier *
-        jobMod *
+        Math.pow(jobMod, 2) *
         statVal *
         (1.0 + v.agi * 0.01) *
         efficiency *

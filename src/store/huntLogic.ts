@@ -52,10 +52,21 @@ export function processVillagerHunt(
   } else {
     const normalMonsters = availableMonsters.filter((m) => !m.isBoss);
     if (normalMonsters.length > 0) {
-      let selectedMonster = normalMonsters[Math.floor(Math.random() * normalMonsters.length)];
+      let selectedMonster = normalMonsters[0];
       let bestTargetRatio = Infinity;
 
+      const isMagicUser = ["魔術師", "僧侶", "薬師"].includes(v.currentJob);
+
       normalMonsters.forEach((monster) => {
+        // 職業（物理/魔法）と敵の防御・攻撃に基づく有利度計算
+        const enemyDefense = isMagicUser
+          ? monster.mdef + monster.int * 0.5
+          : monster.def + monster.vit * 0.5;
+        const combatDifficulty = enemyDefense + monster.atk;
+        // 基準難易度（30）をベースとし、倒しやすく安全な敵ほど advantageMultiplier が小さくなる (0.5 〜 1.5)
+        const advantageMultiplier = Math.max(0.5, Math.min(1.5, combatDifficulty / 30));
+
+        let monsterRatio = 1.0;
         const neededDropRatios = monster.drops
           .map((drop) => {
             const target = targetAmounts[drop.itemId] || 0;
@@ -64,9 +75,15 @@ export function processVillagerHunt(
           })
           .filter((ratio): ratio is number => ratio !== null && ratio < 1);
 
-        if (neededDropRatios.length === 0) return;
+        if (neededDropRatios.length > 0) {
+          monsterRatio = Math.min(...neededDropRatios);
+        } else {
+          // 必要ドロップがない場合、進捗ベースよりも優先度を下げるため 1.5倍 とするが、有利な敵を狙いやすくする
+          monsterRatio = 1.5;
+        }
 
-        let monsterRatio = Math.min(...neededDropRatios);
+        // 有利度を乗算 (有利な敵ほどスコア値が小さくなり優先度が高くなる)
+        monsterRatio *= advantageMultiplier;
 
         const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
           if (idx === i) return false;
