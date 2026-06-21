@@ -310,6 +310,8 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
           "inn",
           "blacksmith",
           "alchemy",
+          "weapon_shop",
+          "pharmacy",
         ];
         for (const facId of upgradeOrder) {
           const fac = state.facilities[facId];

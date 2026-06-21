@@ -176,5 +176,37 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       },
       craftQueue: [],
     },
+    weapon_shop: {
+      id: "weapon_shop",
+      name: "武器屋",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 400,
+        materials: [
+          { itemId: "wood_plank", count: 10 },
+          { itemId: "stone", count: 10 },
+        ],
+      },
+      craftQueue: [],
+    },
+    pharmacy: {
+      id: "pharmacy",
+      name: "薬屋",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 400,
+        materials: [
+          { itemId: "wood_plank", count: 10 },
+          { itemId: "herb", count: 20 },
+        ],
+      },
+      craftQueue: [],
+    },
   };
 }

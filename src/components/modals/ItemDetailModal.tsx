@@ -5,7 +5,7 @@ import { ITEMS, RECIPES, getRecipeForItem } from "../../data/masterData";
 import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
-import { getMarketSellBonus } from "../../utils/marketHelpers";
+import { getSellBonus } from "../../utils/marketHelpers";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
@@ -22,8 +22,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
 
   const maxAmount = Math.floor(inventory[item.id] || 0);
   const [sellAmount, setSellAmount] = useState<number>(1);
-  const marketLevel = facilities.market.level;
-  const bonusRate = getMarketSellBonus(marketLevel);
+  const bonusRate = getSellBonus(item.category, facilities);
 
   // maxAmount の変化に応じて sellAmount を自動調整する
   useEffect(() => {
@@ -37,7 +36,24 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
     }
   }, [maxAmount]);
 
-  const isMarketUnlocked = facilities.market.level > 0;
+  const marketLevel = facilities.market.level;
+  const weaponShopLevel = facilities.weapon_shop?.level || 0;
+  const pharmacyLevel = facilities.pharmacy?.level || 0;
+
+  const isGear = item.category === "gear_weapon" || item.category === "gear_armor";
+  const isConsumable = item.category === "consumable";
+
+  const isSellable =
+    marketLevel > 0 || (isGear && weaponShopLevel > 0) || (isConsumable && pharmacyLevel > 0);
+
+  const shopLabel =
+    isGear && weaponShopLevel > 0
+      ? "武器屋"
+      : isConsumable && pharmacyLevel > 0
+        ? "薬屋"
+        : marketLevel > 0
+          ? "交易所"
+          : "売却";
 
   // このアイテムが使われるレシピを逆引き
   const getUsageRecipes = (itemId: string) => {
@@ -137,7 +153,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
         {/* 価格・用途情報 */}
         <div className="space-y-2.5 text-xs border-t border-slate-800 pt-3.5">
           <div className="flex justify-between font-mono">
-            <span className="text-slate-500">売却価格 (交易所):</span>
+            <span className="text-slate-500">売却価格 ({shopLabel}):</span>
             <div className="text-right">
               <span className="text-amber-400 font-bold">{item.sellPrice} G</span>
               {bonusRate > 0 && (
@@ -215,11 +231,11 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
         </div>
 
         {/* 交易所取引セクション */}
-        {isMarketUnlocked && (
+        {isSellable && (
           <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 flex flex-col gap-3">
             <div className="flex justify-between items-center">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                取引 (交易所)
+                取引 ({shopLabel})
               </span>
               <span className="text-xs font-mono text-slate-400">
                 売却数: <span className="text-amber-400 font-bold">{sellAmount}</span> / {maxAmount}

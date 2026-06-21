@@ -59,6 +59,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       dungeons: result.dungeons,
       inventory: result.inventory,
       targetAmounts: result.targetAmounts,
+      tradeRules: result.tradeRules,
       logs: result.logs,
       currentTier: result.currentTier,
       activeBoss: result.activeBoss,

@@ -197,21 +197,22 @@ describe("gameStore", () => {
     it("自動売却ルールにより、閾値超過分が自動で売却されてゴールドが増加し、在庫が減少すること", () => {
       const store = useGameStore.getState();
 
-      // 交易所をレベル1にする
+      // 薬屋をレベル1にする
       useGameStore.setState((s) => ({
         facilities: {
           ...s.facilities,
-          market: { ...s.facilities.market, level: 1 },
+          pharmacy: { ...s.facilities.pharmacy, level: 1 },
         },
         inventory: {
           ...s.inventory,
-          wood: 15,
+          potion: 15,
         },
+        villagers: [], // 村人によるポーション自動補充を防ぐために空にする
         gold: 100,
         tradeRules: [
           {
             id: "rule_1",
-            itemId: "wood",
+            itemId: "potion",
             type: "sell",
             threshold: 10,
             amount: 5,
@@ -220,16 +221,16 @@ describe("gameStore", () => {
         ],
       }));
 
-      // 木の売却価格は 1G。レベル1はボーナス +0%。
-      // 15 - 10 = 5 個超過。売却制限は 5 なので、5個売却して 5G 獲得。
-      // inventory: 15 -> 10, gold: 100 -> 105
+      // 回復薬の売却価格は 10G。薬屋レベル1はボーナス +20% (計 12G)。
+      // 15 - 10 = 5 個超過。売却制限は 5 なので、5個売却して 60G 獲得。
+      // inventory: 15 -> 10, gold: 100 -> 160
       store.advanceHour();
 
       const state = useGameStore.getState();
-      expect(state.inventory.wood).toBe(10);
-      expect(state.gold).toBe(105);
+      expect(state.inventory.potion).toBe(10);
+      expect(state.gold).toBe(160);
 
-      const tradeLog = state.logs.find((l) => l.message.includes("原木 を 5 個自動売却"));
+      const tradeLog = state.logs.find((l) => l.message.includes("回復薬 を 5 個自動売却（薬屋）"));
       expect(tradeLog).toBeDefined();
     });
 
@@ -317,11 +318,11 @@ describe("gameStore", () => {
           market: { ...s.facilities.market, level: 1 },
         },
         tradeRules: [
-          { id: "rule_1", itemId: "wood", type: "sell", threshold: 10, amount: 5, isEnabled: true },
+          { id: "rule_1", itemId: "wood", type: "buy", threshold: 10, amount: 5, isEnabled: true },
           {
             id: "rule_2",
             itemId: "stone",
-            type: "sell",
+            type: "buy",
             threshold: 10,
             amount: 5,
             isEnabled: true,
@@ -329,7 +330,7 @@ describe("gameStore", () => {
         ],
       }));
 
-      // 3つ目を追加しようとする
+      // 3つ目の購入ルールを追加しようとする
       store.addTradeRule("herb", "buy", 5, 2);
 
       const state = useGameStore.getState();

@@ -1,7 +1,7 @@
 import { ITEMS } from "../../data/masterData";
 import { GameState, GameActions, Item, Villager, TradeRule } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
-import { getMarketSellBonus } from "../../utils/marketHelpers";
+import { getSellBonus } from "../../utils/marketHelpers";
 
 // ヘルパー関数: 魔法職かどうか
 const isMagicJob = (job: string): boolean => {
@@ -74,17 +74,39 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
 
   sellItem: (itemId: string, count: number) => {
     const state = get();
+    const item = ITEMS[itemId];
+    if (!item) return;
+
     const marketLvl = state.facilities.market.level;
-    if (marketLvl === 0) {
-      state.addLog("交易所が建設されていないため売却できません。", "warning");
+    const weaponShopLvl = state.facilities.weapon_shop?.level || 0;
+    const pharmacyLvl = state.facilities.pharmacy?.level || 0;
+
+    const isGear = item.category === "gear_weapon" || item.category === "gear_armor";
+    const isConsumable = item.category === "consumable";
+
+    const isSellable =
+      marketLvl > 0 || (isGear && weaponShopLvl > 0) || (isConsumable && pharmacyLvl > 0);
+
+    if (!isSellable) {
+      if (isGear) {
+        state.addLog("武器屋または交易所が建設されていないため、装備を売却できません。", "warning");
+      } else if (isConsumable) {
+        state.addLog(
+          "薬屋または交易所が建設されていないため、ポーション等を売却できません。",
+          "warning",
+        );
+      } else {
+        state.addLog("交易所が建設されていないため売却できません。", "warning");
+      }
       return;
     }
+
     const currentCount = state.inventory[itemId] || 0;
     const toSell = Math.min(currentCount, count);
     if (toSell <= 0) return;
 
-    const bonusRate = getMarketSellBonus(marketLvl);
-    const basePrice = (ITEMS[itemId]?.sellPrice || 0) * toSell;
+    const bonusRate = getSellBonus(item.category, state.facilities);
+    const basePrice = item.sellPrice * toSell;
     const price = Math.floor(basePrice * (1 + bonusRate));
 
     set((state) => ({
@@ -94,7 +116,7 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
 
     const bonusText = bonusRate > 0 ? ` (ボーナス +${Math.round(bonusRate * 100)}% 適用)` : "";
     state.addLog(
-      `${ITEMS[itemId].name} を ${toSell} 個売却し、${price} G 獲得しました。${bonusText}`,
+      `${item.name} を ${toSell} 個売却し、${price} G 獲得しました。${bonusText}`,
       "info",
     );
   },
@@ -311,16 +333,83 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
 
   addTradeRule: (itemId: string, type: "buy" | "sell", threshold: number, amount: number) => {
     const state = get();
-    const marketLvl = state.facilities.market.level;
-    if (marketLvl === 0) {
-      state.addLog("交易所が建設されていないため、自動取引を設定できません。", "warning");
-      return;
-    }
+    const item = ITEMS[itemId];
+    if (!item) return;
 
-    const maxSlots = marketLvl === 1 ? 2 : marketLvl === 2 ? 4 : marketLvl >= 3 ? 8 : 0;
-    if (state.tradeRules.length >= maxSlots) {
-      state.addLog(`自動取引の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`, "warning");
-      return;
+    const marketLvl = state.facilities.market.level;
+    const weaponShopLvl = state.facilities.weapon_shop?.level || 0;
+    const pharmacyLvl = state.facilities.pharmacy?.level || 0;
+
+    const isGear = item.category === "gear_weapon" || item.category === "gear_armor";
+    const isConsumable = item.category === "consumable";
+
+    const getSlotsForLevel = (lvl: number) => {
+      if (lvl === 1) return 2;
+      if (lvl === 2) return 4;
+      if (lvl >= 3) return 8;
+      return 0;
+    };
+
+    if (type === "buy") {
+      if (marketLvl === 0) {
+        state.addLog("交易所が建設されていないため、自動購入を設定できません。", "warning");
+        return;
+      }
+      const maxSlots = getSlotsForLevel(marketLvl);
+      const currentBuyRules = state.tradeRules.filter((r) => r.type === "buy");
+      if (currentBuyRules.length >= maxSlots) {
+        state.addLog(
+          `交易所が対応できる自動購入の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
+          "warning",
+        );
+        return;
+      }
+    } else if (type === "sell") {
+      if (isGear) {
+        if (weaponShopLvl === 0) {
+          state.addLog("武器屋が建設されていないため、装備の自動売却を設定できません。", "warning");
+          return;
+        }
+        const maxSlots = getSlotsForLevel(weaponShopLvl);
+        const currentGearRules = state.tradeRules.filter((r) => {
+          const rItem = ITEMS[r.itemId];
+          return (
+            r.type === "sell" &&
+            rItem &&
+            (rItem.category === "gear_weapon" || rItem.category === "gear_armor")
+          );
+        });
+        if (currentGearRules.length >= maxSlots) {
+          state.addLog(
+            `武器屋が対応できる自動売却の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
+            "warning",
+          );
+          return;
+        }
+      } else if (isConsumable) {
+        if (pharmacyLvl === 0) {
+          state.addLog("薬屋が建設されていないため、消耗品の自動売却を設定できません。", "warning");
+          return;
+        }
+        const maxSlots = getSlotsForLevel(pharmacyLvl);
+        const currentConsRules = state.tradeRules.filter((r) => {
+          const rItem = ITEMS[r.itemId];
+          return r.type === "sell" && rItem && rItem.category === "consumable";
+        });
+        if (currentConsRules.length >= maxSlots) {
+          state.addLog(
+            `薬屋が対応できる自動売却の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
+            "warning",
+          );
+          return;
+        }
+      } else {
+        state.addLog(
+          "このアイテムは自動売却（自動販売）に対応していません（装備品または消耗品のみ設定可能です）。",
+          "warning",
+        );
+        return;
+      }
     }
 
     const newRule = {
@@ -336,7 +425,7 @@ export const createInventoryActions = (set: StoreSet, get: StoreGet) => ({
       tradeRules: [...state.tradeRules, newRule],
     }));
 
-    state.addLog(`自動取引ルール（${ITEMS[itemId]?.name || itemId}）を追加しました。`, "info");
+    state.addLog(`自動取引ルール（${item.name}）を追加しました。`, "info");
   },
 
   updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => {

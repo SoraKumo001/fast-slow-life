@@ -24,9 +24,13 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
     "武器や防具などの装備品をクラフトできます。強力な装備を作って村人のステータスを強化しましょう。",
   alchemy: "薬草から回復薬を調合したり、魔法石からより強力なポーションやエリクサーを生産できます。",
   market:
-    "倉庫内のアイテム詳細画面から、素材や不要になった装備を売却してゴールドを入手できるようになります。",
+    "倉庫内のアイテム詳細画面から、素材や不要になった装備を売却してゴールドを入手できるようになります。また、自動購入を設定できます。",
   guild:
     "新しい冒険者（村人）を雇用して開拓の効率を上げられます。レベルアップで最大10人まで雇用枠が広がります。",
+  weapon_shop:
+    "武器・防具の専門店です。建設すると武器・防具の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。また、装備の自動売却を設定できます。",
+  pharmacy:
+    "ポーションなどの消耗品専門店です。建設するとポーション等の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。また、消耗品の自動売却を設定できます。",
 };
 
 export const FacilityList: React.FC = () => {
@@ -42,7 +46,6 @@ export const FacilityList: React.FC = () => {
 
   // 自動取引入力用State
   const [tradeItemId, setTradeItemId] = useState("");
-  const [tradeType, setTradeType] = useState<"buy" | "sell">("sell");
   const [tradeThreshold, setTradeThreshold] = useState<number>(10);
   const [tradeAmount, setTradeAmount] = useState<number>(5);
 
@@ -53,7 +56,18 @@ export const FacilityList: React.FC = () => {
     <Panel title="村の施設・クラフト" icon={<Home className="w-5 h-5 text-sky-400" />}>
       {/* 施設一覧 */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
-        {(["inn", "market", "workshop", "blacksmith", "alchemy", "guild"] as const)
+        {(
+          [
+            "inn",
+            "market",
+            "workshop",
+            "blacksmith",
+            "alchemy",
+            "guild",
+            "weapon_shop",
+            "pharmacy",
+          ] as const
+        )
           .map((id) => facilities[id])
           .filter(Boolean)
           .map((fac) => {
@@ -316,17 +330,46 @@ export const FacilityList: React.FC = () => {
                       </div>
                     )}
 
-                    {/* 交易所（Trading Post）自動取引設定UI */}
-                    {fac.id === "market" &&
+                    {/* 自動取引（交易所・武器屋・薬屋）設定UI */}
+                    {(fac.id === "market" || fac.id === "weapon_shop" || fac.id === "pharmacy") &&
                       (() => {
                         const maxSlots =
                           fac.level === 1 ? 2 : fac.level === 2 ? 4 : fac.level >= 3 ? 8 : 0;
-                        const usedSlots = tradeRules ? tradeRules.length : 0;
+
+                        // 施設ごとの対象ルールをフィルタリング
+                        const filteredRules = (tradeRules || []).filter((rule) => {
+                          const item = ITEMS[rule.itemId];
+                          if (!item) return false;
+                          if (fac.id === "market") {
+                            return rule.type === "buy";
+                          }
+                          if (fac.id === "weapon_shop") {
+                            return (
+                              rule.type === "sell" &&
+                              (item.category === "gear_weapon" || item.category === "gear_armor")
+                            );
+                          }
+                          if (fac.id === "pharmacy") {
+                            return rule.type === "sell" && item.category === "consumable";
+                          }
+                          return false;
+                        });
+
+                        const usedSlots = filteredRules.length;
+                        const shopName =
+                          fac.id === "market"
+                            ? "交易所"
+                            : fac.id === "weapon_shop"
+                              ? "武器屋"
+                              : "薬屋";
+
                         return (
                           <div className="space-y-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800">
                             {/* スロット情報 */}
                             <div className="flex justify-between items-center text-xs font-mono text-slate-300">
-                              <span className="font-semibold text-slate-200">自動取引スロット</span>
+                              <span className="font-semibold text-slate-200">
+                                自動取引スロット ({shopName})
+                              </span>
                               <span
                                 className={`${usedSlots >= maxSlots ? "text-amber-500 font-bold" : "text-slate-400"}`}
                               >
@@ -335,9 +378,9 @@ export const FacilityList: React.FC = () => {
                             </div>
 
                             {/* ルール一覧 */}
-                            {tradeRules && tradeRules.length > 0 ? (
+                            {filteredRules.length > 0 ? (
                               <div className="space-y-2">
-                                {tradeRules.map((rule) => {
+                                {filteredRules.map((rule) => {
                                   const item = ITEMS[rule.itemId];
                                   if (!item) return null;
                                   return (
@@ -411,11 +454,24 @@ export const FacilityList: React.FC = () => {
                                     >
                                       <option value="">アイテムを選択</option>
                                       {Object.values(ITEMS)
-                                        .filter(
-                                          (item) =>
-                                            item.category !== "gear_weapon" &&
-                                            item.category !== "gear_armor",
-                                        )
+                                        .filter((item) => {
+                                          if (fac.id === "market") {
+                                            return (
+                                              item.category !== "gear_weapon" &&
+                                              item.category !== "gear_armor"
+                                            );
+                                          }
+                                          if (fac.id === "weapon_shop") {
+                                            return (
+                                              item.category === "gear_weapon" ||
+                                              item.category === "gear_armor"
+                                            );
+                                          }
+                                          if (fac.id === "pharmacy") {
+                                            return item.category === "consumable";
+                                          }
+                                          return false;
+                                        })
                                         .map((item) => (
                                           <option key={item.id} value={item.id}>
                                             {item.name}
@@ -430,23 +486,24 @@ export const FacilityList: React.FC = () => {
                                       取引タイプ
                                     </label>
                                     <select
-                                      value={tradeType}
-                                      onChange={(e) =>
-                                        setTradeType(e.target.value as "buy" | "sell")
-                                      }
-                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-slate-200 focus:outline-none focus:border-indigo-500/80 cursor-pointer"
+                                      disabled
+                                      value={fac.id === "market" ? "buy" : "sell"}
+                                      className="bg-slate-950 border border-slate-800 rounded px-2 py-1.5 text-slate-200 focus:outline-none cursor-not-allowed opacity-80"
                                     >
-                                      <option value="sell">売却 (超過分を売る)</option>
-                                      <option value="buy">購入 (不足分を買う)</option>
+                                      {fac.id === "market" ? (
+                                        <option value="buy">購入 (不足分を買う)</option>
+                                      ) : (
+                                        <option value="sell">売却 (超過分を売る)</option>
+                                      )}
                                     </select>
                                   </div>
 
                                   {/* 閾値 */}
                                   <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-slate-400 font-medium">
-                                      {tradeType === "sell"
-                                        ? "閾値 (この個数を超過時)"
-                                        : "閾値 (この個数未満時)"}
+                                      {fac.id === "market"
+                                        ? "閾値 (この個数未満時)"
+                                        : "閾値 (この個数を超過時)"}
                                     </label>
                                     <input
                                       type="number"
@@ -464,16 +521,16 @@ export const FacilityList: React.FC = () => {
                                   {/* 取引量 */}
                                   <div className="flex flex-col gap-1">
                                     <label className="text-[10px] text-slate-400 font-medium">
-                                      {tradeType === "sell" ? "売却制限数 (0で無制限)" : "購入個数"}
+                                      {fac.id === "market" ? "購入個数" : "売却制限数 (0で無制限)"}
                                     </label>
                                     <input
                                       type="number"
-                                      min="1"
+                                      min={fac.id === "market" ? "1" : "0"}
                                       value={tradeAmount}
                                       onChange={(e) =>
                                         setTradeAmount(
                                           Math.max(
-                                            tradeType === "sell" ? 0 : 1,
+                                            fac.id === "market" ? 1 : 0,
                                             parseInt(e.target.value) || 0,
                                           ),
                                         )
@@ -487,9 +544,10 @@ export const FacilityList: React.FC = () => {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     if (!tradeItemId) return;
+                                    const typeToUse = fac.id === "market" ? "buy" : "sell";
                                     addTradeRule(
                                       tradeItemId,
-                                      tradeType,
+                                      typeToUse,
                                       tradeThreshold,
                                       tradeAmount,
                                     );

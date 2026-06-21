@@ -41,7 +41,6 @@ export const ITEMS: Record<string, Item> = {
     category: "herb",
     sellPrice: 2,
     difficulty: 1.5,
-    initialCount: 2,
     description: "回復薬の原料となる草。",
   },
   mana_stone: {

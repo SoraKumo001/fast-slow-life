@@ -6,7 +6,15 @@ import {
   TIER_LIMIT_DAYS,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { GameState, Villager, Facility, DungeonArea, GameLog, FacilityType } from "../types/game";
+import {
+  GameState,
+  Villager,
+  Facility,
+  DungeonArea,
+  GameLog,
+  FacilityType,
+  TradeRule,
+} from "../types/game";
 import {
   getInitialVillagers,
   getInitialFacilities,
@@ -40,6 +48,7 @@ export interface ResetResult {
   dungeons: DungeonArea[];
   inventory: Record<string, number>;
   targetAmounts: Record<string, number>;
+  tradeRules: TradeRule[];
   logs: GameLog[];
   currentTier: number;
   activeBoss: null;
@@ -104,6 +113,7 @@ export function resetGameHelper(params: {
     dungeons: getInitialDungeons(),
     inventory: createInitialInventory(startFood),
     targetAmounts: Object.keys(ITEMS).reduce((acc, key) => ({ ...acc, [key]: 0 }), {}),
+    tradeRules: [],
     logs,
     currentTier: 1,
     activeBoss: null,
