@@ -226,6 +226,7 @@ export interface GameActions {
   changeVillagerJob: (id: string, job: JobType) => void;
   equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => void;
   unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
+  autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType) => void;
   setTargetAmount: (itemId: string, count: number) => void;

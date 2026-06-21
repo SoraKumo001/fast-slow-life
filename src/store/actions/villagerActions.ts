@@ -52,6 +52,7 @@ export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
         villagers: result.villagers,
         gold: result.gold,
       });
+      get().autoEquipAll();
     }
   },
 
@@ -70,6 +71,7 @@ export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
         gold: result.gold,
         villagers: result.villagers,
       });
+      get().autoEquipAll();
       get().dispatchIdleVillagers();
     }
   },

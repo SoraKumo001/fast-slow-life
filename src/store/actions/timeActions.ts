@@ -101,6 +101,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
         : {}),
     });
 
+    get().autoEquipAll();
     get().dispatchIdleVillagers();
   },
 });

@@ -44,6 +44,35 @@ describe("gameStore", () => {
     // 攻撃力が低い場合や参加者がいない場合は自然回復する
     expect(state.activeBoss).not.toBeNull();
   });
+
+  it("自動装備 (autoEquipAll) が正しく機能すること", () => {
+    useGameStore.setState((s) => ({
+      villagers: s.villagers.map((v, idx) => {
+        if (idx === 0) return { ...v, currentJob: "戦士", weaponId: "none", armorId: "none" };
+        if (idx === 1) return { ...v, currentJob: "魔術師", weaponId: "none", armorId: "none" };
+        return { ...v, weaponId: "none", armorId: "none" };
+      }),
+      inventory: {
+        ...s.inventory,
+        iron_sword: 1,
+        wooden_staff: 1,
+        mythril_staff: 1,
+      },
+    }));
+
+    useGameStore.getState().autoEquipAll();
+
+    const updatedState = useGameStore.getState();
+    const updatedWarrior = updatedState.villagers[0];
+    const updatedMage = updatedState.villagers[1];
+
+    expect(updatedWarrior.weaponId).toBe("iron_sword");
+    expect(updatedMage.weaponId).toBe("mythril_staff");
+
+    expect(updatedState.inventory.iron_sword).toBe(0);
+    expect(updatedState.inventory.mythril_staff).toBe(0);
+    expect(updatedState.inventory.wooden_staff).toBe(1);
+  });
 });
 
 describe("master data references", () => {
