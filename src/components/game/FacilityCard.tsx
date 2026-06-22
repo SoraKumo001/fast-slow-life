@@ -42,7 +42,6 @@ interface FacilityCardProps {
   onToggleExpand: (id: string) => void;
   onStartUpgrade: (facilityId: FacilityType) => void;
   onHireVillager: () => void;
-  onOpenTradeCaravan?: () => void;
 }
 
 export const FacilityCard: React.FC<FacilityCardProps> = ({
@@ -56,7 +55,6 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   onToggleExpand,
   onStartUpgrade,
   onHireVillager,
-  onOpenTradeCaravan,
 }) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const isUnlocked = fac.level > 0;
@@ -186,20 +184,6 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             <p className="text-xs text-slate-300 leading-relaxed font-sans bg-slate-900/20 p-2.5 rounded-lg border border-slate-800/40">
               {FACILITY_DESCRIPTIONS[fac.id]}
             </p>
-
-            {fac.id === "market" && isUnlocked && onOpenTradeCaravan && (
-              <div className="pt-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onOpenTradeCaravan();
-                  }}
-                  className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition cursor-pointer"
-                >
-                  交易馬車の管理を開く
-                </button>
-              </div>
-            )}
 
             {canUpgrade && fac.upgradeTimeLeft === 0 && (
               <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
@@ -342,9 +326,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
               />
             )}
 
-            {(fac.id === "weapon_shop" || fac.id === "pharmacy") && (
-              <TradeRulePanel fac={fac} tradeRules={tradeRules} />
-            )}
+            {fac.id === "market" && isUnlocked && <TradeRulePanel tradeRules={tradeRules} />}
           </div>
         )}
       </div>

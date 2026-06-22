@@ -35,7 +35,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
   facilities,
 }) => {
   const poolTotalValue = Object.entries(v.pool || {}).reduce((sum, [itemId, count]) => {
-    const price = ITEMS[itemId]?.sellPrice || 0;
+    const price = (ITEMS[itemId]?.basePrice || 0) * 2;
     return sum + price * count;
   }, 0);
 
@@ -217,7 +217,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
                     >
                       <span>{item?.name || itemId}</span>
                       <span className="text-slate-400">
-                        x{count} (計 {(item?.sellPrice || 0) * count}G)
+                        x{count} (計 {(item?.basePrice || 0) * 2 * count}G)
                       </span>
                     </div>
                   );

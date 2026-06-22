@@ -2,10 +2,10 @@ import { Target } from "lucide-react";
 import React, { useState, useEffect } from "react";
 
 import { ITEMS, RECIPES, getRecipeForItem } from "../../data/masterData";
-import { useInventory, useFacilities, useInventoryActions } from "../../hooks";
+import { useGameStore } from "../../store/gameStore";
 import { Item, CraftRecipe } from "../../types/game";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
-import { getSellBonus } from "../../utils/marketHelpers";
+import { getMarketSellBonus } from "../../utils/marketHelpers";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
@@ -15,49 +15,38 @@ interface ItemDetailModalProps {
   onClose: () => void;
 }
 
-export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose }) => {
-  const { inventory, targetAmounts, tradeRules } = useInventory();
-  const facilities = useFacilities();
-  const { setTargetAmount, sellItem, addTradeRule, deleteTradeRule, toggleTradeRule } =
-    useInventoryActions();
+export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialItem, onClose }) => {
+  const [item, setItem] = useState<Item>(initialItem);
 
-  const maxAmount = Math.floor(inventory[item.id] || 0);
-  const [sellAmount, setSellAmount] = useState<number>(1);
-  const bonusRate = getSellBonus(item.category, facilities);
+  useEffect(() => {
+    setItem(initialItem);
+  }, [initialItem]);
+
+  const state = useGameStore();
+  const {
+    inventory,
+    targetAmounts,
+    tradeRules,
+    towns,
+    facilities,
+    setTargetAmount,
+    addTradeRule,
+    deleteTradeRule,
+    toggleTradeRule,
+  } = state;
+
   const [autoSellThreshold, setAutoSellThreshold] = useState<number>(10);
 
   const currentRule = (tradeRules || []).find((r) => r.itemId === item.id && r.type === "sell");
 
-  // maxAmount の変化に応じて sellAmount を自動調整する
-  useEffect(() => {
-    if (maxAmount === 0) {
-      setSellAmount(0);
-    } else {
-      setSellAmount((prev) => {
-        if (prev === 0) return 1;
-        return Math.min(prev, maxAmount);
-      });
-    }
-  }, [maxAmount]);
+  const marketLevel = facilities.market?.level || 0;
+  const isSellable = marketLevel > 0;
 
-  const marketLevel = facilities.market.level;
-  const weaponShopLevel = facilities.weapon_shop?.level || 0;
-  const pharmacyLevel = facilities.pharmacy?.level || 0;
-
-  const isGear = item.category === "gear_weapon" || item.category === "gear_armor";
-  const isConsumable = item.category === "consumable";
-
-  const isSellable =
-    marketLevel > 0 || (isGear && weaponShopLevel > 0) || (isConsumable && pharmacyLevel > 0);
-
-  const shopLabel =
-    isGear && weaponShopLevel > 0
-      ? "武器屋"
-      : isConsumable && pharmacyLevel > 0
-        ? "薬屋"
-        : marketLevel > 0
-          ? "交易所"
-          : "売却";
+  // コモレビの村を基準とした自動取引の見込み価格計算
+  const marketBonus = getMarketSellBonus(marketLevel);
+  const komorebi = towns.find((t) => t.id === "komorebi");
+  const friendshipBonus = komorebi ? (komorebi.level - 1) * 0.05 : 0;
+  const autoSellPrice = Math.floor(item.basePrice * (1 + marketBonus + friendshipBonus));
 
   // このアイテムが使われるレシピを逆引き
   const getUsageRecipes = (itemId: string) => {
@@ -157,9 +146,9 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
         {/* 価格・用途情報 */}
         <div className="space-y-2.5 text-xs border-t border-slate-800 pt-3.5">
           <div className="flex justify-between font-mono">
-            <span className="text-slate-500">売却価格 ({shopLabel}):</span>
+            <span className="text-slate-500">基本価格:</span>
             <div className="text-right">
-              <span className="text-amber-400 font-bold">{item.sellPrice} G</span>
+              <span className="text-amber-400 font-bold">{item.basePrice} G</span>
             </div>
           </div>
 
@@ -201,11 +190,25 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
               <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1">
                 <span className="font-semibold text-slate-400 block mb-1">クラフトレシピ:</span>
                 <div className="space-y-0.5 text-slate-300 font-mono text-[11px]">
-                  {recipe.requiredItems.map((req: { itemId: string; count: number }) => (
-                    <p key={req.itemId}>
-                      • {ITEMS[req.itemId]?.name} x {req.count}
-                    </p>
-                  ))}
+                  {recipe.requiredItems.map((req: { itemId: string; count: number }) => {
+                    const reqItem = ITEMS[req.itemId];
+                    return (
+                      <p key={req.itemId}>
+                        •{" "}
+                        {reqItem ? (
+                          <span
+                            onClick={() => setItem(reqItem)}
+                            className="text-sky-400 hover:text-sky-300 hover:underline cursor-pointer font-bold"
+                          >
+                            {reqItem.name}
+                          </span>
+                        ) : (
+                          req.itemId
+                        )}{" "}
+                        x {req.count}
+                      </p>
+                    );
+                  })}
                   <p className="text-slate-500 mt-1">所要時間: {recipe.requiredTime}時間</p>
                 </div>
               </div>
@@ -220,7 +223,12 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
               </span>
               <div className="flex flex-wrap gap-1.5 mt-1">
                 {getUsageRecipes(item.id).map((r) => (
-                  <Badge key={r.id} variant="default">
+                  <Badge
+                    key={r.id}
+                    variant="default"
+                    className="hover:bg-slate-800 hover:text-sky-400 border border-transparent hover:border-sky-500/20 cursor-pointer transition"
+                    onClick={() => setItem(r)}
+                  >
                     {r.name}
                   </Badge>
                 ))}
@@ -229,175 +237,102 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item, onClose 
           )}
         </div>
 
-        {/* 交易所取引セクション */}
-        {isSellable && (
-          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 flex flex-col gap-3">
+        {/* 自動交易設定セクション */}
+        {isSellable ? (
+          <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                取引 ({shopLabel})
-              </span>
-              <span className="text-xs font-mono text-slate-400">
-                売却数: <span className="text-amber-400 font-bold">{sellAmount}</span> / {maxAmount}
+                自動交易（売却）設定
               </span>
             </div>
 
-            {/* スライダー */}
-            <div className="flex items-center gap-2">
-              <input
-                type="range"
-                min={maxAmount > 0 ? 1 : 0}
-                max={maxAmount}
-                value={sellAmount}
-                onChange={(e) => setSellAmount(Number(e.target.value))}
-                disabled={maxAmount === 0}
-                className="flex-1 h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              />
-            </div>
-
-            {/* ショートカットと売却ボタン */}
-            <div className="flex items-center justify-between gap-2 border-t border-slate-900/60 pt-2">
-              <div className="flex gap-1">
-                <Button
-                  onClick={() => setSellAmount(maxAmount > 0 ? 1 : 0)}
-                  disabled={maxAmount === 0}
-                  variant="secondary"
-                  size="xs"
-                >
-                  1
-                </Button>
-                <Button
-                  onClick={() => setSellAmount(Math.max(1, Math.floor(maxAmount / 2)))}
-                  disabled={maxAmount < 2}
-                  variant="secondary"
-                  size="xs"
-                >
-                  1/2
-                </Button>
-                <Button
-                  onClick={() => setSellAmount(maxAmount)}
-                  disabled={maxAmount === 0}
-                  variant="secondary"
-                  size="xs"
-                >
-                  MAX
-                </Button>
-              </div>
-
-              <Button
-                onClick={() => {
-                  sellItem(item.id, sellAmount);
-                }}
-                disabled={sellAmount <= 0}
-                variant="warning"
-                size="sm"
-                className="flex items-center gap-1"
-              >
-                <span>売却</span>
-                <span className="font-bold font-mono">({sellAmount * item.sellPrice} G)</span>
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* 自動売却設定セクション */}
-        {((isGear && weaponShopLevel > 0) || (isConsumable && pharmacyLevel > 0)) &&
-          (() => {
-            const autoSellPrice = Math.floor(item.sellPrice * (1 + bonusRate));
-            return (
-              <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                    自動売却設定 ({isGear ? "武器屋" : "薬屋"})
+            {currentRule ? (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-slate-300 leading-normal">
+                    所持数 <strong className="text-amber-500">{currentRule.threshold}</strong>{" "}
+                    個超過時、自動で交易馬車へ
+                    <br />
+                    <span className="text-[10px] text-slate-400">
+                      (コモレビ村への輸出目安:{" "}
+                      <strong className="text-amber-500 font-bold">{autoSellPrice} G</strong> / 個)
+                    </span>
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                      currentRule.isEnabled
+                        ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20"
+                        : "bg-slate-800 text-slate-500 border border-slate-700"
+                    }`}
+                  >
+                    {currentRule.isEnabled ? "有効中" : "無効化中"}
                   </span>
                 </div>
 
-                {currentRule ? (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center text-xs font-mono">
-                      <span className="text-slate-300 leading-normal">
-                        所持数 <strong className="text-amber-500">{currentRule.threshold}</strong>{" "}
-                        個超過時、1個自動売却
-                        <br />
-                        <span className="text-[10px] text-slate-400">
-                          (獲得ゴールド:{" "}
-                          <strong className="text-amber-500 font-bold">
-                            {autoSellPrice} G
-                          </strong> /
-                          個)
-                        </span>
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          currentRule.isEnabled
-                            ? "bg-emerald-600/20 text-emerald-400 border border-emerald-500/20"
-                            : "bg-slate-800 text-slate-500 border border-slate-700"
-                        }`}
-                      >
-                        {currentRule.isEnabled ? "有効中" : "無効化中"}
-                      </span>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={() => toggleTradeRule(currentRule.id)}
-                        variant={currentRule.isEnabled ? "secondary" : "custom"}
-                        size="sm"
-                        className={
-                          currentRule.isEnabled
-                            ? "flex-1 font-bold"
-                            : "bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 font-bold flex-1"
-                        }
-                      >
-                        {currentRule.isEnabled ? "一時無効" : "有効化"}
-                      </Button>
-                      <Button
-                        onClick={() => deleteTradeRule(currentRule.id)}
-                        variant="danger"
-                        size="sm"
-                        className="flex-1 font-bold"
-                      >
-                        設定削除
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center gap-2">
-                      <label className="text-xs text-slate-400">
-                        閾値 (この個数を超過時に売却):
-                      </label>
-                      <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-2 py-1">
-                        <input
-                          type="number"
-                          min="0"
-                          value={autoSellThreshold}
-                          onChange={(e) =>
-                            setAutoSellThreshold(Math.max(0, parseInt(e.target.value) || 0))
-                          }
-                          className="w-16 bg-transparent text-xs font-mono text-right text-amber-500 font-bold focus:outline-none"
-                        />
-                        <span className="text-[10px] text-slate-500 font-mono">個</span>
-                      </div>
-                    </div>
-
-                    <Button
-                      onClick={() => {
-                        addTradeRule(item.id, "sell", autoSellThreshold);
-                      }}
-                      variant="custom"
-                      size="sm"
-                      className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center justify-center gap-1.5"
-                    >
-                      <span>自動売却を設定する</span>
-                      <span className="text-[11px] text-amber-300 font-mono">
-                        (1個あたり: {autoSellPrice} G)
-                      </span>
-                    </Button>
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => toggleTradeRule(currentRule.id)}
+                    variant={currentRule.isEnabled ? "secondary" : "custom"}
+                    size="sm"
+                    className={
+                      currentRule.isEnabled
+                        ? "flex-1 font-bold"
+                        : "bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/20 text-emerald-400 font-bold flex-1"
+                    }
+                  >
+                    {currentRule.isEnabled ? "一時無効" : "有効化"}
+                  </Button>
+                  <Button
+                    onClick={() => deleteTradeRule(currentRule.id)}
+                    variant="danger"
+                    size="sm"
+                    className="flex-1 font-bold"
+                  >
+                    設定削除
+                  </Button>
+                </div>
               </div>
-            );
-          })()}
+            ) : (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center gap-2">
+                  <label className="text-xs text-slate-400">
+                    閾値 (この個数を超過時に交易に出す):
+                  </label>
+                  <div className="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded px-2 py-1">
+                    <input
+                      type="number"
+                      min="0"
+                      value={autoSellThreshold}
+                      onChange={(e) =>
+                        setAutoSellThreshold(Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      className="w-16 bg-transparent text-xs font-mono text-right text-amber-500 font-bold focus:outline-none"
+                    />
+                    <span className="text-[10px] text-slate-500 font-mono">個</span>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() => {
+                    addTradeRule(item.id, "sell", autoSellThreshold);
+                  }}
+                  variant="custom"
+                  size="sm"
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold flex items-center justify-center gap-1.5"
+                >
+                  <span>自動交易を設定する</span>
+                  <span className="text-[11px] text-amber-300 font-mono">
+                    (目安: {autoSellPrice} G)
+                  </span>
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-[11px] text-slate-500 text-center py-2 border border-slate-850 bg-slate-950/20 rounded">
+            交易所が建設された後、自動交易売却を設定できます。
+          </div>
+        )}
       </div>
     </Modal>
   );

@@ -1,7 +1,6 @@
 import { ITEMS } from "../../data/masterData";
 import { TradeRule, StoreSet, StoreGet } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
-import { getSlotsForLevel } from "../../utils/marketHelpers";
 
 export const createTradeRuleActions = (set: StoreSet, get: StoreGet) => ({
   addTradeRule: (itemId: string, type: "sell", threshold: number) => {
@@ -9,58 +8,16 @@ export const createTradeRuleActions = (set: StoreSet, get: StoreGet) => ({
     const item = ITEMS[itemId];
     if (!item) return;
 
-    const weaponShopLvl = state.facilities.weapon_shop?.level || 0;
-    const pharmacyLvl = state.facilities.pharmacy?.level || 0;
+    const marketLvl = state.facilities.market?.level || 0;
+    if (marketLvl === 0) {
+      state.addLog("交易所が建設されていないため、自動交易を設定できません。", "warning");
+      return;
+    }
 
-    const isGear = item.category === "gear_weapon" || item.category === "gear_armor";
-    const isConsumable = item.category === "consumable";
-
-    if (type === "sell") {
-      if (isGear) {
-        if (weaponShopLvl === 0) {
-          state.addLog("武器屋が建設されていないため、装備の自動売却を設定できません。", "warning");
-          return;
-        }
-        const maxSlots = getSlotsForLevel(weaponShopLvl);
-        const currentGearRules = state.tradeRules.filter((r) => {
-          const rItem = ITEMS[r.itemId];
-          return (
-            r.type === "sell" &&
-            rItem &&
-            (rItem.category === "gear_weapon" || rItem.category === "gear_armor")
-          );
-        });
-        if (currentGearRules.length >= maxSlots) {
-          state.addLog(
-            `武器屋が対応できる自動売却の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
-            "warning",
-          );
-          return;
-        }
-      } else if (isConsumable) {
-        if (pharmacyLvl === 0) {
-          state.addLog("薬屋が建設されていないため、消耗品の自動売却を設定できません。", "warning");
-          return;
-        }
-        const maxSlots = getSlotsForLevel(pharmacyLvl);
-        const currentConsRules = state.tradeRules.filter((r) => {
-          const rItem = ITEMS[r.itemId];
-          return r.type === "sell" && rItem && rItem.category === "consumable";
-        });
-        if (currentConsRules.length >= maxSlots) {
-          state.addLog(
-            `薬屋が対応できる自動売却の設定枠（最大 ${maxSlots} 枠）が上限に達しています。`,
-            "warning",
-          );
-          return;
-        }
-      } else {
-        state.addLog(
-          "このアイテムは自動売却（自動販売）に対応していません（装備品または消耗品のみ設定可能です）。",
-          "warning",
-        );
-        return;
-      }
+    const exists = state.tradeRules.some((r) => r.itemId === itemId && r.type === type);
+    if (exists) {
+      state.addLog(`すでに ${item.name} の自動交易ルールが存在します。`, "warning");
+      return;
     }
 
     const newRule: TradeRule = {
@@ -75,7 +32,7 @@ export const createTradeRuleActions = (set: StoreSet, get: StoreGet) => ({
       tradeRules: [...state.tradeRules, newRule],
     }));
 
-    state.addLog(`自動取引ルール（${item.name}）を追加しました。`, "info");
+    state.addLog(`自動交易ルール（${item.name}）を追加しました。`, "info");
   },
 
   updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => {

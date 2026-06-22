@@ -212,17 +212,12 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         }
         useGameStore.setState({ targetAmounts: newTargets });
 
-        // 2. 余剰素材の自動売却 (ゴールド調達、交易所が建設済みの場合のみ)
+        // 2. 余剰素材の自動交易ルールの設定 (交易所が建設済みの場合のみ)
         if (state.facilities.market.level > 0) {
-          Object.entries(state.inventory).forEach(([itemId, count]) => {
-            const target = newTargets[itemId] || 0;
-            const excess = count - target;
-            if (excess > 0 && itemId !== "potion" && itemId !== "elixir") {
-              // 余剰分のうち半分を売却して、安定したゴールド源とする
-              const toSell = Math.ceil(excess / 2);
-              if (toSell > 0) {
-                store.sellItem(itemId, toSell);
-              }
+          Object.entries(newTargets).forEach(([itemId, target]) => {
+            const hasRule = state.tradeRules.some((r) => r.itemId === itemId && r.type === "sell");
+            if (!hasRule && itemId !== "potion" && itemId !== "elixir") {
+              store.addTradeRule(itemId, "sell", target);
             }
           });
         }

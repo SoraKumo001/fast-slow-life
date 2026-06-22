@@ -46,7 +46,9 @@ export const StatusBar: React.FC = () => {
 
       <span className="flex items-center gap-1.5 shrink-0">
         <span className="text-slate-500">資産</span>
-        <span className="text-amber-400 font-bold font-mono">{gold.toLocaleString()} G</span>
+        <span className="text-amber-400 font-bold font-mono">
+          {Math.floor(gold).toLocaleString()} G
+        </span>
       </span>
 
       <span className="w-px h-3 bg-slate-800 shrink-0" />

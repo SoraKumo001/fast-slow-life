@@ -65,14 +65,14 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
   const innLvl = facilities.inn?.level || 1;
 
   const poolTotalValue = Object.entries(v.pool || {}).reduce((sum, [itemId, count]) => {
-    const price = ITEMS[itemId]?.sellPrice || 0;
+    const price = ITEMS[itemId]?.basePrice || 0;
     return sum + price * count;
   }, 0);
 
   let dailyFoodCost = 0;
   if (v.currentJob !== "無職") {
     if (v.activeFoodBuffId) {
-      dailyFoodCost = ITEMS[v.activeFoodBuffId]?.sellPrice || 2;
+      dailyFoodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;
     } else {
       dailyFoodCost = 2;
     }

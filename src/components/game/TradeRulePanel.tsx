@@ -1,8 +1,6 @@
 import React from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { Facility } from "../../types/game";
-import { getSlotsForLevel } from "../../utils/marketHelpers";
 
 interface TradeRule {
   id: string;
@@ -13,39 +11,20 @@ interface TradeRule {
 }
 
 interface TradeRulePanelProps {
-  fac: Facility;
   tradeRules: TradeRule[];
 }
 
-export const TradeRulePanel: React.FC<TradeRulePanelProps> = ({ fac, tradeRules }) => {
-  const maxSlots = getSlotsForLevel(fac.level);
-
+export const TradeRulePanel: React.FC<TradeRulePanelProps> = ({ tradeRules }) => {
   const filteredRules = (tradeRules || []).filter((rule) => {
     const item = ITEMS[rule.itemId];
-    if (!item) return false;
-    if (fac.id === "weapon_shop") {
-      return (
-        rule.type === "sell" && (item.category === "gear_weapon" || item.category === "gear_armor")
-      );
-    }
-    if (fac.id === "pharmacy") {
-      return rule.type === "sell" && item.category === "consumable";
-    }
-    return false;
+    return rule.type === "sell" && item !== undefined;
   });
-
-  const usedSlots = filteredRules.length;
-  const shopName = fac.id === "weapon_shop" ? "武器屋" : "薬屋";
 
   return (
     <div className="space-y-4 bg-slate-900/40 p-4 rounded-lg border border-slate-800">
       <div className="flex justify-between items-center text-xs font-mono text-slate-300">
-        <span className="font-semibold text-slate-200">自動取引スロット ({shopName})</span>
-        <span
-          className={`${usedSlots >= maxSlots ? "text-amber-500 font-bold" : "text-slate-400"}`}
-        >
-          {usedSlots} / {maxSlots} スロット使用中
-        </span>
+        <span className="font-semibold text-slate-200">自動交易（売却）設定ルール一覧</span>
+        <span className="text-slate-400">設定数: {filteredRules.length} 件</span>
       </div>
 
       {filteredRules.length > 0 ? (
@@ -61,7 +40,7 @@ export const TradeRulePanel: React.FC<TradeRulePanelProps> = ({ fac, tradeRules 
                 <div className="flex flex-col gap-0.5">
                   <span className="font-bold text-slate-200">{item.name}</span>
                   <span className="text-[10px] text-slate-400 font-mono">
-                    {`所持数 ${rule.threshold} 個超過時、1個自動売却`}
+                    {`所持数 ${rule.threshold} 個超過時、自動で交易馬車に積載`}
                   </span>
                 </div>
                 <span
@@ -78,7 +57,7 @@ export const TradeRulePanel: React.FC<TradeRulePanelProps> = ({ fac, tradeRules 
           })}
         </div>
       ) : (
-        <p className="text-[10px] text-slate-500 italic">自動取引ルールが設定されていません。</p>
+        <p className="text-[10px] text-slate-500 italic">自動交易ルールが設定されていません。</p>
       )}
     </div>
   );

@@ -24,7 +24,7 @@ export interface Item {
   id: string;
   name: string;
   category: ItemCategory;
-  sellPrice: number;
+  basePrice: number;
   difficulty: number; // 採取難易度（高いほどスコア低下に影響）
   description?: string;
   initialCount?: number;
@@ -298,7 +298,6 @@ export interface GameActions {
   togglePause: () => void;
   setPlaySpeed: (speed: "normal" | "fast" | "super") => void;
   addLog: (message: string, type: GameLog["type"]) => void;
-  sellItem: (itemId: string, count: number) => void;
   advanceDay: () => void;
   dispatchIdleVillagers: () => void;
   startBossBattle: (monsterId: string, villagerIds: string[]) => void;

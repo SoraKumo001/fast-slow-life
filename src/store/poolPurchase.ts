@@ -29,7 +29,7 @@ export function processItemPoolPurchase(
       const item = ITEMS[itemId];
       if (!item) continue;
 
-      const price = item.sellPrice;
+      const price = item.basePrice * 2;
       if (price <= 0) continue;
 
       const maxCanBuy = Math.floor(nextGold / price);
@@ -76,7 +76,7 @@ export function processItemAcquisition(
   const item = ITEMS[itemId];
   if (!item) return { playerGold, inventory, logs: [] };
 
-  const price = item.sellPrice;
+  const price = item.basePrice * 2;
   const totalPrice = price * amount;
   const logs: LogPayload[] = [];
   const nextInventory = { ...inventory };

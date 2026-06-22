@@ -26,11 +26,9 @@ const FACILITY_CATEGORIES: {
   { label: "資源生産", icon: TreePine, ids: ["farm", "lumberyard", "quarry"] },
 ];
 
-interface FacilityListProps {
-  onOpenTradeCaravan?: () => void;
-}
+interface FacilityListProps {}
 
-export const FacilityList: React.FC<FacilityListProps> = ({ onOpenTradeCaravan }) => {
+export const FacilityList: React.FC<FacilityListProps> = () => {
   const facilities = useFacilities();
   const { inventory, tradeRules } = useInventory();
   const { gold } = usePlayerResources();
@@ -68,7 +66,6 @@ export const FacilityList: React.FC<FacilityListProps> = ({ onOpenTradeCaravan }
                   onToggleExpand={toggleExpand}
                   onStartUpgrade={startFacilityUpgrade}
                   onHireVillager={hireVillager}
-                  onOpenTradeCaravan={onOpenTradeCaravan}
                 />
               );
             })}

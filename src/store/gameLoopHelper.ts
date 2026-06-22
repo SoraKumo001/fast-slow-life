@@ -1,7 +1,6 @@
 import { ITEMS } from "../data/masterData";
 import { getFriendshipLevel } from "../data/towns";
 import { GameState, Villager } from "../types/game";
-import { getMarketSellBonus } from "../utils/marketHelpers";
 import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";
 import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
@@ -137,7 +136,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       } else if (v.isStarving) {
         foodCost = 0;
       } else if (v.activeFoodBuffId) {
-        foodCost = ITEMS[v.activeFoodBuffId]?.sellPrice || 2;
+        foodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;
       } else {
         foodCost = 2; // 生の食材の基本価格
       }
@@ -288,180 +287,69 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   inventory = { ...inventory, ...autoRes.inventory };
   logsToAppend.push(...autoRes.logs);
 
-  // 交易馬車の進行処理
+  // 交易馬車の進行処理（帰還時は自動回収して待機状態にする）
   caravans = caravans.map((caravan) => {
     if (caravan.status !== "trading") return caravan;
     const nextTimeLeft = caravan.timeLeft - 1;
     if (nextTimeLeft <= 0) {
       const destTown = towns.find((t) => t.id === caravan.destinationTownId);
-      logsToAppend.push({
-        message: `【交易】${destTown?.name || "外の町"} へ派遣していた交易馬車が帰還しました。`,
-        type: "info",
-      });
-
-      if (caravan.isAuto) {
-        // 自動交易：自動的に回収して再派遣する
-        if (caravan.type === "export") {
-          // 1. 回収（ゴールド加算と友好度上昇）
-          gold += caravan.goldEarned;
-
-          towns = towns.map((t) => {
-            if (t.id === caravan.destinationTownId) {
-              const nextFriendship = Math.min(1000, t.friendship + caravan.friendshipEarned);
-              const nextLevel = getFriendshipLevel(nextFriendship);
-              return { ...t, friendship: nextFriendship, level: nextLevel };
-            }
-            return t;
-          });
-
-          const updatedTown = towns.find((t) => t.id === caravan.destinationTownId)!;
-          logsToAppend.push({
-            message: `【自動交易】馬車が帰還！ ${caravan.goldEarned} G 獲得、友好度 +${caravan.friendshipEarned} (Lv.${updatedTown.level})。`,
-            type: "info",
-          });
-
-          // 2. 再派遣のチェックと実行
-          let hasAllItems = true;
-          const tempInventory = { ...inventory };
-          for (const entry of caravan.cargo) {
-            const current = tempInventory[entry.itemId] || 0;
-            if (current < entry.count) {
-              hasAllItems = false;
-              break;
-            }
-            tempInventory[entry.itemId] = current - entry.count;
-          }
-
-          if (hasAllItems) {
-            inventory = tempInventory;
-
-            // 輸出見込み額の再計算
-            const marketLvl = facilities.market?.level || 0;
-            const marketBonus = getMarketSellBonus(marketLvl);
-            let totalGoldEarned = 0;
-            let totalFriendshipEarned = 0;
-
-            for (const entry of caravan.cargo) {
-              const item = ITEMS[entry.itemId];
-              if (!item) continue;
-
-              let price = item.sellPrice;
-              const isTrend =
-                marketTrend &&
-                marketTrend.targetTownId === destTown?.id &&
-                marketTrend.itemId === entry.itemId;
-
-              if (isTrend && marketTrend?.type === "demand") {
-                price = Math.floor(price * marketTrend.multiplier);
-              }
-
-              const friendshipBonus = (updatedTown.level - 1) * 0.05;
-              const finalPrice =
-                Math.floor(price * (1 + marketBonus + friendshipBonus)) * entry.count;
-              totalGoldEarned += finalPrice;
-              totalFriendshipEarned += entry.count * (isTrend ? 2 : 1);
-            }
-
-            const timeReduction = Math.min(0.5, (updatedTown.investLevel - 1) * 0.1);
-            const totalTime = Math.max(
-              1,
-              Math.ceil((destTown?.distance || 1) * (1 - timeReduction)),
-            );
-
-            logsToAppend.push({
-              message: `【自動交易】馬車を ${updatedTown.name} へ再派遣しました（輸出: 所要時間 ${totalTime} 時間）。`,
-              type: "info",
-            });
-
-            return {
-              ...caravan,
-              status: "trading",
-              timeLeft: totalTime,
-              totalTime,
-              goldEarned: totalGoldEarned,
-              friendshipEarned: totalFriendshipEarned,
-            };
-          } else {
-            logsToAppend.push({
-              message: `【自動交易警告】倉庫のアイテムが不足しているため、馬車の自動取引を停止しました。`,
-              type: "warning",
-            });
-            return {
-              ...caravan,
-              status: "returned",
-              timeLeft: 0,
-            };
-          }
-        } else if (caravan.type === "import") {
-          // 1. 回収（仕入れアイテムを倉庫へ）
-          for (const entry of caravan.cargo) {
-            inventory[entry.itemId] = (inventory[entry.itemId] || 0) + entry.count;
-          }
-
-          const itemsStr = caravan.cargo
-            .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)
-            .join(", ");
-          logsToAppend.push({
-            message: `【自動交易】馬車が帰還！ 仕入れた品物を受け取りました：${itemsStr}`,
-            type: "info",
-          });
-
-          // 2. 再派遣のチェックと実行
-          // 仕入れ価格の再計算
-          let totalGoldCost = 0;
-          const discountLvl = soulUpgrades.discount || 0;
-          const updatedTown = towns.find((t) => t.id === caravan.destinationTownId)!;
-
-          for (const entry of caravan.cargo) {
-            const item = ITEMS[entry.itemId];
-            if (!item) continue;
-            const basePrice = item.sellPrice * 3;
-            const rate = 1 - (updatedTown.level - 1) * 0.05 - discountLvl * 0.05;
-            const buyPrice = Math.max(1, Math.floor(basePrice * rate));
-            totalGoldCost += buyPrice * entry.count;
-          }
-
-          if (gold >= totalGoldCost) {
-            gold -= totalGoldCost;
-
-            const timeReduction = Math.min(0.5, (updatedTown.investLevel - 1) * 0.1);
-            const totalTime = Math.max(1, Math.ceil(updatedTown.distance * (1 - timeReduction)));
-
-            logsToAppend.push({
-              message: `【自動交易】馬車を ${updatedTown.name} へ再派遣しました（仕入れ: 所要時間 ${totalTime} 時間）。`,
-              type: "info",
-            });
-
-            return {
-              ...caravan,
-              status: "trading",
-              timeLeft: totalTime,
-              totalTime,
-              goldCost: totalGoldCost,
-            };
-          } else {
-            logsToAppend.push({
-              message: `【自動交易警告】ゴールドが不足しているため、馬車の自動取引を停止しました。`,
-              type: "warning",
-            });
-            return {
-              ...caravan,
-              status: "returned",
-              timeLeft: 0,
-            };
-          }
-        }
+      if (!destTown) {
+        return {
+          ...caravan,
+          status: "idle",
+          destinationTownId: null,
+          type: null,
+          timeLeft: 0,
+          totalTime: 0,
+          cargo: [],
+          goldCost: 0,
+          goldEarned: 0,
+          friendshipEarned: 0,
+        };
       }
 
-      // 自動交易が無効な場合は通常通り returned に遷移
-      logsToAppend.push({
-        message: `【交易】交易所で報告を受け取りましょう。`,
-        type: "info",
-      });
+      if (caravan.type === "export") {
+        gold += caravan.goldEarned;
+
+        towns = towns.map((t) => {
+          if (t.id === destTown.id) {
+            const nextFriendship = Math.min(1000, t.friendship + caravan.friendshipEarned);
+            const nextLevel = getFriendshipLevel(nextFriendship);
+            return { ...t, friendship: nextFriendship, level: nextLevel };
+          }
+          return t;
+        });
+
+        const updatedTown = towns.find((t) => t.id === destTown.id)!;
+        logsToAppend.push({
+          message: `【交易帰還】${destTown.name} から交易馬車が帰還！ ${caravan.goldEarned} G を獲得、友好度 +${caravan.friendshipEarned}（現在の友好度Lv: ${updatedTown.level}）。`,
+          type: "info",
+        });
+      } else if (caravan.type === "import") {
+        for (const entry of caravan.cargo) {
+          inventory[entry.itemId] = (inventory[entry.itemId] || 0) + entry.count;
+        }
+
+        const itemsStr = caravan.cargo
+          .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)
+          .join(", ");
+        logsToAppend.push({
+          message: `【交易帰還】仕入れ馬車が ${destTown.name} から帰還し、品物を受け取りました：${itemsStr}`,
+          type: "info",
+        });
+      }
+
       return {
         ...caravan,
+        status: "idle",
+        destinationTownId: null,
+        type: null,
         timeLeft: 0,
-        status: "returned",
+        totalTime: 0,
+        cargo: [],
+        goldCost: 0,
+        goldEarned: 0,
+        friendshipEarned: 0,
       };
     }
     return {
@@ -495,9 +383,13 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     tradeRules: state.tradeRules,
     inventory,
     gold,
+    caravans,
+    towns,
+    marketTrend,
   });
   gold = tradeRes.gold;
   inventory = tradeRes.inventory;
+  caravans = tradeRes.caravans;
   logsToAppend.push(...tradeRes.logs);
 
   // 毎時間のプール自動購入処理

@@ -78,7 +78,7 @@ export const Header: React.FC = () => {
               ゴールド
             </span>
             <span className="text-amber-400 font-mono font-bold text-lg">
-              {gold.toLocaleString()} G
+              {Math.floor(gold).toLocaleString()} G
             </span>
           </div>
 

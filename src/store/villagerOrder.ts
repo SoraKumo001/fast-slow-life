@@ -107,7 +107,7 @@ export function setVillagerOrderHelper(params: {
         for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
-            const price = ITEMS[pId]?.sellPrice || 0;
+            const price = ITEMS[pId]?.basePrice || 0;
             const maxCanBuy = Math.floor(v.gold / price);
             const toBuy = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv, maxCanBuy);
             if (toBuy > 0) {
@@ -126,7 +126,7 @@ export function setVillagerOrderHelper(params: {
           nextPotionItemId = assignedId;
           const pName = ITEMS[assignedId]?.name || "回復薬";
           logs.push({
-            message: `【準備】${v.name} は${pName}を ${assignedCount} 個購入しました（計 ${assignedCount * (ITEMS[assignedId]?.sellPrice || 0)} G）。`,
+            message: `【準備】${v.name} は${pName}を ${assignedCount} 個購入しました（計 ${assignedCount * (ITEMS[assignedId]?.basePrice || 0)} G）。`,
             type: "info",
           });
         }
@@ -136,7 +136,7 @@ export function setVillagerOrderHelper(params: {
         const staminaDrinkId = "stamina_drink";
         const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
         if (staminaDrinkInInv > 0) {
-          const price = ITEMS[staminaDrinkId]?.sellPrice || 0;
+          const price = ITEMS[staminaDrinkId]?.basePrice || 0;
           const maxCanBuy = Math.floor(v.gold / price);
           const toBuy = Math.min(2, staminaDrinkInInv, maxCanBuy);
           if (toBuy > 0) {
@@ -152,7 +152,7 @@ export function setVillagerOrderHelper(params: {
           nextStaminaDrinkItemId = staminaDrinkId;
           const staminaName = ITEMS[staminaDrinkId]?.name || "スタミナポーション";
           logs.push({
-            message: `【準備】${v.name} は${staminaName}を ${assignedStaminaCount} 個購入しました（計 ${assignedStaminaCount * (ITEMS[staminaDrinkId]?.sellPrice || 0)} G）。`,
+            message: `【準備】${v.name} は${staminaName}を ${assignedStaminaCount} 個購入しました（計 ${assignedStaminaCount * (ITEMS[staminaDrinkId]?.basePrice || 0)} G）。`,
             type: "info",
           });
         }

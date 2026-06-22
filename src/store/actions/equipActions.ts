@@ -61,7 +61,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
     const oldEquipId = slot === "weapon" ? villager.weaponId : villager.armorId;
     if (oldEquipId === itemId) return;
 
-    const price = item.sellPrice || 0;
+    const price = item.basePrice || 0;
     if (villager.gold < price) {
       state.addLog(
         `【警告】${villager.name} のゴールド不足により、${item.name} を購入できません（必要: ${price}G / 所持: ${villager.gold}G）。`,
@@ -190,7 +190,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         if (count <= 0) return;
         const item = ITEMS[itemId];
         const isSame = v.weaponId === itemId;
-        const cost = isSame ? 0 : item.sellPrice || 0;
+        const cost = isSame ? 0 : item.basePrice || 0;
 
         if (villagerObj.gold >= cost) {
           const score = getWeaponScore(item, v);
@@ -218,7 +218,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         if (count <= 0) return;
         const item = ITEMS[itemId];
         const isSame = v.armorId === itemId;
-        const cost = isSame ? 0 : item.sellPrice || 0;
+        const cost = isSame ? 0 : item.basePrice || 0;
 
         if (villagerObj.gold >= cost) {
           const score = getArmorScore(item, v);

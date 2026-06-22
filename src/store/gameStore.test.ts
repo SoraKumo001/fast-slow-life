@@ -254,14 +254,14 @@ describe("gameStore", () => {
       globalThis.IS_TEST_ENVIRONMENT = true;
     });
 
-    it("自動売却ルールにより、閾値超過時に1個ずつ自動で売却されてゴールドが増加し、在庫が減少すること", () => {
+    it("自動売却ルールにより、閾値超過時に自動で交易馬車が派遣され、帰還時にゴールドが増加し在庫が減少すること", () => {
       const store = useGameStore.getState();
 
-      // 薬屋をレベル1にする
+      // 交易所をレベル1にする
       useGameStore.setState((s) => ({
         facilities: {
           ...s.facilities,
-          pharmacy: { ...s.facilities.pharmacy, level: 1 },
+          market: { ...s.facilities.market, level: 1 },
         },
         inventory: {
           ...s.inventory,
@@ -278,18 +278,41 @@ describe("gameStore", () => {
             isEnabled: true,
           },
         ],
+        marketTrend: {
+          targetTownId: "komorebi",
+          itemId: "potion",
+          type: "demand",
+          multiplier: 1.2,
+        },
       }));
 
-      // 回復薬の売却価格は 10G。薬屋レベル1はボーナス +20% (計 12G)。
-      // 15 > 10 なので、1個売却して 12G 獲得。
-      // inventory: 15 -> 14, gold: 100 -> 112
+      // 最初の1時間経過で、馬車がコモレビの村へ自動派遣される
+      // コモレビの村の距離は 12 時間
+      // 派遣によって、倉庫の potion は即座に (15 - 10 = 5個) 減少し、10 個になる
       store.advanceHour();
 
-      const state = useGameStore.getState();
-      expect(state.inventory.potion).toBe(14);
-      expect(state.gold).toBe(112);
+      let state = useGameStore.getState();
+      expect(state.inventory.potion).toBe(10);
+      expect(state.caravans[0].status).toBe("trading");
+      expect(state.caravans[0].destinationTownId).toBe("komorebi");
+      expect(state.caravans[0].timeLeft).toBe(12);
 
-      const tradeLog = state.logs.find((l) => l.message.includes("回復薬 を 1 個自動売却（薬屋）"));
+      // さらに12時間進める (帰還する)
+      for (let i = 0; i < 12; i++) {
+        store.advanceHour();
+      }
+
+      state = useGameStore.getState();
+      // 帰還時の自動回収により、ゴールドが増加していることを確認。
+      // コモレビの村では potion が需要アイテム（ multiplier 1.2倍 ）。
+      // potion basePrice 10G * 1.2倍 = 12G。
+      // 友好度レベル1（+0%）, 交易所レベル1（+0%）。
+      // 5個売却で、 5 * 12G = 60G 獲得。
+      // gold: 100 -> 160G.
+      expect(state.gold).toBe(160);
+      expect(state.caravans[0].status).toBe("idle");
+
+      const tradeLog = state.logs.find((l) => l.message.includes("コモレビ村 から交易馬車が帰還"));
       expect(tradeLog).toBeDefined();
     });
 
@@ -315,12 +338,12 @@ describe("gameStore", () => {
       }));
 
       // 1. 採取を行い、プレイヤーのゴールドが不足してプールされることを確認
-      // 小麦 (sellPrice = 1G) を 15 個採取しようとすると、15G 必要。
-      // プレイヤーは 10G しか持っていないため、10個は買い取り、5個はプールされる。
+      // 小麦 (basePrice = 1G) の買取単価は 2G。 11個採取しようとすると、22G 必要。
+      // プレイヤーは 10G しか持っていないため、5個は買い取り、6個はプールされる。
       // プレイヤーゴールド: 10G -> 0G
       // 村人ゴールド: 50G -> 60G
-      // 倉庫小麦: 0 -> 10個
-      // プール小麦: 5個
+      // 倉庫小麦: 0 -> 5個
+      // プール小麦: 6個
       const stateBefore = useGameStore.getState();
       const forestOriginal = stateBefore.dungeons.find((d) => d.id === "forest")!;
       const forest = {
@@ -351,16 +374,20 @@ describe("gameStore", () => {
 
       expect(res.gold).toBe(0); // プレイヤーゴールドは 0G に減少
       expect(v.gold).toBe(60); // 村人のゴールドは 50 + 10 = 60G に増加
-      expect(v.pool.wheat).toBe(1); // 買えなかった1個がプールされる (採取量: 11)
-      expect(nextInventory.wheat).toBe(10); // 買えた10個が倉庫に入る
+      expect(v.pool.wheat).toBe(6); // 買えなかった6個がプールされる (採取量: 11)
+      expect(nextInventory.wheat).toBe(5); // 買えた5個が倉庫に入る
 
       // 2. プレイヤーのゴールドが増えたときに、プールから自動精算されることを検証
       // プレイヤーが 100G を手に入れたとする
+      // プール小麦 6個 x 2G = 12G が支払われ、 100 - 12 = 88G になる
+      // プールされていた小麦が倉庫に移り、計 5 + 6 = 11 個になる
+      // 村人に 12G 支払われて 60 + 12 = 72G になる
+      // プール小麦は完済して消滅
       const poolPurchaseResult = processItemPoolPurchase(100, nextInventory, [v]);
-      expect(poolPurchaseResult.gold).toBe(99); // プール小麦 1個 x 1G = 1G が支払われ、 100 - 1 = 99G になる
-      expect(poolPurchaseResult.inventory.wheat).toBe(11); // プールされていた小麦が倉庫に移り、計 11 個になる
-      expect(poolPurchaseResult.villagers[0].gold).toBe(61); // 村人に 1G 支払われて 60 + 1 = 61G になる
-      expect(poolPurchaseResult.villagers[0].pool.wheat).toBeUndefined(); // プール小麦は完済して消滅
+      expect(poolPurchaseResult.gold).toBe(88);
+      expect(poolPurchaseResult.inventory.wheat).toBe(11);
+      expect(poolPurchaseResult.villagers[0].gold).toBe(72);
+      expect(poolPurchaseResult.villagers[0].pool.wheat).toBeUndefined();
 
       // 3. 宿代の差し引きとツケ払いの確認
       // 村人が resting の場合、宿代が差し引かれてプレイヤーへ支払われる

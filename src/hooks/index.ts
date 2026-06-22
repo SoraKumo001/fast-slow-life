@@ -18,7 +18,6 @@ export const useInventoryActions = () =>
   useGameStore(
     (s) => ({
       setTargetAmount: s.setTargetAmount,
-      sellItem: s.sellItem,
       addTradeRule: s.addTradeRule,
       updateTradeRule: s.updateTradeRule,
       deleteTradeRule: s.deleteTradeRule,

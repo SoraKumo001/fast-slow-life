@@ -177,7 +177,7 @@ export function dispatchIdleVillagersHelper(params: {
         for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
-            const price = ITEMS[pId]?.sellPrice || 0;
+            const price = ITEMS[pId]?.basePrice || 0;
             const maxCanBuy = Math.floor(v.gold / price);
             const toBuy = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv, maxCanBuy);
             if (toBuy > 0) {
@@ -195,7 +195,7 @@ export function dispatchIdleVillagersHelper(params: {
         const staminaDrinkId = "stamina_drink";
         const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
         if (staminaDrinkInInv > 0) {
-          const price = ITEMS[staminaDrinkId]?.sellPrice || 0;
+          const price = ITEMS[staminaDrinkId]?.basePrice || 0;
           const maxCanBuy = Math.floor(v.gold / price);
           const toBuy = Math.min(2, staminaDrinkInInv, maxCanBuy);
           if (toBuy > 0) {

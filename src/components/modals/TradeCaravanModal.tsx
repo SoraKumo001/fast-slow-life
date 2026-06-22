@@ -55,7 +55,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
   const getImportPrice = (itemId: string, town: Town) => {
     const item = ITEMS[itemId];
     if (!item) return 0;
-    const basePrice = item.sellPrice * 3;
+    const basePrice = item.basePrice * 3;
     const discountLvl = state.soulUpgrades.discount || 0;
     const rate = 1 - (town.level - 1) * 0.05 - discountLvl * 0.05;
     return Math.max(1, Math.floor(basePrice * rate));
@@ -74,7 +74,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
       const item = ITEMS[itemId];
       if (!item || count <= 0) return;
 
-      let price = item.sellPrice;
+      let price = item.basePrice;
       const isTrend =
         marketTrend && marketTrend.targetTownId === activeTown.id && marketTrend.itemId === itemId;
 

@@ -33,7 +33,7 @@ export const calculateEarnedSp = (
   state: Pick<GameState, "gold" | "inventory" | "currentTier" | "bossDefeated" | "currentDay">,
 ): number => {
   const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
-    return sum + (ITEMS[itemId]?.sellPrice || 0) * count;
+    return sum + (ITEMS[itemId]?.basePrice || 0) * count;
   }, 0);
   const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
   return (

@@ -48,7 +48,7 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       const item = ITEMS[entry.itemId];
       if (!item) continue;
 
-      let price = item.sellPrice;
+      let price = item.basePrice;
       const isTrend =
         state.marketTrend &&
         state.marketTrend.targetTownId === townId &&

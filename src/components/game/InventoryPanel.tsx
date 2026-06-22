@@ -55,10 +55,10 @@ export const InventoryPanel: React.FC = () => {
       return countA - countB;
     }
     if (sortBy === "price-desc") {
-      return itemB.sellPrice - itemA.sellPrice;
+      return itemB.basePrice - itemA.basePrice;
     }
     if (sortBy === "price-asc") {
-      return itemA.sellPrice - itemB.sellPrice;
+      return itemA.basePrice - itemB.basePrice;
     }
     if (sortBy === "name-asc") {
       return itemA.name.localeCompare(itemB.name, "ja");
@@ -119,8 +119,8 @@ export const InventoryPanel: React.FC = () => {
         options={[
           { value: "count-desc", label: "所持数順 (多)" },
           { value: "count-asc", label: "所持数順 (少)" },
-          { value: "price-desc", label: "売却価格順 (高)" },
-          { value: "price-asc", label: "売却価格順 (安)" },
+          { value: "price-desc", label: "基本価格順 (高)" },
+          { value: "price-asc", label: "基本価格順 (安)" },
           { value: "name-asc", label: "名前順" },
         ]}
       />
@@ -169,7 +169,7 @@ export const InventoryPanel: React.FC = () => {
                       所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
                     </span>
                     <span>
-                      売値: <span className="text-amber-500 font-bold">{item.sellPrice} G</span>
+                      価格: <span className="text-amber-500 font-bold">{item.basePrice} G</span>
                     </span>
                     {target > 0 && (
                       <span className="text-sky-400 font-bold">

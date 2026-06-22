@@ -106,7 +106,7 @@ export function processStarvation(
       const count = nextInventory[foodId] || 0;
       if (count >= FOOD_CONSUMPTION_PER_VILLAGER) {
         const item = ITEMS[foodId];
-        const price = item?.sellPrice || (rawIngredients.includes(foodId) ? 2 : 1);
+        const price = item?.basePrice || (rawIngredients.includes(foodId) ? 2 : 1);
 
         // 価格が 3G 以下の食料（パン、生の食材など）や無職の村人は所持金に関係なく消費可能。
         // それ以外は所持金が価格以上である場合のみ消費可能。

@@ -137,7 +137,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                   ([itemId, _]) =>
                     (inventory[itemId] || 0) > 0 || currentVillager.weaponId === itemId,
                 )
-                .sort(([, a], [, b]) => b.sellPrice - a.sellPrice)
+                .sort(([, a], [, b]) => b.basePrice - a.basePrice)
                 .map(([itemId, item]) => {
                   const count = Math.floor(inventory[itemId] || 0);
                   const isEquipped = currentVillager.weaponId === itemId;
@@ -234,7 +234,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({ villager, onClos
                   ([itemId, _]) =>
                     (inventory[itemId] || 0) > 0 || currentVillager.armorId === itemId,
                 )
-                .sort(([, a], [, b]) => b.sellPrice - a.sellPrice)
+                .sort(([, a], [, b]) => b.basePrice - a.basePrice)
                 .map(([itemId, item]) => {
                   const count = Math.floor(inventory[itemId] || 0);
                   const isEquipped = currentArmor && currentArmor.id === itemId;
