@@ -22,6 +22,7 @@ import {
   DEFAULT_INVENTORY,
   getInitialTowns,
   getInitialCaravans,
+  getInitialStats,
 } from "./initialState";
 import { partialize, merge, customStorage } from "./persistence";
 
@@ -55,6 +56,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   bossDefeated: false,
   gameLimitDays: TIER_LIMIT_DAYS[1],
   gameOver: false,
+  gameOverReason: "",
   isPaused: true,
   playSpeed: "normal",
   soulUpgrades: {
@@ -70,6 +72,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   marketTrend: null,
   isSalaryUnpaid: false,
   consecutiveNegativeGoldDays: 0,
+  stats: getInitialStats(),
 
   ...createLogActions(set as StoreSet, get as StoreGet),
   ...createTimeActions(set as StoreSet, get as StoreGet),

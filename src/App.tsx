@@ -7,6 +7,7 @@ import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
 import { Header } from "./components/layout/Header";
 import { StatusBar } from "./components/layout/StatusBar";
+import { ResultScreen } from "./components/modals/ResultScreen";
 import { SoulShop } from "./components/modals/SoulShop";
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
@@ -15,11 +16,12 @@ import { useGameStatus, useGameControls, useLogs } from "./hooks";
 import { useToastStore } from "./hooks/useToastStore";
 
 export default function App() {
-  const { isPaused, playSpeed, gameOver } = useGameStatus();
+  const { isPaused, playSpeed, gameOver, gameOverReason, gameLimitDays } = useGameStatus();
   const { advanceHour } = useGameControls();
   const logs = useLogs();
   const addToast = useToastStore((s) => s.addToast);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [gameOverTab, setGameOverTab] = useState<"result" | "soul">("result");
   const lastLogIdRef = useRef<string | null>(null);
 
   // 新しいログを監視してToast通知
@@ -110,19 +112,48 @@ export default function App() {
         </div>
       </main>
 
-      {/* ゲームオーバー時の強制転生ショップオーバーレイ */}
+      {/* ゲームオーバー時のオーバーレイ */}
       {gameOver && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="max-w-2xl w-full">
-            <div className="text-center mb-6 space-y-2">
+            <div className="text-center mb-4 space-y-2">
               <h1 className="text-4xl font-extrabold text-red-500 uppercase tracking-widest animate-pulse">
                 GAME OVER
               </h1>
               <p className="text-slate-400 text-sm">
-                制限日数を迎えたか、すべての村人が死亡しました。
+                {gameOverReason === "破産"
+                  ? "所持金マイナス状態が3日間続いたため、破産しました。"
+                  : gameOverReason === "全滅"
+                    ? "すべての村人が戦闘不能になりました。"
+                    : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
               </p>
             </div>
-            <SoulShop />
+
+            {/* タブ切り替え */}
+            <div className="flex gap-1 mb-4 bg-slate-950/60 p-1 rounded-lg border border-slate-800">
+              <button
+                onClick={() => setGameOverTab("result")}
+                className={`flex-1 py-2 px-4 rounded text-xs font-bold transition ${
+                  gameOverTab === "result"
+                    ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                リザルト
+              </button>
+              <button
+                onClick={() => setGameOverTab("soul")}
+                className={`flex-1 py-2 px-4 rounded text-xs font-bold transition ${
+                  gameOverTab === "soul"
+                    ? "bg-purple-500/10 text-purple-400 border border-purple-500/20"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                転生ショップ
+              </button>
+            </div>
+
+            {gameOverTab === "result" ? <ResultScreen /> : <SoulShop />}
           </div>
         </div>
       )}

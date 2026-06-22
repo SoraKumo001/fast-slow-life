@@ -52,6 +52,7 @@ export const useGameStatus = () =>
       isPaused: s.isPaused,
       playSpeed: s.playSpeed,
       gameOver: s.gameOver,
+      gameOverReason: s.gameOverReason,
       gameLimitDays: s.gameLimitDays,
     }),
     shallow,
@@ -102,3 +103,5 @@ export const useBossActions = () =>
 
 export const useSoulActions = () =>
   useGameStore((s) => ({ buySoulUpgrade: s.buySoulUpgrade, resetGame: s.resetGame }), shallow);
+
+export const useGameStats = () => useGameStore((s) => s.stats);

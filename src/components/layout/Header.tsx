@@ -1,4 +1,4 @@
-import { Play, Pause, RefreshCw, Sparkles, Terminal } from "lucide-react";
+import { Play, Pause, RefreshCw, Sparkles, Terminal, BarChart3 } from "lucide-react";
 import React, { useState } from "react";
 
 import { SOUL_UPGRADES } from "../../data/masterData";
@@ -13,6 +13,7 @@ import {
   useSoulUpgrades,
   useLogs,
 } from "../../hooks";
+import { ResultScreen } from "../modals/ResultScreen";
 import { SoulShop } from "../modals/SoulShop";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -32,6 +33,7 @@ export const Header: React.FC = () => {
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showResultModal, setShowResultModal] = useState(false);
 
   const dailyFoodConsumption = villagers.length;
   // 食料在庫の合計を計算: foodカテゴリ品 + 生の食材（飢餓判定で消費される）
@@ -180,6 +182,17 @@ export const Header: React.FC = () => {
           </Button>
 
           <Button
+            onClick={() => setShowResultModal(true)}
+            variant="secondary"
+            size="custom"
+            className="flex items-center gap-2 font-medium text-xs px-3.5 py-2 rounded-lg hover:border-slate-650"
+            title="リザルトを表示"
+          >
+            <BarChart3 className="w-4 h-4 text-sky-400" />
+            リザルト
+          </Button>
+
+          <Button
             onClick={() => setShowSoulShopModal(true)}
             variant="custom"
             size="custom"
@@ -212,6 +225,15 @@ export const Header: React.FC = () => {
       {showHistoryModal && (
         <LogHistoryWindow logs={logs} onClose={() => setShowHistoryModal(false)} />
       )}
+
+      <Modal
+        isOpen={showResultModal}
+        onClose={() => setShowResultModal(false)}
+        size="lg"
+        showCloseButton
+      >
+        <ResultScreen />
+      </Modal>
     </>
   );
 };

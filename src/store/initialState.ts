@@ -8,6 +8,7 @@ import {
 } from "../constants";
 import { DUNGEONS, ITEMS } from "../data/masterData";
 import { TOWNS_DATA } from "../data/towns";
+import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager } from "../utils/villagerHelpers";
 
@@ -275,6 +276,20 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       },
       craftQueue: [],
     },
+  };
+}
+
+export function getInitialStats(): RunStats {
+  return {
+    totalGoldFromExports: 0,
+    totalGoldSpentOnImports: 0,
+    totalItemsGathered: 0,
+    totalMonstersDefeated: 0,
+    totalBossesDefeated: 0,
+    totalItemsCrafted: 0,
+    totalGoldFromPurchases: 0,
+    totalItemsPurchased: 0,
+    totalGoldFromTax: 0,
   };
 }
 

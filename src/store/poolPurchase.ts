@@ -1,11 +1,12 @@
 import { ITEMS } from "../data/masterData";
-import { Villager } from "../types/game";
+import { Villager, RunStats } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processItemPoolPurchase(
   gold: number,
   inventory: Record<string, number>,
   villagers: Villager[],
+  stats?: RunStats,
 ): {
   gold: number;
   inventory: Record<string, number>;
@@ -36,6 +37,10 @@ export function processItemPoolPurchase(
 
       if (buyCount > 0) {
         const cost = buyCount * price;
+        if (stats) {
+          stats.totalItemsPurchased += buyCount;
+          stats.totalGoldFromPurchases += cost;
+        }
         nextGold -= cost;
         v.gold = (v.gold || 0) + cost;
         v.pool[itemId] -= buyCount;

@@ -82,11 +82,13 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       bossDefeated: result.bossDefeated,
       gameLimitDays: result.gameLimitDays,
       gameOver: result.gameOver,
+      gameOverReason: result.gameOverReason,
       isPaused: result.isPaused,
       towns: result.towns,
       caravans: result.caravans,
       marketTrend: result.marketTrend,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
+      stats: result.stats,
       ...(result.gameOver && !state.gameOver
         ? {
             soulPoints:

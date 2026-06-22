@@ -16,6 +16,7 @@ import {
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea } from "../types/game";
+import type { RunStats } from "../types/game";
 import { getFoodBuffBonus, applySalaryDebuff } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
@@ -32,6 +33,7 @@ export function processVillagerGather(
   soulUpgrades: Record<string, number>,
   gold: number,
   _isSalaryUnpaid: boolean = false,
+  stats?: RunStats,
 ): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
   const logs: LogPayload[] = [];
 
@@ -160,6 +162,8 @@ export function processVillagerGather(
 
         const statMod = 1.0 + statVal * STAT_GATHER_AMOUNT_FACTOR;
         const amount = Math.max(1, Math.floor(baseAmount * jobMod * statMod * efficiency));
+
+        if (stats) stats.totalItemsGathered += amount;
 
         const acqRes = processItemAcquisition(v, bestItemId, amount, gold, nextInventory);
         gold = acqRes.playerGold;

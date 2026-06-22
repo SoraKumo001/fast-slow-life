@@ -8,7 +8,7 @@ import {
   EDUCATION_EXP_BONUS,
 } from "../constants";
 import { MONSTERS } from "../data/masterData";
-import { Villager, DungeonArea, ActiveBossState } from "../types/game";
+import { Villager, DungeonArea, ActiveBossState, RunStats } from "../types/game";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
   calculateHitRate,
@@ -32,6 +32,7 @@ export function processBossBattle(
   _hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   _isSalaryUnpaid: boolean = false,
+  stats?: RunStats,
 ) {
   const logs: LogPayload[] = [];
   let nextActiveBoss = activeBoss ? { ...activeBoss } : null;
@@ -256,6 +257,7 @@ export function processBossBattle(
       }
 
       if (nextActiveBoss && nextActiveBoss.currentHp <= 0) {
+        if (stats) stats.totalBossesDefeated += 1;
         logs.push({
           message: `エリアボス【${monster.name}】を撃破しました！`,
           type: "system",

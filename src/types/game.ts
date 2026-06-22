@@ -323,11 +323,24 @@ export interface GameActions {
   payVillagerDebts: () => void;
 }
 
+export interface RunStats {
+  totalGoldFromExports: number;
+  totalGoldSpentOnImports: number;
+  totalItemsGathered: number;
+  totalMonstersDefeated: number;
+  totalBossesDefeated: number;
+  totalItemsCrafted: number;
+  totalGoldFromPurchases: number;
+  totalItemsPurchased: number;
+  totalGoldFromTax: number;
+}
+
 export interface GameState {
   currentDay: number;
   currentHour: number;
   gold: number;
   soulPoints: number;
+  stats: RunStats;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];
@@ -340,6 +353,7 @@ export interface GameState {
   bossDefeated: boolean;
   gameLimitDays: number; // 現在のTierの制限日数
   gameOver: boolean;
+  gameOverReason: string;
   isPaused: boolean;
   playSpeed: "normal" | "fast" | "super"; // 自動進行のスピード
   soulUpgrades: Record<string, number>; // upgradeId -> 購入レベル

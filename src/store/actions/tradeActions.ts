@@ -138,10 +138,16 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       friendshipEarned: 0,
     };
 
-    set({
-      gold: state.gold - goldCost,
+    const nextGold = state.gold - goldCost;
+
+    set((s) => ({
+      gold: nextGold,
       caravans: updatedCaravans,
-    });
+      stats: {
+        ...s.stats,
+        totalGoldSpentOnImports: s.stats.totalGoldSpentOnImports + goldCost,
+      },
+    }));
 
     state.addLog(
       `【交易】交易馬車を ${town.name} へ派遣しました（仕入れ: 所要時間 ${totalTime} 時間）。`,
@@ -164,9 +170,12 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     const nextInventory = { ...state.inventory };
     let nextTowns = [...state.towns];
 
+    let statsUpdate: Partial<import("../../types/game").RunStats> = {};
+
     if (caravan.type === "export") {
       // ゴールドの獲得
       nextGold += caravan.goldEarned;
+      statsUpdate = { totalGoldFromExports: caravan.goldEarned };
 
       // 友好度の上昇
       nextTowns = state.towns.map((t) => {
@@ -223,13 +232,14 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       isAuto: caravan.isAuto,
     };
 
-    set({
+    set((s) => ({
       gold: nextGold,
       inventory: nextInventory,
       towns: nextTowns,
       caravans: updatedCaravans,
       villagers: poolRes.villagers,
-    });
+      stats: Object.keys(statsUpdate).length > 0 ? { ...s.stats, ...statsUpdate } : s.stats,
+    }));
 
     poolRes.logs.forEach((log) => state.addLog(log.message, log.type));
   },

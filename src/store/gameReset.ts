@@ -17,6 +17,7 @@ import {
   Town,
   Caravan,
   MarketTrend,
+  RunStats,
 } from "../types/game";
 import {
   getInitialVillagers,
@@ -26,6 +27,7 @@ import {
   createInitialInventory,
   getInitialTowns,
   getInitialCaravans,
+  getInitialStats,
 } from "./initialState";
 
 /** ゲーム終了時の獲得SPを計算する共通ヘルパー */
@@ -61,12 +63,14 @@ export interface ResetResult {
   bossDefeated: boolean;
   gameLimitDays: number;
   gameOver: boolean;
+  gameOverReason: string;
   isPaused: boolean;
   towns: Town[];
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
+  stats: RunStats;
 }
 
 export function resetGameHelper(params: {
@@ -131,11 +135,13 @@ export function resetGameHelper(params: {
     bossDefeated: false,
     gameLimitDays: TIER_LIMIT_DAYS[1],
     gameOver: false,
+    gameOverReason: "",
     isPaused: true,
     towns: getInitialTowns(),
     caravans: getInitialCaravans(),
     marketTrend: null,
     isSalaryUnpaid: false,
     consecutiveNegativeGoldDays: 0,
+    stats: getInitialStats(),
   };
 }

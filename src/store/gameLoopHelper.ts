@@ -1,6 +1,6 @@
 import { ITEMS } from "../data/masterData";
 import { getFriendshipLevel } from "../data/towns";
-import { GameState, Villager } from "../types/game";
+import { GameState, Villager, RunStats } from "../types/game";
 import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";
 import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
@@ -42,8 +42,10 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     marketTrend,
     isSalaryUnpaid,
     consecutiveNegativeGoldDays,
+    stats,
   } = state;
 
+  const nextStats: RunStats = { ...stats };
   const logsToAppend: import("./gameLoopTypes").LogPayload[] = [];
 
   currentHour += 1;
@@ -108,6 +110,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       bossDefeated,
       gameLimitDays,
       gameOver: true,
+      gameOverReason: "破産",
       isPaused: true,
       logsToAppend,
       towns,
@@ -115,6 +118,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      stats: nextStats,
     };
   }
 
@@ -136,6 +140,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       bossDefeated,
       gameLimitDays,
       gameOver: true,
+      gameOverReason: "期限切れ",
       isPaused: true,
       logsToAppend,
       towns,
@@ -143,6 +148,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      stats: nextStats,
     };
   }
 
@@ -180,6 +186,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     });
 
     gold += totalFoodCost;
+    nextStats.totalGoldFromTax += totalFoodCost;
     logsToAppend.push({
       message: `【経済】村人全員の食料代（計 ${totalFoodCost} G）が引き落とされ、プレイヤーに支払われました。`,
       type: "info",
@@ -201,7 +208,13 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   dungeons = explRes.dungeons;
   logsToAppend.push(...explRes.logs);
 
-  const craftRes = processCraftingAndUpgrades(facilities, villagers, inventory, soulUpgrades);
+  const craftRes = processCraftingAndUpgrades(
+    facilities,
+    villagers,
+    inventory,
+    soulUpgrades,
+    nextStats,
+  );
   facilities = craftRes.facilities;
   villagers = craftRes.villagers;
   inventory = { ...inventory, ...craftRes.inventory };
@@ -264,6 +277,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     hasStarvation,
     soulUpgrades,
     isSalaryUnpaidNext,
+    nextStats,
   );
   activeBoss = bossRes.activeBoss;
   villagers = bossRes.villagers;
@@ -284,6 +298,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     soulUpgrades,
     gold,
     isSalaryUnpaidNext,
+    nextStats,
   );
   villagers = actRes.villagers;
   inventory = { ...inventory, ...actRes.inventory };
@@ -304,6 +319,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       bossDefeated,
       gameLimitDays,
       gameOver: actRes.gameOver,
+      gameOverReason: "全滅",
       isPaused: actRes.isPaused,
       logsToAppend,
       towns,
@@ -311,6 +327,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      stats: nextStats,
     };
   }
 
@@ -343,6 +360,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
       if (caravan.type === "export") {
         gold += caravan.goldEarned;
+        nextStats.totalGoldFromExports += caravan.goldEarned;
 
         towns = towns.map((t) => {
           if (t.id === destTown.id) {
@@ -362,6 +380,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
         for (const entry of caravan.cargo) {
           inventory[entry.itemId] = (inventory[entry.itemId] || 0) + entry.count;
         }
+        nextStats.totalGoldSpentOnImports += caravan.goldCost;
 
         const itemsStr = caravan.cargo
           .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)
@@ -426,7 +445,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   logsToAppend.push(...tradeRes.logs);
 
   // 毎時間のプール自動購入処理
-  const poolRes = processItemPoolPurchase(gold, inventory, villagers);
+  const poolRes = processItemPoolPurchase(gold, inventory, villagers, nextStats);
   gold = poolRes.gold;
   inventory = poolRes.inventory;
   villagers = poolRes.villagers;
@@ -448,6 +467,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     bossDefeated,
     gameLimitDays,
     gameOver,
+    gameOverReason: state.gameOverReason,
     isPaused,
     logsToAppend,
     towns,
@@ -455,5 +475,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     marketTrend,
     isSalaryUnpaid: isSalaryUnpaidNext,
     consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+    stats: nextStats,
   };
 }

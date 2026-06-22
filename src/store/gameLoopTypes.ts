@@ -8,6 +8,7 @@ import {
   Town,
   Caravan,
   MarketTrend,
+  RunStats,
 } from "../types/game";
 
 export interface LogPayload {
@@ -28,6 +29,7 @@ export interface AdvanceHourResult {
   bossDefeated: boolean;
   gameLimitDays: number;
   gameOver: boolean;
+  gameOverReason: string;
   isPaused: boolean;
   logsToAppend: LogPayload[];
   towns: Town[];
@@ -35,4 +37,5 @@ export interface AdvanceHourResult {
   marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
+  stats: RunStats;
 }

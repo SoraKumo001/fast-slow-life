@@ -9,6 +9,7 @@ import {
 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import { Villager, DungeonArea, DungeonMonster } from "../types/game";
+import type { RunStats } from "../types/game";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
   calculateHitRate,
@@ -34,6 +35,7 @@ export function processVillagerHunt(
   soulUpgrades: Record<string, number>,
   gold: number,
   _isSalaryUnpaid: boolean = false,
+  stats?: RunStats,
 ): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
   const logs: LogPayload[] = [];
   let currentGold = gold;
@@ -248,6 +250,7 @@ export function processVillagerHunt(
       }
 
       if (battleWon) {
+        if (stats) stats.totalMonstersDefeated += 1;
         const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
         const expGained = Math.floor(enemy.expReward * eduBonus);
         v.exp += expGained;

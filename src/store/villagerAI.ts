@@ -12,7 +12,14 @@ import {
   RETREAT_HP_RATIO,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { Villager, DungeonArea, Facility, FacilityType, ActiveBossState } from "../types/game";
+import {
+  Villager,
+  DungeonArea,
+  Facility,
+  FacilityType,
+  ActiveBossState,
+  RunStats,
+} from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 import { processVillagerGather } from "./gatherLogic";
 import { processVillagerHunt } from "./huntLogic";
@@ -29,6 +36,7 @@ export function processVillagerActivities(
   soulUpgrades: Record<string, number>,
   gold: number,
   isSalaryUnpaid: boolean = false,
+  stats?: RunStats,
 ) {
   let currentGold = gold;
 
@@ -240,6 +248,7 @@ export function processVillagerActivities(
           soulUpgrades,
           currentGold,
           isSalaryUnpaid,
+          stats,
         );
         currentGold = gatherResult.gold;
         logs.push(...gatherResult.logs);
@@ -255,6 +264,7 @@ export function processVillagerActivities(
           soulUpgrades,
           currentGold,
           isSalaryUnpaid,
+          stats,
         );
         currentGold = huntResult.gold;
         logs.push(...huntResult.logs);

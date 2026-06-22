@@ -27,6 +27,7 @@ export const partialize = (state: GameState & GameActions): GameState => ({
   bossDefeated: state.bossDefeated,
   gameLimitDays: state.gameLimitDays,
   gameOver: state.gameOver,
+  gameOverReason: state.gameOverReason,
   isPaused: state.isPaused,
   playSpeed: state.playSpeed,
   soulUpgrades: state.soulUpgrades,
@@ -35,6 +36,8 @@ export const partialize = (state: GameState & GameActions): GameState => ({
   caravans: state.caravans,
   marketTrend: state.marketTrend,
   isSalaryUnpaid: state.isSalaryUnpaid,
+  consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
+  stats: state.stats,
 });
 
 export const merge = <S extends GameState & GameActions>(

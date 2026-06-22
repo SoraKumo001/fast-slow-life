@@ -6,7 +6,7 @@ import {
   CRAFT_DEX_FACTOR,
 } from "../constants";
 import { ITEMS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
-import { Villager, Facility, FacilityType } from "../types/game";
+import { Villager, Facility, FacilityType, RunStats } from "../types/game";
 import { calculateCraftTime, generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
@@ -15,6 +15,7 @@ export function processCraftingAndUpgrades(
   villagers: Villager[],
   inventory: Record<string, number>,
   _soulUpgrades: Record<string, number>,
+  stats?: RunStats,
 ) {
   const logs: LogPayload[] = [];
   const nextFacilities = { ...facilities };
@@ -63,6 +64,7 @@ export function processCraftingAndUpgrades(
         const recipe = getRecipeForItem(updatedJob.itemId);
         const craftCount = (recipe?.outputCount || 1) * (isGreatSuccess ? 2 : 1);
 
+        if (stats) stats.totalItemsCrafted += craftCount;
         nextInventory[updatedJob.itemId] = (nextInventory[updatedJob.itemId] || 0) + craftCount;
 
         logs.push({
