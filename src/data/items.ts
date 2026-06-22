@@ -368,7 +368,7 @@ export const ITEMS: Record<string, Item> = {
     id: "food_bread",
     name: "パン",
     category: "food",
-    sellPrice: 4,
+    sellPrice: 3,
     difficulty: 1.0,
     description: "小麦をこねて焼き上げた素朴なパン。村人のVITを少し上昇させる。",
     foodBuff: { vit: 2 },

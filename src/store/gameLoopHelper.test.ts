@@ -84,7 +84,7 @@ describe("gameLoopHelper", () => {
           name: "貧乏村人",
           currentJob: "農民",
           jobHistory: ["農民"],
-          gold: 50, // 200G未満、竜鱗の贅沢鍋(120G)は買えないがパン(4G)は買える
+          gold: 50, // 200G未満、竜鱗の贅沢鍋(120G)は買えないがパン(3G)は買える
           activeFoodBuffId: null,
         },
         {
