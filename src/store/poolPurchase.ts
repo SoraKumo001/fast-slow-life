@@ -76,7 +76,6 @@ export function processItemAcquisition(
   if (!item) return { playerGold, inventory, logs: [] };
 
   const price = item.basePrice * 2;
-  const totalPrice = price * amount;
   const logs: LogPayload[] = [];
   const nextInventory = { ...inventory };
 

@@ -165,9 +165,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     let totalFoodCost = 0;
     villagers = villagers.map((v) => {
       let foodCost = 0;
-      if (v.currentJob === "無職") {
-        foodCost = 0;
-      } else if (v.isStarving) {
+      if (v.isStarving) {
         foodCost = 0;
       } else if (v.activeFoodBuffId) {
         foodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;

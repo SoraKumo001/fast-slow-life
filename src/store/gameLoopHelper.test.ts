@@ -113,15 +113,15 @@ describe("gameLoopHelper", () => {
         (v) => v.id === "unemployed_villager",
       )!;
 
-      // 金持ち村人と無職村人は竜鱗の贅沢鍋を消費する
+      // 金持ち村人は竜鱗の贅沢鍋を消費する
       expect(rich.activeFoodBuffId).toBe("food_dragon_hotpot");
-      expect(unemployed.activeFoodBuffId).toBe("food_dragon_hotpot");
-      // 貧乏村人は竜鱗の贅沢鍋を避け、パンを消費する
+      // 貧乏村人と無職村人は竜鱗の贅沢鍋を避け、パンを消費する
+      expect(unemployed.activeFoodBuffId).toBe("food_bread");
       expect(poor.activeFoodBuffId).toBe("food_bread");
 
       // 在庫の消費量を確認 (FOOD_CONSUMPTION_PER_VILLAGER = 1/24)
-      const expectedHotpotCost = (1.0 / 24.0) * 2; // rich & unemployed
-      const expectedBreadCost = 1.0 / 24.0; // poor
+      const expectedHotpotCost = 1.0 / 24.0; // rich
+      const expectedBreadCost = (1.0 / 24.0) * 2; // poor & unemployed
 
       expect(resultInv.food_dragon_hotpot).toBeCloseTo(10 - expectedHotpotCost, 5);
       expect(resultInv.food_bread).toBeCloseTo(10 - expectedBreadCost, 5);
@@ -951,7 +951,7 @@ describe("gameLoopHelper", () => {
 
   describe("calculateAdvanceHour - Negative Gold Game Over", () => {
     it("ゴールドがマイナスの状態で日付が変わると、consecutiveNegativeGoldDaysがカウントアップされること", () => {
-      const baseState: any = {
+      const baseState = {
         currentDay: 1,
         currentHour: 23,
         gold: -10,
@@ -983,7 +983,7 @@ describe("gameLoopHelper", () => {
         marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 0,
-      };
+      } as unknown as import("../types/game").GameState;
 
       const result = calculateAdvanceHour(baseState);
       expect(result.consecutiveNegativeGoldDays).toBe(1);
@@ -991,7 +991,7 @@ describe("gameLoopHelper", () => {
     });
 
     it("ゴールドがマイナスの状態で3日連続で続くと、破産によるゲームオーバーになること", () => {
-      const baseState: any = {
+      const baseState = {
         currentDay: 1,
         currentHour: 23,
         gold: -10,
@@ -1023,7 +1023,7 @@ describe("gameLoopHelper", () => {
         marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 2,
-      };
+      } as unknown as import("../types/game").GameState;
 
       const result = calculateAdvanceHour(baseState);
       expect(result.consecutiveNegativeGoldDays).toBe(3);
@@ -1033,7 +1033,7 @@ describe("gameLoopHelper", () => {
     });
 
     it("日付が変わるタイミングでゴールドが0以上であれば、consecutiveNegativeGoldDaysがリセットされること", () => {
-      const baseState: any = {
+      const baseState = {
         currentDay: 1,
         currentHour: 23,
         gold: 10,
@@ -1065,7 +1065,7 @@ describe("gameLoopHelper", () => {
         marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 2,
-      };
+      } as unknown as import("../types/game").GameState;
 
       const result = calculateAdvanceHour(baseState);
       expect(result.consecutiveNegativeGoldDays).toBe(0);

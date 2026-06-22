@@ -70,15 +70,13 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
   }, 0);
 
   let dailyFoodCost = 0;
-  if (v.currentJob !== "無職") {
-    if (v.activeFoodBuffId) {
-      dailyFoodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;
-    } else {
-      dailyFoodCost = 2;
-    }
+  if (v.activeFoodBuffId) {
+    dailyFoodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;
+  } else {
+    dailyFoodCost = 2;
   }
 
-  const hourlyInnCost = v.currentJob === "無職" ? 0 : 1 + innLvl;
+  const hourlyInnCost = 1 + innLvl;
 
   return (
     <div className="space-y-1.5">
@@ -208,15 +206,11 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
             </div>
             <p className="flex justify-between">
               <span className="text-slate-400">日々の食費:</span>
-              <span className="text-slate-200 font-bold">
-                {v.currentJob === "無職" ? "無料" : `${dailyFoodCost} G/日`}
-              </span>
+              <span className="text-slate-200 font-bold">{`${dailyFoodCost} G/日`}</span>
             </p>
             <p className="flex justify-between">
               <span className="text-slate-400">宿泊費(休息時):</span>
-              <span className="text-slate-200 font-bold">
-                {v.currentJob === "無職" ? "無料" : `${hourlyInnCost} G/h`}
-              </span>
+              <span className="text-slate-200 font-bold">{`${hourlyInnCost} G/h`}</span>
             </p>
           </div>
         </div>

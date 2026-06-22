@@ -55,8 +55,8 @@ export function processVillagerActivities(
       v.currentHp = Math.min(v.maxHp, v.currentHp + hpRecovery);
       v.stamina = Math.min(maxStamina, v.stamina + staminaRecovery);
 
-      // 宿代請求: 1時間あたり 1 + innLvl G を村人からプレイヤーへ（無職の場合は無料）
-      const innCost = v.currentJob === "無職" ? 0 : 1 + innLvl;
+      // 宿代請求: 1時間あたり 1 + innLvl G を村人からプレイヤーへ
+      const innCost = 1 + innLvl;
       v.gold -= innCost; // 不足時はツケ払い（マイナス）
       currentGold += innCost;
       if (innCost > 0) {

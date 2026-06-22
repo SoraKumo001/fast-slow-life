@@ -15,7 +15,7 @@ import { Panel } from "../ui/Panel";
 import { SortSelect } from "../ui/SortSelect";
 
 export const InventoryPanel: React.FC = () => {
-  const { inventory, targetAmounts, caravans, tradeRules } = useInventory();
+  const { inventory, targetAmounts, tradeRules } = useInventory();
   const facilities = useFacilities();
   const { currentTier, dungeons } = useDungeons();
 
