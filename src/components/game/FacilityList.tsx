@@ -1,4 +1,4 @@
-import { Hammer, Home, ShoppingBag, TreePine } from "lucide-react";
+import { Hammer, Home, TreePine } from "lucide-react";
 import React from "react";
 
 import {
@@ -20,9 +20,8 @@ const FACILITY_CATEGORIES: {
   icon: React.ComponentType<{ className?: string }>;
   ids: FacilityType[];
 }[] = [
-  { label: "宿泊・雇用", icon: Home, ids: ["inn", "guild"] },
-  { label: "加工・クラフト", icon: Hammer, ids: ["workshop", "kitchen", "blacksmith", "alchemy"] },
-  { label: "商店・交易", icon: ShoppingBag, ids: ["market", "weapon_shop", "pharmacy"] },
+  { label: "宿泊・雇用・交易", icon: Home, ids: ["inn", "guild", "market"] },
+  { label: "加工・クラフト", icon: Hammer, ids: ["workshop", "kitchen", "alchemy", "weapon_shop"] },
   { label: "資源生産", icon: TreePine, ids: ["farm", "lumberyard", "quarry"] },
 ];
 

@@ -138,12 +138,10 @@ export type FacilityType =
   | "inn"
   | "workshop"
   | "kitchen"
-  | "blacksmith"
   | "alchemy"
   | "market"
   | "guild"
   | "weapon_shop"
-  | "pharmacy"
   | "farm"
   | "lumberyard"
   | "quarry";

@@ -58,7 +58,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   iron_sword: {
     id: "iron_sword",
     resultItemId: "iron_sword",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "iron_ingot", count: 2 },
@@ -70,7 +70,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   iron_armor: {
     id: "iron_armor",
     resultItemId: "iron_armor",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [
       { itemId: "iron_ingot", count: 3 },
@@ -115,7 +115,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   wooden_staff: {
     id: "wooden_staff",
     resultItemId: "wooden_staff",
-    facilityId: "workshop",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "wood", count: 2 }],
     requiredTime: 2,
@@ -124,7 +124,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   silver_rapier: {
     id: "silver_rapier",
     resultItemId: "silver_rapier",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 2,
     requiredItems: [
       { itemId: "silver_ingot", count: 2 },
@@ -149,7 +149,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   dragon_slayer: {
     id: "dragon_slayer",
     resultItemId: "dragon_slayer",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 4,
     requiredItems: [
       { itemId: "iron_ingot", count: 4 },
@@ -162,7 +162,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   leather_cloak: {
     id: "leather_cloak",
     resultItemId: "leather_cloak",
-    facilityId: "workshop",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "leather", count: 2 }],
     requiredTime: 2,
@@ -171,7 +171,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   silver_chainmail: {
     id: "silver_chainmail",
     resultItemId: "silver_chainmail",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 2,
     requiredItems: [
       { itemId: "silver_ingot", count: 3 },
@@ -196,7 +196,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
   dragon_scale_mail: {
     id: "dragon_scale_mail",
     resultItemId: "dragon_scale_mail",
-    facilityId: "blacksmith",
+    facilityId: "weapon_shop",
     requiredFacilityLevel: 4,
     requiredItems: [
       { itemId: "iron_ingot", count: 3 },
