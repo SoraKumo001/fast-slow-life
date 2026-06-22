@@ -63,8 +63,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   if (isNewDay) {
     if (gold < 0) {
       consecutiveNegativeGoldDaysNext += 1;
+      const daysUntilBankrupt = 3 - consecutiveNegativeGoldDaysNext;
       logsToAppend.push({
-        message: `【経済警告】プレイヤーの所持金がマイナスになっています（連続 ${consecutiveNegativeGoldDaysNext} 日目）。`,
+        message: `【経済警告】プレイヤーの所持金がマイナスになっています（連続 ${consecutiveNegativeGoldDaysNext} 日目、破産まであと ${daysUntilBankrupt} 日）。`,
         type: "warning",
       });
     } else {
@@ -286,6 +287,32 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   currentTier = bossRes.currentTier;
   gameLimitDays = bossRes.gameLimitDays;
   logsToAppend.push(...bossRes.logs);
+
+  if (bossRes.gameOver) {
+    return {
+      currentDay,
+      currentHour,
+      gold,
+      villagers,
+      facilities,
+      dungeons,
+      inventory,
+      currentTier,
+      activeBoss,
+      bossDefeated,
+      gameLimitDays,
+      gameOver: true,
+      gameOverReason: "クリア",
+      isPaused: true,
+      logsToAppend,
+      towns,
+      caravans,
+      marketTrend,
+      isSalaryUnpaid: isSalaryUnpaidNext,
+      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      stats: nextStats,
+    };
+  }
 
   const actRes = processVillagerActivities(
     villagers,

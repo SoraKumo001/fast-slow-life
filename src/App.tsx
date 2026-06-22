@@ -116,21 +116,34 @@ export default function App() {
       {/* ボス撃破アナウンス */}
       <BossDefeatAnnouncement />
 
-      {/* ゲームオーバー時のオーバーレイ */}
+      {/* ゲームオーバー・ゲームクリア時のオーバーレイ */}
       {gameOver && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-md p-4 overflow-y-auto">
           <div className="max-w-2xl w-full">
             <div className="text-center mb-4 space-y-2">
-              <h1 className="text-4xl font-extrabold text-red-500 uppercase tracking-widest animate-pulse">
-                GAME OVER
-              </h1>
-              <p className="text-slate-400 text-sm">
-                {gameOverReason === "破産"
-                  ? "所持金マイナス状態が3日間続いたため、破産しました。"
-                  : gameOverReason === "全滅"
-                    ? "すべての村人が戦闘不能になりました。"
-                    : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
-              </p>
+              {gameOverReason === "クリア" ? (
+                <>
+                  <h1 className="text-4xl font-extrabold text-amber-400 uppercase tracking-widest animate-bounce drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]">
+                    🎉 GAME CLEAR 🎉
+                  </h1>
+                  <p className="text-emerald-400 text-sm font-bold">
+                    おめでとうございます！終焉の竜を討伐し、世界に平和をもたらしました！
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1 className="text-4xl font-extrabold text-red-500 uppercase tracking-widest animate-pulse">
+                    GAME OVER
+                  </h1>
+                  <p className="text-slate-400 text-sm">
+                    {gameOverReason === "破産"
+                      ? "所持金マイナス状態が3日間続いたため、破産しました。"
+                      : gameOverReason === "全滅"
+                        ? "すべての村人が戦闘不能になりました。"
+                        : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
+                  </p>
+                </>
+              )}
             </div>
 
             {/* タブ切り替え */}

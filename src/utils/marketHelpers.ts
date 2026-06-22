@@ -14,7 +14,7 @@ export const getMarketSellBonus = (level: number): number => {
 };
 
 export const getSellBonus = (
-  category: ItemCategory,
+  _category: ItemCategory,
   facilities: {
     market: { level: number };
   },

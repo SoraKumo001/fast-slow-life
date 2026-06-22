@@ -115,11 +115,11 @@ describe("Balance Simulator", () => {
   - 平均村人死亡回数 (Avg Villager Deaths): ${avgDeaths} 回
 
 ■ 進行度（Tier）ごとの平均ボス撃破達成日数
-  - Tier 1 (始まりの森: ゴブリンロード)   平均: ${avgTierDays[1]} 日 (制限60日)
-  - Tier 2 (廃鉱山: アイアンゴーレム)       平均: ${avgTierDays[2]} 日 (制限180日)
-  - Tier 3 (魔獣の谷: キマイラ)            平均: ${avgTierDays[3]} 日 (制限320日)
-  - Tier 4 (世界樹の根: アークデーモン)     平均: ${avgTierDays[4]} 日 (制限550日)
-  - Tier 5 (深淵の奈落: 終焉の竜)          平均: ${avgTierDays[5]} 日 (制限850日)
+  - Tier 1 (始まりの森: ゴブリンロード)   平均: ${avgTierDays[1]} 日 (制限25日)
+  - Tier 2 (廃鉱山: アイアンゴーレム)       平均: ${avgTierDays[2]} 日 (制限55日)
+  - Tier 3 (魔獣の谷: キマイラ)            平均: ${avgTierDays[3]} 日 (制限100日)
+  - Tier 4 (世界樹の根: アークデーモン)     平均: ${avgTierDays[4]} 日 (制限150日)
+  - Tier 5 (深淵の奈落: 終焉の竜)          平均: ${avgTierDays[5]} 日 (制限210日)
 ${detailedRunsText}==================================================
 `;
 

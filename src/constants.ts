@@ -1,4 +1,4 @@
-export const TIER_LIMIT_DAYS = [0, 30, 70, 120, 180, 250];
+export const TIER_LIMIT_DAYS = [0, 25, 55, 100, 150, 210];
 
 export const HOURS_PER_DAY = 24;
 export const MAX_LOG_COUNT = 100;
@@ -6,19 +6,19 @@ export const MAX_LOG_COUNT = 100;
 export const BASE_STAT = 10;
 export const BASE_HP = 100;
 export const BASE_STAMINA = 100;
-export const STAT_GROWTH_PER_LEVEL = 3;
-export const HP_GROWTH_PER_LEVEL = 15;
-export const STAMINA_GROWTH_PER_LEVEL = 10;
-export const EXP_NEEDED_PER_LEVEL = 50;
+export const STAT_GROWTH_PER_LEVEL = 5;
+export const HP_GROWTH_PER_LEVEL = 20;
+export const STAMINA_GROWTH_PER_LEVEL = 15;
+export const EXP_NEEDED_PER_LEVEL = 40;
 export const STAMINA_COST_PER_HOUR = 5;
 
 export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
 
-export const STARTING_GOLD = 1000;
-export const STARTING_FOOD = 50;
-export const VILLAGER_STARTING_GOLD = 50;
+export const STARTING_GOLD = 1500;
+export const STARTING_FOOD = 80;
+export const VILLAGER_STARTING_GOLD = 100;
 
-export const HIRE_COST = 100;
+export const HIRE_COST = 80;
 export const BASE_MAX_VILLAGERS = 3;
 export const MAX_VILLAGERS_ABSOLUTE = 10;
 export const VILLAGERS_PER_GUILD_LEVEL = 2;
@@ -64,24 +64,24 @@ export const HIT_RATE_DEX_FACTOR = 1.5;
 export const CRIT_RATE_CAP = 30;
 export const CRIT_RATE_DEX_FACTOR = 0.1;
 
-export const FOOD_GATHER_AMOUNT = 10;
-export const BASE_GATHER_AMOUNT = 1;
-export const STAT_GATHER_AMOUNT_FACTOR = 0.01;
+export const FOOD_GATHER_AMOUNT = 15;
+export const BASE_GATHER_AMOUNT = 2;
+export const STAT_GATHER_AMOUNT_FACTOR = 0.015;
 
-export const CRAFTER_TIME_REDUCTION = 0.8;
-export const CRAFT_QUEUE_MAX_LENGTH = 3;
-export const BASE_GREAT_SUCCESS_RATE = 0.05;
+export const CRAFTER_TIME_REDUCTION = 0.75;
+export const CRAFT_QUEUE_MAX_LENGTH = 4;
+export const BASE_GREAT_SUCCESS_RATE = 0.1;
 
 export const BASE_UPGRADE_TIME = 5;
 export const UPGRADE_TIME_PER_LEVEL = 5;
 
 export const DISCOUNT_PER_SOUL_LEVEL = 0.1;
 
-export const HERITAGE_GOLD_PER_LEVEL = 500;
-export const STORAGE_FOOD_PER_LEVEL = 100;
-export const BODY_STAT_PER_LEVEL = 2;
-export const BUILDING_COST_REDUCTION = 0.05;
-export const EDUCATION_EXP_BONUS = 0.1;
+export const HERITAGE_GOLD_PER_LEVEL = 800;
+export const STORAGE_FOOD_PER_LEVEL = 150;
+export const BODY_STAT_PER_LEVEL = 3;
+export const BUILDING_COST_REDUCTION = 0.08;
+export const EDUCATION_EXP_BONUS = 0.15;
 
 export const DEFAULT_GATHER_RESPAWN_HOURS = 3;
 export const HARD_GATHER_RESPAWN_HOURS = 6;

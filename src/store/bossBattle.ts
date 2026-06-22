@@ -300,6 +300,7 @@ export function processBossBattle(
           return v;
         });
 
+        let isClear = false;
         if (nextCurrentTier < 5) {
           nextCurrentTier += 1;
           nextGameLimitDays = TIER_LIMIT_DAYS[nextCurrentTier];
@@ -308,8 +309,27 @@ export function processBossBattle(
             message: `新しいエリアと施設が解放されました！ 次のボス期限は ${nextGameLimitDays} 日目まで。`,
             type: "system",
           });
+        } else {
+          isClear = true;
+          logs.push({
+            message: `【ゲームクリア】伝説の魔獣【終焉の竜】を討伐しました！世界に平和が戻りました。`,
+            type: "system",
+          });
         }
         nextActiveBoss = null;
+
+        if (isClear) {
+          return {
+            activeBoss: null,
+            villagers: nextVillagers,
+            bossDefeated: true,
+            currentTier: nextCurrentTier,
+            gameLimitDays: nextGameLimitDays,
+            logs,
+            gameOver: true,
+            gameOverReason: "クリア",
+          };
+        }
       }
     } else {
       const regen = Math.floor(nextActiveBoss.maxHp * BOSS_REGEN_PERCENT);
@@ -324,5 +344,7 @@ export function processBossBattle(
     currentTier: nextCurrentTier,
     gameLimitDays: nextGameLimitDays,
     logs,
+    gameOver: false,
+    gameOverReason: undefined,
   };
 }

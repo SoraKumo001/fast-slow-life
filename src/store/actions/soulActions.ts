@@ -65,6 +65,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       caravans: result.caravans,
       marketTrend: result.marketTrend,
       isSalaryUnpaid: result.isSalaryUnpaid,
+      consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       stats: result.stats,
     });
   },

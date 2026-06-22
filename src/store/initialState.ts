@@ -87,9 +87,9 @@ export const createInitialInventory = (foodOverride?: number): Record<string, nu
     Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0]),
   );
   if (foodOverride !== undefined) {
-    base.wheat = Math.ceil(foodOverride / 3);
-    base.vegetable = Math.floor((foodOverride + 1) / 3);
-    base.raw_meat = Math.floor(foodOverride / 3);
+    base.wheat = foodOverride;
+    base.vegetable = 0;
+    base.raw_meat = 0;
   }
   return base;
 };

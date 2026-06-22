@@ -7,8 +7,6 @@ import {
   usePlayerResources,
   useGameStatus,
   useGameControls,
-  useVillagers,
-  useInventory,
   useDungeons,
   useSoulUpgrades,
   useLogs,
@@ -23,10 +21,8 @@ import { LogHistoryWindow } from "./LogHistoryWindow";
 export const Header: React.FC = () => {
   const { currentDay, currentHour } = useGameTime();
   const { gold, soulPoints } = usePlayerResources();
-  const inventory = useInventory().inventory;
   const { isPaused, playSpeed, gameOver, gameLimitDays } = useGameStatus();
   const { currentTier, bossDefeated } = useDungeons();
-  const villagers = useVillagers();
   const soulUpgrades = useSoulUpgrades();
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
   const logs = useLogs();
@@ -34,23 +30,6 @@ export const Header: React.FC = () => {
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
-
-  const dailyFoodConsumption = villagers.length;
-  // 食料在庫の合計を計算: foodカテゴリ品 + 生の食材（飢餓判定で消費される）
-  const foodItems = [
-    "food_bread",
-    "food_dried_meat",
-    "food_herb_salad",
-    "food_sandwich",
-    "food_stamina_stew",
-    "food_beast_roast",
-    "food_dragon_hotpot",
-  ];
-  const rawItems = ["wheat", "vegetable", "raw_meat"];
-  const foodAmount =
-    foodItems.reduce((sum, id) => sum + (inventory[id] || 0), 0) +
-    rawItems.reduce((sum, id) => sum + (inventory[id] || 0), 0);
-  const foodDaysLeft = dailyFoodConsumption > 0 ? Math.floor(foodAmount / dailyFoodConsumption) : 0;
 
   return (
     <>
@@ -81,20 +60,6 @@ export const Header: React.FC = () => {
             </span>
             <span className="text-amber-400 font-mono font-bold text-lg">
               {Math.floor(gold).toLocaleString()} G
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">
-              食料在庫
-            </span>
-            <span
-              className={`font-mono font-bold text-lg ${foodAmount < 10 ? "text-red-400 animate-pulse" : "text-emerald-400"}`}
-            >
-              {Math.floor(foodAmount)}
-              <span className="text-[10px] text-slate-400 font-normal ml-1">
-                (-{dailyFoodConsumption}/日, あと{foodDaysLeft}日分)
-              </span>
             </span>
           </div>
 

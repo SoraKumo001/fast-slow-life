@@ -175,7 +175,9 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     if (caravan.type === "export") {
       // ゴールドの獲得
       nextGold += caravan.goldEarned;
-      statsUpdate = { totalGoldFromExports: caravan.goldEarned };
+      statsUpdate = {
+        totalGoldFromExports: (state.stats?.totalGoldFromExports || 0) + caravan.goldEarned,
+      };
 
       // 友好度の上昇
       nextTowns = state.towns.map((t) => {

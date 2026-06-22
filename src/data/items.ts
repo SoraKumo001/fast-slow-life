@@ -16,7 +16,7 @@ export const ITEMS: Record<string, Item> = {
     category: "material",
     basePrice: 1,
     difficulty: 1.0,
-    initialCount: 20,
+    initialCount: 0,
     description: "農場で収穫される野菜。サラダや鍋の材料になる。",
   },
   raw_meat: {
@@ -25,7 +25,7 @@ export const ITEMS: Record<string, Item> = {
     category: "material",
     basePrice: 2,
     difficulty: 1.0,
-    initialCount: 10,
+    initialCount: 0,
     description: "農場で得られる生の肉。干し肉や鍋の材料になる。",
   },
   wood: {
