@@ -10,7 +10,12 @@ export const usePlayerResources = () =>
 
 export const useInventory = () =>
   useGameStore(
-    (s) => ({ inventory: s.inventory, targetAmounts: s.targetAmounts, tradeRules: s.tradeRules }),
+    (s) => ({
+      inventory: s.inventory,
+      targetAmounts: s.targetAmounts,
+      tradeRules: s.tradeRules,
+      caravans: s.caravans,
+    }),
     shallow,
   );
 

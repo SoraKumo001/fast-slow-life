@@ -86,6 +86,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       towns: result.towns,
       caravans: result.caravans,
       marketTrend: result.marketTrend,
+      consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       ...(result.gameOver && !state.gameOver
         ? {
             soulPoints:

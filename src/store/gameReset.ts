@@ -66,6 +66,7 @@ export interface ResetResult {
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
+  consecutiveNegativeGoldDays: number;
 }
 
 export function resetGameHelper(params: {
@@ -135,5 +136,6 @@ export function resetGameHelper(params: {
     caravans: getInitialCaravans(),
     marketTrend: null,
     isSalaryUnpaid: false,
+    consecutiveNegativeGoldDays: 0,
   };
 }

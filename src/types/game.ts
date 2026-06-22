@@ -347,6 +347,7 @@ export interface GameState {
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
+  consecutiveNegativeGoldDays: number;
 }
 
 export type StoreSet = (

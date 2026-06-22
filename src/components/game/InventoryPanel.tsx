@@ -15,7 +15,7 @@ import { Panel } from "../ui/Panel";
 import { SortSelect } from "../ui/SortSelect";
 
 export const InventoryPanel: React.FC = () => {
-  const { inventory, targetAmounts } = useInventory();
+  const { inventory, targetAmounts, caravans, tradeRules } = useInventory();
   const facilities = useFacilities();
   const { currentTier, dungeons } = useDungeons();
 
@@ -148,6 +148,9 @@ export const InventoryPanel: React.FC = () => {
             const currentCount = Math.floor(inventory[item.id] || 0);
             const target = targetAmounts[item.id] || 0;
 
+            // 自動交易設定 (売却ルール) の有無を確認
+            const rule = tradeRules?.find((r) => r.itemId === item.id && r.type === "sell");
+
             return (
               <div
                 key={item.id}
@@ -168,6 +171,15 @@ export const InventoryPanel: React.FC = () => {
                     <span>
                       所持数: <span className="text-slate-300 font-bold">{currentCount}</span>
                     </span>
+                    {rule && (
+                      <span
+                        className={
+                          rule.isEnabled ? "text-orange-400 font-bold" : "text-slate-500 font-bold"
+                        }
+                      >
+                        (自動交易: {rule.isEnabled ? `${rule.threshold}個超` : "無効"})
+                      </span>
+                    )}
                     <span>
                       価格: <span className="text-amber-500 font-bold">{item.basePrice} G</span>
                     </span>

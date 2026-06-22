@@ -41,6 +41,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     caravans,
     marketTrend,
     isSalaryUnpaid,
+    consecutiveNegativeGoldDays,
   } = state;
 
   const logsToAppend: import("./gameLoopTypes").LogPayload[] = [];
@@ -54,14 +55,18 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   }
 
   let isSalaryUnpaidNext = isSalaryUnpaid;
+  let consecutiveNegativeGoldDaysNext = consecutiveNegativeGoldDays;
 
   if (isNewDay) {
-    // プレイヤーのゴールドは毎日100G増える
-    gold += 100;
-    logsToAppend.push({
-      message: `【経済】毎日の資金援助としてプレイヤーのゴールドが 100 G 増加しました。`,
-      type: "info",
-    });
+    if (gold < 0) {
+      consecutiveNegativeGoldDaysNext += 1;
+      logsToAppend.push({
+        message: `【経済警告】プレイヤーの所持金がマイナスになっています（連続 ${consecutiveNegativeGoldDaysNext} 日目）。`,
+        type: "warning",
+      });
+    } else {
+      consecutiveNegativeGoldDaysNext = 0;
+    }
 
     const unlockedTowns = towns.filter((t) => t.isUnlocked);
 
@@ -83,6 +88,34 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
         });
       }
     }
+  }
+
+  if (consecutiveNegativeGoldDaysNext >= 3) {
+    logsToAppend.push({
+      message: `【ゲームオーバー】所持金マイナス状態が3日間続いたため、破産しました！`,
+      type: "error",
+    });
+    return {
+      currentDay,
+      currentHour,
+      gold,
+      villagers,
+      facilities,
+      dungeons,
+      inventory,
+      currentTier,
+      activeBoss,
+      bossDefeated,
+      gameLimitDays,
+      gameOver: true,
+      isPaused: true,
+      logsToAppend,
+      towns,
+      caravans,
+      marketTrend,
+      isSalaryUnpaid: isSalaryUnpaidNext,
+      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+    };
   }
 
   if (currentDay > gameLimitDays && !bossDefeated) {
@@ -109,6 +142,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
+      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
     };
   }
 
@@ -278,6 +312,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
+      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
     };
   }
 
@@ -421,5 +456,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     caravans,
     marketTrend,
     isSalaryUnpaid: isSalaryUnpaidNext,
+    consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
   };
 }

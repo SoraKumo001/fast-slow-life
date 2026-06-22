@@ -34,4 +34,5 @@ export interface AdvanceHourResult {
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
+  consecutiveNegativeGoldDays: number;
 }

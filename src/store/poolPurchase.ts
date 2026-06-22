@@ -32,8 +32,7 @@ export function processItemPoolPurchase(
       const price = item.basePrice * 2;
       if (price <= 0) continue;
 
-      const maxCanBuy = Math.floor(nextGold / price);
-      const buyCount = Math.min(count, maxCanBuy);
+      const buyCount = count;
 
       if (buyCount > 0) {
         const cost = buyCount * price;
@@ -84,10 +83,7 @@ export function processItemAcquisition(
   let buyCount = amount;
   let poolCount = 0;
 
-  if (playerGold < totalPrice) {
-    buyCount = Math.floor(playerGold / price);
-    poolCount = amount - buyCount;
-  }
+  // 所持金不足でも制限なく全量買い取る
 
   let nextPlayerGold = playerGold;
   if (buyCount > 0) {

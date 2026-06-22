@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 
+import { STARTING_GOLD } from "../constants";
 import { DUNGEONS, ITEMS, RECIPES } from "../data/masterData";
 import { FacilityType } from "../types/game";
 import { useGameStore } from "./gameStore";
@@ -14,7 +15,7 @@ describe("gameStore", () => {
 
   it("初期状態が正しくセットアップされていること", () => {
     const state = useGameStore.getState();
-    expect(state.gold).toBe(500);
+    expect(state.gold).toBe(STARTING_GOLD);
     expect(state.inventory.wheat).toBe(17);
     expect(state.inventory.vegetable).toBe(17);
     expect(state.inventory.raw_meat).toBe(16);
@@ -26,7 +27,7 @@ describe("gameStore", () => {
 
   it("ゴールドの変更が正しく機能すること", () => {
     const state = useGameStore.getState();
-    expect(state.gold).toBe(500);
+    expect(state.gold).toBe(STARTING_GOLD);
   });
 
   it("ボス討伐が開始でき、HPが時間経過で自然回復すること", () => {
@@ -337,13 +338,12 @@ describe("gameStore", () => {
         }),
       }));
 
-      // 1. 採取を行い、プレイヤーのゴールドが不足してプールされることを確認
+      // 1. 採取を行い、プレイヤーのゴールドが不足しても全量買い取ってマイナスになることを確認
       // 小麦 (basePrice = 1G) の買取単価は 2G。 11個採取しようとすると、22G 必要。
-      // プレイヤーは 10G しか持っていないため、5個は買い取り、6個はプールされる。
-      // プレイヤーゴールド: 10G -> 0G
-      // 村人ゴールド: 50G -> 60G
-      // 倉庫小麦: 0 -> 5個
-      // プール小麦: 6個
+      // プレイヤーゴールド: 10G -> -12G
+      // 村人ゴールド: 50G -> 72G
+      // 倉庫小麦: 0 -> 11個
+      // プール小麦: 0個
       const stateBefore = useGameStore.getState();
       const forestOriginal = stateBefore.dungeons.find((d) => d.id === "forest")!;
       const forest = {
@@ -372,18 +372,20 @@ describe("gameStore", () => {
         10, // プレイヤーゴールド 10G
       );
 
-      expect(res.gold).toBe(0); // プレイヤーゴールドは 0G に減少
-      expect(v.gold).toBe(60); // 村人のゴールドは 50 + 10 = 60G に増加
-      expect(v.pool.wheat).toBe(6); // 買えなかった6個がプールされる (採取量: 11)
-      expect(nextInventory.wheat).toBe(5); // 買えた5個が倉庫に入る
+      expect(res.gold).toBe(-12); // プレイヤーゴールドは -12G に減少 (10 - 22 = -12)
+      expect(v.gold).toBe(72); // 村人のゴールドは 50 + 22 = 72G に増加
+      expect(v.pool.wheat).toBeUndefined(); // プールは発生しない
+      expect(nextInventory.wheat).toBe(11); // 11個すべてが倉庫に入る
 
-      // 2. プレイヤーのゴールドが増えたときに、プールから自動精算されることを検証
-      // プレイヤーが 100G を手に入れたとする
+      // 2. プレイヤーのゴールドが増えたときに、プールから自動精算されることを検証 (モックでプールデータを設定してテスト)
+      // プレイヤーが 100G を手に入れ、プール小麦6個が存在する場合
       // プール小麦 6個 x 2G = 12G が支払われ、 100 - 12 = 88G になる
       // プールされていた小麦が倉庫に移り、計 5 + 6 = 11 個になる
       // 村人に 12G 支払われて 60 + 12 = 72G になる
       // プール小麦は完済して消滅
-      const poolPurchaseResult = processItemPoolPurchase(100, nextInventory, [v]);
+      v.pool = { wheat: 6 };
+      v.gold = 60;
+      const poolPurchaseResult = processItemPoolPurchase(100, { ...nextInventory, wheat: 5 }, [v]);
       expect(poolPurchaseResult.gold).toBe(88);
       expect(poolPurchaseResult.inventory.wheat).toBe(11);
       expect(poolPurchaseResult.villagers[0].gold).toBe(72);

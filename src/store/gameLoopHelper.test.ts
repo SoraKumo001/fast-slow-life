@@ -7,6 +7,7 @@ import {
   processRespawns,
   processVillagerActivities,
   processCraftingAndUpgrades,
+  calculateAdvanceHour,
 } from "./gameLoopHelper";
 
 describe("gameLoopHelper", () => {
@@ -945,6 +946,130 @@ describe("gameLoopHelper", () => {
       expect(res2.inventory["wood"]).toBeGreaterThan(0);
       expect(res2.villagers[0].status).toBe("idle");
       expect(res2.villagers[0].assignedCraftJobId).toBeNull();
+    });
+  });
+
+  describe("calculateAdvanceHour - Negative Gold Game Over", () => {
+    it("ゴールドがマイナスの状態で日付が変わると、consecutiveNegativeGoldDaysがカウントアップされること", () => {
+      const baseState: any = {
+        currentDay: 1,
+        currentHour: 23,
+        gold: -10,
+        villagers: [],
+        facilities: {
+          inn: { level: 0, craftQueue: [] },
+          workshop: { level: 0, craftQueue: [] },
+          kitchen: { level: 0, craftQueue: [] },
+          blacksmith: { level: 0, craftQueue: [] },
+          alchemy: { level: 0, craftQueue: [] },
+          market: { level: 0, craftQueue: [] },
+          guild: { level: 0, craftQueue: [] },
+          weapon_shop: { level: 0, craftQueue: [] },
+          pharmacy: { level: 0, craftQueue: [] },
+          farm: { level: 0, craftQueue: [] },
+          lumberyard: { level: 0, craftQueue: [] },
+          quarry: { level: 0, craftQueue: [] },
+        },
+        dungeons: [],
+        inventory: {},
+        currentTier: 1,
+        activeBoss: null,
+        bossDefeated: false,
+        gameLimitDays: 30,
+        gameOver: false,
+        isPaused: false,
+        towns: [],
+        caravans: [],
+        marketTrend: null,
+        isSalaryUnpaid: false,
+        consecutiveNegativeGoldDays: 0,
+      };
+
+      const result = calculateAdvanceHour(baseState);
+      expect(result.consecutiveNegativeGoldDays).toBe(1);
+      expect(result.gameOver).toBe(false);
+    });
+
+    it("ゴールドがマイナスの状態で3日連続で続くと、破産によるゲームオーバーになること", () => {
+      const baseState: any = {
+        currentDay: 1,
+        currentHour: 23,
+        gold: -10,
+        villagers: [],
+        facilities: {
+          inn: { level: 0, craftQueue: [] },
+          workshop: { level: 0, craftQueue: [] },
+          kitchen: { level: 0, craftQueue: [] },
+          blacksmith: { level: 0, craftQueue: [] },
+          alchemy: { level: 0, craftQueue: [] },
+          market: { level: 0, craftQueue: [] },
+          guild: { level: 0, craftQueue: [] },
+          weapon_shop: { level: 0, craftQueue: [] },
+          pharmacy: { level: 0, craftQueue: [] },
+          farm: { level: 0, craftQueue: [] },
+          lumberyard: { level: 0, craftQueue: [] },
+          quarry: { level: 0, craftQueue: [] },
+        },
+        dungeons: [],
+        inventory: {},
+        currentTier: 1,
+        activeBoss: null,
+        bossDefeated: false,
+        gameLimitDays: 30,
+        gameOver: false,
+        isPaused: false,
+        towns: [],
+        caravans: [],
+        marketTrend: null,
+        isSalaryUnpaid: false,
+        consecutiveNegativeGoldDays: 2,
+      };
+
+      const result = calculateAdvanceHour(baseState);
+      expect(result.consecutiveNegativeGoldDays).toBe(3);
+      expect(result.gameOver).toBe(true);
+      expect(result.isPaused).toBe(true);
+      expect(result.logsToAppend.some((log) => log.message.includes("破産しました"))).toBe(true);
+    });
+
+    it("日付が変わるタイミングでゴールドが0以上であれば、consecutiveNegativeGoldDaysがリセットされること", () => {
+      const baseState: any = {
+        currentDay: 1,
+        currentHour: 23,
+        gold: 10,
+        villagers: [],
+        facilities: {
+          inn: { level: 0, craftQueue: [] },
+          workshop: { level: 0, craftQueue: [] },
+          kitchen: { level: 0, craftQueue: [] },
+          blacksmith: { level: 0, craftQueue: [] },
+          alchemy: { level: 0, craftQueue: [] },
+          market: { level: 0, craftQueue: [] },
+          guild: { level: 0, craftQueue: [] },
+          weapon_shop: { level: 0, craftQueue: [] },
+          pharmacy: { level: 0, craftQueue: [] },
+          farm: { level: 0, craftQueue: [] },
+          lumberyard: { level: 0, craftQueue: [] },
+          quarry: { level: 0, craftQueue: [] },
+        },
+        dungeons: [],
+        inventory: {},
+        currentTier: 1,
+        activeBoss: null,
+        bossDefeated: false,
+        gameLimitDays: 30,
+        gameOver: false,
+        isPaused: false,
+        towns: [],
+        caravans: [],
+        marketTrend: null,
+        isSalaryUnpaid: false,
+        consecutiveNegativeGoldDays: 2,
+      };
+
+      const result = calculateAdvanceHour(baseState);
+      expect(result.consecutiveNegativeGoldDays).toBe(0);
+      expect(result.gameOver).toBe(false);
     });
   });
 });
