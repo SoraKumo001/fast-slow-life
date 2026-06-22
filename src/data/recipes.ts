@@ -7,7 +7,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "workshop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "wood", count: 3 }],
-    requiredTime: 1,
+    requiredTime: 2,
     outputCount: 1,
   },
   iron_ingot: {
@@ -16,7 +16,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "workshop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "iron_ore", count: 3 }],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   potion: {
@@ -28,7 +28,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 2 },
       { itemId: "vegetable", count: 1 },
     ],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   mid_potion: {
@@ -40,7 +40,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 3 },
       { itemId: "mushroom", count: 2 },
     ],
-    requiredTime: 3,
+    requiredTime: 6,
     outputCount: 1,
   },
   high_potion: {
@@ -52,7 +52,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 4 },
       { itemId: "crystal_fragment", count: 1 },
     ],
-    requiredTime: 6,
+    requiredTime: 12,
     outputCount: 1,
   },
   iron_sword: {
@@ -64,7 +64,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "iron_ingot", count: 2 },
       { itemId: "wood_plank", count: 1 },
     ],
-    requiredTime: 6,
+    requiredTime: 12,
     outputCount: 1,
   },
   iron_armor: {
@@ -76,7 +76,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "iron_ingot", count: 3 },
       { itemId: "leather", count: 2 },
     ],
-    requiredTime: 8,
+    requiredTime: 16,
     outputCount: 1,
   },
   silver_ingot: {
@@ -85,7 +85,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "workshop",
     requiredFacilityLevel: 2,
     requiredItems: [{ itemId: "silver_ore", count: 3 }],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   stamina_drink: {
@@ -97,7 +97,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 2 },
       { itemId: "wheat", count: 2 },
     ],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   elixir: {
@@ -109,7 +109,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 4 },
       { itemId: "mana_stone", count: 2 },
     ],
-    requiredTime: 7,
+    requiredTime: 14,
     outputCount: 1,
   },
   wooden_staff: {
@@ -118,7 +118,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "wood", count: 2 }],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   silver_rapier: {
@@ -130,7 +130,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "silver_ingot", count: 2 },
       { itemId: "wood_plank", count: 1 },
     ],
-    requiredTime: 7,
+    requiredTime: 14,
     outputCount: 1,
   },
   mythril_staff: {
@@ -143,7 +143,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "wood_plank", count: 2 },
       { itemId: "silver_ingot", count: 1 },
     ],
-    requiredTime: 10,
+    requiredTime: 20,
     outputCount: 1,
   },
   dragon_slayer: {
@@ -156,7 +156,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "mana_stone", count: 4 },
       { itemId: "bone", count: 3 },
     ],
-    requiredTime: 14,
+    requiredTime: 28,
     outputCount: 1,
   },
   leather_cloak: {
@@ -165,7 +165,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "weapon_shop",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "leather", count: 2 }],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   silver_chainmail: {
@@ -177,7 +177,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "silver_ingot", count: 3 },
       { itemId: "leather", count: 2 },
     ],
-    requiredTime: 8,
+    requiredTime: 16,
     outputCount: 1,
   },
   mythril_robe: {
@@ -190,7 +190,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "leather", count: 3 },
       { itemId: "wood_plank", count: 1 },
     ],
-    requiredTime: 10,
+    requiredTime: 20,
     outputCount: 1,
   },
   dragon_scale_mail: {
@@ -204,7 +204,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "leather", count: 4 },
       { itemId: "bone", count: 2 },
     ],
-    requiredTime: 14,
+    requiredTime: 28,
     outputCount: 1,
   },
   food_dried_meat: {
@@ -216,7 +216,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "raw_meat", count: 2 },
       { itemId: "leather", count: 1 },
     ],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   food_herb_salad: {
@@ -228,7 +228,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "vegetable", count: 2 },
       { itemId: "herb", count: 1 },
     ],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   food_sandwich: {
@@ -241,7 +241,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "vegetable", count: 1 },
       { itemId: "mushroom", count: 1 },
     ],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
   food_stamina_stew: {
@@ -255,7 +255,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "herb", count: 2 },
       { itemId: "stamina_drink", count: 1 },
     ],
-    requiredTime: 3,
+    requiredTime: 6,
     outputCount: 1,
   },
   food_beast_roast: {
@@ -268,7 +268,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "beast_meat", count: 1 },
       { itemId: "herb", count: 1 },
     ],
-    requiredTime: 3,
+    requiredTime: 6,
     outputCount: 1,
   },
   food_dragon_hotpot: {
@@ -282,7 +282,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
       { itemId: "dragon_meat", count: 1 },
       { itemId: "mana_stone", count: 2 },
     ],
-    requiredTime: 5,
+    requiredTime: 10,
     outputCount: 1,
   },
   food_bread: {
@@ -291,7 +291,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     facilityId: "kitchen",
     requiredFacilityLevel: 1,
     requiredItems: [{ itemId: "wheat", count: 2 }],
-    requiredTime: 2,
+    requiredTime: 4,
     outputCount: 1,
   },
 };
