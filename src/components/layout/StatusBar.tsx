@@ -2,6 +2,7 @@ import React from "react";
 
 import { TIER_LIMIT_DAYS } from "../../constants";
 import {
+  useBankruptcyWarning,
   useDungeons,
   useGameStatus,
   useGameTime,
@@ -14,6 +15,7 @@ export const StatusBar: React.FC = () => {
   const { currentDay } = useGameTime();
   const { gameLimitDays } = useGameStatus();
   const { gold } = usePlayerResources();
+  const { consecutiveNegativeGoldDays } = useBankruptcyWarning();
   const villagers = useVillagers();
   const { currentTier, bossDefeated } = useDungeons();
 
@@ -46,9 +48,14 @@ export const StatusBar: React.FC = () => {
 
       <span className="flex items-center gap-1.5 shrink-0">
         <span className="text-slate-500">資産</span>
-        <span className="text-amber-400 font-bold font-mono">
+        <span className={`font-bold font-mono ${gold < 0 ? "text-red-400" : "text-amber-400"}`}>
           {Math.floor(gold).toLocaleString()} G
         </span>
+        {gold < 0 && (
+          <span className="text-red-400 font-bold font-mono ml-1">
+            (破産まであと{3 - consecutiveNegativeGoldDays}日)
+          </span>
+        )}
       </span>
 
       <span className="w-px h-3 bg-slate-800 shrink-0" />

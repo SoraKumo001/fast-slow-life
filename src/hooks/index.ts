@@ -105,3 +105,9 @@ export const useSoulActions = () =>
   useGameStore((s) => ({ buySoulUpgrade: s.buySoulUpgrade, resetGame: s.resetGame }), shallow);
 
 export const useGameStats = () => useGameStore((s) => s.stats);
+
+export const useBankruptcyWarning = () =>
+  useGameStore(
+    (s) => ({ gold: s.gold, consecutiveNegativeGoldDays: s.consecutiveNegativeGoldDays }),
+    shallow,
+  );
