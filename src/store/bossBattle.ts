@@ -260,7 +260,7 @@ export function processBossBattle(
         if (stats) stats.totalBossesDefeated += 1;
         logs.push({
           message: `エリアボス【${monster.name}】を撃破しました！`,
-          type: "system",
+          type: "combat",
         });
         nextBossDefeated = true;
 

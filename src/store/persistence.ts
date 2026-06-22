@@ -9,7 +9,12 @@ import {
   DungeonMonster,
 } from "../types/game";
 import { FacilityType } from "../types/game";
-import { getInitialFacilities, getInitialTowns, getInitialCaravans } from "./initialState";
+import {
+  getInitialFacilities,
+  getInitialTowns,
+  getInitialCaravans,
+  getInitialStats,
+} from "./initialState";
 
 export const partialize = (state: GameState & GameActions): GameState => ({
   currentDay: state.currentDay,
@@ -121,6 +126,9 @@ export const merge = <S extends GameState & GameActions>(
   merged.caravans = persisted.caravans || getInitialCaravans();
   merged.marketTrend = persisted.marketTrend !== undefined ? persisted.marketTrend : null;
   merged.isSalaryUnpaid = persisted.isSalaryUnpaid !== undefined ? persisted.isSalaryUnpaid : false;
+  merged.consecutiveNegativeGoldDays = persisted.consecutiveNegativeGoldDays ?? 0;
+  merged.gameOverReason = persisted.gameOverReason ?? "";
+  merged.stats = persisted.stats ?? getInitialStats();
 
   return merged;
 };

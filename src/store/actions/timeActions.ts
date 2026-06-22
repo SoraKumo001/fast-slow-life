@@ -1,4 +1,6 @@
 import { MAX_LOG_COUNT } from "../../constants";
+import { MONSTERS } from "../../data/masterData";
+import { useBossDefeatStore } from "../../hooks/useBossDefeatStore";
 import { GameLog, StoreSet, StoreGet } from "../../types/game";
 import { generateId } from "../../utils/craftHelpers";
 import { formatGameTime } from "../../utils/timeHelpers";
@@ -52,6 +54,8 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
     const state = get();
     if (state.gameOver) return;
 
+    const prevTier = state.currentTier;
+
     const result = calculateAdvanceHour(state);
 
     if (!globalThis.IS_TEST_ENVIRONMENT) {
@@ -103,6 +107,16 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
           }
         : {}),
     });
+
+    // ボス撃破検出：Tierが上がったらバナー表示
+    if (result.currentTier > prevTier && state.activeBoss) {
+      const monster = MONSTERS[state.activeBoss.monsterId];
+      useBossDefeatStore.getState().announce({
+        bossName: monster?.name || state.activeBoss.monsterId,
+        tier: result.currentTier,
+        gameLimitDays: result.gameLimitDays,
+      });
+    }
 
     get().autoEquipAll();
     get().dispatchIdleVillagers();

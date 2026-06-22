@@ -9,6 +9,7 @@ import { Header } from "./components/layout/Header";
 import { StatusBar } from "./components/layout/StatusBar";
 import { ResultScreen } from "./components/modals/ResultScreen";
 import { SoulShop } from "./components/modals/SoulShop";
+import { BossDefeatAnnouncement } from "./components/ui/BossDefeatAnnouncement";
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ToastContainer } from "./components/ui/ToastContainer";
@@ -111,6 +112,9 @@ export default function App() {
           <DungeonPanel />
         </div>
       </main>
+
+      {/* ボス撃破アナウンス */}
+      <BossDefeatAnnouncement />
 
       {/* ゲームオーバー時のオーバーレイ */}
       {gameOver && (

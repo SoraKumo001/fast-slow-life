@@ -6,6 +6,7 @@ import { processBossBattle } from "./bossBattle";
 import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
 import { processExploration } from "./exploration";
 import { AdvanceHourResult } from "./gameLoopTypes";
+import { getInitialStats } from "./initialState";
 import { processItemPoolPurchase } from "./poolPurchase";
 import { processRespawns } from "./respawns";
 import { processStarvation } from "./starvation";
@@ -45,7 +46,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     stats,
   } = state;
 
-  const nextStats: RunStats = { ...stats };
+  const nextStats: RunStats = stats ? { ...stats } : getInitialStats();
   const logsToAppend: import("./gameLoopTypes").LogPayload[] = [];
 
   currentHour += 1;
@@ -57,7 +58,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   }
 
   let isSalaryUnpaidNext = isSalaryUnpaid;
-  let consecutiveNegativeGoldDaysNext = consecutiveNegativeGoldDays;
+  let consecutiveNegativeGoldDaysNext = consecutiveNegativeGoldDays ?? 0;
 
   if (isNewDay) {
     if (gold < 0) {
