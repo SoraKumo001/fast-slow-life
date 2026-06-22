@@ -35,7 +35,15 @@ export const Header: React.FC = () => {
 
   const dailyFoodConsumption = villagers.length;
   // 食料在庫の合計を計算: foodカテゴリ品 + 生の食材（飢餓判定で消費される）
-  const foodItems = ["food_bread", "food_dried_meat", "food_herb_salad", "food_sandwich", "food_stamina_stew", "food_beast_roast", "food_dragon_hotpot"];
+  const foodItems = [
+    "food_bread",
+    "food_dried_meat",
+    "food_herb_salad",
+    "food_sandwich",
+    "food_stamina_stew",
+    "food_beast_roast",
+    "food_dragon_hotpot",
+  ];
   const rawItems = ["wheat", "vegetable", "raw_meat"];
   const foodAmount =
     foodItems.reduce((sum, id) => sum + (inventory[id] || 0), 0) +

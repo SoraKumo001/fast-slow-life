@@ -1,6 +1,6 @@
 import { ITEMS } from "../data/masterData";
 import { getFriendshipLevel } from "../data/towns";
-import { GameState } from "../types/game";
+import { GameState, Villager } from "../types/game";
 import { getMarketSellBonus } from "../utils/marketHelpers";
 import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";

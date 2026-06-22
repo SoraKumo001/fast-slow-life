@@ -29,7 +29,7 @@ export function processBossBattle(
   currentTier: number,
   bossDefeated: boolean,
   gameLimitDays: number,
-  hasStarvation: boolean,
+  _hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   _isSalaryUnpaid: boolean = false,
 ) {

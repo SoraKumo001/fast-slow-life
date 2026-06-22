@@ -25,7 +25,7 @@ export function processVillagerActivities(
   targetAmounts: Record<string, number>,
   activeBoss: ActiveBossState | null,
   _bossDefeated: boolean,
-  hasStarvation: boolean,
+  _hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   gold: number,
   isSalaryUnpaid: boolean = false,
