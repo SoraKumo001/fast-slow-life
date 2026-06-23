@@ -133,7 +133,20 @@ export function processVillagerActivities(
           });
           v.staminaDrinkCount = 0;
         }
-        if (v.order === "rest") {
+        // アップグレード予約がある場合は即座に作業開始
+        const reservedFacility = Object.entries(facilities).find(
+          ([, f]) => f.upgradeAssignedVillagerId === v.id,
+        );
+        if (reservedFacility) {
+          const [, fac] = reservedFacility;
+          v.status = "active";
+          v.assignedCraftJobId = `upgrade_${fac.id}`;
+          v.order = "gather";
+          logs.push({
+            message: `${v.name} が帰還し、${fac.name} のアップグレード作業を開始しました。`,
+            type: "info",
+          });
+        } else if (v.order === "rest") {
           v.status = "resting";
           logs.push({
             message: `${v.name} が村に帰還し、宿屋で休息を開始しました。`,

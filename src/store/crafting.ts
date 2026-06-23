@@ -40,6 +40,19 @@ export function processCraftingAndUpgrades(
           type: "upgrade",
         });
 
+        // 担当村人を解放
+        if (fac.upgradeAssignedVillagerId) {
+          const workerIdx = nextVillagers.findIndex((v) => v.id === fac.upgradeAssignedVillagerId);
+          if (workerIdx !== -1) {
+            nextVillagers[workerIdx] = {
+              ...nextVillagers[workerIdx],
+              status: "idle",
+              assignedCraftJobId: null,
+            };
+          }
+          fac.upgradeAssignedVillagerId = null;
+        }
+
         fac.upgradeCost = {
           gold: fac.level * UPGRADE_COST_GOLD_MULTIPLIER,
           materials: fac.upgradeCost.materials.map((m) => ({

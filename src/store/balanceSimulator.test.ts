@@ -84,6 +84,47 @@ describe("Balance Simulator", () => {
     const avgPrestige = (prestigeCounts.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
     const maxPrestige = Math.max(...prestigeCounts);
 
+    // 経済KPIの集計
+    const avgGoldFromExports = (
+      results.reduce((sum, r) => sum + r.totalGoldFromExports, 0) / totalRuns
+    ).toFixed(1);
+    const avgGoldFromImports = (
+      results.reduce((sum, r) => sum + r.totalGoldFromImports, 0) / totalRuns
+    ).toFixed(1);
+    const avgGoldFromPurchases = (
+      results.reduce((sum, r) => sum + r.totalGoldFromPurchases, 0) / totalRuns
+    ).toFixed(1);
+    const avgGoldFromTax = (
+      results.reduce((sum, r) => sum + r.totalGoldFromTax, 0) / totalRuns
+    ).toFixed(1);
+
+    // 最終ゴールド分布
+    const allGold = results.map((r) => r.gold);
+    const avgFinalGold = (allGold.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
+    const minFinalGold = Math.min(...allGold);
+    const maxFinalGold = Math.max(...allGold);
+
+    // クリアRun vs 失敗Run のゴールド比較
+    const clearGoldAvg =
+      clearRuns.length > 0
+        ? (clearRuns.reduce((sum, r) => sum + r.gold, 0) / clearRuns.length).toFixed(1)
+        : "N/A";
+    const failGoldAvg =
+      gameOverRuns.length > 0
+        ? (gameOverRuns.reduce((sum, r) => sum + r.gold, 0) / gameOverRuns.length).toFixed(1)
+        : "N/A";
+
+    // 破産によるGame Over
+    const bankruptRuns = gameOverRuns.filter((r) => r.gameOverReason === "破産");
+    const bankruptRate = ((bankruptRuns.length / totalRuns) * 100).toFixed(1);
+
+    // ツケ発生率
+    const unpaidRuns = results.filter((r) => r.unpaidVillagersCount > 0);
+    const unpaidRate = ((unpaidRuns.length / totalRuns) * 100).toFixed(1);
+    const avgUnpaidVillagers = (
+      results.reduce((sum, r) => sum + r.unpaidVillagersCount, 0) / totalRuns
+    ).toFixed(1);
+
     // 訓練関連の統計
     const totalTrainingRuns = results.filter((r) => r.trainingCount > 0).length;
     const totalTrainingSessions = results.reduce((sum, r) => sum + r.trainingCount, 0);
@@ -175,6 +216,16 @@ ${reasonBreakdown}
 
 ■ 転生統計
   - 平均転生回数: ${avgPrestige} 回 (最大: ${maxPrestige} 回)
+
+■ 経済統計
+  - 平均輸出獲得ゴールド: ${avgGoldFromExports} G/Run
+  - 平均輸入支出ゴールド: ${avgGoldFromImports} G/Run
+  - 平均買取支出ゴールド: ${avgGoldFromPurchases} G/Run
+  - 平均食料代獲得ゴールド: ${avgGoldFromTax} G/Run
+  - 最終ゴールド: 平均 ${avgFinalGold} G (min: ${minFinalGold}, max: ${maxFinalGold})
+  - クリアRun平均ゴールド: ${clearGoldAvg} G / 失敗Run平均ゴールド: ${failGoldAvg} G
+  - 破産によるGame Over: ${bankruptRuns.length}回 (${bankruptRate}%)
+  - ツケ発生Run: ${unpaidRuns.length}/${totalRuns} (${unpaidRate}%), 平均ツケ村人数: ${avgUnpaidVillagers}
 ${detailedRunsText}
 ■ 失敗Runの内訳（Game Over Reason）
 ${Object.entries(reasonCounts)
@@ -220,6 +271,13 @@ ${results
         prestigeCount: r.prestigeCount,
         bossDefeatDays: r.bossDefeatDays,
         facilitiesFinal: r.facilitiesFinal,
+        totalGoldFromExports: r.totalGoldFromExports,
+        totalGoldFromImports: r.totalGoldFromImports,
+        totalGoldFromPurchases: r.totalGoldFromPurchases,
+        totalGoldFromTax: r.totalGoldFromTax,
+        townsFinal: r.townsFinal,
+        unpaidVillagersCount: r.unpaidVillagersCount,
+        caravansActiveCount: r.caravansActiveCount,
       }));
       // 集計サマリーもJSONに含める
       const jsonSummary = {
@@ -229,6 +287,15 @@ ${results
         trainingRuns: totalTrainingRuns,
         avgTrainingPerRun: `${avgTrainingCount} 回`,
         trainingDistribution: trainingDist,
+        economy: {
+          avgGoldFromExports: `${avgGoldFromExports} G`,
+          avgGoldFromImports: `${avgGoldFromImports} G`,
+          avgGoldFromPurchases: `${avgGoldFromPurchases} G`,
+          avgGoldFromTax: `${avgGoldFromTax} G`,
+          avgFinalGold: `${avgFinalGold} G`,
+          bankruptRate: `${bankruptRate}%`,
+          unpaidRate: `${unpaidRate}%`,
+        },
       };
       fs.writeFileSync(
         path.join(debugDir, "simulation_summary.json"),
@@ -272,6 +339,29 @@ ${results
       expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
     }
 
+    // 経済KPIのデータ整合性
+    results.forEach((r) => {
+      expect(r.totalGoldFromExports).toBeGreaterThanOrEqual(0);
+      expect(r.totalGoldFromImports).toBeGreaterThanOrEqual(0);
+      expect(r.totalGoldFromPurchases).toBeGreaterThanOrEqual(0);
+      expect(r.totalGoldFromTax).toBeGreaterThanOrEqual(0);
+      expect(r.unpaidVillagersCount).toBeGreaterThanOrEqual(0);
+      expect(r.caravansActiveCount).toBeGreaterThanOrEqual(0);
+    });
+
+    // クリアRunは交易でゴールドを稼いでいること
+    clearRuns.forEach((r) => {
+      expect(r.totalGoldFromExports).toBeGreaterThan(0);
+    });
+
+    // 平均最終ゴールドが閾値以上であること（環境変数 SIM_MIN_AVG_GOLD で設定）
+    const MIN_AVG_GOLD = process.env.SIM_MIN_AVG_GOLD
+      ? parseFloat(process.env.SIM_MIN_AVG_GOLD)
+      : 0;
+    if (MIN_AVG_GOLD > 0) {
+      expect(parseFloat(avgFinalGold)).toBeGreaterThanOrEqual(MIN_AVG_GOLD);
+    }
+
     // 警告: クリア率が極端に低い場合、バランス崩壊の可能性
     if (clearRate < 10) {
       console.warn(
@@ -281,6 +371,11 @@ ${results
     if (avgDeaths > 5) {
       console.warn(
         `⚠️ 警告: 平均村人死亡回数が ${avgDeaths} 回と高いです。難易度が高すぎる可能性があります。`,
+      );
+    }
+    if (bankruptRuns.length > totalRuns * 0.3) {
+      console.warn(
+        `⚠️ 警告: 破産によるGame Overが ${bankruptRate}% と高いです。経済バランスに問題がある可能性があります。`,
       );
     }
   }, 300000);

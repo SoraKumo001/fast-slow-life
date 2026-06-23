@@ -29,6 +29,13 @@ interface SimulationResult {
   gameOverReason: string;
   prestigeCount: number;
   facilitiesFinal: string;
+  totalGoldFromExports: number;
+  totalGoldFromImports: number;
+  totalGoldFromPurchases: number;
+  totalGoldFromTax: number;
+  townsFinal: string;
+  unpaidVillagersCount: number;
+  caravansActiveCount: number;
 }
 
 // 指定された回数分のシミュレーションを回すチャンク実行関数
@@ -534,6 +541,13 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         .filter(([, f]) => f.level > 0)
         .map(([key, f]) => `${key}:Lv${f.level}`)
         .join(", "),
+      totalGoldFromExports: finalState.stats?.totalGoldFromExports || 0,
+      totalGoldFromImports: finalState.stats?.totalGoldSpentOnImports || 0,
+      totalGoldFromPurchases: finalState.stats?.totalGoldFromPurchases || 0,
+      totalGoldFromTax: finalState.stats?.totalGoldFromTax || 0,
+      townsFinal: finalState.towns.map((t) => `${t.name}:Lv${t.level}(${t.friendship})`).join(", "),
+      unpaidVillagersCount: finalState.villagers.filter((v) => v.gold < 0).length,
+      caravansActiveCount: finalState.caravans.filter((c) => c.status === "trading").length,
     });
 
     if (run === 1) {

@@ -175,13 +175,15 @@ export const DungeonPanel: React.FC = () => {
                           {area.gathers.map((g) => {
                             const unlocked =
                               area.explorationProgress >= (g.unlockedAtProgress || 0);
+                            const gItem = ITEMS[g.itemId];
+                            const priceLabel = gItem ? `(${gItem.basePrice}G)` : "";
                             return (
                               <DungeonResourceItem
                                 key={g.itemId}
                                 keyId={g.itemId}
                                 isUnlocked={unlocked}
                                 unlockedAtProgress={g.unlockedAtProgress || 0}
-                                name={ITEMS[g.itemId]?.name || g.itemId}
+                                name={`${gItem?.name || g.itemId} ${priceLabel}`}
                                 progress={g.currentProgress || 0}
                                 respawnTimeLeft={g.respawnTimeLeft}
                                 respawnTimeTotal={g.respawnTimeTotal}
@@ -204,7 +206,13 @@ export const DungeonPanel: React.FC = () => {
                             const dropsLabel =
                               unlocked && m.drops.length > 0 ? (
                                 <span className="z-10 text-[9px] text-slate-500 truncate shrink-0 max-w-20 ml-1">
-                                  [{m.drops.map((d) => ITEMS[d.itemId]?.name || d.itemId).join("/")}
+                                  [
+                                  {m.drops
+                                    .map(
+                                      (d) =>
+                                        `${ITEMS[d.itemId]?.name || d.itemId}(${Math.round(d.chance * 100)}%)`,
+                                    )
+                                    .join("/")}
                                   ]
                                 </span>
                               ) : null;

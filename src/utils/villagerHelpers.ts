@@ -1,5 +1,18 @@
 import { VILLAGER_STARTING_GOLD } from "../constants";
+import { VILLAGER_NAMES } from "../data/masterData";
 import { Villager } from "../types/game";
+
+export function generateRandomName(existingNames: string[]): string {
+  const available = VILLAGER_NAMES.filter((n) => !existingNames.includes(n));
+  if (available.length > 0) {
+    const idx = Math.floor(Math.random() * available.length);
+    return available[idx];
+  }
+  // 名前プールが枯渇した場合はインデックス付きでフォールバック
+  const poolLen = VILLAGER_NAMES.length;
+  const idx = (existingNames.length - poolLen) % poolLen;
+  return `${VILLAGER_NAMES[idx]} ${existingNames.length - poolLen + 1}`;
+}
 
 export function createVillager(options: {
   id: string;

@@ -2,6 +2,7 @@ import { BUILDING_COST_REDUCTION } from "../../constants";
 import { ITEMS, getRecipeForItem, getTrainingProgram } from "../../data/masterData";
 import { FacilityType, Villager, StoreSet, StoreGet } from "../../types/game";
 import { calculateCraftTime, generateId } from "../../utils/craftHelpers";
+import { calculateUpgradeTime, selectBestUpgradeVillager } from "../../utils/upgradeHelpers";
 
 export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => {
@@ -85,10 +86,16 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
     );
   },
 
-  startFacilityUpgrade: (facilityId: FacilityType) => {
+  startFacilityUpgrade: (facilityId: FacilityType, villagerId?: string) => {
     const state = get();
     const facility = state.facilities[facilityId];
     if (!facility || facility.level >= facility.maxLevel) return;
+
+    // すでにアップグレード中または予約済み
+    if (facility.upgradeTimeLeft > 0 || facility.upgradeAssignedVillagerId) {
+      state.addLog(`${facility.name} はすでにアップグレードが進行中です。`, "warning");
+      return;
+    }
 
     const buildLvl = state.soulUpgrades.building || 0;
     const costReduction = 1 - buildLvl * BUILDING_COST_REDUCTION;
@@ -109,6 +116,60 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
       return;
     }
 
+    // 担当村人の選択
+    let selectedVillager: Villager | null = null;
+    if (villagerId) {
+      selectedVillager = state.villagers.find((v) => v.id === villagerId) || null;
+    }
+    if (!selectedVillager) {
+      selectedVillager = selectBestUpgradeVillager(state.villagers);
+    }
+
+    if (!selectedVillager) {
+      state.addLog("アップグレードを担当できる村人がいません。", "warning");
+      return;
+    }
+
+    const baseTime = 5 + facility.level * 5;
+    const actualTime = calculateUpgradeTime(baseTime, selectedVillager);
+    const jobName = selectedVillager.currentJob;
+
+    // ダンジョン活動中の村人は帰還を待つ（予約状態）
+    if (selectedVillager.status === "active" || selectedVillager.status === "traveling_to") {
+      const area = state.dungeons.find((d) => d.id === selectedVillager.destinationAreaId);
+      set((state) => {
+        const updatedVillagers = state.villagers.map((v) => {
+          if (v.id !== selectedVillager!.id) return v;
+          return {
+            ...v,
+            status: "traveling_back",
+            travelTimeLeft: area ? area.distance : 1,
+            order: "rest",
+            destinationAreaId: null,
+            potionCount: 0,
+            staminaDrinkCount: 0,
+          } as Villager;
+        });
+        const updatedFacilities = { ...state.facilities };
+        updatedFacilities[facilityId] = {
+          ...facility,
+          upgradeTimeLeft: actualTime,
+          upgradeTotalTime: actualTime,
+          upgradeAssignedVillagerId: selectedVillager!.id,
+        };
+        return {
+          villagers: updatedVillagers,
+          facilities: updatedFacilities,
+        };
+      });
+      state.addLog(
+        `${facility.name} のアップグレード予約: ${selectedVillager.name}(${jobName}) を担当に割り当てました（ダンジョンから帰還後に開始、所要 ${actualTime} 時間）。`,
+        "upgrade",
+      );
+      return;
+    }
+
+    // 村にいる村人の場合、ゴールドを支給して即座に開始
     set((state) => {
       const inv = { ...state.inventory };
       facility.upgradeCost.materials.forEach((req) => {
@@ -116,23 +177,34 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
         inv[req.itemId] = Math.max(0, (inv[req.itemId] || 0) - reqCount);
       });
 
+      const updatedVillagers = state.villagers.map((v) => {
+        if (v.id !== selectedVillager!.id) return v;
+        return {
+          ...v,
+          gold: v.gold + goldCost,
+          status: "active",
+          assignedCraftJobId: `upgrade_${facilityId}`,
+        } as Villager;
+      });
+
       const updatedFacilities = { ...state.facilities };
-      const time = 5 + facility.level * 5;
       updatedFacilities[facilityId] = {
         ...facility,
-        upgradeTimeLeft: time,
-        upgradeTotalTime: time,
+        upgradeTimeLeft: actualTime,
+        upgradeTotalTime: actualTime,
+        upgradeAssignedVillagerId: selectedVillager!.id,
       };
 
       return {
         gold: state.gold - goldCost,
         inventory: inv,
+        villagers: updatedVillagers,
         facilities: updatedFacilities,
       };
     });
 
     state.addLog(
-      `${facility.name} のアップグレードを開始しました。レベル ${facility.level + 1} まであと ${5 + facility.level * 5} 時間。`,
+      `${facility.name} のアップグレードを開始しました。担当: ${selectedVillager.name}(${jobName})（レベル ${facility.level + 1} まであと ${actualTime} 時間、支給 ${goldCost} G）。`,
       "upgrade",
     );
   },

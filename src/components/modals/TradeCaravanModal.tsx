@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { ITEMS } from "../../data/masterData";
 import { getTownShopItems } from "../../data/towns";
 import { useGameStore } from "../../store/gameStore";
+import { getEffectiveExportPrice } from "../../utils/economyHelpers";
 import {
   getImportPrice,
   calculateExportEstimates,
@@ -355,6 +356,12 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                                   marketTrend &&
                                   marketTrend.targetTownId === activeTown.id &&
                                   marketTrend.itemId === itemId;
+                                const effectivePrice = getEffectiveExportPrice(
+                                  itemId,
+                                  activeTown,
+                                  marketLvl,
+                                  marketTrend,
+                                );
 
                                 return (
                                   <div
@@ -372,6 +379,16 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                                       </p>
                                       <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                                         倉庫: {count} / 積載: {loaded}
+                                      </p>
+                                      <p className="text-[10px] font-mono mt-0.5">
+                                        <span className="text-amber-400 font-bold">
+                                          {effectivePrice.price} G/個
+                                        </span>
+                                        {effectivePrice.isTrend && (
+                                          <span className="text-yellow-500 text-[9px] ml-1">
+                                            (×{effectivePrice.trendMultiplier})
+                                          </span>
+                                        )}
                                       </p>
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0 select-none">

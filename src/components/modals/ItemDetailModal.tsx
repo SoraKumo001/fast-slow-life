@@ -1,9 +1,10 @@
 import { Target } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 
 import { ITEMS, RECIPES, getRecipeForItem } from "../../data/masterData";
 import { useGameStore } from "../../store/gameStore";
-import { Item, CraftRecipe } from "../../types/game";
+import type { CraftRecipe, Item } from "../../types/game";
+import { getEffectiveExportPrice } from "../../utils/economyHelpers";
 import { getCategoryBadgeColor, getCategoryLabel } from "../../utils/itemHelpers";
 import { getMarketSellBonus } from "../../utils/marketHelpers";
 import { Badge } from "../ui/Badge";
@@ -29,6 +30,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
     tradeRules,
     towns,
     facilities,
+    marketTrend,
     setTargetAmount,
     addTradeRule,
     deleteTradeRule,
@@ -151,6 +153,78 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
               <span className="text-amber-400 font-bold">{item.basePrice} G</span>
             </div>
           </div>
+
+          {/* 街別輸出価格 */}
+          {isSellable && (
+            <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1.5">
+              <span className="font-semibold text-slate-400 block text-[10px]">
+                輸出価格 (街別):
+              </span>
+              <div className="space-y-1">
+                {towns
+                  .filter((t) => t.isUnlocked)
+                  .map((t) => {
+                    const info = getEffectiveExportPrice(item.id, t, marketLevel, marketTrend);
+                    if (info.price <= 0) return null;
+                    const bonusStr = [
+                      info.isTrend && `需要×${info.trendMultiplier}`,
+                      info.friendshipBonus > 0 && `友好+${Math.round(info.friendshipBonus * 100)}%`,
+                      info.marketBonus > 0 && `市場+${Math.round(info.marketBonus * 100)}%`,
+                    ]
+                      .filter(Boolean)
+                      .join(", ");
+                    return (
+                      <div
+                        key={t.id}
+                        className={`flex justify-between text-[11px] font-mono py-0.5 px-1 rounded ${info.isTrend ? "bg-amber-950/20" : ""}`}
+                      >
+                        <span className="text-slate-400">{t.name}</span>
+                        <span className="flex items-center gap-1.5">
+                          <span
+                            className={`font-bold ${info.isTrend ? "text-yellow-400" : "text-amber-400"}`}
+                          >
+                            {info.price} G
+                          </span>
+                          {bonusStr && (
+                            <span className="text-[9px] text-slate-500">({bonusStr})</span>
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
+          {/* 食料Buff */}
+          {item.category === "food" &&
+            item.foodBuff &&
+            Object.values(item.foodBuff).some((v) => v) && (
+              <div className="bg-emerald-950/20 p-2.5 rounded border border-emerald-900/40 space-y-1">
+                <span className="text-[10px] font-semibold text-emerald-400 block">
+                  配給効果 (1時間持続):
+                </span>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] font-mono text-emerald-300">
+                  {Object.entries(item.foodBuff).map(([stat, val]) => {
+                    if (!val) return null;
+                    const labelMap: Record<string, string> = {
+                      str: "STR",
+                      int: "INT",
+                      dex: "DEX",
+                      agi: "AGI",
+                      vit: "VIT",
+                      maxHp: "最大HP",
+                      maxStamina: "最大ｽﾀﾐﾅ",
+                    };
+                    return (
+                      <span key={stat}>
+                        {labelMap[stat] || stat}: <span className="font-bold">+{val}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
           {/* 装備性能 */}
           {item.equipment && (

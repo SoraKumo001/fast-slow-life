@@ -7,7 +7,8 @@ import {
   CATEGORY_MANA_STONE,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { OrderType, Villager, DungeonArea } from "../types/game";
+import { OrderType, Villager, DungeonArea, FacilityType, Facility } from "../types/game";
+import { selectBestUpgradeVillager } from "../utils/upgradeHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export interface DispatchResult {
@@ -16,6 +17,7 @@ export interface DispatchResult {
   logs: LogPayload[];
   anyDispatched: boolean;
   gold: number;
+  facilities: Record<FacilityType, Facility>;
 }
 
 export function dispatchIdleVillagersHelper(params: {
@@ -26,8 +28,18 @@ export function dispatchIdleVillagersHelper(params: {
   currentTier: number;
   bossDefeated: boolean;
   gold: number;
+  facilities: Record<FacilityType, Facility>;
 }): DispatchResult {
-  const { villagers, inventory, targetAmounts, dungeons, currentTier, bossDefeated, gold } = params;
+  const {
+    villagers,
+    inventory,
+    targetAmounts,
+    dungeons,
+    currentTier,
+    bossDefeated,
+    gold,
+    facilities,
+  } = params;
 
   const hasIdleVillagers = villagers.some((v) => v.status === "idle" && v.order !== "rest");
   if (!hasIdleVillagers) {
@@ -37,16 +49,50 @@ export function dispatchIdleVillagersHelper(params: {
       logs: [],
       anyDispatched: false,
       gold,
+      facilities: { ...facilities },
     };
   }
-
-  let nextGold = gold;
 
   let anyDispatched = false;
   const nextInventory = { ...inventory };
   const logs: LogPayload[] = [];
+  let updatedVillagers = [...villagers];
+  let nextGold = gold;
+  const nextFacilities = { ...facilities };
 
-  const updatedVillagers = villagers.map((v) => {
+  // ── 最優先: 施設アップグレードの担当割り当て ──
+  // 1. アップグレード進行中だが担当不在の施設にidle村民を割り当て
+  for (const [facId, fac] of Object.entries(nextFacilities)) {
+    if (fac.upgradeTimeLeft > 0 && !fac.upgradeAssignedVillagerId && fac.level < fac.maxLevel) {
+      const idleCandidates = updatedVillagers.filter(
+        (v) => v.status === "idle" && !v.assignedCraftJobId,
+      );
+      if (idleCandidates.length > 0) {
+        const best = selectBestUpgradeVillager(idleCandidates);
+        if (best) {
+          const idx = updatedVillagers.findIndex((v) => v.id === best.id);
+          updatedVillagers[idx] = {
+            ...updatedVillagers[idx],
+            status: "active",
+            assignedCraftJobId: `upgrade_${facId}`,
+          };
+          nextFacilities[facId as FacilityType] = {
+            ...fac,
+            upgradeAssignedVillagerId: best.id,
+          };
+          logs.push({
+            message: `【自動割当】${best.name} が ${fac.name} のアップグレード作業を引き継ぎました。`,
+            type: "info",
+          });
+          anyDispatched = true;
+        }
+      }
+    }
+  }
+
+  // 残りのidle村民 → ダンジョン派遣（既存ロジック）
+
+  updatedVillagers = updatedVillagers.map((v) => {
     if (v.status === "idle" && v.order !== "rest") {
       let targetAreaId: string | null = null;
       let targetOrder: OrderType = "gather";
@@ -245,5 +291,6 @@ export function dispatchIdleVillagersHelper(params: {
     logs,
     anyDispatched,
     gold: nextGold,
+    facilities: nextFacilities,
   };
 }

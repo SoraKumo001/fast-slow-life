@@ -34,7 +34,7 @@ export const GuildPanel: React.FC<GuildPanelProps> = ({
       <p className="text-[10px] text-slate-400 leading-normal">
         ギルドレベルに応じて雇用できる村人の上限が緩和されます。
         <br />
-        ・Lv1: 最大5人 / ・Lv2: 最大7人 / ・Lv3: 最大9人 / ・Lv4以上: 最大10人
+        ・Lv0: 最大5人 / ・Lv1: 最大7人 / ・Lv2: 最大9人 / ・Lv3以上: 最大10人
       </p>
 
       <button

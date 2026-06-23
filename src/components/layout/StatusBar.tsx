@@ -6,9 +6,11 @@ import {
   useDungeons,
   useGameStatus,
   useGameTime,
+  useInventory,
   usePlayerResources,
   useVillagers,
 } from "../../hooks";
+import { getDailyFoodConsumption, getFoodDaysRemaining } from "../../utils/economyHelpers";
 import { ProgressBar } from "../ui/ProgressBar";
 
 export const StatusBar: React.FC = () => {
@@ -18,6 +20,7 @@ export const StatusBar: React.FC = () => {
   const { consecutiveNegativeGoldDays } = useBankruptcyWarning();
   const villagers = useVillagers();
   const { currentTier, bossDefeated } = useDungeons();
+  const { inventory } = useInventory();
 
   const avgLevel =
     villagers.length > 0
@@ -29,6 +32,9 @@ export const StatusBar: React.FC = () => {
   const progressPct = Math.min(100, Math.round((daysElapsed / limitDays) * 100));
 
   const tierNames = ["", "始まりの森", "廃鉱山", "魔獣の谷", "世界樹の根", "深淵の奈落"];
+
+  const dailyConsumption = getDailyFoodConsumption(villagers.length);
+  const foodDays = getFoodDaysRemaining(inventory, villagers.length);
 
   return (
     <div className="bg-slate-900/60 border-b border-slate-800 px-6 py-1.5 flex items-center gap-5 text-[10px] text-slate-400 shrink-0 select-none overflow-x-auto no-scrollbar">
@@ -56,6 +62,18 @@ export const StatusBar: React.FC = () => {
             (破産まであと{3 - consecutiveNegativeGoldDays}日)
           </span>
         )}
+      </span>
+
+      <span className="w-px h-3 bg-slate-800 shrink-0" />
+
+      <span className="flex items-center gap-1.5 shrink-0">
+        <span className="text-slate-500">食料</span>
+        <span
+          className={`font-bold font-mono ${foodDays < 3 ? "text-red-400" : "text-emerald-400"}`}
+        >
+          {foodDays}日分
+        </span>
+        <span className="text-slate-600 text-[9px]">(-{dailyConsumption}/日)</span>
       </span>
 
       <span className="w-px h-3 bg-slate-800 shrink-0" />

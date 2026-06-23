@@ -235,7 +235,9 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
             >
               <Sword className="w-3 h-3 text-amber-500" />
-              {v.weaponId !== "none" ? ITEMS[v.weaponId].name : "武器なし"}
+              {v.weaponId !== "none"
+                ? `${ITEMS[v.weaponId].name} (ATK+${ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0})`
+                : "武器なし"}
             </button>
             <button
               onClick={(e) => {
@@ -245,7 +247,9 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               className="flex items-center gap-1 px-2 py-1 rounded bg-slate-900 hover:bg-slate-800 text-[10px] text-slate-300 hover:text-white transition"
             >
               <Shield className="w-3 h-3 text-sky-400" />
-              {v.armorId !== "none" ? ITEMS[v.armorId].name : "防具なし"}
+              {v.armorId !== "none"
+                ? `${ITEMS[v.armorId].name} (DEF+${ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0})`
+                : "防具なし"}
             </button>
             {v.potionCount > 0 && (
               <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">

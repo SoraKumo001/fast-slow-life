@@ -10,32 +10,27 @@ import { DUNGEONS, ITEMS } from "../data/masterData";
 import { TOWNS_DATA, getFriendshipLevel } from "../data/towns";
 import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
-import { createVillager } from "../utils/villagerHelpers";
+import { createVillager, generateRandomName } from "../utils/villagerHelpers";
 
 export function getInitialVillagers(bodyLvl: number = 0): ReturnType<typeof createVillager>[] {
   const statBonus = bodyLvl * 2;
+  const existingNames: string[] = [];
+
+  const makeVillager = (
+    id: string,
+    overrides: Partial<{ str: number; int: number; dex: number; agi: number; vit: number }> = {},
+  ) => {
+    const name = generateRandomName(existingNames);
+    existingNames.push(name);
+    return createVillager({ id, name, statBonus, ...overrides });
+  };
+
   return [
-    createVillager({ id: "v1", name: "アルフ", statBonus }),
-    createVillager({
-      id: "v2",
-      name: "ベアトリス",
-      statBonus,
-      str: 8,
-      int: 12,
-      dex: 11,
-      agi: 9,
-      vit: 10,
-    }),
-    createVillager({
-      id: "v3",
-      name: "シリル",
-      statBonus,
-      str: 12,
-      int: 8,
-      dex: 9,
-      agi: 11,
-      vit: 10,
-    }),
+    makeVillager("v1"),
+    makeVillager("v2", { str: 8, int: 12, dex: 11, agi: 9, vit: 10 }),
+    makeVillager("v3", { str: 12, int: 8, dex: 9, agi: 11, vit: 10 }),
+    makeVillager("v4", { str: 10, int: 10, dex: 13, agi: 8, vit: 9 }),
+    makeVillager("v5", { str: 9, int: 9, dex: 10, agi: 10, vit: 12 }),
   ];
 }
 
@@ -222,6 +217,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeCost: { gold: b.upgradeGold, materials: b.upgradeMaterials },
       craftQueue: [],
       trainingQueue: [],
+      upgradeAssignedVillagerId: null,
     };
   }
   return facilities;

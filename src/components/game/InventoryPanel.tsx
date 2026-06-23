@@ -2,8 +2,10 @@ import { ShoppingBag } from "lucide-react";
 import React, { useState } from "react";
 
 import { ITEMS, getRecipeForItem } from "../../data/masterData";
-import { useInventory, useFacilities, useDungeons } from "../../hooks";
-import { Item } from "../../types/game";
+import { useDungeons, useFacilities, useInventory } from "../../hooks";
+import { useGameStore } from "../../store/gameStore";
+import type { Item } from "../../types/game";
+import { getBestExportPrice } from "../../utils/economyHelpers";
 import {
   getCategoryBadgeColor,
   getCategoryLabel,
@@ -18,6 +20,9 @@ export const InventoryPanel: React.FC = () => {
   const { inventory, targetAmounts, tradeRules } = useInventory();
   const facilities = useFacilities();
   const { currentTier, dungeons } = useDungeons();
+  const towns = useGameStore((s) => s.towns);
+  const marketTrend = useGameStore((s) => s.marketTrend);
+  const marketLvl = facilities.market?.level || 0;
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
 
@@ -25,7 +30,7 @@ export const InventoryPanel: React.FC = () => {
   type SortOption = "count-desc" | "count-asc" | "price-desc" | "price-asc" | "name-asc";
 
   const [activeTab, setActiveTab] = useState<FilterTab>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("count-desc");
+  const [sortBy, setSortBy] = useState<SortOption>("price-asc");
 
   const filterItem = (item: Item) => {
     if (activeTab === "all") return true;
@@ -147,8 +152,8 @@ export const InventoryPanel: React.FC = () => {
           .map((item) => {
             const currentCount = Math.floor(inventory[item.id] || 0);
             const target = targetAmounts[item.id] || 0;
-
-            // 自動交易設定 (売却ルール) の有無を確認
+            const exportInfo =
+              marketLvl > 0 ? getBestExportPrice(item.id, towns, marketLvl, marketTrend) : null;
             const rule = tradeRules?.find((r) => r.itemId === item.id && r.type === "sell");
 
             return (
@@ -182,6 +187,15 @@ export const InventoryPanel: React.FC = () => {
                     )}
                     <span>
                       価格: <span className="text-amber-500 font-bold">{item.basePrice} G</span>
+                      {exportInfo && exportInfo.price > 0 && (
+                        <span className="text-orange-400 text-[9px] ml-1">
+                          (輸出:{" "}
+                          <span className={exportInfo.isTrend ? "text-yellow-400 font-bold" : ""}>
+                            {exportInfo.price}G
+                          </span>
+                          )
+                        </span>
+                      )}
                     </span>
                     {target > 0 && (
                       <span className="text-sky-400 font-bold">

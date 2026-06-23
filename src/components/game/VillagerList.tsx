@@ -19,7 +19,7 @@ type JobGroup = "all" | "production" | "combat";
 const getSalary = (v: Villager) =>
   v.currentJob === "無職" ? 0 : Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1);
 
-type SortOption = "level-desc" | "level-asc" | "wage-desc" | "wage-asc";
+type SortOption = "level-desc" | "level-asc" | "wage-desc" | "wage-asc" | "id-asc" | "id-desc";
 
 export const VillagerList: React.FC = () => {
   const dungeonsData = useDungeons();
@@ -34,7 +34,7 @@ export const VillagerList: React.FC = () => {
   const gold = useGameStore((state) => state.gold);
 
   const [jobGroup, setJobGroup] = useState<JobGroup>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("level-desc");
+  const [sortBy, setSortBy] = useState<SortOption>("id-asc");
 
   const totalDebts = useMemo(
     () => villagers.reduce((sum, v) => sum + (v.gold < 0 ? -v.gold : 0), 0),
@@ -51,6 +51,16 @@ export const VillagerList: React.FC = () => {
     }
 
     result.sort((a, b) => {
+      if (sortBy === "id-asc" || sortBy === "id-desc") {
+        const numA = parseInt(a.id.replace(/^v_?/, ""), 10);
+        const numB = parseInt(b.id.replace(/^v_?/, ""), 10);
+        let cmp = 0;
+        if (!isNaN(numA) && !isNaN(numB)) cmp = numA - numB;
+        else if (!isNaN(numA)) cmp = -1;
+        else if (!isNaN(numB)) cmp = 1;
+        else cmp = a.id.localeCompare(b.id);
+        return sortBy === "id-asc" ? cmp : -cmp;
+      }
       const [field, dir] = sortBy.split("-") as ["level" | "wage", "asc" | "desc"];
       let cmp = 0;
       if (field === "level") {
@@ -83,6 +93,8 @@ export const VillagerList: React.FC = () => {
         value={sortBy}
         onChange={(val) => setSortBy(val as SortOption)}
         options={[
+          { value: "id-asc", label: "登録順 (昇順)" },
+          { value: "id-desc", label: "登録順 (降順)" },
           { value: "level-desc", label: "Lv順 (降順)" },
           { value: "level-asc", label: "Lv順 (昇順)" },
           { value: "wage-desc", label: "賃金順 (降順)" },

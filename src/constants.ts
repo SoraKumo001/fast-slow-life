@@ -19,7 +19,7 @@ export const STARTING_FOOD = 80;
 export const VILLAGER_STARTING_GOLD = 100;
 
 export const HIRE_COST = 80;
-export const BASE_MAX_VILLAGERS = 3;
+export const BASE_MAX_VILLAGERS = 5;
 export const MAX_VILLAGERS_ABSOLUTE = 10;
 export const VILLAGERS_PER_GUILD_LEVEL = 2;
 
@@ -74,6 +74,10 @@ export const BASE_GREAT_SUCCESS_RATE = 0.1;
 
 export const BASE_UPGRADE_TIME = 5;
 export const UPGRADE_TIME_PER_LEVEL = 5;
+
+export const UPGRADE_DEX_FACTOR = 0.003;
+export const UPGRADE_TIME_REDUCTION_CRAFTER = 0.75;
+export const UPGRADE_TIME_REDUCTION_MINER = 0.85;
 
 export const DISCOUNT_PER_SOUL_LEVEL = 0.1;
 

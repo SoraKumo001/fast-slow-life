@@ -38,6 +38,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       currentTier: state.currentTier,
       bossDefeated: state.bossDefeated,
       gold: state.gold,
+      facilities: state.facilities,
     });
 
     if (result.anyDispatched) {
@@ -46,6 +47,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
         villagers: result.villagers,
         inventory: result.inventory,
         gold: result.gold,
+        facilities: result.facilities,
       });
     }
   },

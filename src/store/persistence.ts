@@ -44,6 +44,9 @@ const migrations: Record<number, SaveMigration> = {
         if (f && (f.level as number) > 0 && !Array.isArray(f.trainingQueue)) {
           f.trainingQueue = [];
         }
+        if (f && f.upgradeAssignedVillagerId === undefined) {
+          f.upgradeAssignedVillagerId = null;
+        }
       });
     }
 

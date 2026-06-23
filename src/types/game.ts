@@ -181,6 +181,7 @@ export interface Facility {
   };
   craftQueue: CraftJob[];
   trainingQueue: TrainingJob[];
+  upgradeAssignedVillagerId: string | null;
 }
 
 export interface Monster {
@@ -311,7 +312,7 @@ export interface GameActions {
   unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
   autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
-  startFacilityUpgrade: (facilityId: FacilityType) => void;
+  startFacilityUpgrade: (facilityId: FacilityType, villagerId?: string) => void;
   startTraining: (programId: string, villagerId: string) => void;
   setTargetAmount: (itemId: string, count: number) => void;
   buySoulUpgrade: (upgradeId: string) => void;

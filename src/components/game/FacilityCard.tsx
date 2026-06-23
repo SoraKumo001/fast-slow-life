@@ -3,10 +3,11 @@ import React, { useState } from "react";
 
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
-import { Facility, FacilityType, Item, Villager } from "../../types/game";
+import type { Facility, FacilityType, Item, Villager } from "../../types/game";
+import { getRecipeValueInfo, getResourceFacilityGValue } from "../../utils/economyHelpers";
 import {
-  getResourceProductionInfo,
   getNextLevelResourceProduction,
+  getResourceProductionInfo,
   isResourceFacility,
 } from "../../utils/facilityHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
@@ -114,7 +115,13 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
         {fac.upgradeTimeLeft > 0 && (
           <div className="mt-3 space-y-1">
             <div className="flex justify-between text-[10px] font-mono text-slate-400">
-              <span>アップグレード進行中...</span>
+              <span>
+                アップグレード進行中
+                {fac.upgradeAssignedVillagerId
+                  ? ` (担当: ${villagers.find((v) => v.id === fac.upgradeAssignedVillagerId)?.name || "村人"})`
+                  : ""}
+                ...
+              </span>
               <span>残り {fac.upgradeTimeLeft}時間</span>
             </div>
             <ProgressBar
@@ -225,6 +232,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {craftableItems.map((item) => {
                     const recipe = getRecipeForItem(item.id)!;
+                    const valueInfo = getRecipeValueInfo(recipe);
                     return (
                       <div
                         key={item.id}
@@ -259,6 +267,15 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                         </p>
                         <p className="text-[10px] text-slate-400 font-mono">
                           所要時間: {recipe.requiredTime}時間
+                          {valueInfo.valueAdd !== 0 && (
+                            <span
+                              className={`ml-1.5 font-bold ${valueInfo.valueAdd > 0 ? "text-emerald-400" : "text-red-400"}`}
+                            >
+                              {valueInfo.valueAdd > 0 ? "+" : ""}
+                              {valueInfo.valueAdd}G ({valueInfo.valuePerHour >= 0 ? "+" : ""}
+                              {valueInfo.valuePerHour}G/h)
+                            </span>
+                          )}
                         </p>
                       </div>
                     );
@@ -307,12 +324,25 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                   {fac.level === 0 ? "なし" : getResourceProductionInfo(fac).label}
                 </span>
                 /12時間
+                {fac.level > 0 && (
+                  <span className="text-amber-400 font-bold font-mono ml-1">
+                    (約{getResourceFacilityGValue(fac.id, fac.level).gValue}G相当)
+                  </span>
+                )}
                 {fac.level > 0 && fac.level < fac.maxLevel && (
                   <>
                     {" "}
                     （建設・強化後:{" "}
-                    <span className="text-emerald-450 font-bold font-mono">
+                    <span className="text-sky-400 font-bold font-mono">
                       {getNextLevelResourceProduction(fac).label}
+                    </span>
+                    <span className="text-amber-400 font-bold font-mono ml-1">
+                      (約
+                      {
+                        getResourceFacilityGValue(fac.id, Math.min(fac.level + 1, fac.maxLevel))
+                          .gValue
+                      }
+                      G相当)
                     </span>
                     /12時間）
                   </>

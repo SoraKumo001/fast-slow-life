@@ -307,10 +307,10 @@ describe("gameStore", () => {
       // 帰還時の自動回収により、ゴールドが増加していることを確認。
       // コモレビの村では potion が需要アイテム（ multiplier 1.2倍 ）。
       // potion basePrice 10G * 1.2倍 = 12G。
-      // 友好度レベル1（+0%）, 交易所レベル1（+0%）。
-      // 5個売却で、 5 * 12G = 60G 獲得。
-      // gold: 100 -> 160G.
-      expect(state.gold).toBe(160);
+      // 友好度レベル1（+0%）, 交易所レベル1（+10%）。
+      // 5個売却で、 floor(floor(12 * 1.1) * 5) = 65G 獲得。
+      // gold: 100 -> 165G.
+      expect(state.gold).toBe(165);
       expect(state.caravans[0].status).toBe("idle");
 
       const tradeLog = state.logs.find((l) => l.message.includes("コモレビ村 から交易馬車が帰還"));
@@ -339,9 +339,9 @@ describe("gameStore", () => {
       }));
 
       // 1. 採取を行い、プレイヤーのゴールドが不足しても全量買い取ってマイナスになることを確認
-      // 小麦 (basePrice = 1G) の買取単価は 2G。 17個採取しようとすると、34G 必要。
-      // プレイヤーゴールド: 10G -> -24G
-      // 村人ゴールド: 50G -> 84G
+      // 小麦 (basePrice = 1G) の買取単価は basePrice の 1G。 17個採取すると、 17G 必要。
+      // プレイヤーゴールド: 10G -> -7G
+      // 村人ゴールド: 50G -> 67G
       // 倉庫小麦: 0 -> 17個
       // プール小麦: 0個
       const stateBefore = useGameStore.getState();
@@ -372,23 +372,23 @@ describe("gameStore", () => {
         10, // プレイヤーゴールド 10G
       );
 
-      expect(res.gold).toBe(-24); // プレイヤーゴールドは -24G に減少 (10 - 34 = -24)
-      expect(v.gold).toBe(84); // 村人のゴールドは 50 + 34 = 84G に増加
+      expect(res.gold).toBe(-7); // プレイヤーゴールドは -7G に減少 (10 - 17 = -7)
+      expect(v.gold).toBe(67); // 村人のゴールドは 50 + 17 = 67G に増加
       expect(v.pool.wheat).toBeUndefined(); // プールは発生しない
       expect(nextInventory.wheat).toBe(17); // 17個すべてが倉庫に入る
 
       // 2. プレイヤーのゴールドが増えたときに、プールから自動精算されることを検証 (モックでプールデータを設定してテスト)
       // プレイヤーが 100G を手に入れ、プール小麦6個が存在する場合
-      // プール小麦 6個 x 2G = 12G が支払われ、 100 - 12 = 88G になる
+      // プール小麦 6個 x 1G = 6G が支払われ、 100 - 6 = 94G になる
       // プールされていた小麦が倉庫に移り、計 5 + 6 = 11 個になる
-      // 村人に 12G 支払われて 60 + 12 = 72G になる
+      // 村人に 6G 支払われて 60 + 6 = 66G になる
       // プール小麦は完済して消滅
       v.pool = { wheat: 6 };
       v.gold = 60;
       const poolPurchaseResult = processItemPoolPurchase(100, { ...nextInventory, wheat: 5 }, [v]);
-      expect(poolPurchaseResult.gold).toBe(88);
+      expect(poolPurchaseResult.gold).toBe(94);
       expect(poolPurchaseResult.inventory.wheat).toBe(11);
-      expect(poolPurchaseResult.villagers[0].gold).toBe(72);
+      expect(poolPurchaseResult.villagers[0].gold).toBe(66);
       expect(poolPurchaseResult.villagers[0].pool.wheat).toBeUndefined();
 
       // 3. 宿代の差し引きとツケ払いの確認
@@ -472,6 +472,198 @@ describe("gameStore", () => {
       // パンが完成していることを確認
       expect(state.inventory.food_bread).toBeGreaterThanOrEqual(1);
       expect(state.facilities.kitchen.craftQueue.length).toBe(0);
+    });
+
+    it("payVillagerDebts: ゴールド不足の場合は部分返済されること", () => {
+      useGameStore.setState((s) => ({
+        gold: 8,
+        villagers: [
+          { ...s.villagers[0], id: "v1", gold: -5, pool: {} },
+          { ...s.villagers[1], id: "v2", gold: -10, pool: {} },
+        ],
+      }));
+
+      const store = useGameStore.getState();
+      store.payVillagerDebts();
+
+      const state = useGameStore.getState();
+      // totalDebt = 5 + 10 = 15, gold = 8 < 15
+      // v1: 8 >= 5 → 5支払い, v1.gold=0, playerGold=3
+      // v2: 3 < 10 → 3支払い, v2.gold=-7, playerGold=0
+      expect(state.gold).toBe(0);
+      expect(state.villagers[0].gold).toBe(0);
+      expect(state.villagers[1].gold).toBe(-7);
+    });
+
+    it("payVillagerDebts: ツケのある村人がいない場合は何も変更されないこと", () => {
+      useGameStore.setState((s) => ({
+        gold: 100,
+        villagers: s.villagers.map((v) => ({ ...v, gold: 50 })),
+      }));
+
+      const store = useGameStore.getState();
+      store.payVillagerDebts();
+
+      const state = useGameStore.getState();
+      expect(state.gold).toBe(100);
+      state.villagers.forEach((v) => {
+        expect(v.gold).toBe(50);
+      });
+    });
+
+    it("sendExportCaravan: 友好度ボーナスとトレンド倍率が売却額に反映されること", () => {
+      useGameStore.setState((s) => ({
+        gold: 100,
+        inventory: { ...s.inventory, potion: 10 },
+        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+        towns: s.towns.map((t) =>
+          t.id === "komorebi" ? { ...t, isUnlocked: true, level: 3, friendship: 300 } : t,
+        ),
+        marketTrend: {
+          targetTownId: "komorebi",
+          itemId: "potion",
+          type: "demand",
+          multiplier: 1.5,
+        },
+      }));
+
+      const store = useGameStore.getState();
+      store.sendExportCaravan("caravan_1", "komorebi", [{ itemId: "potion", count: 5 }]);
+
+      const state = useGameStore.getState();
+      // potion basePrice=10, trend 1.5x → price=15
+      // marketBonus=0.1, friendshipBonus=(3-1)*0.05=0.1
+      // finalPrice = floor(floor(15 * 1.2) * 5) = floor(18 * 5) = 90
+      expect(state.caravans[0].goldEarned).toBe(90);
+      expect(state.caravans[0].status).toBe("trading");
+      expect(state.inventory.potion).toBe(5);
+    });
+
+    it("sendImportCaravan: 所持ゴールド不足の場合は派遣されないこと", () => {
+      useGameStore.setState((s) => ({
+        gold: 10,
+        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+        towns: s.towns.map((t) => (t.id === "komorebi" ? { ...t, isUnlocked: true, level: 1 } : t)),
+      }));
+
+      const store = useGameStore.getState();
+      store.sendImportCaravan("caravan_1", "komorebi", [{ itemId: "potion", count: 2 }], 60);
+
+      const state = useGameStore.getState();
+      expect(state.caravans[0].status).toBe("idle");
+      expect(state.gold).toBe(10);
+    });
+
+    it("investInTown: 投資で投資レベルが上昇し次回投資コストが漸増すること", () => {
+      useGameStore.setState((s) => ({
+        gold: 1000,
+        towns: s.towns.map((t) =>
+          t.id === "komorebi" ? { ...t, isUnlocked: true, investLevel: 1, investCost: 500 } : t,
+        ),
+      }));
+
+      const store = useGameStore.getState();
+      store.investInTown("komorebi");
+
+      const state = useGameStore.getState();
+      const town = state.towns.find((t) => t.id === "komorebi")!;
+      expect(town.investLevel).toBe(2);
+      expect(town.investCost).toBe(1000);
+      expect(state.gold).toBe(500);
+    });
+
+    it("宿屋レベル2の場合、宿代として3Gが引き落とされること", () => {
+      useGameStore.setState((s) => ({
+        gold: 100,
+        villagers: [
+          {
+            ...s.villagers[0],
+            currentJob: "農民",
+            status: "resting",
+            gold: 5,
+            pool: {},
+          },
+        ],
+        facilities: {
+          ...s.facilities,
+          inn: { ...s.facilities.inn, level: 2 },
+        },
+      }));
+
+      const store = useGameStore.getState();
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      const v = state.villagers[0];
+      // innCost = 1 + innLvl(2) = 3G
+      expect(v.gold).toBe(2);
+      expect(state.gold).toBe(103);
+    });
+
+    it("日付変更時に食料代が村人から引き落とされプレイヤーに支払われること", () => {
+      useGameStore.setState((s) => ({
+        currentHour: 23,
+        currentDay: 1,
+        gold: 500,
+        villagers: s.villagers.map((v, idx) => {
+          if (idx === 0) {
+            return {
+              ...v,
+              gold: 100,
+              activeFoodBuffId: "food_bread",
+              status: "idle",
+              order: "gather",
+              destinationAreaId: null,
+              pool: {},
+            };
+          }
+          return { ...v, status: "idle", order: "gather", destinationAreaId: null, pool: {} };
+        }),
+        inventory: { ...s.inventory, food_bread: 100, wheat: 100 },
+      }));
+
+      const store = useGameStore.getState();
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      const foodCostLog = state.logs.find((l) => l.message.includes("食料代"));
+      expect(foodCostLog).toBeDefined();
+    });
+
+    it("日付変更時にマーケットトレンドが生成されること", () => {
+      useGameStore.setState((s) => ({
+        currentHour: 23,
+        currentDay: 1,
+        villagers: [],
+        towns: s.towns.map((t) => ({ ...t, isUnlocked: true })),
+        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+      }));
+
+      const store = useGameStore.getState();
+      store.advanceHour();
+
+      const state = useGameStore.getState();
+      expect(state.currentDay).toBe(2);
+      expect(state.marketTrend).not.toBeNull();
+      expect(state.marketTrend?.type).toBe("demand");
+    });
+
+    it("交易所レベル2の場合、2台の馬車を同時派遣できること", () => {
+      useGameStore.setState((s) => ({
+        gold: 100,
+        inventory: { ...s.inventory, potion: 30 },
+        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 2 } },
+        towns: s.towns.map((t) => (t.id === "komorebi" ? { ...t, isUnlocked: true, level: 1 } : t)),
+      }));
+
+      const store = useGameStore.getState();
+      store.sendExportCaravan("caravan_1", "komorebi", [{ itemId: "potion", count: 10 }]);
+      store.sendExportCaravan("caravan_2", "komorebi", [{ itemId: "potion", count: 10 }]);
+
+      const state = useGameStore.getState();
+      expect(state.caravans[0].status).toBe("trading");
+      expect(state.caravans[1].status).toBe("trading");
+      expect(state.inventory.potion).toBe(10);
     });
   });
 });

@@ -4,10 +4,9 @@ import {
   MAX_VILLAGERS_ABSOLUTE,
   HIRE_COST,
 } from "../constants";
-import { VILLAGER_NAMES } from "../data/masterData";
 import { Villager, Facility } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
-import { createVillager } from "../utils/villagerHelpers";
+import { createVillager, generateRandomName } from "../utils/villagerHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export interface HireResult {
@@ -84,7 +83,8 @@ export function hireVillagerHelper(params: {
     }
   }
 
-  const name = VILLAGER_NAMES[villagers.length % VILLAGER_NAMES.length] + " (新人)";
+  const existingNames = villagers.map((v) => v.name);
+  const name = generateRandomName(existingNames);
   const sb = (soulUpgrades.body || 0) * 2;
   const newVillager = createVillager({ id: "v_" + generateId(), name, statBonus: sb });
 
