@@ -84,29 +84,15 @@ export function processItemAcquisition(
   const logs: LogPayload[] = [];
   const nextInventory = { ...inventory };
 
-  let buyCount = amount;
-  let poolCount = 0;
-
-  // 所持金不足でも制限なく全量買い取る
-
   let nextPlayerGold = playerGold;
-  if (buyCount > 0) {
-    const cost = buyCount * price;
+  if (amount > 0) {
+    const cost = amount * price;
     nextPlayerGold -= cost;
     v.gold = (v.gold || 0) + cost;
-    nextInventory[itemId] = (nextInventory[itemId] || 0) + buyCount;
+    nextInventory[itemId] = (nextInventory[itemId] || 0) + amount;
     logs.push({
-      message: `【買取】${v.name} が獲得した ${item.name} x${buyCount} を ${cost} G で買い取りました。`,
+      message: `【買取】${v.name} が獲得した ${item.name} x${amount} を ${cost} G で買い取りました。`,
       type: "info",
-    });
-  }
-
-  if (poolCount > 0) {
-    if (!v.pool) v.pool = {};
-    v.pool[itemId] = (v.pool[itemId] || 0) + poolCount;
-    logs.push({
-      message: `【警告】ゴールド不足のため、${v.name} が獲得した ${item.name} x${poolCount} は仮置き場にプールされました。`,
-      type: "warning",
     });
   }
 

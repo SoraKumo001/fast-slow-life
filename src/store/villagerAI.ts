@@ -291,7 +291,6 @@ export function processVillagerActivities(
     }
     nextVillagers[i] = v;
   }
-
   return {
     villagers: nextVillagers,
     inventory: nextInventory,

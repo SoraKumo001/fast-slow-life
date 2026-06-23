@@ -293,31 +293,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   dungeons = actRes.dungeons;
   gold = actRes.gold; // 宿代引き落としや採取・討伐完了による売買が反映される
   logsToAppend.push(...actRes.logs);
-  if (actRes.gameOver) {
-    return {
-      currentDay,
-      currentHour,
-      gold,
-      villagers,
-      facilities,
-      dungeons,
-      inventory,
-      currentTier,
-      activeBoss,
-      bossDefeated,
-      gameLimitDays,
-      gameOver: actRes.gameOver,
-      gameOverReason: "全滅",
-      isPaused: actRes.isPaused,
-      logsToAppend,
-      towns,
-      caravans,
-      marketTrend,
-      isSalaryUnpaid: isSalaryUnpaidNext,
-      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
-      stats: nextStats,
-    };
-  }
 
   const autoRes = processAutoCraft(facilities, villagers, inventory, targetAmounts);
   facilities = autoRes.facilities;
@@ -330,13 +305,30 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   villagers = trainingRes.villagers;
   logsToAppend.push(...trainingRes.logs);
 
-  // 交易馬車の進行処理（帰還時は自動回収して待機状態にする）
+  // 交易馬車の進行処理（帰還時は報酬を自動回収し、returned状態にする）
   const caravanRes = processCaravanProgress(caravans, towns, gold, inventory, nextStats);
   caravans = caravanRes.caravans;
   towns = caravanRes.towns;
   gold = caravanRes.gold;
   inventory = caravanRes.inventory;
   logsToAppend.push(...caravanRes.logs);
+
+  // 自動交易が有効な馬車は即座に idle に戻して次の交易に備える
+  caravans = caravans.map((c) => {
+    if (c.status !== "returned" || !c.isAuto) return c;
+    return {
+      ...c,
+      status: "idle" as const,
+      destinationTownId: null,
+      type: null,
+      timeLeft: 0,
+      totalTime: 0,
+      cargo: [],
+      goldCost: 0,
+      goldEarned: 0,
+      friendshipEarned: 0,
+    };
+  });
 
   // Tierアップ時に対応する町をアンロック
   const unlockRes = unlockTownsByTier(towns, currentTier);

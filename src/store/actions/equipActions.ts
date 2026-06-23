@@ -180,7 +180,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
 
     let playerGold = state.gold;
     sortedVillagerIndices.forEach(({ v, index }) => {
-      const villagerObj = villagers[index];
+      const currentGold = villagers[index].gold;
 
       let bestWeaponId = "none";
       let bestWeaponScore = -1;
@@ -192,7 +192,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         const isSame = v.weaponId === itemId;
         const cost = isSame ? 0 : item.basePrice || 0;
 
-        if (villagerObj.gold >= cost) {
+        if (currentGold >= cost) {
           const score = getWeaponScore(item, v);
           if (score > bestWeaponScore) {
             bestWeaponScore = score;
@@ -202,12 +202,11 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         }
       });
 
+      let remainingGold = currentGold;
       if (bestWeaponId !== "none") {
         weaponPool[bestWeaponId]--;
-        if (weaponCost > 0) {
-          villagerObj.gold -= weaponCost;
-          playerGold += weaponCost;
-        }
+        remainingGold -= weaponCost;
+        playerGold += weaponCost;
       }
 
       let bestArmorId = "none";
@@ -220,7 +219,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
         const isSame = v.armorId === itemId;
         const cost = isSame ? 0 : item.basePrice || 0;
 
-        if (villagerObj.gold >= cost) {
+        if (remainingGold >= cost) {
           const score = getArmorScore(item, v);
           if (score > bestArmorScore) {
             bestArmorScore = score;
@@ -232,17 +231,16 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
 
       if (bestArmorId !== "none") {
         armorPool[bestArmorId]--;
-        if (armorCost > 0) {
-          villagerObj.gold -= armorCost;
-          playerGold += armorCost;
-        }
+        remainingGold -= armorCost;
+        playerGold += armorCost;
       }
 
       const originalWeapon = v.weaponId;
       const originalArmor = v.armorId;
 
       villagers[index] = {
-        ...villagerObj,
+        ...villagers[index],
+        gold: remainingGold,
         weaponId: bestWeaponId,
         armorId: bestArmorId,
       };

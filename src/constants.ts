@@ -20,7 +20,7 @@ export const VILLAGER_STARTING_GOLD = 100;
 
 export const HIRE_COST = 80;
 export const BASE_MAX_VILLAGERS = 5;
-export const MAX_VILLAGERS_ABSOLUTE = 10;
+export const MAX_VILLAGERS_ABSOLUTE = 14;
 export const VILLAGERS_PER_GUILD_LEVEL = 2;
 
 export const MAX_POTIONS_PER_VILLAGER = 2;

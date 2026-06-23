@@ -1,6 +1,6 @@
 import { ITEMS } from "../data/masterData";
 import { GameState, Caravan, Town } from "../types/game";
-import { getMarketSellBonus } from "../utils/marketHelpers";
+import { getMarketSellBonus, getMaxCaravans } from "../utils/marketHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processAutoTrade(
@@ -25,7 +25,7 @@ export function processAutoTrade(
     return { gold, inventory, caravans, logs };
   }
 
-  const maxCaravans = marketLvl === 1 ? 1 : marketLvl === 2 ? 2 : 3;
+  const maxCaravans = getMaxCaravans(marketLvl);
   const marketBonus = getMarketSellBonus(marketLvl);
 
   // 1. 待機中（idle）の馬車をスロット枠内で探す

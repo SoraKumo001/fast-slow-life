@@ -41,11 +41,11 @@ export const SOUL_UPGRADES: SoulUpgrade[] = [
   {
     id: "building",
     name: "効率的な建築",
-    description: "施設アップグレードの素材必要量 -8%",
+    description: "施設アップグレードの素材必要量 -20%",
     level: 0,
     maxLevel: 5,
     costs: [20, 40, 60, 110, 180],
-    effectValue: 0.08,
+    effectValue: 0.2,
   },
   {
     id: "discount",

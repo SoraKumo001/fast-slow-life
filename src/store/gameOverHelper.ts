@@ -13,7 +13,7 @@ export function isTimeOver(
 }
 
 export function buildGameOverLog(
-  reason: "破産" | "期限切れ" | "クリア" | "全滅",
+  reason: "破産" | "期限切れ" | "クリア",
   gameLimitDays?: number,
 ): LogPayload {
   switch (reason) {
@@ -29,7 +29,5 @@ export function buildGameOverLog(
       };
     case "クリア":
       return { message: "ボスを討伐し、Tierをクリアしました！", type: "system" };
-    case "全滅":
-      return { message: "すべての村人が戦闘不能になりました。ゲームオーバー！", type: "error" };
   }
 }

@@ -34,7 +34,7 @@ export function processCaravanProgress(
       if (!destTown) {
         return {
           ...caravan,
-          status: "idle",
+          status: "returned",
           destinationTownId: null,
           type: null,
           timeLeft: 0,
@@ -81,15 +81,7 @@ export function processCaravanProgress(
 
       return {
         ...caravan,
-        status: "idle",
-        destinationTownId: null,
-        type: null,
-        timeLeft: 0,
-        totalTime: 0,
-        cargo: [],
-        goldCost: 0,
-        goldEarned: 0,
-        friendshipEarned: 0,
+        status: "returned",
       } as Caravan;
     }
     return {

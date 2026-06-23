@@ -190,6 +190,8 @@ function runSimulationChunk(
           newTargets.herb = 15;
           newTargets.mushroom = 10;
           newTargets.potion = 5;
+          newTargets.wooden_club = 2;
+          newTargets.wooden_shield = 2;
         }
         if (currentTier >= 2) {
           newTargets.stone = 25;
@@ -199,6 +201,8 @@ function runSimulationChunk(
           newTargets.iron_ingot = 10;
           newTargets.iron_sword = 3;
           newTargets.iron_armor = 3;
+          newTargets.wooden_bow = 2;
+          newTargets.leather_armor = 2;
         }
         if (currentTier >= 3) {
           newTargets.silver_ingot = 10;
@@ -206,6 +210,9 @@ function runSimulationChunk(
           newTargets.silver_chainmail = 3;
           newTargets.crystal_fragment = 10;
           newTargets.feather = 5;
+          newTargets.reinforced_plank = 6;
+          newTargets.ultimate_potion = 3;
+          newTargets.food_herb_banquet = 3;
         }
         if (currentTier >= 4) {
           newTargets.mana_stone = 20;
@@ -213,11 +220,15 @@ function runSimulationChunk(
           newTargets.elixir = 5;
           newTargets.mythril_robe = 2;
           newTargets.mythril_staff = 2;
+          newTargets.crystal_powder = 8;
         }
         if (currentTier >= 5) {
           newTargets.dragon_slayer = 3;
           newTargets.dragon_scale_mail = 3;
-          newTargets.dark_crystal = 5;
+          newTargets.dark_crystal = 10;
+          newTargets.dark_ingot = 6;
+          newTargets.food_dragon_feast = 2;
+          newTargets.phoenix_tear = 2;
         }
 
         // ボスが未撃破の間は、レベリングと探索のために主要採取アイテムの目標を適度に大きくする
@@ -352,15 +363,15 @@ function runSimulationChunk(
         const upgradeOrder: FacilityType[] = [
           "market",
           "guild",
+          "weapon_shop",
           "training_ground",
           "farm",
           "lumberyard",
           "quarry",
           "workshop",
-          "kitchen",
           "inn",
+          "kitchen",
           "alchemy",
-          "weapon_shop",
         ];
         for (const facId of upgradeOrder) {
           const fac = state.facilities[facId];
@@ -507,7 +518,7 @@ function runSimulationChunk(
     let actualReason = "Clear";
     if (!isClear) {
       if (finalState.gameOver && finalState.gameOverReason) {
-        // ゲームエンジンが出力した理由をそのまま使う（"破産", "期限切れ", "全滅", "クリア" 等）
+        // ゲームエンジンが出力した理由をそのまま使う（"破産", "期限切れ", "クリア" 等）
         actualReason = finalState.gameOverReason;
       } else if (finalState.villagers.length === 0) {
         actualReason = "VillagersDefeated";

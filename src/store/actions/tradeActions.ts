@@ -1,8 +1,7 @@
 import { ITEMS } from "../../data/masterData";
-import { getFriendshipLevel, getInvestCost } from "../../data/towns";
+import { getInvestCost } from "../../data/towns";
 import { StoreGet, StoreSet } from "../../types/game";
-import { getMarketSellBonus } from "../../utils/marketHelpers";
-import { processItemPoolPurchase } from "../poolPurchase";
+import { getMarketSellBonus, getMaxCaravans } from "../../utils/marketHelpers";
 
 export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
   sendExportCaravan: (
@@ -18,7 +17,7 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     const marketLvl = state.facilities.market?.level || 0;
     if (marketLvl === 0) return;
 
-    const maxCaravans = marketLvl === 1 ? 1 : marketLvl === 2 ? 2 : 3;
+    const maxCaravans = getMaxCaravans(marketLvl);
     const caravanIndex = state.caravans.findIndex((c) => c.id === caravanId);
     if (caravanIndex === -1 || caravanIndex >= maxCaravans) return;
 
@@ -108,7 +107,7 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     const marketLvl = state.facilities.market?.level || 0;
     if (marketLvl === 0) return;
 
-    const maxCaravans = marketLvl === 1 ? 1 : marketLvl === 2 ? 2 : 3;
+    const maxCaravans = getMaxCaravans(marketLvl);
     const caravanIndex = state.caravans.findIndex((c) => c.id === caravanId);
     if (caravanIndex === -1 || caravanIndex >= maxCaravans) return;
 
@@ -163,62 +162,22 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     const caravan = state.caravans[caravanIndex];
     if (caravan.status !== "returned") return;
 
-    const town = state.towns.find((t) => t.id === caravan.destinationTownId);
-    if (!town) return;
-
-    let nextGold = state.gold;
-    const nextInventory = { ...state.inventory };
-    let nextTowns = [...state.towns];
-
-    let statsUpdate: Partial<import("../../types/game").RunStats> = {};
+    const townName = caravan.destinationTownId
+      ? state.towns.find((t) => t.id === caravan.destinationTownId)?.name || ""
+      : "";
 
     if (caravan.type === "export") {
-      // ゴールドの獲得
-      nextGold += caravan.goldEarned;
-      statsUpdate = {
-        totalGoldFromExports: (state.stats?.totalGoldFromExports || 0) + caravan.goldEarned,
-      };
-
-      // 友好度の上昇
-      nextTowns = state.towns.map((t) => {
-        if (t.id === town.id) {
-          const nextFriendship = Math.min(1000, t.friendship + caravan.friendshipEarned);
-          const nextLevel = getFriendshipLevel(nextFriendship);
-          return {
-            ...t,
-            friendship: nextFriendship,
-            level: nextLevel,
-          };
-        }
-        return t;
-      });
-
-      const updatedTown = nextTowns.find((t) => t.id === town.id)!;
       state.addLog(
-        `【交易】交易馬車が ${town.name} から帰還！ ${caravan.goldEarned} G を獲得し、友好度が ${caravan.friendshipEarned} 上昇しました（現在の友好度Lv: ${updatedTown.level}）。`,
+        `【交易】交易馬車が ${townName} からの交易を完了しました。次の交易に備えます。`,
         "info",
       );
     } else if (caravan.type === "import") {
-      // アイテムの獲得
-      for (const entry of caravan.cargo) {
-        nextInventory[entry.itemId] = (nextInventory[entry.itemId] || 0) + entry.count;
-      }
-
-      const itemsStr = caravan.cargo
-        .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)
-        .join(", ");
       state.addLog(
-        `【交易】交易馬車が ${town.name} から帰還し、仕入れた品物を受け取りました：${itemsStr}`,
+        `【交易】仕入れ馬車が ${townName} からの交易を完了しました。次の交易に備えます。`,
         "info",
       );
     }
 
-    const poolRes = processItemPoolPurchase(nextGold, nextInventory, state.villagers);
-    nextGold = poolRes.gold;
-    Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
-    Object.assign(nextInventory, poolRes.inventory);
-
-    // 馬車の状態リセット
     const updatedCaravans = [...state.caravans];
     updatedCaravans[caravanIndex] = {
       id: caravanId,
@@ -234,16 +193,7 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       isAuto: caravan.isAuto,
     };
 
-    set((s) => ({
-      gold: nextGold,
-      inventory: nextInventory,
-      towns: nextTowns,
-      caravans: updatedCaravans,
-      villagers: poolRes.villagers,
-      stats: Object.keys(statsUpdate).length > 0 ? { ...s.stats, ...statsUpdate } : s.stats,
-    }));
-
-    poolRes.logs.forEach((log) => state.addLog(log.message, log.type));
+    set({ caravans: updatedCaravans });
   },
 
   investInTown: (townId: string) => {

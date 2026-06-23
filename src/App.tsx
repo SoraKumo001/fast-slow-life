@@ -138,9 +138,7 @@ export default function App() {
                   <p className="text-slate-400 text-sm">
                     {gameOverReason === "破産"
                       ? "所持金マイナス状態が3日間続いたため、破産しました。"
-                      : gameOverReason === "全滅"
-                        ? "すべての村人が戦闘不能になりました。"
-                        : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
+                      : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
                   </p>
                 </>
               )}

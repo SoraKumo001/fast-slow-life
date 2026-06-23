@@ -1,6 +1,11 @@
 import React from "react";
 
-import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
+import {
+  MAX_VILLAGERS_ABSOLUTE,
+  BASE_MAX_VILLAGERS,
+  VILLAGERS_PER_GUILD_LEVEL,
+  HIRE_COST,
+} from "../../constants";
 import { Facility, Villager } from "../../types/game";
 
 interface GuildPanelProps {
@@ -18,23 +23,35 @@ export const GuildPanel: React.FC<GuildPanelProps> = ({
   isUnlocked,
   onHireVillager,
 }) => {
-  const maxVillagers = Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2);
-  const canHire = isUnlocked && gold >= 100 && villagers.length < maxVillagers;
+  const maxVillagers = Math.min(
+    MAX_VILLAGERS_ABSOLUTE,
+    BASE_MAX_VILLAGERS + fac.level * VILLAGERS_PER_GUILD_LEVEL,
+  );
+  const canHire = isUnlocked && gold >= HIRE_COST && villagers.length < maxVillagers;
 
   return (
     <div className="space-y-3 bg-slate-900/40 p-3 rounded-lg border border-slate-800 leading-relaxed">
       <div className="flex justify-between items-center text-[10px] font-mono">
         <span className="text-slate-300 font-medium">
           現在人数: <strong className="text-sky-400">{villagers.length}</strong> / {maxVillagers} 人{" "}
-          {!isUnlocked && <span className="text-slate-400">(建設後: 5人)</span>}
+          {!isUnlocked && (
+            <span className="text-slate-400">
+              (建設後: {BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL}人)
+            </span>
+          )}
         </span>
-        {isUnlocked && <span className="text-slate-400">雇用コスト: 100 G</span>}
+        {isUnlocked && <span className="text-slate-400">雇用コスト: {HIRE_COST} G</span>}
       </div>
 
       <p className="text-[10px] text-slate-400 leading-normal">
         ギルドレベルに応じて雇用できる村人の上限が緩和されます。
         <br />
-        ・Lv0: 最大5人 / ・Lv1: 最大7人 / ・Lv2: 最大9人 / ・Lv3以上: 最大10人
+        ・Lv0: {BASE_MAX_VILLAGERS}人 / ・Lv1: {BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL}人 /
+        ・Lv2: {BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 2}人 / ・Lv3:{" "}
+        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 3)}人 /
+        ・Lv4:{" "}
+        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 4)}人 /
+        ・Lv5: {MAX_VILLAGERS_ABSOLUTE}人
       </p>
 
       <button
@@ -49,7 +66,7 @@ export const GuildPanel: React.FC<GuildPanelProps> = ({
           ? "冒険者ギルドを建設すると雇用できます"
           : villagers.length >= maxVillagers
             ? "雇用上限に達しています"
-            : "新しい冒険者を雇用する (100G)"}
+            : `新しい冒険者を雇用する (${HIRE_COST}G)`}
       </button>
     </div>
   );

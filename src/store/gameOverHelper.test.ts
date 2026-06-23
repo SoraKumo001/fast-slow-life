@@ -54,11 +54,5 @@ describe("gameOverHelper", () => {
       expect(log.message).toContain("Tier");
       expect(log.type).toBe("system");
     });
-
-    it("全滅ログのメッセージとタイプが正しいこと", () => {
-      const log = buildGameOverLog("全滅");
-      expect(log.message).toContain("村人");
-      expect(log.type).toBe("error");
-    });
   });
 });

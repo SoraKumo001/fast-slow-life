@@ -138,10 +138,17 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
     if (selectedVillager.status === "active" || selectedVillager.status === "traveling_to") {
       const area = state.dungeons.find((d) => d.id === selectedVillager.destinationAreaId);
       set((state) => {
+        const inv = { ...state.inventory };
+        facility.upgradeCost.materials.forEach((req) => {
+          const reqCount = Math.floor(req.count * costReduction);
+          inv[req.itemId] = Math.max(0, (inv[req.itemId] || 0) - reqCount);
+        });
+
         const updatedVillagers = state.villagers.map((v) => {
           if (v.id !== selectedVillager!.id) return v;
           return {
             ...v,
+            gold: v.gold + goldCost,
             status: "traveling_back",
             travelTimeLeft: area ? area.distance : 1,
             order: "rest",
@@ -158,6 +165,8 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
           upgradeAssignedVillagerId: selectedVillager!.id,
         };
         return {
+          gold: state.gold - goldCost,
+          inventory: inv,
           villagers: updatedVillagers,
           facilities: updatedFacilities,
         };

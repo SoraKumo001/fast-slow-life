@@ -81,7 +81,7 @@ describe("caravanProgressHelper", () => {
       const result = processCaravanProgress([caravan], [town], 100, {}, stats);
 
       expect(result.gold).toBe(160);
-      expect(result.caravans[0].status).toBe("idle");
+      expect(result.caravans[0].status).toBe("returned");
       expect(result.towns[0].friendship).toBe(55);
       expect(result.towns[0].level).toBe(1);
       expect(stats.totalGoldFromExports).toBe(60);
@@ -118,7 +118,7 @@ describe("caravanProgressHelper", () => {
       const result = processCaravanProgress([caravan], [town], 100, { potion: 5 }, stats);
 
       expect(result.inventory.potion).toBe(7);
-      expect(result.caravans[0].status).toBe("idle");
+      expect(result.caravans[0].status).toBe("returned");
       expect(stats.totalGoldSpentOnImports).toBe(30);
       expect(result.gold).toBe(100);
     });
@@ -138,7 +138,7 @@ describe("caravanProgressHelper", () => {
       expect(result.towns[0].friendship).toBe(1000);
     });
 
-    it("目的地の街が見つからない場合はidleにリセットされること", () => {
+    it("目的地の街が見つからない場合はreturnedにリセットされること", () => {
       const caravan = makeCaravan({
         status: "trading",
         type: "export",
@@ -148,7 +148,7 @@ describe("caravanProgressHelper", () => {
       });
       const result = processCaravanProgress([caravan], [], 100, {}, makeStats());
 
-      expect(result.caravans[0].status).toBe("idle");
+      expect(result.caravans[0].status).toBe("returned");
       expect(result.gold).toBe(100);
     });
 

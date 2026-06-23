@@ -1,6 +1,7 @@
 import { Hammer, Home, TreePine } from "lucide-react";
 import React from "react";
 
+import { BUILDING_COST_REDUCTION } from "../../constants";
 import {
   useFacilities,
   usePlayerResources,
@@ -38,7 +39,7 @@ export const FacilityList: React.FC<FacilityListProps> = () => {
   const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
 
   const buildLvl = soulUpgrades.building || 0;
-  const costReduction = 1 - buildLvl * 0.05;
+  const costReduction = 1 - buildLvl * BUILDING_COST_REDUCTION;
 
   return (
     <Panel title="村の施設・クラフト" icon={<Home className="w-5 h-5 text-sky-400" />}>

@@ -1,7 +1,11 @@
 import { Hammer, ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
 
-import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
+import {
+  MAX_VILLAGERS_ABSOLUTE,
+  BASE_MAX_VILLAGERS,
+  VILLAGERS_PER_GUILD_LEVEL,
+} from "../../constants";
 import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
 import type { Facility, FacilityType, Item, Villager } from "../../types/game";
 import { getRecipeValueInfo, getResourceFacilityGValue } from "../../utils/economyHelpers";
@@ -18,16 +22,18 @@ import { TrainingGroundPanel } from "./TrainingGroundPanel";
 
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
-  workshop: "採取した原木や鉄鉱石などの素材を、木板や鉄インゴットなどの中間素材へ加工できます。",
+  workshop:
+    "採取した原木や鉄鉱石などの素材を、木板や鉄インゴットなどの中間素材へ加工できます。Lv3以上で強化木板・水晶の粉末・闇のインゴットが生産可能に。",
   kitchen:
-    "集めた食料や魔獣の肉などから、村人のステータスを一時的に強化する様々な料理を調理できます。",
-  alchemy: "薬草から回復薬を調合したり、魔法石からより強力なポーションやエリクサーを生産できます。",
+    "集めた食料や魔獣の肉などから、村人のステータスを一時的に強化する様々な料理を調理できます。Lv4で薬草の宴、Lv5で竜の宴が解放。",
+  alchemy:
+    "薬草から回復薬を調合したり、魔法石からより強力なポーションやエリクサーを生産できます。Lv4で極上の万能薬、Lv5でフェニックスの涙が解放。",
   market:
-    "倉庫内のアイテム詳細画面から、素材や不要になった装備を売却してゴールドを入手できるようになります。また、自動購入を設定できます。",
+    "レベルに応じて輸出売却額が+10%～+50%に上昇し、同時に出せる馬車数が1～5台に増加します。また、自動購入を設定できます。",
   guild:
-    "新しい冒険者（村人）を雇用して開拓の効率を上げられます。レベルアップで最大10人まで雇用枠が広がります。",
+    "新しい冒険者（村人）を雇用して開拓の効率を上げられます。レベルアップで最大14人まで雇用枠が広がります。",
   weapon_shop:
-    "武器や防具などの装備品をクラフトできる工房です。強力な装備を作って村人のステータスを強化しましょう。また、武器・防具の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。",
+    "武器や防具などの装備品をクラフトできる工房です。レベルアップでより強力な装備が作れるようになります。Lv1〜2は木・革素材、Lv3は鉄、Lv4は銀、Lv5は竜素材の装備が解放されます。",
   training_ground:
     "村人が所持金を支払って能力を鍛える訓練施設です。上位の訓練プログラムほど高度な施設レベルと高額な費用が必要ですが、より大きな成長が見込めます。",
   farm: "毎時間自動的に食料を生産します。レベルアップで生産効率が向上します。",
@@ -140,8 +146,12 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 <span className="text-slate-500">休息機能利用可能</span>
               ) : fac.id === "guild" ? (
                 <span className="text-slate-500">
-                  雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
-                  {villagers.length}人)
+                  雇用上限:{" "}
+                  {Math.min(
+                    MAX_VILLAGERS_ABSOLUTE,
+                    BASE_MAX_VILLAGERS + fac.level * VILLAGERS_PER_GUILD_LEVEL,
+                  )}
+                  人 (現在: {villagers.length}人)
                 </span>
               ) : fac.id === "training_ground" ? (
                 fac.trainingQueue.length > 0 ? (
