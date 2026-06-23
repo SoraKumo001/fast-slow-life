@@ -4,6 +4,11 @@ import React, { useState } from "react";
 import { MAX_VILLAGERS_ABSOLUTE } from "../../constants";
 import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
 import { Facility, FacilityType, Item, Villager } from "../../types/game";
+import {
+  getResourceProductionInfo,
+  getNextLevelResourceProduction,
+  isResourceFacility,
+} from "../../utils/facilityHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 import { ProgressBar } from "../ui/ProgressBar";
 import { GuildPanel } from "./GuildPanel";
@@ -145,17 +150,9 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 ) : (
                   <span className="text-slate-500">待機中の村人を訓練可能</span>
                 )
-              ) : fac.id === "farm" ? (
+              ) : isResourceFacility(fac.id) ? (
                 <span className="text-emerald-500 font-semibold">
-                  自動生産中: 食料 +{Math.floor((1 + fac.level * 2) / 3)}/12h
-                </span>
-              ) : fac.id === "lumberyard" ? (
-                <span className="text-emerald-500 font-semibold">
-                  自動生産中: 原木 +{Math.floor((1 + fac.level * 1) / 2)}/12h
-                </span>
-              ) : fac.id === "quarry" ? (
-                <span className="text-emerald-500 font-semibold">
-                  自動生産中: 石材 +{Math.floor((1 + fac.level * 1) / 2)}/12h
+                  自動生産中: {getResourceProductionInfo(fac).label}/12h
                 </span>
               ) : fac.craftQueue.length > 0 ? (
                 <>
@@ -303,29 +300,19 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
               <TrainingGroundPanel fac={fac} villagers={villagers} />
             )}
 
-            {(fac.id === "farm" || fac.id === "lumberyard" || fac.id === "quarry") && (
+            {isResourceFacility(fac.id) && (
               <p className="text-[10px] text-slate-400 italic leading-relaxed">
                 ※この施設は12時間ごとに自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
                 <span className="text-emerald-400 font-bold font-mono">
-                  {fac.level === 0
-                    ? "なし"
-                    : fac.id === "farm"
-                      ? `食料 +${Math.floor((1 + fac.level * 2) / 3)}個`
-                      : fac.id === "lumberyard"
-                        ? `原木 +${Math.floor((1 + fac.level * 1) / 2)}個`
-                        : `石材 +${Math.floor((1 + fac.level * 1) / 2)}個`}
+                  {fac.level === 0 ? "なし" : getResourceProductionInfo(fac).label}
                 </span>
                 /12時間
-                {fac.level < fac.maxLevel && (
+                {fac.level > 0 && fac.level < fac.maxLevel && (
                   <>
                     {" "}
                     （建設・強化後:{" "}
                     <span className="text-emerald-450 font-bold font-mono">
-                      {fac.id === "farm"
-                        ? `食料 +${Math.floor((1 + (fac.level + 1) * 2) / 3)}個`
-                        : fac.id === "lumberyard"
-                          ? `原木 +${Math.floor((1 + (fac.level + 1) * 1) / 2)}個`
-                          : `石材 +${Math.floor((1 + (fac.level + 1) * 1) / 2)}個`}
+                      {getNextLevelResourceProduction(fac).label}
                     </span>
                     /12時間）
                   </>

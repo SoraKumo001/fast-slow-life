@@ -1,15 +1,18 @@
 import { ITEMS } from "../data/masterData";
-import { getFriendshipLevel } from "../data/towns";
 import { GameState, Villager, RunStats } from "../types/game";
 import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";
-import { processCraftingAndUpgrades, processAutoCraft, processAutoTraining } from "./crafting";
+import { processCaravanProgress, unlockTownsByTier } from "./caravanProgressHelper";
+import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
 import { processExploration } from "./exploration";
 import { AdvanceHourResult } from "./gameLoopTypes";
+import { isBankrupt, isTimeOver, buildGameOverLog } from "./gameOverHelper";
 import { getInitialStats } from "./initialState";
 import { processItemPoolPurchase } from "./poolPurchase";
+import { processResourceFacilities } from "./resourceFacilitiesHelper";
 import { processRespawns } from "./respawns";
 import { processStarvation } from "./starvation";
+import { processAutoTraining } from "./trainingLogic";
 import { processVillagerActivities } from "./villagerAI";
 
 export type { AdvanceHourResult, LogPayload } from "./gameLoopTypes";
@@ -17,7 +20,8 @@ export type { AdvanceHourResult, LogPayload } from "./gameLoopTypes";
 export { processRespawns } from "./respawns";
 export { processStarvation } from "./starvation";
 export { processExploration } from "./exploration";
-export { processCraftingAndUpgrades, processAutoCraft, processAutoTraining } from "./crafting";
+export { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
+export { processAutoTraining } from "./trainingLogic";
 export { processBossBattle } from "./bossBattle";
 export { processVillagerActivities } from "./villagerAI";
 
@@ -94,11 +98,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     }
   }
 
-  if (consecutiveNegativeGoldDaysNext >= 3) {
-    logsToAppend.push({
-      message: `【ゲームオーバー】所持金マイナス状態が3日間続いたため、破産しました！`,
-      type: "error",
-    });
+  if (isBankrupt(consecutiveNegativeGoldDaysNext)) {
+    logsToAppend.push(buildGameOverLog("破産"));
     return {
       currentDay,
       currentHour,
@@ -124,11 +125,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     };
   }
 
-  if (currentDay > gameLimitDays && !bossDefeated) {
-    logsToAppend.push({
-      message: `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。ゲームオーバー！`,
-      type: "error",
-    });
+  if (isTimeOver(currentDay, gameLimitDays, bossDefeated)) {
+    logsToAppend.push(buildGameOverLog("期限切れ", gameLimitDays));
     return {
       currentDay,
       currentHour,
@@ -226,81 +224,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
   // 資源生産施設による供給（12時間ごと）
   if (currentHour % 12 === 0) {
-    let producedWheat = 0;
-    let producedVegetable = 0;
-    let producedRawMeat = 0;
-    let producedWood = 0;
-    let producedStone = 0;
-    let producedIronOre = 0;
-    let producedSilverOre = 0;
-    let producedWoodPlank = 0;
-
-    if (facilities.farm && facilities.farm.level > 0) {
-      const lvl = facilities.farm.level;
-      producedWheat = Math.floor((1 + lvl) / 2);
-      producedVegetable = Math.floor(lvl / 2);
-      producedRawMeat = Math.floor((lvl - 1) / 2);
-
-      if (producedWheat > 0) inventory.wheat = (inventory.wheat || 0) + producedWheat;
-      if (producedVegetable > 0)
-        inventory.vegetable = (inventory.vegetable || 0) + producedVegetable;
-      if (producedRawMeat > 0) inventory.raw_meat = (inventory.raw_meat || 0) + producedRawMeat;
-    }
-    if (facilities.lumberyard && facilities.lumberyard.level > 0) {
-      const lvl = facilities.lumberyard.level;
-      producedWood = lvl; // Lv1=1, Lv2=2, ... Lv5=5
-      inventory.wood = (inventory.wood || 0) + producedWood;
-
-      // Lv3+: 木板を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
-      if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
-        producedWoodPlank = 1;
-        inventory.wood_plank = (inventory.wood_plank || 0) + 1;
-      }
-    }
-    if (facilities.quarry && facilities.quarry.level > 0) {
-      const lvl = facilities.quarry.level;
-      producedStone = lvl; // Lv1=1, Lv2=2, ... Lv5=5
-      inventory.stone = (inventory.stone || 0) + producedStone;
-
-      // Lv3+: 鉄鉱石を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
-      if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
-        producedIronOre = 1;
-        inventory.iron_ore = (inventory.iron_ore || 0) + 1;
-      }
-      // Lv5+: 銀鉱石を確率生産 (25%)
-      if (lvl >= 5 && Math.random() < 0.25) {
-        producedSilverOre = 1;
-        inventory.silver_ore = (inventory.silver_ore || 0) + 1;
-      }
-    }
-
-    const hasFarmProd = producedWheat > 0 || producedVegetable > 0 || producedRawMeat > 0;
-    if (
-      hasFarmProd ||
-      producedWood > 0 ||
-      producedStone > 0 ||
-      producedIronOre > 0 ||
-      producedSilverOre > 0 ||
-      producedWoodPlank > 0
-    ) {
-      const prodLogs: string[] = [];
-      if (hasFarmProd) {
-        const farmLogs: string[] = [];
-        if (producedWheat > 0) farmLogs.push(`小麦+${producedWheat}`);
-        if (producedVegetable > 0) farmLogs.push(`野菜+${producedVegetable}`);
-        if (producedRawMeat > 0) farmLogs.push(`生肉+${producedRawMeat}`);
-        prodLogs.push(farmLogs.join("、"));
-      }
-      if (producedWood > 0) prodLogs.push(`原木+${producedWood}`);
-      if (producedWoodPlank > 0) prodLogs.push(`木板+${producedWoodPlank}`);
-      if (producedStone > 0) prodLogs.push(`石材+${producedStone}`);
-      if (producedIronOre > 0) prodLogs.push(`鉄鉱石+${producedIronOre}`);
-      if (producedSilverOre > 0) prodLogs.push(`銀鉱石+${producedSilverOre}`);
-      logsToAppend.push({
-        message: `【生産】資源施設が稼働しました（${prodLogs.join("、")}）。`,
-        type: "info",
-      });
-    }
+    const prodResult = processResourceFacilities(facilities, inventory);
+    inventory = prodResult.inventory;
+    logsToAppend.push(...prodResult.logs);
   }
 
   const bossRes = processBossBattle(
@@ -405,96 +331,17 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   logsToAppend.push(...trainingRes.logs);
 
   // 交易馬車の進行処理（帰還時は自動回収して待機状態にする）
-  caravans = caravans.map((caravan) => {
-    if (caravan.status !== "trading") return caravan;
-    const nextTimeLeft = caravan.timeLeft - 1;
-    if (nextTimeLeft <= 0) {
-      const destTown = towns.find((t) => t.id === caravan.destinationTownId);
-      if (!destTown) {
-        return {
-          ...caravan,
-          status: "idle",
-          destinationTownId: null,
-          type: null,
-          timeLeft: 0,
-          totalTime: 0,
-          cargo: [],
-          goldCost: 0,
-          goldEarned: 0,
-          friendshipEarned: 0,
-        };
-      }
-
-      if (caravan.type === "export") {
-        gold += caravan.goldEarned;
-        nextStats.totalGoldFromExports += caravan.goldEarned;
-
-        towns = towns.map((t) => {
-          if (t.id === destTown.id) {
-            const nextFriendship = Math.min(1000, t.friendship + caravan.friendshipEarned);
-            const nextLevel = getFriendshipLevel(nextFriendship);
-            return { ...t, friendship: nextFriendship, level: nextLevel };
-          }
-          return t;
-        });
-
-        const updatedTown = towns.find((t) => t.id === destTown.id)!;
-        logsToAppend.push({
-          message: `【交易帰還】${destTown.name} から交易馬車が帰還！ ${caravan.goldEarned} G を獲得、友好度 +${caravan.friendshipEarned}（現在の友好度Lv: ${updatedTown.level}）。`,
-          type: "info",
-        });
-      } else if (caravan.type === "import") {
-        for (const entry of caravan.cargo) {
-          inventory[entry.itemId] = (inventory[entry.itemId] || 0) + entry.count;
-        }
-        nextStats.totalGoldSpentOnImports += caravan.goldCost;
-
-        const itemsStr = caravan.cargo
-          .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)
-          .join(", ");
-        logsToAppend.push({
-          message: `【交易帰還】仕入れ馬車が ${destTown.name} から帰還し、品物を受け取りました：${itemsStr}`,
-          type: "info",
-        });
-      }
-
-      return {
-        ...caravan,
-        status: "idle",
-        destinationTownId: null,
-        type: null,
-        timeLeft: 0,
-        totalTime: 0,
-        cargo: [],
-        goldCost: 0,
-        goldEarned: 0,
-        friendshipEarned: 0,
-      };
-    }
-    return {
-      ...caravan,
-      timeLeft: nextTimeLeft,
-    };
-  });
+  const caravanRes = processCaravanProgress(caravans, towns, gold, inventory, nextStats);
+  caravans = caravanRes.caravans;
+  towns = caravanRes.towns;
+  gold = caravanRes.gold;
+  inventory = caravanRes.inventory;
+  logsToAppend.push(...caravanRes.logs);
 
   // Tierアップ時に対応する町をアンロック
-  towns = towns.map((t) => {
-    if (!t.isUnlocked && t.id === "ironport" && currentTier >= 2) {
-      logsToAppend.push({
-        message: `【交易】噂が広まり、新たな交易先「港町アイアンポート」への航路が拓かれました！`,
-        type: "system",
-      });
-      return { ...t, isUnlocked: true };
-    }
-    if (!t.isUnlocked && t.id === "magica" && currentTier >= 3) {
-      logsToAppend.push({
-        message: `【交易】噂が広まり、新たな交易先「魔法都市マギカ」への街道が解放されました！`,
-        type: "system",
-      });
-      return { ...t, isUnlocked: true };
-    }
-    return t;
-  });
+  const unlockRes = unlockTownsByTier(towns, currentTier);
+  towns = unlockRes.towns;
+  logsToAppend.push(...unlockRes.logs);
 
   // 自動取引の実行
   const tradeRes = processAutoTrade({

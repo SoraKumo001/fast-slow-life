@@ -4,8 +4,12 @@ import React, { useState } from "react";
 import { ITEMS } from "../../data/masterData";
 import { getTownShopItems } from "../../data/towns";
 import { useGameStore } from "../../store/gameStore";
-import { Town } from "../../types/game";
-import { getMarketSellBonus } from "../../utils/marketHelpers";
+import {
+  getImportPrice,
+  calculateExportEstimates,
+  calculateImportEstimates,
+  getCargoLimit,
+} from "../../utils/tradeHelpers";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
@@ -46,71 +50,14 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
 
   const activeTown = towns.find((t) => t.id === selectedTownId);
 
-  // 積載上限
-  const getCargoLimit = (town: Town) => {
-    return 15 + (town.investLevel - 1) * 10;
-  };
+  const discountLvl = state.soulUpgrades.discount || 0;
 
-  // 仕入れ価格の計算 (売値の3倍がベース、友好度Lvとソウル割引で最大40%引き)
-  const getImportPrice = (itemId: string, town: Town) => {
-    const item = ITEMS[itemId];
-    if (!item) return 0;
-    const basePrice = item.basePrice * 3;
-    const discountLvl = state.soulUpgrades.discount || 0;
-    const rate = 1 - (town.level - 1) * 0.05 - discountLvl * 0.05;
-    return Math.max(1, Math.floor(basePrice * rate));
-  };
-
-  // 輸出総額と友好度上昇量の推定
-  const calculateExportEstimates = () => {
-    if (!activeTown) return { gold: 0, friendship: 0, count: 0 };
-    let totalGold = 0;
-    let totalFriendship = 0;
-    let totalCount = 0;
-
-    const marketBonus = getMarketSellBonus(marketLvl);
-
-    Object.entries(exportCargo).forEach(([itemId, count]) => {
-      const item = ITEMS[itemId];
-      if (!item || count <= 0) return;
-
-      let price = item.basePrice;
-      const isTrend =
-        marketTrend && marketTrend.targetTownId === activeTown.id && marketTrend.itemId === itemId;
-
-      if (isTrend && marketTrend?.type === "demand") {
-        price = Math.floor(price * marketTrend.multiplier);
-      }
-
-      const friendshipBonus = (activeTown.level - 1) * 0.05;
-      const finalPrice = Math.floor(price * (1 + marketBonus + friendshipBonus)) * count;
-
-      totalGold += finalPrice;
-      totalFriendship += count * (isTrend ? 2 : 1);
-      totalCount += count;
-    });
-
-    return { gold: totalGold, friendship: totalFriendship, count: totalCount };
-  };
-
-  // 輸入の総額と積載量の推定
-  const calculateImportEstimates = () => {
-    if (!activeTown) return { gold: 0, count: 0 };
-    let totalGold = 0;
-    let totalCount = 0;
-
-    Object.entries(importCargo).forEach(([itemId, count]) => {
-      if (count <= 0) return;
-      const price = getImportPrice(itemId, activeTown);
-      totalGold += price * count;
-      totalCount += count;
-    });
-
-    return { gold: totalGold, count: totalCount };
-  };
-
-  const exportEstimates = calculateExportEstimates();
-  const importEstimates = calculateImportEstimates();
+  const exportEstimates = activeTown
+    ? calculateExportEstimates(activeTown, exportCargo, marketLvl, marketTrend)
+    : { gold: 0, friendship: 0, count: 0 };
+  const importEstimates = activeTown
+    ? calculateImportEstimates(activeTown, importCargo, discountLvl)
+    : { gold: 0, count: 0 };
 
   const handleStartExport = () => {
     if (!selectedCaravanId || !activeTown) return;
@@ -476,7 +423,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                               const item = ITEMS[itemId];
                               if (!item) return null;
                               const loaded = importCargo[itemId] || 0;
-                              const buyPrice = getImportPrice(itemId, activeTown);
+                              const buyPrice = getImportPrice(itemId, activeTown, discountLvl);
 
                               return (
                                 <div

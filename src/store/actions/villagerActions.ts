@@ -4,20 +4,20 @@ import { changeVillagerJobHelper } from "../villagerJob";
 import { setVillagerOrderHelper } from "../villagerOrder";
 
 export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
-  setVillagerOrder: (
-    id: string,
-    order: OrderType,
-    areaId: string | null,
-    targetGatherItemId?: string | null,
-    targetMonsterId?: string | null,
-  ) => {
+  setVillagerOrder: (params: {
+    id: string;
+    order: OrderType;
+    areaId: string | null;
+    targetGatherItemId?: string | null;
+    targetMonsterId?: string | null;
+  }) => {
     const state = get();
     const result = setVillagerOrderHelper({
-      villagerId: id,
-      order,
-      areaId,
-      targetGatherItemId,
-      targetMonsterId,
+      villagerId: params.id,
+      order: params.order,
+      areaId: params.areaId,
+      targetGatherItemId: params.targetGatherItemId,
+      targetMonsterId: params.targetMonsterId,
       villagers: state.villagers,
       inventory: state.inventory,
       gold: state.gold,

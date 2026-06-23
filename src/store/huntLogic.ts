@@ -24,6 +24,99 @@ import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
 import { processItemAcquisition } from "./poolPurchase";
 
+/**
+ * 村人が討伐対象とするモンスターを選択する。
+ * 手動ターゲット > 自動選択（ドロップ需要 + 戦闘有利度 + 他村人との競合回避）。
+ * v.autoTargetName を副作用で更新する。
+ */
+function selectHuntTarget(
+  v: Villager,
+  i: number,
+  area: DungeonArea,
+  nextVillagers: Villager[],
+  nextInventory: Record<string, number>,
+  targetAmounts: Record<string, number>,
+): { enemy: DungeonMonster | null; enemyIdx: number } {
+  const progress = area.explorationProgress;
+
+  // 手動ターゲットが有効ならそれを優先
+  const targetedMonsterIdx = area.monsters.findIndex((m) => m.id === v.targetMonsterId);
+  const targetedMonster = targetedMonsterIdx !== -1 ? area.monsters[targetedMonsterIdx] : null;
+  if (
+    targetedMonster &&
+    !targetedMonster.isBoss &&
+    progress >= (targetedMonster.unlockedAtProgress || 0) &&
+    !(targetedMonster.respawnTimeLeft && targetedMonster.respawnTimeLeft > 0)
+  ) {
+    v.autoTargetName = null;
+    return { enemy: { ...targetedMonster }, enemyIdx: targetedMonsterIdx };
+  }
+
+  // 自動選択: 通常モンスターから最適な標的を選ぶ
+  const availableMonsters = area.monsters.filter(
+    (m) =>
+      !m.isBoss &&
+      progress >= (m.unlockedAtProgress || 0) &&
+      !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
+  );
+
+  if (availableMonsters.length === 0) {
+    v.autoTargetName = null;
+    return { enemy: null, enemyIdx: -1 };
+  }
+
+  let selectedMonster = availableMonsters[0];
+  let bestTargetRatio = Infinity;
+  const isMagicUser = isMagicJob(v.currentJob);
+
+  for (const monster of availableMonsters) {
+    // 職業（物理/魔法）と敵の防御・攻撃に基づく有利度計算
+    const enemyDefense = isMagicUser
+      ? monster.mdef + monster.int * 0.5
+      : monster.def + monster.vit * 0.5;
+    const combatDifficulty = enemyDefense + monster.atk;
+    const advantageMultiplier = Math.max(0.5, Math.min(1.5, combatDifficulty / 30));
+
+    let monsterRatio = 1.0;
+    const neededDropRatios = monster.drops
+      .map((drop) => {
+        const target = targetAmounts[drop.itemId] || 0;
+        if (target <= 0) return null;
+        return (nextInventory[drop.itemId] || 0) / target;
+      })
+      .filter((ratio): ratio is number => ratio !== null && ratio < 1);
+
+    if (neededDropRatios.length > 0) {
+      monsterRatio = Math.min(...neededDropRatios);
+    } else {
+      monsterRatio = 1.5;
+    }
+
+    monsterRatio *= advantageMultiplier;
+
+    // 他村人と標的が重複する場合はペナルティ
+    const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
+      if (idx === i) return false;
+      if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
+        return false;
+      const otherTarget = otherV.targetMonsterId || otherV.autoTargetName;
+      return otherTarget === monster.id || otherTarget === monster.name;
+    });
+    if (isTargetedByOthers) {
+      monsterRatio += 10.0;
+    }
+
+    if (monsterRatio < bestTargetRatio) {
+      bestTargetRatio = monsterRatio;
+      selectedMonster = monster;
+    }
+  }
+
+  const enemyIdx = area.monsters.findIndex((m) => m.id === selectedMonster.id);
+  v.autoTargetName = selectedMonster.name;
+  return { enemy: { ...selectedMonster }, enemyIdx };
+}
+
 export function processVillagerHunt(
   v: Villager,
   i: number,
@@ -40,8 +133,6 @@ export function processVillagerHunt(
   const logs: LogPayload[] = [];
   let currentGold = gold;
 
-  const progress = area.explorationProgress;
-
   const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
   const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
   const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
@@ -52,84 +143,14 @@ export function processVillagerHunt(
   const effectiveInt = applySalaryDebuff(v.int + buffInt, v.gold < 0);
   const effectiveMaxHp = applySalaryDebuff(v.maxHp + buffMaxHp, v.gold < 0);
 
-  const availableMonsters = area.monsters.filter(
-    (m) => progress >= (m.unlockedAtProgress || 0) && !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
+  const { enemy, enemyIdx } = selectHuntTarget(
+    v,
+    i,
+    area,
+    nextVillagers,
+    nextInventory,
+    targetAmounts,
   );
-
-  let enemy: DungeonMonster | null = null;
-  let enemyIdx = -1;
-
-  const targetedMonsterIdx = area.monsters.findIndex((m) => m.id === v.targetMonsterId);
-  const targetedMonster = targetedMonsterIdx !== -1 ? area.monsters[targetedMonsterIdx] : null;
-  if (
-    targetedMonster &&
-    !targetedMonster.isBoss &&
-    progress >= (targetedMonster.unlockedAtProgress || 0) &&
-    !(targetedMonster.respawnTimeLeft && targetedMonster.respawnTimeLeft > 0)
-  ) {
-    enemy = { ...targetedMonster };
-    enemyIdx = targetedMonsterIdx;
-    v.autoTargetName = null;
-  } else {
-    const normalMonsters = availableMonsters.filter((m) => !m.isBoss);
-    if (normalMonsters.length > 0) {
-      let selectedMonster = normalMonsters[0];
-      let bestTargetRatio = Infinity;
-
-      const isMagicUser = isMagicJob(v.currentJob);
-
-      normalMonsters.forEach((monster) => {
-        // 職業（物理/魔法）と敵の防御・攻撃に基づく有利度計算
-        const enemyDefense = isMagicUser
-          ? monster.mdef + monster.int * 0.5
-          : monster.def + monster.vit * 0.5;
-        const combatDifficulty = enemyDefense + monster.atk;
-        // 基準難易度（30）をベースとし、倒しやすく安全な敵ほど advantageMultiplier が小さくなる (0.5 〜 1.5)
-        const advantageMultiplier = Math.max(0.5, Math.min(1.5, combatDifficulty / 30));
-
-        let monsterRatio = 1.0;
-        const neededDropRatios = monster.drops
-          .map((drop) => {
-            const target = targetAmounts[drop.itemId] || 0;
-            if (target <= 0) return null;
-            return (nextInventory[drop.itemId] || 0) / target;
-          })
-          .filter((ratio): ratio is number => ratio !== null && ratio < 1);
-
-        if (neededDropRatios.length > 0) {
-          monsterRatio = Math.min(...neededDropRatios);
-        } else {
-          // 必要ドロップがない場合、進捗ベースよりも優先度を下げるため 1.5倍 とするが、有利な敵を狙いやすくする
-          monsterRatio = 1.5;
-        }
-
-        // 有利度を乗算 (有利な敵ほどスコア値が小さくなり優先度が高くなる)
-        monsterRatio *= advantageMultiplier;
-
-        const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
-          if (idx === i) return false;
-          if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
-            return false;
-          const otherTarget = otherV.targetMonsterId || otherV.autoTargetName;
-          return otherTarget === monster.id || otherTarget === monster.name;
-        });
-        if (isTargetedByOthers) {
-          monsterRatio += 10.0;
-        }
-
-        if (monsterRatio < bestTargetRatio) {
-          bestTargetRatio = monsterRatio;
-          selectedMonster = monster;
-        }
-      });
-
-      enemy = { ...selectedMonster };
-      enemyIdx = area.monsters.findIndex((m) => m.id === selectedMonster.id);
-      v.autoTargetName = enemy.name;
-    } else {
-      v.autoTargetName = null;
-    }
-  }
 
   if (enemy && enemyIdx !== -1) {
     const monsterState = { ...area.monsters[enemyIdx] };

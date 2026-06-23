@@ -299,13 +299,13 @@ export interface TradeRule {
 
 export interface GameActions {
   advanceHour: () => void;
-  setVillagerOrder: (
-    id: string,
-    order: OrderType,
-    areaId: string | null,
-    targetGatherItemId?: string | null,
-    targetMonsterId?: string | null,
-  ) => void;
+  setVillagerOrder: (params: {
+    id: string;
+    order: OrderType;
+    areaId: string | null;
+    targetGatherItemId?: string | null;
+    targetMonsterId?: string | null;
+  }) => void;
   changeVillagerJob: (id: string, job: JobType) => void;
   equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => void;
   unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
@@ -357,34 +357,52 @@ export interface RunStats {
   totalGoldFromTax: number;
 }
 
-export interface GameState {
-  currentDay: number;
-  currentHour: number;
+export interface GameEconomy {
   gold: number;
   soulPoints: number;
-  stats: RunStats;
-  villagers: Villager[];
+  soulUpgrades: Record<string, number>;
+  inventory: Record<string, number>;
+  targetAmounts: Record<string, number>;
   facilities: Record<FacilityType, Facility>;
+}
+
+export interface GameWorld {
   dungeons: DungeonArea[];
-  inventory: Record<string, number>; // itemId -> 所持数
-  targetAmounts: Record<string, number>; // itemId -> 目標個数
-  tradeRules: TradeRule[];
-  logs: GameLog[];
-  currentTier: number; // 1 to 5
-  activeBoss: ActiveBossState | null; // 現在対峙中のボス。nullなら不在
-  bossDefeated: boolean;
-  gameLimitDays: number; // 現在のTierの制限日数
-  gameOver: boolean;
-  gameOverReason: string;
-  isPaused: boolean;
-  playSpeed: "normal" | "fast" | "super"; // 自動進行のスピード
-  soulUpgrades: Record<string, number>; // upgradeId -> 購入レベル
   towns: Town[];
   caravans: Caravan[];
   marketTrend: MarketTrend | null;
-  isSalaryUnpaid: boolean;
+  activeBoss: ActiveBossState | null;
+}
+
+export interface GameProgression {
+  currentDay: number;
+  currentHour: number;
+  currentTier: number;
+  gameLimitDays: number;
+  bossDefeated: boolean;
+  gameOver: boolean;
+  gameOverReason: string;
   consecutiveNegativeGoldDays: number;
 }
+
+export interface GameUI {
+  isPaused: boolean;
+  playSpeed: "normal" | "fast" | "super";
+}
+
+export interface GamePeople {
+  villagers: Villager[];
+  stats: RunStats;
+  tradeRules: TradeRule[];
+  logs: GameLog[];
+  isSalaryUnpaid: boolean;
+}
+
+/**
+ * ルート状態。論理グループ（Economy/World/Progression/UI/People）の交差型で構成。
+ * 各フィールドはフラットにアクセス可能（state.gold, state.dungeons 等）。
+ */
+export interface GameState extends GameEconomy, GameWorld, GameProgression, GameUI, GamePeople {}
 
 export type StoreSet = (
   partial:

@@ -6,13 +6,13 @@ import { DungeonArea, OrderType, Villager } from "../../types/game";
 interface VillagerActionsProps {
   villager: Villager;
   dungeons: DungeonArea[];
-  onSetOrder: (
-    villagerId: string,
-    order: OrderType,
-    areaId: string | null,
-    targetGatherItemId?: string | null,
-    targetMonsterId?: string | null,
-  ) => void;
+  onSetOrder: (params: {
+    id: string;
+    order: OrderType;
+    areaId: string | null;
+    targetGatherItemId?: string | null;
+    targetMonsterId?: string | null;
+  }) => void;
 }
 
 export const VillagerActions: React.FC<VillagerActionsProps> = ({
@@ -26,7 +26,7 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onSetOrder(v.id, "rest", null);
+            onSetOrder({ id: v.id, order: "rest", areaId: null });
           }}
           className="w-full py-1 text-center rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition"
         >
@@ -37,7 +37,7 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onSetOrder(v.id, "gather", null);
+            onSetOrder({ id: v.id, order: "gather", areaId: null });
           }}
           className="w-full py-1 text-center rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs text-slate-400 hover:text-slate-200 transition"
         >
@@ -51,7 +51,7 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder(v.id, "gather", v.destinationAreaId, null, null);
+                onSetOrder({ id: v.id, order: "gather", areaId: v.destinationAreaId });
               }}
               disabled={v.order === "gather"}
               className="py-1 text-center rounded bg-emerald-950/40 hover:bg-emerald-900 border border-emerald-900 text-[9px] font-bold text-emerald-400 hover:text-emerald-200 transition disabled:opacity-40"
@@ -61,7 +61,7 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder(v.id, "hunt", v.destinationAreaId, null, null);
+                onSetOrder({ id: v.id, order: "hunt", areaId: v.destinationAreaId });
               }}
               disabled={v.order === "hunt"}
               className="py-1 text-center rounded bg-red-950/40 hover:bg-red-900 border border-red-900 text-[9px] font-bold text-red-400 hover:text-red-200 transition disabled:opacity-40"
@@ -71,7 +71,7 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder(v.id, "rest", v.destinationAreaId);
+                onSetOrder({ id: v.id, order: "rest", areaId: v.destinationAreaId });
               }}
               className="py-1 text-center rounded bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[9px] font-bold text-slate-400 hover:text-slate-200 transition"
             >
@@ -86,7 +86,12 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
                 value={v.targetGatherItemId || ""}
                 onChange={(e) => {
                   const val = e.target.value === "" ? null : e.target.value;
-                  onSetOrder(v.id, v.order, v.destinationAreaId, val, null);
+                  onSetOrder({
+                    id: v.id,
+                    order: v.order,
+                    areaId: v.destinationAreaId,
+                    targetGatherItemId: val,
+                  });
                 }}
                 className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
               >
@@ -114,7 +119,12 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
                 value={v.targetMonsterId || ""}
                 onChange={(e) => {
                   const val = e.target.value === "" ? null : e.target.value;
-                  onSetOrder(v.id, v.order, v.destinationAreaId, null, val);
+                  onSetOrder({
+                    id: v.id,
+                    order: v.order,
+                    areaId: v.destinationAreaId,
+                    targetMonsterId: val,
+                  });
                 }}
                 className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
               >

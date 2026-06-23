@@ -20,7 +20,7 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
   };
 
   const handleAssign = (vId: string, order: "gather" | "hunt") => {
-    setVillagerOrder(vId, order, area.id);
+    setVillagerOrder({ id: vId, order, areaId: area.id });
     onClose();
   };
 

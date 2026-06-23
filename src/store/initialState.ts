@@ -101,177 +101,130 @@ export function getDefaultTargetAmounts(): Record<string, number> {
 }
 
 export function getInitialFacilities(): Record<FacilityType, Facility> {
-  return {
-    inn: {
+  const MAX_LEVEL = 5;
+
+  /** 施設定義: 可変部分のみ指定し、固定値はマッピングで付与 */
+  const blueprints: {
+    id: FacilityType;
+    name: string;
+    initialLevel: number;
+    upgradeGold: number;
+    upgradeMaterials: { itemId: string; count: number }[];
+  }[] = [
+    // 初期Lv1
+    {
       id: "inn",
       name: "宿屋",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: { gold: 200, materials: [{ itemId: "wood", count: 10 }] },
-      craftQueue: [],
-      trainingQueue: [],
+      initialLevel: 1,
+      upgradeGold: 200,
+      upgradeMaterials: [{ itemId: "wood", count: 10 }],
     },
-    workshop: {
+    {
       id: "workshop",
       name: "加工工房",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 300,
-        materials: [
-          { itemId: "wood", count: 15 },
-          { itemId: "stone", count: 10 },
-        ],
-      },
-      craftQueue: [],
-      trainingQueue: [],
+      initialLevel: 1,
+      upgradeGold: 300,
+      upgradeMaterials: [
+        { itemId: "wood", count: 15 },
+        { itemId: "stone", count: 10 },
+      ],
     },
-    alchemy: {
-      id: "alchemy",
-      name: "錬金工房",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [
-          { itemId: "wood_plank", count: 8 },
-          { itemId: "iron_ingot", count: 3 },
-        ],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    market: {
-      id: "market",
-      name: "交易所",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [{ itemId: "wood", count: 5 }],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    guild: {
-      id: "guild",
-      name: "冒険者ギルド",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [
-          { itemId: "wood", count: 10 },
-          { itemId: "stone", count: 5 },
-        ],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    weapon_shop: {
-      id: "weapon_shop",
-      name: "武器屋",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [
-          { itemId: "wood_plank", count: 10 },
-          { itemId: "stone", count: 10 },
-        ],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    farm: {
+    {
       id: "farm",
       name: "農場",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 200,
-        materials: [{ itemId: "wood", count: 10 }],
-      },
-      craftQueue: [],
-      trainingQueue: [],
+      initialLevel: 1,
+      upgradeGold: 200,
+      upgradeMaterials: [{ itemId: "wood", count: 10 }],
     },
-    lumberyard: {
-      id: "lumberyard",
-      name: "伐採所",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [{ itemId: "stone", count: 10 }],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    quarry: {
-      id: "quarry",
-      name: "採石場",
-      level: 0,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [{ itemId: "wood", count: 10 }],
-      },
-      craftQueue: [],
-      trainingQueue: [],
-    },
-    kitchen: {
+    {
       id: "kitchen",
       name: "調理場",
-      level: 1,
-      maxLevel: 5,
-      upgradeTimeLeft: 0,
-      upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 250,
-        materials: [
-          { itemId: "wood_plank", count: 5 },
-          { itemId: "stone", count: 10 },
-        ],
-      },
-      craftQueue: [],
-      trainingQueue: [],
+      initialLevel: 1,
+      upgradeGold: 250,
+      upgradeMaterials: [
+        { itemId: "wood_plank", count: 5 },
+        { itemId: "stone", count: 10 },
+      ],
     },
-    training_ground: {
+    // 初期Lv0 (未建設)
+    {
+      id: "alchemy",
+      name: "錬金工房",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [
+        { itemId: "wood_plank", count: 8 },
+        { itemId: "iron_ingot", count: 3 },
+      ],
+    },
+    {
+      id: "market",
+      name: "交易所",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [{ itemId: "wood", count: 5 }],
+    },
+    {
+      id: "guild",
+      name: "冒険者ギルド",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [
+        { itemId: "wood", count: 10 },
+        { itemId: "stone", count: 5 },
+      ],
+    },
+    {
+      id: "weapon_shop",
+      name: "武器屋",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [
+        { itemId: "wood_plank", count: 10 },
+        { itemId: "stone", count: 10 },
+      ],
+    },
+    {
+      id: "lumberyard",
+      name: "伐採所",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [{ itemId: "stone", count: 10 }],
+    },
+    {
+      id: "quarry",
+      name: "採石場",
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [{ itemId: "wood", count: 10 }],
+    },
+    {
       id: "training_ground",
       name: "訓練場",
-      level: 0,
-      maxLevel: 5,
+      initialLevel: 0,
+      upgradeGold: 0,
+      upgradeMaterials: [
+        { itemId: "wood", count: 15 },
+        { itemId: "stone", count: 10 },
+      ],
+    },
+  ];
+
+  const facilities = {} as Record<FacilityType, Facility>;
+  for (const b of blueprints) {
+    facilities[b.id] = {
+      id: b.id,
+      name: b.name,
+      level: b.initialLevel,
+      maxLevel: MAX_LEVEL,
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
-      upgradeCost: {
-        gold: 0,
-        materials: [
-          { itemId: "wood", count: 15 },
-          { itemId: "stone", count: 10 },
-        ],
-      },
+      upgradeCost: { gold: b.upgradeGold, materials: b.upgradeMaterials },
       craftQueue: [],
       trainingQueue: [],
-    },
-  };
+    };
+  }
+  return facilities;
 }
 
 export function getInitialStats(): RunStats {

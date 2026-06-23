@@ -13,13 +13,13 @@ interface VillagerRowProps {
   onToggleExpand: (id: string) => void;
   onOpenJobModal: (v: Villager) => void;
   onOpenEquipModal: (v: Villager) => void;
-  onSetOrder: (
-    villagerId: string,
-    order: OrderType,
-    areaId: string | null,
-    targetGatherItemId?: string | null,
-    targetMonsterId?: string | null,
-  ) => void;
+  onSetOrder: (params: {
+    id: string;
+    order: OrderType;
+    areaId: string | null;
+    targetGatherItemId?: string | null;
+    targetMonsterId?: string | null;
+  }) => void;
   dungeons: DungeonArea[];
   facilities: Record<FacilityType, Facility>;
 }
