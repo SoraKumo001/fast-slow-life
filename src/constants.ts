@@ -1,4 +1,4 @@
-export const TIER_LIMIT_DAYS = [0, 25, 55, 100, 150, 210];
+export const TIER_LIMIT_DAYS = [0, 60, 180, 450, 700, 900];
 
 export const HOURS_PER_DAY = 24;
 export const MAX_LOG_COUNT = 100;
@@ -80,13 +80,13 @@ export const UPGRADE_DEX_FACTOR = 0.003;
 export const UPGRADE_TIME_REDUCTION_CRAFTER = 0.75;
 export const UPGRADE_TIME_REDUCTION_MINER = 0.85;
 
-export const DISCOUNT_PER_SOUL_LEVEL = 0.1;
+export const DISCOUNT_PER_SOUL_LEVEL = 0.2;
 
-export const HERITAGE_GOLD_PER_LEVEL = 800;
-export const STORAGE_FOOD_PER_LEVEL = 150;
-export const BODY_STAT_PER_LEVEL = 3;
-export const BUILDING_COST_REDUCTION = 0.08;
-export const EDUCATION_EXP_BONUS = 0.15;
+export const HERITAGE_GOLD_PER_LEVEL = 5000;
+export const STORAGE_FOOD_PER_LEVEL = 800;
+export const BODY_STAT_PER_LEVEL = 25;
+export const BUILDING_COST_REDUCTION = 0.2;
+export const EDUCATION_EXP_BONUS = 1.5;
 
 export const DEFAULT_GATHER_RESPAWN_HOURS = 3;
 export const HARD_GATHER_RESPAWN_HOURS = 6;

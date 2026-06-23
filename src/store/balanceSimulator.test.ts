@@ -564,11 +564,10 @@ ${Object.entries(reasonCounts)
     }
 
     expect(totalRuns).toBe(TOTAL_RUNS);
-    // 全バフMAX時のクリア率を検証（環境変数 SIM_MIN_FULLBUFF_CLEAR_RATE で期待値を設定）
-    // デフォルトは単に計測のみ（アサーション無効）
+    // 全バフMAX時のクリア率を検証（環境変数 SIM_MIN_FULLBUFF_CLEAR_RATE で期待値を設定、デフォルト80%）
     const MIN_CLEAR_RATE = process.env.SIM_MIN_FULLBUFF_CLEAR_RATE
       ? parseFloat(process.env.SIM_MIN_FULLBUFF_CLEAR_RATE)
-      : 0;
+      : 80;
     if (MIN_CLEAR_RATE > 0) {
       expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
     }
