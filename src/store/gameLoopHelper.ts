@@ -78,7 +78,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       const randomTown = unlockedTowns[Math.floor(Math.random() * unlockedTowns.length)];
       if (randomTown.demands && randomTown.demands.length > 0) {
         const demand = randomTown.demands[Math.floor(Math.random() * randomTown.demands.length)];
-        const multiplier = Math.round((1.5 + Math.random() * 1.0) * 10) / 10;
+        const multiplier = Math.round((2.0 + Math.random() * 1.5) * 10) / 10;
         marketTrend = {
           targetTownId: randomTown.id,
           itemId: demand.itemId,
@@ -231,6 +231,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     let producedRawMeat = 0;
     let producedWood = 0;
     let producedStone = 0;
+    let producedIronOre = 0;
+    let producedSilverOre = 0;
+    let producedWoodPlank = 0;
 
     if (facilities.farm && facilities.farm.level > 0) {
       const lvl = facilities.farm.level;
@@ -244,16 +247,42 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       if (producedRawMeat > 0) inventory.raw_meat = (inventory.raw_meat || 0) + producedRawMeat;
     }
     if (facilities.lumberyard && facilities.lumberyard.level > 0) {
-      producedWood = Math.floor((1 + facilities.lumberyard.level * 1) / 2);
+      const lvl = facilities.lumberyard.level;
+      producedWood = lvl; // Lv1=1, Lv2=2, ... Lv5=5
       inventory.wood = (inventory.wood || 0) + producedWood;
+
+      // Lv3+: 木板を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
+      if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
+        producedWoodPlank = 1;
+        inventory.wood_plank = (inventory.wood_plank || 0) + 1;
+      }
     }
     if (facilities.quarry && facilities.quarry.level > 0) {
-      producedStone = Math.floor((1 + facilities.quarry.level * 1) / 2);
+      const lvl = facilities.quarry.level;
+      producedStone = lvl; // Lv1=1, Lv2=2, ... Lv5=5
       inventory.stone = (inventory.stone || 0) + producedStone;
+
+      // Lv3+: 鉄鉱石を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
+      if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
+        producedIronOre = 1;
+        inventory.iron_ore = (inventory.iron_ore || 0) + 1;
+      }
+      // Lv5+: 銀鉱石を確率生産 (25%)
+      if (lvl >= 5 && Math.random() < 0.25) {
+        producedSilverOre = 1;
+        inventory.silver_ore = (inventory.silver_ore || 0) + 1;
+      }
     }
 
     const hasFarmProd = producedWheat > 0 || producedVegetable > 0 || producedRawMeat > 0;
-    if (hasFarmProd || producedWood > 0 || producedStone > 0) {
+    if (
+      hasFarmProd ||
+      producedWood > 0 ||
+      producedStone > 0 ||
+      producedIronOre > 0 ||
+      producedSilverOre > 0 ||
+      producedWoodPlank > 0
+    ) {
       const prodLogs: string[] = [];
       if (hasFarmProd) {
         const farmLogs: string[] = [];
@@ -263,7 +292,10 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
         prodLogs.push(farmLogs.join("、"));
       }
       if (producedWood > 0) prodLogs.push(`原木+${producedWood}`);
+      if (producedWoodPlank > 0) prodLogs.push(`木板+${producedWoodPlank}`);
       if (producedStone > 0) prodLogs.push(`石材+${producedStone}`);
+      if (producedIronOre > 0) prodLogs.push(`鉄鉱石+${producedIronOre}`);
+      if (producedSilverOre > 0) prodLogs.push(`銀鉱石+${producedSilverOre}`);
       logsToAppend.push({
         message: `【生産】資源施設が稼働しました（${prodLogs.join("、")}）。`,
         type: "info",

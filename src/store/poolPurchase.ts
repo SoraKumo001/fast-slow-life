@@ -30,7 +30,7 @@ export function processItemPoolPurchase(
       const item = ITEMS[itemId];
       if (!item) continue;
 
-      const price = item.basePrice * 2;
+      const price = item.basePrice;
       if (price <= 0) continue;
 
       const buyCount = count;
@@ -80,7 +80,7 @@ export function processItemAcquisition(
   const item = ITEMS[itemId];
   if (!item) return { playerGold, inventory, logs: [] };
 
-  const price = item.basePrice * 2;
+  const price = item.basePrice;
   const logs: LogPayload[] = [];
   const nextInventory = { ...inventory };
 

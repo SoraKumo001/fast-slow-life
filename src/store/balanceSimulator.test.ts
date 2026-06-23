@@ -11,6 +11,9 @@ import type { SimulationResult } from "./balanceSimulator.worker";
 describe("Balance Simulator", () => {
   it("Run game balance simulation (30 times) in parallel", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
+    const MIN_CLEAR_RATE = process.env.SIM_MIN_CLEAR_RATE
+      ? parseFloat(process.env.SIM_MIN_CLEAR_RATE)
+      : 0; // 閾値は環境変数で調整可能、デフォルトは無効
     const numCPUs = Math.min(os.cpus().length || 4, 16);
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
@@ -52,10 +55,17 @@ describe("Balance Simulator", () => {
     const totalRuns = results.length;
     const clearRuns = results.filter((r) => r.isClear);
     const clearRate = (clearRuns.length / totalRuns) * 100;
-    const timeLimitDefeats = results.filter((r) => r.gameOverReason === "TimeLimit").length;
-    const bankruptcyDefeats = results.filter(
-      (r) => r.gameOverReason === "VillagersDefeated",
-    ).length;
+    const gameOverRuns = results.filter((r) => !r.isClear);
+
+    // ゲームオーバー理由の内訳（実際の gameOverReason をそのまま使う）
+    const reasonCounts: Record<string, number> = {};
+    gameOverRuns.forEach((r) => {
+      reasonCounts[r.gameOverReason] = (reasonCounts[r.gameOverReason] || 0) + 1;
+    });
+    const reasonBreakdown = Object.entries(reasonCounts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([reason, count]) => `    - ${reason}: ${((count / totalRuns) * 100).toFixed(1)}%`)
+      .join("\n");
 
     const clearDays = clearRuns.map((r) => r.days);
     const avgClearDays =
@@ -65,12 +75,39 @@ describe("Balance Simulator", () => {
     const minClearDays = clearDays.length > 0 ? Math.min(...clearDays) : "N/A";
     const maxClearDays = clearDays.length > 0 ? Math.max(...clearDays) : "N/A";
 
-    const totalDeaths = results.reduce((sum, r) => sum + r.deathsCount, 0);
+    const deathsByRuns = results.map((r) => r.deathsCount);
+    const totalDeaths = deathsByRuns.reduce((a, b) => a + b, 0);
     const avgDeaths = (totalDeaths / totalRuns).toFixed(1);
+    const maxDeaths = Math.max(...deathsByRuns);
 
     const prestigeCounts = results.map((r) => r.prestigeCount);
     const avgPrestige = (prestigeCounts.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
     const maxPrestige = Math.max(...prestigeCounts);
+
+    // 訓練関連の統計
+    const totalTrainingRuns = results.filter((r) => r.trainingCount > 0).length;
+    const totalTrainingSessions = results.reduce((sum, r) => sum + r.trainingCount, 0);
+    const avgTrainingCount = (totalTrainingSessions / totalRuns).toFixed(1);
+    const maxTrainingCount = Math.max(...results.map((r) => r.trainingCount));
+    const avgTrainingTrainingRuns =
+      totalTrainingRuns > 0 ? (totalTrainingSessions / totalTrainingRuns).toFixed(1) : "N/A";
+    const avgTrainingGold = (
+      results.reduce((sum, r) => sum + r.totalTrainingGold, 0) / totalRuns
+    ).toFixed(1);
+    const maxTrainingLevel = Math.max(...results.map((r) => r.highestTrainingLevel));
+    const avgBonusStatsAll = (
+      results.reduce((sum, r) => sum + r.averageBonusStats, 0) / totalRuns
+    ).toFixed(1);
+
+    // 訓練回数の分布（0回/1回/2-5回/6-10回/11回以上）
+    const trainingDist = { "0回": 0, "1回": 0, "2-5回": 0, "6-10回": 0, "11回以上": 0 };
+    results.forEach((r) => {
+      if (r.trainingCount === 0) trainingDist["0回"]++;
+      else if (r.trainingCount === 1) trainingDist["1回"]++;
+      else if (r.trainingCount <= 5) trainingDist["2-5回"]++;
+      else if (r.trainingCount <= 10) trainingDist["6-10回"]++;
+      else trainingDist["11回以上"]++;
+    });
 
     // 各Tierのボス平均突破日数
     const tierDefeatDays: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
@@ -90,51 +127,161 @@ describe("Balance Simulator", () => {
       {} as Record<number, string>,
     );
 
-    // 最初の5回の詳細データをレポートに追加
-    let detailedRunsText = "\n■ 各回（最初の5回）の最終詳細情報\n";
-    results.slice(0, 5).forEach((r) => {
-      detailedRunsText += `  - Run #${r.run}: ${r.gameOverReason} (Prestige: ${r.prestigeCount}, Day ${r.days}, Gold: ${r.gold}G, Villagers: ${r.villagersCount}, AvgLvl: ${r.averageLevel.toFixed(1)}, Dungeons: ${r.dungeonsProgress})\n`;
+    // Tier突破率
+    const tier1Defeated = results.filter((r) => r.bossDefeatDays[1]).length;
+    const tier2Defeated = results.filter((r) => r.bossDefeatDays[2]).length;
+    const tier3Defeated = results.filter((r) => r.bossDefeatDays[3]).length;
+    const tier4Defeated = results.filter((r) => r.bossDefeatDays[4]).length;
+
+    // 詳細データサマリー
+    let detailedRunsText = "\n■ 各回の最終詳細情報（先頭10件）\n";
+    results.slice(0, 10).forEach((r) => {
+      detailedRunsText += `  #${String(r.run).padStart(2)}: ${r.gameOverReason.padEnd(16)} Day ${String(r.days).padStart(3)} | Gold: ${String(r.gold).padStart(7)}G | Villagers: ${r.villagersCount} | Lv: ${r.averageLevel.toFixed(1)} | Bonus: ${r.averageBonusStats.toFixed(1)} | Training: ${r.trainingCount}回 | Prestige: ${r.prestigeCount}\n`;
     });
 
     const reportText = `
 ==================================================
   FAST SLOW LIFE - BALANCE SIMULATION REPORT
   Total Runs: ${totalRuns}
+  Date: ${new Date().toISOString()}
 ==================================================
-■ 全体統計
-  - クリア率 (Game Clear Rate): ${clearRate.toFixed(1)}%
-  - ゲームオーバー率 (Game Over Rate): ${(100 - clearRate).toFixed(1)}%
-    - 期限切れによる敗北 (Time Limit Defeats): ${((timeLimitDefeats / totalRuns) * 100).toFixed(1)}%
-    - 全滅・破産による敗北 (Bankruptcy Defeats): ${((bankruptcyDefeats / totalRuns) * 100).toFixed(1)}%
-  - 平均転生回数 (Avg Prestige Count): ${avgPrestige} 回 (最大: ${maxPrestige} 回)
+■ クリア率
+  - クリア (Clear): ${clearRate.toFixed(1)}% (${clearRuns.length}/${totalRuns})
+  - ゲームオーバー (Game Over): ${(100 - clearRate).toFixed(1)}% (${gameOverRuns.length}/${totalRuns})
+${reasonBreakdown}
 
-■ クリア時の詳細統計 (Clear Runs)
+■ 訓練所の活用状況
+  - 訓練を実施したRun: ${totalTrainingRuns}/${totalRuns} (${((totalTrainingRuns / totalRuns) * 100).toFixed(1)}%)
+  - 総訓練回数: ${totalTrainingSessions} 回 (全Run合計)
+  - 平均訓練実施回数: ${avgTrainingCount} 回/Run (最大: ${maxTrainingCount} 回)
+  - 訓練実施Runのみの平均: ${avgTrainingTrainingRuns} 回
+  - 平均訓練総支出: ${avgTrainingGold} G/Run
+  - 最大訓練プログラムLevel: ${maxTrainingLevel}
+  - 平均BonusStats: ${avgBonusStatsAll}
+  - 訓練回数分布: 0回=${trainingDist["0回"]}Run / 1回=${trainingDist["1回"]}Run / 2-5回=${trainingDist["2-5回"]}Run / 6-10回=${trainingDist["6-10回"]}Run / 11回以上=${trainingDist["11回以上"]}Run
+
+■ クリア時の詳細統計 (Clear Runs: ${clearRuns.length}回)
   - 平均クリア日数 (Avg Days to Clear): ${avgClearDays} 日
   - 最速クリア日数 (Min Days to Clear): ${minClearDays} 日
   - 最遅クリア日数 (Max Days to Clear): ${maxClearDays} 日
-  - 平均村人死亡回数 (Avg Villager Deaths): ${avgDeaths} 回
+  - 平均村人死亡回数 (Avg Villager Deaths): ${avgDeaths} 回 (最大: ${maxDeaths} 回)
 
-■ 進行度（Tier）ごとの平均ボス撃破達成日数
-  - Tier 1 (始まりの森: ゴブリンロード)   平均: ${avgTierDays[1]} 日 (制限25日)
-  - Tier 2 (廃鉱山: アイアンゴーレム)       平均: ${avgTierDays[2]} 日 (制限55日)
-  - Tier 3 (魔獣の谷: キマイラ)            平均: ${avgTierDays[3]} 日 (制限100日)
-  - Tier 4 (世界樹の根: アークデーモン)     平均: ${avgTierDays[4]} 日 (制限150日)
-  - Tier 5 (深淵の奈落: 終焉の竜)          平均: ${avgTierDays[5]} 日 (制限210日)
-${detailedRunsText}==================================================
+■ 進行度（Tier）ごとの統計
+  - Tier 1 (始まりの森)  突破率: ${((tier1Defeated / totalRuns) * 100).toFixed(1)}%  平均突破日: ${avgTierDays[1]}日
+  - Tier 2 (廃鉱山)      突破率: ${((tier2Defeated / totalRuns) * 100).toFixed(1)}%  平均突破日: ${avgTierDays[2]}日
+  - Tier 3 (魔獣の谷)    突破率: ${((tier3Defeated / totalRuns) * 100).toFixed(1)}%  平均突破日: ${avgTierDays[3]}日
+  - Tier 4 (世界樹の根)  突破率: ${((tier4Defeated / totalRuns) * 100).toFixed(1)}%  平均突破日: ${avgTierDays[4]}日
+  - Tier 5 (深淵の奈落)  突破率: ${clearRate.toFixed(1)}%  平均突破日: ${avgTierDays[5]}日
+
+■ 転生統計
+  - 平均転生回数: ${avgPrestige} 回 (最大: ${maxPrestige} 回)
+${detailedRunsText}
+■ 失敗Runの内訳（Game Over Reason）
+${Object.entries(reasonCounts)
+  .sort(([, a], [, b]) => b - a)
+  .map(
+    ([reason, count]) => `  - ${reason}: ${count}回 (${((count / totalRuns) * 100).toFixed(1)}%)`,
+  )
+  .join("\n")}
+
+■ 最終施設状況（先頭5件の施設レベル）
+${results
+  .slice(0, 5)
+  .map((r) => `  Run #${r.run}: ${r.facilitiesFinal}`)
+  .join("\n")}
+==================================================
 `;
 
     console.log(reportText);
 
+    // ファイル出力
     try {
       const debugDir = path.join(process.cwd(), "debug");
       if (!fs.existsSync(debugDir)) {
         fs.mkdirSync(debugDir, { recursive: true });
       }
+      // テキストレポート
       fs.writeFileSync(path.join(debugDir, "simulation_report.txt"), reportText, "utf-8");
+      // JSONデータ（後続の分析に使えるように）
+      const jsonData = results.map((r) => ({
+        run: r.run,
+        isClear: r.isClear,
+        gameOverReason: r.gameOverReason,
+        days: r.days,
+        gold: r.gold,
+        villagersCount: r.villagersCount,
+        averageLevel: r.averageLevel,
+        averageBonusStats: r.averageBonusStats,
+        deathsCount: r.deathsCount,
+        totalHired: r.totalHired,
+        trainingCount: r.trainingCount,
+        totalTrainingGold: r.totalTrainingGold,
+        highestTrainingLevel: r.highestTrainingLevel,
+        prestigeCount: r.prestigeCount,
+        bossDefeatDays: r.bossDefeatDays,
+        facilitiesFinal: r.facilitiesFinal,
+      }));
+      // 集計サマリーもJSONに含める
+      const jsonSummary = {
+        totalRuns,
+        clearRate: `${clearRate.toFixed(1)}%`,
+        totalTrainingSessions,
+        trainingRuns: totalTrainingRuns,
+        avgTrainingPerRun: `${avgTrainingCount} 回`,
+        trainingDistribution: trainingDist,
+      };
+      fs.writeFileSync(
+        path.join(debugDir, "simulation_summary.json"),
+        JSON.stringify(jsonSummary, null, 2),
+        "utf-8",
+      );
+      fs.writeFileSync(
+        path.join(debugDir, "simulation_data.json"),
+        JSON.stringify(jsonData, null, 2),
+        "utf-8",
+      );
     } catch (e) {
       console.error("Failed to write simulation report to file", e);
     }
 
+    // --- アサーション（健全性チェック） ---
     expect(totalRuns).toBe(TOTAL_RUNS);
+
+    // 全てのRunに結果が正しく格納されている
+    results.forEach((r, i) => {
+      expect(r.run).toBe(i + 1);
+      expect(r.days).toBeGreaterThan(0);
+      expect(typeof r.isClear).toBe("boolean");
+      expect(["Clear", "破産", "期限切れ", "全滅", "VillagersDefeated", "TimeLimit"]).toContain(
+        r.gameOverReason,
+      );
+      expect(r.prestigeCount).toBeGreaterThanOrEqual(0);
+      expect(r.prestigeCount).toBeLessThanOrEqual(3);
+    });
+
+    // 訓練所のデータ整合性（訓練を実施したRunには必ず trainingCount > 0）
+    results.forEach((r) => {
+      if (r.trainingCount > 0) {
+        expect(r.totalTrainingGold).toBeGreaterThan(0);
+        expect(r.highestTrainingLevel).toBeGreaterThanOrEqual(1);
+      }
+    });
+
+    // クリア率が閾値を超えているか（環境変数 SIM_MIN_CLEAR_RATE で設定）
+    if (MIN_CLEAR_RATE > 0) {
+      expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
+    }
+
+    // 警告: クリア率が極端に低い場合、バランス崩壊の可能性
+    if (clearRate < 10) {
+      console.warn(
+        `⚠️ 警告: クリア率が ${clearRate.toFixed(1)}% と非常に低いです。ゲームバランスに問題がある可能性があります。`,
+      );
+    }
+    if (avgDeaths > 5) {
+      console.warn(
+        `⚠️ 警告: 平均村人死亡回数が ${avgDeaths} 回と高いです。難易度が高すぎる可能性があります。`,
+      );
+    }
   }, 300000);
 });

@@ -4,6 +4,9 @@ import {
   UPGRADE_COST_GOLD_MULTIPLIER,
   UPGRADE_COST_MATERIAL_INCREMENT,
   CRAFT_DEX_FACTOR,
+  CRAFT_WAGE_BASE,
+  CRAFT_WAGE_DEX_FACTOR,
+  CRAFT_WAGE_CRAFTER_MULTIPLIER,
 } from "../constants";
 import {
   ITEMS,
@@ -83,8 +86,24 @@ export function processCraftingAndUpgrades(
         if (updatedJob.assignedVillagerId) {
           const idx = nextVillagers.findIndex((v) => v.id === updatedJob.assignedVillagerId);
           if (idx !== -1) {
+            const worker = nextVillagers[idx];
+            // 工賃計算: (基本額 + Dex補正) × 職人ボーナス
+            const jobMultiplier =
+              worker.currentJob === "職人" ? CRAFT_WAGE_CRAFTER_MULTIPLIER : 1.0;
+            const wage = Math.floor(
+              (CRAFT_WAGE_BASE + worker.dex * CRAFT_WAGE_DEX_FACTOR) * jobMultiplier,
+            );
+            currentGold -= wage;
+            worker.gold += wage;
+            if (stats) stats.totalGoldFromPurchases += wage;
+
+            logs.push({
+              message: `${worker.name} に工賃 ${wage} G を支払いました。（Dex: ${worker.dex}${worker.currentJob === "職人" ? "、職人ボーナス×1.5" : ""}）`,
+              type: "info",
+            });
+
             nextVillagers[idx] = {
-              ...nextVillagers[idx],
+              ...worker,
               status: "idle",
               assignedCraftJobId: null,
             };

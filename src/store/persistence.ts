@@ -1,22 +1,70 @@
 import { StateStorage, createJSONStorage } from "zustand/middleware";
 
-import {
-  GameState,
-  GameActions,
-  Villager,
-  DungeonArea,
-  DungeonGather,
-  DungeonMonster,
-} from "../types/game";
-import { FacilityType } from "../types/game";
-import {
-  getInitialFacilities,
-  getInitialTowns,
-  getInitialCaravans,
-  getInitialStats,
-} from "./initialState";
+import { GameState, GameActions, FacilityType } from "../types/game";
+import { getInitialFacilities } from "./initialState";
 
-export const partialize = (state: GameState & GameActions): GameState => ({
+// ==========================================
+// セーブデータバージョン管理
+// ==========================================
+/** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
+export const SAVE_VERSION = 1;
+
+type SaveMigration = (data: Record<string, unknown>) => void;
+
+/**
+ * バージョン別マイグレーション関数。
+ * key = 適用元バージョン（そのバージョンの保存データを次のバージョンに上げる）
+ * バージョン 0 は「バージョン管理が未導入の旧データ」を意味する
+ */
+const migrations: Record<number, SaveMigration> = {
+  0: (data) => {
+    // ── Villager: 後から追加されたフィールドのデフォルト補完 ──
+    if (Array.isArray(data.villagers)) {
+      data.villagers = data.villagers.map((v: Record<string, unknown>) => ({
+        ...v,
+        potionCount: v.potionCount ?? 0,
+        staminaDrinkItemId: v.staminaDrinkItemId ?? "stamina_drink",
+        staminaDrinkCount: v.staminaDrinkCount ?? 0,
+        bonusStr: v.bonusStr ?? 0,
+        bonusInt: v.bonusInt ?? 0,
+        bonusDex: v.bonusDex ?? 0,
+        bonusAgi: v.bonusAgi ?? 0,
+        bonusVit: v.bonusVit ?? 0,
+        bonusMaxHp: v.bonusMaxHp ?? 0,
+        bonusMaxStamina: v.bonusMaxStamina ?? 0,
+        activeFoodBuffId: v.activeFoodBuffId ?? null,
+        isStarving: v.isStarving ?? false,
+      }));
+    }
+
+    // ── Facility: 建設済み施設に trainingQueue を追加 ──
+    if (data.facilities && typeof data.facilities === "object") {
+      Object.values(data.facilities).forEach((fac: unknown) => {
+        const f = fac as Record<string, unknown>;
+        if (f && (f.level as number) > 0 && !Array.isArray(f.trainingQueue)) {
+          f.trainingQueue = [];
+        }
+      });
+    }
+
+    // ── Top-level フィールドのデフォルト補完 ──
+    data.tradeRules = data.tradeRules ?? [];
+    data.marketTrend = data.marketTrend ?? null;
+    data.isSalaryUnpaid = data.isSalaryUnpaid ?? false;
+    data.consecutiveNegativeGoldDays = data.consecutiveNegativeGoldDays ?? 0;
+    data.gameOverReason = data.gameOverReason ?? "";
+    data.stats = data.stats ?? null;
+
+    data.saveVersion = 1;
+  },
+};
+
+// ==========================================
+// partialize（永続化するフィールドを選別）
+// ==========================================
+export const partialize = (
+  state: GameState & GameActions,
+): GameState & { saveVersion: number } => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,
@@ -43,56 +91,47 @@ export const partialize = (state: GameState & GameActions): GameState => ({
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   stats: state.stats,
+  saveVersion: SAVE_VERSION,
 });
 
+// ==========================================
+// merge（永続化データを復元＋マイグレーション）
+// ==========================================
 export const merge = <S extends GameState & GameActions>(
   persistedState: unknown,
   currentState: S,
 ): S => {
   if (!persistedState) return currentState;
-  const persisted = persistedState as Partial<GameState>;
 
-  const merged: S = { ...currentState, ...persisted };
+  const persisted = persistedState as Record<string, unknown>;
+  const saveVersion = (persisted.saveVersion as number) ?? 0;
 
+  // マイグレーションを順次適用（saveVersion → 最新へ）
+  if (saveVersion < SAVE_VERSION) {
+    for (let v = saveVersion; v < SAVE_VERSION; v++) {
+      if (migrations[v]) {
+        migrations[v](persisted);
+      }
+    }
+  }
+
+  // currentState（初期値）とマージ
+  const merged: S = { ...currentState, ...persisted } as S;
+
+  // フラットな Record は shallow merge
   merged.inventory = {
     ...currentState.inventory,
-    ...persisted.inventory,
+    ...(persisted.inventory as Record<string, number>),
   };
   merged.targetAmounts = {
     ...currentState.targetAmounts,
-    ...persisted.targetAmounts,
+    ...(persisted.targetAmounts as Record<string, number>),
   };
 
-  if (persisted.dungeons) {
-    merged.dungeons = currentState.dungeons.map((curD: DungeonArea) => {
-      const persD = persisted.dungeons!.find((d: DungeonArea) => d.id === curD.id);
-      return {
-        ...curD,
-        explorationProgress: persD ? persD.explorationProgress : 0,
-        gathers: curD.gathers.map((curG: DungeonGather) => {
-          const persG = persD?.gathers?.find((g: DungeonGather) => g.itemId === curG.itemId);
-          return {
-            ...curG,
-            currentProgress: persG?.currentProgress !== undefined ? persG.currentProgress : 0,
-            respawnTimeLeft: persG?.respawnTimeLeft !== undefined ? persG.respawnTimeLeft : 0,
-          };
-        }),
-        monsters: curD.monsters.map((curM: DungeonMonster) => {
-          const persM = persD?.monsters?.find((m: DungeonMonster) => m.id === curM.id);
-          return {
-            ...curM,
-            currentProgress: persM?.currentProgress !== undefined ? persM.currentProgress : 0,
-            respawnTimeLeft: persM?.respawnTimeLeft !== undefined ? persM.respawnTimeLeft : 0,
-          };
-        }),
-      };
-    });
-  }
-
-  if (persisted.facilities) {
+  // Lv0 施設の建設コストを常に最新の初期値で上書き
+  // （gold:0 変更などを既存セーブにも反映するため）
+  if (merged.facilities) {
     const initialFacs = getInitialFacilities();
-    merged.facilities = { ...persisted.facilities };
-
     Object.keys(merged.facilities).forEach((key) => {
       const fac = merged.facilities[key as FacilityType];
       const initFac = initialFacs[key as FacilityType];
@@ -101,34 +140,6 @@ export const merge = <S extends GameState & GameActions>(
       }
     });
   }
-
-  if (persisted.villagers) {
-    merged.villagers = persisted.villagers.map((v: Villager) => ({
-      ...v,
-      potionCount: v.potionCount !== undefined ? v.potionCount : 0,
-      staminaDrinkItemId:
-        v.staminaDrinkItemId !== undefined ? v.staminaDrinkItemId : "stamina_drink",
-      staminaDrinkCount: v.staminaDrinkCount !== undefined ? v.staminaDrinkCount : 0,
-      bonusStr: v.bonusStr !== undefined ? v.bonusStr : 0,
-      bonusInt: v.bonusInt !== undefined ? v.bonusInt : 0,
-      bonusDex: v.bonusDex !== undefined ? v.bonusDex : 0,
-      bonusAgi: v.bonusAgi !== undefined ? v.bonusAgi : 0,
-      bonusVit: v.bonusVit !== undefined ? v.bonusVit : 0,
-      bonusMaxHp: v.bonusMaxHp !== undefined ? v.bonusMaxHp : 0,
-      bonusMaxStamina: v.bonusMaxStamina !== undefined ? v.bonusMaxStamina : 0,
-      activeFoodBuffId: v.activeFoodBuffId !== undefined ? v.activeFoodBuffId : null,
-      isStarving: v.isStarving !== undefined ? v.isStarving : false,
-    }));
-  }
-
-  merged.tradeRules = persisted.tradeRules || [];
-  merged.towns = persisted.towns || getInitialTowns();
-  merged.caravans = persisted.caravans || getInitialCaravans();
-  merged.marketTrend = persisted.marketTrend !== undefined ? persisted.marketTrend : null;
-  merged.isSalaryUnpaid = persisted.isSalaryUnpaid !== undefined ? persisted.isSalaryUnpaid : false;
-  merged.consecutiveNegativeGoldDays = persisted.consecutiveNegativeGoldDays ?? 0;
-  merged.gameOverReason = persisted.gameOverReason ?? "";
-  merged.stats = persisted.stats ?? getInitialStats();
 
   return merged;
 };

@@ -7,7 +7,7 @@ import {
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
 import { DUNGEONS, ITEMS } from "../data/masterData";
-import { TOWNS_DATA } from "../data/towns";
+import { TOWNS_DATA, getFriendshipLevel } from "../data/towns";
 import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager } from "../utils/villagerHelpers";
@@ -138,7 +138,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 600,
+        gold: 0,
         materials: [
           { itemId: "wood_plank", count: 8 },
           { itemId: "iron_ingot", count: 3 },
@@ -169,7 +169,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 300,
+        gold: 0,
         materials: [
           { itemId: "wood", count: 10 },
           { itemId: "stone", count: 5 },
@@ -186,7 +186,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 400,
+        gold: 0,
         materials: [
           { itemId: "wood_plank", count: 10 },
           { itemId: "stone", count: 10 },
@@ -217,7 +217,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 200,
+        gold: 0,
         materials: [{ itemId: "stone", count: 10 }],
       },
       craftQueue: [],
@@ -231,7 +231,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 200,
+        gold: 0,
         materials: [{ itemId: "wood", count: 10 }],
       },
       craftQueue: [],
@@ -262,7 +262,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
       upgradeCost: {
-        gold: 400,
+        gold: 0,
         materials: [
           { itemId: "wood", count: 15 },
           { itemId: "stone", count: 10 },
@@ -296,8 +296,8 @@ export function getInitialTowns(): import("../types/game").Town[] {
     description: t.description,
     specialties: t.specialties,
     demands: t.demands,
-    friendship: 0,
-    level: 1,
+    friendship: 50,
+    level: getFriendshipLevel(50),
     investLevel: 1,
     investCost: 500,
     isUnlocked: t.unlockedAtTier === 1,

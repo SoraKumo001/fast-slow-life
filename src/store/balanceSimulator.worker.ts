@@ -5,7 +5,7 @@ import * as path from "node:path";
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
 
 import { CATEGORY_GEAR_WEAPON, CATEGORY_GEAR_ARMOR } from "../constants";
-import { ITEMS, JOBS, SOUL_UPGRADES } from "../data/masterData";
+import { ITEMS, JOBS, SOUL_UPGRADES, getTrainingProgramsForFacility } from "../data/masterData";
 import { FacilityType, JobType } from "../types/game";
 import { formatGameTime } from "../utils/timeHelpers";
 import { useGameStore } from "./gameStore";
@@ -17,13 +17,18 @@ interface SimulationResult {
   gold: number;
   villagersCount: number;
   averageLevel: number;
+  averageBonusStats: number;
   forestExploration: number;
   dungeonsProgress: string;
   deathsCount: number;
   totalHired: number;
+  trainingCount: number;
+  totalTrainingGold: number;
+  highestTrainingLevel: number;
   bossDefeatDays: Record<number, number>;
   gameOverReason: string;
   prestigeCount: number;
+  facilitiesFinal: string;
 }
 
 // 指定された回数分のシミュレーションを回すチャンク実行関数
@@ -52,6 +57,9 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
     let prestigeCount = 0;
     let totalHired = 0;
     let deathsCount = 0;
+    let trainingCount = 0;
+    let totalTrainingGold = 0;
+    let highestTrainingLevel = 0;
     let bossDefeatDays: Record<number, number> = {};
     let traceLog = "";
     let finalState = useGameStore.getState();
@@ -102,8 +110,8 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
           traceLog += `[${formatGameTime(state.currentDay, state.currentHour)}] `;
-          traceLog += `Gold: ${state.gold}, Wheat: ${state.inventory.wheat || 0}, Veg: ${state.inventory.vegetable || 0}, Meat: ${state.inventory.raw_meat || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
-          traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob})`).join(" | ")}\n`;
+          traceLog += `Gold: ${state.gold}, Wheat: ${state.inventory.wheat || 0}, Veg: ${state.inventory.vegetable || 0}, Meat: ${state.inventory.raw_meat || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, TrainingLvl: ${state.facilities.training_ground?.level || 0}, TrainingQueue: ${state.facilities.training_ground?.trainingQueue?.length || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
+          traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob}, Gold:${v.gold}, Bonus:${(v.bonusStr || 0) + (v.bonusInt || 0) + (v.bonusDex || 0) + (v.bonusAgi || 0) + (v.bonusVit || 0)})`).join(" | ")}\n`;
         }
 
         if (state.gameOver) {
@@ -323,6 +331,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         const upgradeOrder: FacilityType[] = [
           "market",
           "guild",
+          "training_ground",
           "farm",
           "lumberyard",
           "quarry",
@@ -349,6 +358,52 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
             ) {
               store.startFacilityUpgrade(facId);
               break;
+            }
+          }
+        }
+
+        // 6.5. 自動訓練（訓練場が利用可能で、待機中の村人に余剰ゴールドがある場合）
+        const trainingGround = state.facilities.training_ground;
+        if (
+          trainingGround &&
+          trainingGround.level >= 1 &&
+          trainingGround.trainingQueue.length < 3
+        ) {
+          const availablePrograms = getTrainingProgramsForFacility(trainingGround.level);
+          if (availablePrograms.length > 0) {
+            const cheapestCost = Math.min(...availablePrograms.map((p) => p.goldCost));
+            const idleForTraining = state.villagers.filter(
+              (v) =>
+                v.status === "idle" &&
+                !v.assignedCraftJobId &&
+                v.gold >= cheapestCost &&
+                // 訓練後に即座に破産しないように最低限のゴールドを残す
+                v.gold - cheapestCost >= 50,
+            );
+            for (const v of idleForTraining) {
+              if (trainingGround.trainingQueue.length >= 3) break;
+              // 最も低い基本ステータスを伸ばす訓練を選択
+              const baseStats = { str: v.str, int: v.int, dex: v.dex, agi: v.agi, vit: v.vit };
+              const sortedStats = Object.entries(baseStats).sort(([, a], [, b]) => a - b);
+              let chosenProgram = availablePrograms[0];
+              for (const [stat] of sortedStats) {
+                const prog = availablePrograms.find((p) => {
+                  const bonus = p.statBonus[stat as keyof typeof p.statBonus];
+                  return bonus !== undefined && bonus > 0 && v.gold >= p.goldCost;
+                });
+                if (prog) {
+                  chosenProgram = prog;
+                  break;
+                }
+              }
+              if (v.gold >= chosenProgram.goldCost) {
+                store.startTraining(chosenProgram.id, v.id);
+                trainingCount++;
+                totalTrainingGold += chosenProgram.goldCost;
+                if (chosenProgram.requiredFacilityLevel > highestTrainingLevel) {
+                  highestTrainingLevel = chosenProgram.requiredFacilityLevel;
+                }
+              }
             }
           }
         }
@@ -427,14 +482,33 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
         ? finalState.villagers.reduce((sum, v) => sum + v.level, 0) / finalState.villagers.length
         : 0;
 
+    // ゲームオーバー理由を実際の state.gameOverReason から正確に取得
     let actualReason = "Clear";
     if (!isClear) {
-      if (finalState.gameOver && finalState.villagers.length === 0) {
+      if (finalState.gameOver && finalState.gameOverReason) {
+        // ゲームエンジンが出力した理由をそのまま使う（"破産", "期限切れ", "全滅", "クリア" 等）
+        actualReason = finalState.gameOverReason;
+      } else if (finalState.villagers.length === 0) {
         actualReason = "VillagersDefeated";
       } else {
         actualReason = "TimeLimit";
       }
     }
+
+    // 平均ボーナスステータス（訓練による成長度合い）
+    const avgBonusStats =
+      finalState.villagers.length > 0
+        ? finalState.villagers.reduce(
+            (sum, v) =>
+              sum +
+              (v.bonusStr || 0) +
+              (v.bonusInt || 0) +
+              (v.bonusDex || 0) +
+              (v.bonusAgi || 0) +
+              (v.bonusVit || 0),
+            0,
+          ) / finalState.villagers.length
+        : 0;
 
     results.push({
       run,
@@ -443,15 +517,23 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
       gold: finalState.gold,
       villagersCount: finalState.villagers.length,
       averageLevel: avgLvl,
+      averageBonusStats: avgBonusStats,
       forestExploration: forestDungeon ? forestDungeon.explorationProgress : 0,
       dungeonsProgress: finalState.dungeons
         .map((d) => `${d.name}:${d.explorationProgress.toFixed(0)}%`)
         .join(", "),
       deathsCount,
       totalHired,
+      trainingCount,
+      totalTrainingGold,
+      highestTrainingLevel,
       bossDefeatDays,
       gameOverReason: actualReason,
       prestigeCount,
+      facilitiesFinal: Object.entries(finalState.facilities)
+        .filter(([, f]) => f.level > 0)
+        .map(([key, f]) => `${key}:Lv${f.level}`)
+        .join(", "),
     });
 
     if (run === 1) {
