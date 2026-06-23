@@ -106,7 +106,14 @@ export const useBossActions = () =>
   );
 
 export const useSoulActions = () =>
-  useGameStore((s) => ({ buySoulUpgrade: s.buySoulUpgrade, resetGame: s.resetGame }), shallow);
+  useGameStore(
+    (s) => ({
+      buySoulUpgrade: s.buySoulUpgrade,
+      downgradeSoulUpgrade: s.downgradeSoulUpgrade,
+      resetGame: s.resetGame,
+    }),
+    shallow,
+  );
 
 export const useGameStats = () => useGameStore((s) => s.stats);
 

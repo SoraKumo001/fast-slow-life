@@ -36,10 +36,16 @@ interface SimulationResult {
   townsFinal: string;
   unpaidVillagersCount: number;
   caravansActiveCount: number;
+  totalDamageDealt: number;
+  totalDamageReceived: number;
 }
 
 // 指定された回数分のシミュレーションを回すチャンク実行関数
-function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] {
+function runSimulationChunk(
+  runs: number,
+  startIdx: number,
+  initialSoulUpgrades?: Record<string, number>,
+): SimulationResult[] {
   const MAX_HOURS = 900 * 24; // 最大900日間 (21600時間)
   const results: SimulationResult[] = [];
 
@@ -75,6 +81,14 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
     while (!isClear && prestigeCount < 3) {
       store.resetGame(prestigeCount > 0); // 2回目以降は prestige: true で転生
 
+      // 初回のみ initialSoulUpgrades が指定されていれば全バフ適用
+      if (prestigeCount === 0 && initialSoulUpgrades) {
+        const current = useGameStore.getState();
+        useGameStore.setState({
+          soulUpgrades: { ...current.soulUpgrades, ...initialSoulUpgrades },
+        });
+      }
+
       // 転生直後、もしSPがあればソウルアップグレードを自動購入
       if (prestigeCount > 0) {
         let state = useGameStore.getState();
@@ -88,7 +102,7 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
             const currentLvl = state.soulUpgrades[upId] || 0;
             const uDef = SOUL_UPGRADES.find((u) => u.id === upId);
             if (uDef && currentLvl < uDef.maxLevel) {
-              const cost = uDef.costPerLevel * (currentLvl + 1);
+              const cost = uDef.costs[currentLvl];
               if (state.soulPoints >= cost) {
                 store.buySoulUpgrade(upId);
                 boughtSomething = true;
@@ -548,6 +562,8 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
       townsFinal: finalState.towns.map((t) => `${t.name}:Lv${t.level}(${t.friendship})`).join(", "),
       unpaidVillagersCount: finalState.villagers.filter((v) => v.gold < 0).length,
       caravansActiveCount: finalState.caravans.filter((c) => c.status === "trading").length,
+      totalDamageDealt: finalState.stats?.totalDamageDealt || 0,
+      totalDamageReceived: finalState.stats?.totalDamageReceived || 0,
     });
 
     if (run === 1) {
@@ -568,8 +584,12 @@ function runSimulationChunk(runs: number, startIdx: number): SimulationResult[] 
 
 // ワーカースレッドのメイン処理
 if (!isMainThread) {
-  const { runs, runStartIdx } = workerData;
-  const results = runSimulationChunk(runs, runStartIdx);
+  const { runs, runStartIdx, initialSoulUpgrades } = workerData as {
+    runs: number;
+    runStartIdx: number;
+    initialSoulUpgrades?: Record<string, number>;
+  };
+  const results = runSimulationChunk(runs, runStartIdx, initialSoulUpgrades);
   parentPort?.postMessage(results);
   process.exit(0);
 }

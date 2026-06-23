@@ -125,6 +125,24 @@ describe("Balance Simulator", () => {
       results.reduce((sum, r) => sum + r.unpaidVillagersCount, 0) / totalRuns
     ).toFixed(1);
 
+    // 戦闘統計の集計
+    const avgDamageDealt = (
+      results.reduce((sum, r) => sum + r.totalDamageDealt, 0) / totalRuns
+    ).toFixed(1);
+    const avgDamageReceived = (
+      results.reduce((sum, r) => sum + r.totalDamageReceived, 0) / totalRuns
+    ).toFixed(1);
+    const clearDamageDealtAvg =
+      clearRuns.length > 0
+        ? (clearRuns.reduce((sum, r) => sum + r.totalDamageDealt, 0) / clearRuns.length).toFixed(1)
+        : "N/A";
+    const failDamageDealtAvg =
+      gameOverRuns.length > 0
+        ? (
+            gameOverRuns.reduce((sum, r) => sum + r.totalDamageDealt, 0) / gameOverRuns.length
+          ).toFixed(1)
+        : "N/A";
+
     // 訓練関連の統計
     const totalTrainingRuns = results.filter((r) => r.trainingCount > 0).length;
     const totalTrainingSessions = results.reduce((sum, r) => sum + r.trainingCount, 0);
@@ -226,6 +244,11 @@ ${reasonBreakdown}
   - クリアRun平均ゴールド: ${clearGoldAvg} G / 失敗Run平均ゴールド: ${failGoldAvg} G
   - 破産によるGame Over: ${bankruptRuns.length}回 (${bankruptRate}%)
   - ツケ発生Run: ${unpaidRuns.length}/${totalRuns} (${unpaidRate}%), 平均ツケ村人数: ${avgUnpaidVillagers}
+
+■ 戦闘統計
+  - 平均総与ダメージ: ${avgDamageDealt} /Run (min: ${Math.min(...results.map((r) => r.totalDamageDealt))}, max: ${Math.max(...results.map((r) => r.totalDamageDealt))})
+  - 平均総被ダメージ: ${avgDamageReceived} /Run (min: ${Math.min(...results.map((r) => r.totalDamageReceived))}, max: ${Math.max(...results.map((r) => r.totalDamageReceived))})
+  - クリアRun平均与ダメージ: ${clearDamageDealtAvg} / 失敗Run平均与ダメージ: ${failDamageDealtAvg}
 ${detailedRunsText}
 ■ 失敗Runの内訳（Game Over Reason）
 ${Object.entries(reasonCounts)
@@ -278,6 +301,8 @@ ${results
         townsFinal: r.townsFinal,
         unpaidVillagersCount: r.unpaidVillagersCount,
         caravansActiveCount: r.caravansActiveCount,
+        totalDamageDealt: r.totalDamageDealt,
+        totalDamageReceived: r.totalDamageReceived,
       }));
       // 集計サマリーもJSONに含める
       const jsonSummary = {
@@ -295,6 +320,10 @@ ${results
           avgFinalGold: `${avgFinalGold} G`,
           bankruptRate: `${bankruptRate}%`,
           unpaidRate: `${unpaidRate}%`,
+        },
+        combat: {
+          avgDamageDealt: `${avgDamageDealt}`,
+          avgDamageReceived: `${avgDamageReceived}`,
         },
       };
       fs.writeFileSync(
@@ -347,6 +376,8 @@ ${results
       expect(r.totalGoldFromTax).toBeGreaterThanOrEqual(0);
       expect(r.unpaidVillagersCount).toBeGreaterThanOrEqual(0);
       expect(r.caravansActiveCount).toBeGreaterThanOrEqual(0);
+      expect(r.totalDamageDealt).toBeGreaterThanOrEqual(0);
+      expect(r.totalDamageReceived).toBeGreaterThanOrEqual(0);
     });
 
     // クリアRunは交易でゴールドを稼いでいること
@@ -376,6 +407,175 @@ ${results
     if (bankruptRuns.length > totalRuns * 0.3) {
       console.warn(
         `⚠️ 警告: 破産によるGame Overが ${bankruptRate}% と高いです。経済バランスに問題がある可能性があります。`,
+      );
+    }
+  }, 300000);
+
+  it("Run with all soul upgrades maxed out (30 times)", async () => {
+    const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
+    const numCPUs = Math.min(os.cpus().length || 4, 16);
+    const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
+    const promises: Promise<SimulationResult[]>[] = [];
+
+    // 全バフ最大値
+    const maxBuffs: Record<string, number> = {
+      heritage: 10,
+      storage: 10,
+      education: 5,
+      body: 5,
+      building: 5,
+      discount: 5,
+    };
+
+    console.log(
+      `\nStarting ${TOTAL_RUNS} runs with ALL SOUL UPGRADES MAXED using ${numCPUs} workers...`,
+    );
+
+    for (let i = 0; i < numCPUs; i++) {
+      const workerRuns = Math.min(runsPerWorker, TOTAL_RUNS - i * runsPerWorker);
+      if (workerRuns <= 0) break;
+
+      const runStartIdx = i * runsPerWorker + 1;
+
+      const promise = new Promise<SimulationResult[]>((resolve, reject) => {
+        const worker = new Worker(new URL("./balanceSimulator.worker.ts", import.meta.url), {
+          execArgv: ["--import", "tsx"],
+          workerData: { runs: workerRuns, runStartIdx, initialSoulUpgrades: maxBuffs },
+        });
+
+        worker.on("message", (msg) => resolve(msg));
+        worker.on("error", (err) => reject(err));
+        worker.on("exit", (code) => {
+          if (code !== 0) {
+            reject(new Error(`Worker stopped with exit code ${code}`));
+          }
+        });
+      });
+
+      promises.push(promise);
+    }
+
+    const chunkResults = await Promise.all(promises);
+    const results = chunkResults.flat().sort((a, b) => a.run - b.run);
+
+    const totalRuns = results.length;
+    const clearRuns = results.filter((r) => r.isClear);
+    const clearRate = (clearRuns.length / totalRuns) * 100;
+    const gameOverRuns = results.filter((r) => !r.isClear);
+
+    const clearDays = clearRuns.map((r) => r.days);
+    const avgClearDays =
+      clearDays.length > 0
+        ? (clearDays.reduce((a, b) => a + b, 0) / clearDays.length).toFixed(1)
+        : "N/A";
+
+    const allGold = results.map((r) => r.gold);
+    const avgFinalGold = (allGold.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
+
+    // ゲームオーバー理由の内訳
+    const reasonCounts: Record<string, number> = {};
+    gameOverRuns.forEach((r) => {
+      reasonCounts[r.gameOverReason] = (reasonCounts[r.gameOverReason] || 0) + 1;
+    });
+
+    // ボス突破統計
+    const tierDefeatDays: Record<number, number[]> = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+    results.forEach((r) => {
+      Object.entries(r.bossDefeatDays).forEach(([tier, day]) => {
+        tierDefeatDays[Number(tier)].push(day);
+      });
+    });
+
+    const reportText = `
+==================================================
+  FULL SOUL UPGRADE BENCHMARK REPORT
+==================================================
+■ クリア率: ${clearRate.toFixed(1)}% (${clearRuns.length}/${totalRuns})
+■ 平均クリア日数: ${avgClearDays} 日
+■ 平均最終ゴールド: ${avgFinalGold} G (min: ${Math.min(...allGold)}, max: ${Math.max(...allGold)})
+
+■ 転生統計
+  - 平均転生回数: ${(results.reduce((s, r) => s + r.prestigeCount, 0) / totalRuns).toFixed(1)} 回 (最大: ${Math.max(...results.map((r) => r.prestigeCount))} 回)
+
+■ 戦闘統計
+  - 平均総与ダメージ: ${(results.reduce((s, r) => s + r.totalDamageDealt, 0) / totalRuns).toFixed(1)} /Run
+  - 平均総被ダメージ: ${(results.reduce((s, r) => s + r.totalDamageReceived, 0) / totalRuns).toFixed(1)} /Run
+
+■ 進行度（Tier）ごとの平均突破日
+  - Tier 1: ${tierDefeatDays[1].length > 0 ? (tierDefeatDays[1].reduce((a, b) => a + b, 0) / tierDefeatDays[1].length).toFixed(1) : "N/A"}日 (${((tierDefeatDays[1].length / totalRuns) * 100).toFixed(1)}%)
+  - Tier 2: ${tierDefeatDays[2].length > 0 ? (tierDefeatDays[2].reduce((a, b) => a + b, 0) / tierDefeatDays[2].length).toFixed(1) : "N/A"}日 (${((tierDefeatDays[2].length / totalRuns) * 100).toFixed(1)}%)
+  - Tier 3: ${tierDefeatDays[3].length > 0 ? (tierDefeatDays[3].reduce((a, b) => a + b, 0) / tierDefeatDays[3].length).toFixed(1) : "N/A"}日 (${((tierDefeatDays[3].length / totalRuns) * 100).toFixed(1)}%)
+  - Tier 4: ${tierDefeatDays[4].length > 0 ? (tierDefeatDays[4].reduce((a, b) => a + b, 0) / tierDefeatDays[4].length).toFixed(1) : "N/A"}日 (${((tierDefeatDays[4].length / totalRuns) * 100).toFixed(1)}%)
+  - Tier 5: ${tierDefeatDays[5].length > 0 ? (tierDefeatDays[5].reduce((a, b) => a + b, 0) / tierDefeatDays[5].length).toFixed(1) : "N/A"}日 (${clearRate.toFixed(1)}%)
+
+■ 失敗Runの内訳
+${Object.entries(reasonCounts)
+  .sort(([, a], [, b]) => b - a)
+  .map(
+    ([reason, count]) => `  - ${reason}: ${count}回 (${((count / totalRuns) * 100).toFixed(1)}%)`,
+  )
+  .join("\n")}
+==================================================
+`;
+
+    console.log(reportText);
+
+    // ファイル出力
+    try {
+      const debugDir = path.join(process.cwd(), "debug");
+      if (!fs.existsSync(debugDir)) {
+        fs.mkdirSync(debugDir, { recursive: true });
+      }
+      fs.writeFileSync(path.join(debugDir, "simulation_fullbuff_report.txt"), reportText, "utf-8");
+      const jsonData = results.map((r) => ({
+        run: r.run,
+        isClear: r.isClear,
+        gameOverReason: r.gameOverReason,
+        days: r.days,
+        gold: r.gold,
+        villagersCount: r.villagersCount,
+        averageLevel: r.averageLevel,
+        averageBonusStats: r.averageBonusStats,
+        deathsCount: r.deathsCount,
+        totalHired: r.totalHired,
+        trainingCount: r.trainingCount,
+        totalTrainingGold: r.totalTrainingGold,
+        highestTrainingLevel: r.highestTrainingLevel,
+        prestigeCount: r.prestigeCount,
+        bossDefeatDays: r.bossDefeatDays,
+        facilitiesFinal: r.facilitiesFinal,
+        totalGoldFromExports: r.totalGoldFromExports,
+        totalGoldFromImports: r.totalGoldFromImports,
+        totalGoldFromPurchases: r.totalGoldFromPurchases,
+        totalGoldFromTax: r.totalGoldFromTax,
+        townsFinal: r.townsFinal,
+        unpaidVillagersCount: r.unpaidVillagersCount,
+        caravansActiveCount: r.caravansActiveCount,
+        totalDamageDealt: r.totalDamageDealt,
+        totalDamageReceived: r.totalDamageReceived,
+      }));
+      fs.writeFileSync(
+        path.join(debugDir, "simulation_fullbuff_data.json"),
+        JSON.stringify(jsonData, null, 2),
+        "utf-8",
+      );
+    } catch (e) {
+      console.error("Failed to write fullbuff report to file", e);
+    }
+
+    expect(totalRuns).toBe(TOTAL_RUNS);
+    // 全バフMAX時のクリア率を検証（環境変数 SIM_MIN_FULLBUFF_CLEAR_RATE で期待値を設定）
+    // デフォルトは単に計測のみ（アサーション無効）
+    const MIN_CLEAR_RATE = process.env.SIM_MIN_FULLBUFF_CLEAR_RATE
+      ? parseFloat(process.env.SIM_MIN_FULLBUFF_CLEAR_RATE)
+      : 0;
+    if (MIN_CLEAR_RATE > 0) {
+      expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
+    }
+
+    if (clearRate < 10) {
+      console.warn(
+        `⚠️ 警告: 全バフMAXでもクリア率が ${clearRate.toFixed(1)}% です。ゲームバランスに問題がある可能性があります。`,
       );
     }
   }, 300000);

@@ -9,7 +9,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
     const uDef = SOUL_UPGRADES.find((u) => u.id === upgradeId);
     if (!uDef || currentLvl >= uDef.maxLevel) return;
 
-    const cost = uDef.costPerLevel * (currentLvl + 1);
+    const cost = uDef.costs[currentLvl];
     if (state.soulPoints < cost) {
       state.addLog("ソウルポイントが不足しています。", "warning");
       return;
@@ -24,6 +24,30 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
     }));
 
     state.addLog(`転生バフ【${uDef.name}】のレベルを ${currentLvl + 1} に強化しました。`, "system");
+  },
+
+  downgradeSoulUpgrade: (upgradeId: string) => {
+    const state = get();
+    const currentLvl = state.soulUpgrades[upgradeId] || 0;
+    const uDef = SOUL_UPGRADES.find((u) => u.id === upgradeId);
+    if (!uDef || currentLvl <= 0) return;
+
+    // 払戻額 = 現レベル到達時に支払ったSP（costs[currentLvl - 1]）
+    const refund = uDef.costs[currentLvl - 1];
+    const nextLvl = currentLvl - 1;
+
+    set((state) => ({
+      soulPoints: state.soulPoints + refund,
+      soulUpgrades: {
+        ...state.soulUpgrades,
+        [upgradeId]: nextLvl,
+      },
+    }));
+
+    state.addLog(
+      `転生バフ【${uDef.name}】のレベルを ${nextLvl} に戻し、${refund} SP を払い戻しました。`,
+      "system",
+    );
   },
 
   resetGame: (prestige = false) => {

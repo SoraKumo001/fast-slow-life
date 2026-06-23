@@ -48,6 +48,12 @@ function makeStats(): RunStats {
     totalGoldFromPurchases: 0,
     totalItemsPurchased: 0,
     totalGoldFromTax: 0,
+    totalDamageDealt: 0,
+    totalDamageReceived: 0,
+    totalCriticalHits: 0,
+    totalAttacksLanded: 0,
+    totalAttacksAttempted: 0,
+    totalPotionHealing: 0,
   };
 }
 

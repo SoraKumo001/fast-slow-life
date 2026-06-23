@@ -184,6 +184,7 @@ export function processVillagerHunt(
           v.potionCount = potionResult.updated.potionCount;
           v.currentHp = potionResult.updated.currentHp;
           const pId = v.potionItemId || "potion";
+          if (stats) stats.totalPotionHealing += potionResult.healed;
           // 探索時のポーション使用は村人本人が持つポーションなので、購入処理は発生しない
           logs.push({
             message: `[Turn ${turn}] ${v.name} は戦闘中に${ITEMS[pId]?.name || "回復薬"}を使用し、HPを ${potionResult.healed} 回復した。 (残り ${v.potionCount} 個)`,
@@ -207,12 +208,15 @@ export function processVillagerHunt(
           const hitRate = calculateHitRate(effectiveDex, enemy.agi);
           const isHit = Math.random() * 100 < hitRate;
 
+          if (stats) stats.totalAttacksAttempted += 1;
+
           if (!isHit) {
             logs.push({
               message: `[Turn ${turn}] ${v.name} の攻撃！ しかし ${enemy.name} に回避された。`,
               type: "combat",
             });
           } else {
+            if (stats) stats.totalAttacksLanded += 1;
             const critRate = calculateCritRate(effectiveDex);
             const isCritical = Math.random() * 100 < critRate;
 
@@ -224,6 +228,9 @@ export function processVillagerHunt(
               isMagicUser,
               isSalaryUnpaid: v.gold < 0,
             });
+
+            if (isCritical && stats) stats.totalCriticalHits += 1;
+            if (stats) stats.totalDamageDealt += damage;
 
             enemyHp -= damage;
             logs.push({
@@ -258,6 +265,7 @@ export function processVillagerHunt(
           });
 
           v.currentHp = Math.max(0, v.currentHp - damageToVillager);
+          if (stats) stats.totalDamageReceived += damageToVillager;
           logs.push({
             message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。${isEnemyCrit ? " (クリティカル！)" : ""}`,
             type: "combat",

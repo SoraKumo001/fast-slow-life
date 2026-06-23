@@ -6,6 +6,7 @@ import {
   CRIT_RATE_CAP,
   CRIT_RATE_DEX_FACTOR,
   BATTLE_POTION_HP_RATIO,
+  DEF_EFFECT_FACTOR,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import { Villager, VillagerBaseStats, VillagerEquipment, VillagerJobInfo } from "../types/game";
@@ -99,12 +100,14 @@ export function calculateEnemyDamage(params: EnemyAttackParams): number {
   const buffVit = getFoodBuffBonus(defender.activeFoodBuffId || null, "vit");
   const rawVit = defender.vit + buffVit;
   const effectiveVit = applySalaryDebuff(rawVit, isSalaryUnpaid);
-  let defenderDef = effectiveVit + armorDef;
-  if (isCritical) defenderDef *= 0.5;
+  const defenderDef = effectiveVit + armorDef;
 
-  const baseDamage = attacker.atk - defenderDef;
+  // 乗算式: 防御が高いほど減衰率が上がるが、ゼロにはならない
+  const reduction = DEF_EFFECT_FACTOR / (DEF_EFFECT_FACTOR + defenderDef);
+  const baseDamage = attacker.atk * reduction;
+
   let damage = Math.max(minDamage, Math.floor(baseDamage));
-  if (isCritical) damage = Math.floor(damage * 1.5);
+  if (isCritical) damage = Math.floor(damage * 1.8);
 
   return damage;
 }

@@ -244,7 +244,9 @@ export interface SoulUpgrade {
   description: string;
   level: number;
   maxLevel: number;
-  costPerLevel: number;
+  // レベル i → i+1 の強化に必要なSP。配列長は maxLevel と一致。
+  // index 0 が Lv0→1 のコスト。参考: costPerLevel は非線形版へ移行済み。
+  costs: number[];
   effectValue: number; // レベルごとの倍率・加算値
 }
 
@@ -316,6 +318,7 @@ export interface GameActions {
   startTraining: (programId: string, villagerId: string) => void;
   setTargetAmount: (itemId: string, count: number) => void;
   buySoulUpgrade: (upgradeId: string) => void;
+  downgradeSoulUpgrade: (upgradeId: string) => void;
   hireVillager: () => void;
   resetGame: (prestige?: boolean) => void;
   togglePause: () => void;
@@ -356,6 +359,12 @@ export interface RunStats {
   totalGoldFromPurchases: number;
   totalItemsPurchased: number;
   totalGoldFromTax: number;
+  totalDamageDealt: number;
+  totalDamageReceived: number;
+  totalCriticalHits: number;
+  totalAttacksLanded: number;
+  totalAttacksAttempted: number;
+  totalPotionHealing: number;
 }
 
 export interface GameEconomy {

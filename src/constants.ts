@@ -38,8 +38,9 @@ export const STARVATION_HP_LOSS_PERCENT = 0.004;
 export const STARVATION_EFFICIENCY_PENALTY = 0.5;
 export const ZERO_STAMINA_PENALTY = 0.3;
 export const WARRIOR_DAMAGE_BONUS = 1.3;
-export const MIN_DAMAGE = 2;
-export const MIN_BOSS_DAMAGE = 5;
+export const MIN_DAMAGE = 10;
+export const MIN_BOSS_DAMAGE = 30;
+export const DEF_EFFECT_FACTOR = 100;
 
 export const BATTLE_POTION_HP_RATIO = 0.5;
 export const RETREAT_HP_RATIO = 0.3;

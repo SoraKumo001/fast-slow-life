@@ -7,7 +7,7 @@ import { usePlayerResources, useSoulUpgrades, useSoulActions } from "../../hooks
 export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
   const { soulPoints } = usePlayerResources();
   const soulUpgrades = useSoulUpgrades();
-  const { buySoulUpgrade, resetGame } = useSoulActions();
+  const { buySoulUpgrade, downgradeSoulUpgrade, resetGame } = useSoulActions();
   const [showConfirm, setShowConfirm] = useState(false);
 
   const handleStartNewGame = () => {
@@ -41,7 +41,9 @@ export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
         {SOUL_UPGRADES.map((u) => {
           const currentLvl = soulUpgrades[u.id] || 0;
           const isMax = currentLvl >= u.maxLevel;
-          const cost = u.costPerLevel * (currentLvl + 1);
+          const isMin = currentLvl <= 0;
+          const cost = u.costs[currentLvl];
+          const refund = isMin ? 0 : u.costs[currentLvl - 1];
           const canAfford = soulPoints >= cost && !isMax;
 
           return (
@@ -76,6 +78,16 @@ export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
                     className="px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[10px] font-bold transition"
                   >
                     強化 ({cost} SP)
+                  </button>
+                )}
+
+                {!isMin && (
+                  <button
+                    onClick={() => downgradeSoulUpgrade(u.id)}
+                    className="px-2.5 py-1.5 ml-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-bold transition"
+                    title={`${refund} SP を払い戻してレベルを戻す`}
+                  >
+                    戻す (+{refund} SP)
                   </button>
                 )}
               </div>
