@@ -3,7 +3,7 @@ import { getFriendshipLevel } from "../data/towns";
 import { GameState, Villager, RunStats } from "../types/game";
 import { processAutoTrade } from "./autoTradeHelper";
 import { processBossBattle } from "./bossBattle";
-import { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
+import { processCraftingAndUpgrades, processAutoCraft, processAutoTraining } from "./crafting";
 import { processExploration } from "./exploration";
 import { AdvanceHourResult } from "./gameLoopTypes";
 import { getInitialStats } from "./initialState";
@@ -17,7 +17,7 @@ export type { AdvanceHourResult, LogPayload } from "./gameLoopTypes";
 export { processRespawns } from "./respawns";
 export { processStarvation } from "./starvation";
 export { processExploration } from "./exploration";
-export { processCraftingAndUpgrades, processAutoCraft } from "./crafting";
+export { processCraftingAndUpgrades, processAutoCraft, processAutoTraining } from "./crafting";
 export { processBossBattle } from "./bossBattle";
 export { processVillagerActivities } from "./villagerAI";
 
@@ -215,11 +215,13 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     villagers,
     inventory,
     soulUpgrades,
+    gold,
     nextStats,
   );
   facilities = craftRes.facilities;
   villagers = craftRes.villagers;
   inventory = { ...inventory, ...craftRes.inventory };
+  gold = craftRes.gold;
   logsToAppend.push(...craftRes.logs);
 
   // 資源生産施設による供給（12時間ごと）
@@ -364,6 +366,11 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   villagers = autoRes.villagers;
   inventory = { ...inventory, ...autoRes.inventory };
   logsToAppend.push(...autoRes.logs);
+
+  const trainingRes = processAutoTraining(facilities, villagers);
+  facilities = trainingRes.facilities;
+  villagers = trainingRes.villagers;
+  logsToAppend.push(...trainingRes.logs);
 
   // 交易馬車の進行処理（帰還時は自動回収して待機状態にする）
   caravans = caravans.map((caravan) => {

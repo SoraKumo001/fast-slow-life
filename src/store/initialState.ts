@@ -111,6 +111,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       upgradeTotalTime: 0,
       upgradeCost: { gold: 200, materials: [{ itemId: "wood", count: 10 }] },
       craftQueue: [],
+      trainingQueue: [],
     },
     workshop: {
       id: "workshop",
@@ -127,6 +128,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         ],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     alchemy: {
       id: "alchemy",
@@ -143,6 +145,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         ],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     market: {
       id: "market",
@@ -156,6 +159,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         materials: [{ itemId: "wood", count: 5 }],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     guild: {
       id: "guild",
@@ -172,6 +176,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         ],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     weapon_shop: {
       id: "weapon_shop",
@@ -188,6 +193,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         ],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     farm: {
       id: "farm",
@@ -201,6 +207,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         materials: [{ itemId: "wood", count: 10 }],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     lumberyard: {
       id: "lumberyard",
@@ -214,6 +221,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         materials: [{ itemId: "stone", count: 10 }],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     quarry: {
       id: "quarry",
@@ -227,6 +235,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         materials: [{ itemId: "wood", count: 10 }],
       },
       craftQueue: [],
+      trainingQueue: [],
     },
     kitchen: {
       id: "kitchen",
@@ -243,6 +252,24 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
         ],
       },
       craftQueue: [],
+      trainingQueue: [],
+    },
+    training_ground: {
+      id: "training_ground",
+      name: "訓練場",
+      level: 0,
+      maxLevel: 5,
+      upgradeTimeLeft: 0,
+      upgradeTotalTime: 0,
+      upgradeCost: {
+        gold: 400,
+        materials: [
+          { itemId: "wood", count: 15 },
+          { itemId: "stone", count: 10 },
+        ],
+      },
+      craftQueue: [],
+      trainingQueue: [],
     },
   };
 }

@@ -11,6 +11,7 @@ export { DUNGEONS } from "./dungeons";
 export { SOUL_UPGRADES } from "./soulUpgrades";
 export { JOBS } from "./jobs";
 export { VILLAGER_NAMES } from "./villagerNames";
+export { TRAINING_PROGRAMS, getTrainingProgram, getTrainingProgramsForFacility } from "./trainings";
 
 // ==========================================
 // 2. マスタデータ取得用ヘルパー関数

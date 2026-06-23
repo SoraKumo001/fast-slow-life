@@ -8,6 +8,7 @@ import { ItemDetailModal } from "../modals/ItemDetailModal";
 import { ProgressBar } from "../ui/ProgressBar";
 import { GuildPanel } from "./GuildPanel";
 import { TradeRulePanel } from "./TradeRulePanel";
+import { TrainingGroundPanel } from "./TrainingGroundPanel";
 
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
@@ -21,6 +22,8 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
     "新しい冒険者（村人）を雇用して開拓の効率を上げられます。レベルアップで最大10人まで雇用枠が広がります。",
   weapon_shop:
     "武器や防具などの装備品をクラフトできる工房です。強力な装備を作って村人のステータスを強化しましょう。また、武器・防具の売却が可能になり、レベルに応じて買取価格にボーナスが適用されます。",
+  training_ground:
+    "村人が所持金を支払って能力を鍛える訓練施設です。上位の訓練プログラムほど高度な施設レベルと高額な費用が必要ですが、より大きな成長が見込めます。",
   farm: "毎時間自動的に食料を生産します。レベルアップで生産効率が向上します。",
   lumberyard: "毎時間自動的に原木を生産します。開拓に必要な木材を効率よく調達できます。",
   quarry:
@@ -128,6 +131,20 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                   雇用上限: {Math.min(MAX_VILLAGERS_ABSOLUTE, 3 + fac.level * 2)}人 (現在:{" "}
                   {villagers.length}人)
                 </span>
+              ) : fac.id === "training_ground" ? (
+                fac.trainingQueue.length > 0 ? (
+                  <>
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="text-amber-400 font-bold">
+                      訓練中 ({fac.trainingQueue.length}/3)
+                    </span>
+                    <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
+                      • {fac.trainingQueue[0].timeLeft}時間残
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-slate-500">待機中の村人を訓練可能</span>
+                )
               ) : fac.id === "farm" ? (
                 <span className="text-emerald-500 font-semibold">
                   自動生産中: 食料 +{Math.floor((1 + fac.level * 2) / 3)}/12h
@@ -280,6 +297,10 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                 ※休息中の村人のHP/スタミナが 毎時間 HP +{10 + fac.level * 5}, スタミナ +
                 {15 + fac.level * 5} 回復します。
               </p>
+            )}
+
+            {fac.id === "training_ground" && isUnlocked && (
+              <TrainingGroundPanel fac={fac} villagers={villagers} />
             )}
 
             {(fac.id === "farm" || fac.id === "lumberyard" || fac.id === "quarry") && (

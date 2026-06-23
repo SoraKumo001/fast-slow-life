@@ -88,7 +88,11 @@ export const useEquipmentActions = () =>
 
 export const useCraftActions = () =>
   useGameStore(
-    (s) => ({ startCraft: s.startCraft, startFacilityUpgrade: s.startFacilityUpgrade }),
+    (s) => ({
+      startCraft: s.startCraft,
+      startFacilityUpgrade: s.startFacilityUpgrade,
+      startTraining: s.startTraining,
+    }),
     shallow,
   );
 

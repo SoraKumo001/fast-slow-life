@@ -144,7 +144,29 @@ export type FacilityType =
   | "weapon_shop"
   | "farm"
   | "lumberyard"
-  | "quarry";
+  | "quarry"
+  | "training_ground";
+
+export interface TrainingProgram {
+  id: string;
+  name: string;
+  description: string;
+  requiredFacilityLevel: number;
+  requiredTime: number; // 訓練時間（時間単位）
+  goldCost: number; // 総訓練費用
+  statBonus: Partial<
+    Record<"str" | "int" | "dex" | "agi" | "vit" | "maxHp" | "maxStamina", number>
+  >;
+}
+
+export interface TrainingJob {
+  id: string;
+  programId: string;
+  timeLeft: number;
+  totalTime: number;
+  assignedVillagerId: string;
+  goldPerHour: number;
+}
 
 export interface Facility {
   id: FacilityType;
@@ -158,6 +180,7 @@ export interface Facility {
     materials: { itemId: string; count: number }[];
   };
   craftQueue: CraftJob[];
+  trainingQueue: TrainingJob[];
 }
 
 export interface Monster {
@@ -289,6 +312,7 @@ export interface GameActions {
   autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType) => void;
+  startTraining: (programId: string, villagerId: string) => void;
   setTargetAmount: (itemId: string, count: number) => void;
   buySoulUpgrade: (upgradeId: string) => void;
   hireVillager: () => void;
