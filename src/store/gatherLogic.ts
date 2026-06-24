@@ -51,80 +51,72 @@ export function processVillagerGather(
   const effectiveDex = applySalaryDebuff(v.dex + buffDex, v.gold < 0);
   const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, v.gold < 0);
 
-  const targetedGather = area.gathers.find((g) => g.itemId === v.targetGatherItemId);
-  if (
-    targetedGather &&
-    progress >= (targetedGather.unlockedAtProgress || 0) &&
-    !(targetedGather.respawnTimeLeft && targetedGather.respawnTimeLeft > 0)
-  ) {
-    bestItemId = v.targetGatherItemId!;
-    v.autoTargetName = null;
-  } else {
-    let maxScore = -1;
-    const availableGathers = area.gathers.filter(
-      (g) =>
-        progress >= (g.unlockedAtProgress || 0) && !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
-    );
+  let maxScore = -1;
+  const availableGathers = area.gathers.filter(
+    (g) => progress >= (g.unlockedAtProgress || 0) && !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
+  );
 
-    availableGathers.forEach((gather) => {
-      const item = ITEMS[gather.itemId];
-      if (!item) return;
-      const baseMultiplier = 1.0 / gather.difficulty;
+  availableGathers.forEach((gather) => {
+    const item = ITEMS[gather.itemId];
+    if (!item) return;
+    const baseMultiplier = 1.0 / gather.difficulty;
 
-      let jobMod = 1.0;
-      const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
-      if (jobAdapt) jobMod = jobAdapt;
+    let jobMod = 1.0;
+    const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
+    if (jobAdapt) jobMod = jobAdapt;
 
-      let statVal = 0;
+    let statVal = 0;
+    if (
+      item.category === CATEGORY_FOOD ||
+      item.category === CATEGORY_ORE ||
+      item.category === CATEGORY_MATERIAL
+    ) {
+      statVal =
+        effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
+    } else {
+      statVal =
+        effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
+    }
+
+    const currentCount = nextInventory[gather.itemId] || 0;
+    const targetCount = targetAmounts[gather.itemId] || 0;
+    let targetPenalty = 1.0;
+    if (targetCount === 0) {
+      targetPenalty = AUTO_GATHER_TARGET_PENALTY;
+    } else if (currentCount >= targetCount) {
+      targetPenalty = AUTO_GATHER_EXCEED_PENALTY;
+    }
+
+    let dupPenalty = 1.0;
+    const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
+      if (idx === i) return false;
       if (
-        item.category === CATEGORY_FOOD ||
-        item.category === CATEGORY_ORE ||
-        item.category === CATEGORY_MATERIAL
-      ) {
-        statVal =
-          effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
-      } else {
-        statVal =
-          effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
-      }
-
-      const currentCount = nextInventory[gather.itemId] || 0;
-      const targetCount = targetAmounts[gather.itemId] || 0;
-      let targetPenalty = 1.0;
-      if (targetCount === 0) {
-        targetPenalty = AUTO_GATHER_TARGET_PENALTY;
-      } else if (currentCount >= targetCount) {
-        targetPenalty = AUTO_GATHER_EXCEED_PENALTY;
-      }
-
-      let dupPenalty = 1.0;
-      const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
-        if (idx === i) return false;
-        if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
-          return false;
-        const otherTarget = otherV.targetGatherItemId || otherV.autoTargetName;
-        return otherTarget === gather.itemId || otherTarget === item.name;
-      });
-      if (isTargetedByOthers) {
-        dupPenalty = 0.05;
-      }
-
-      const score =
-        baseMultiplier *
-        Math.pow(jobMod, 2) *
-        statVal *
-        (1.0 + effectiveAgi * 0.01) *
-        efficiency *
-        targetPenalty *
-        dupPenalty;
-      if (score > maxScore) {
-        maxScore = score;
-        bestItemId = gather.itemId;
-      }
+        (otherV.status !== "active" && otherV.status !== "traveling_to") ||
+        otherV.destinationAreaId !== v.destinationAreaId
+      )
+        return false;
+      const otherTarget = otherV.autoTargetName;
+      return otherTarget === gather.itemId || otherTarget === item.name;
     });
+    if (isTargetedByOthers) {
+      dupPenalty = 0.05;
+    }
 
-    v.autoTargetName = bestItemId ? ITEMS[bestItemId]?.name || null : null;
-  }
+    const score =
+      baseMultiplier *
+      Math.pow(jobMod, 2) *
+      statVal *
+      (1.0 + effectiveAgi * 0.01) *
+      efficiency *
+      targetPenalty *
+      dupPenalty;
+    if (score > maxScore) {
+      maxScore = score;
+      bestItemId = gather.itemId;
+    }
+  });
+
+  v.autoTargetName = bestItemId ? ITEMS[bestItemId]?.name || null : null;
 
   if (bestItemId) {
     const gatherIdx = area.gathers.findIndex((g) => g.itemId === bestItemId);

@@ -10,6 +10,8 @@ import {
   STAMINA_DRINK_THRESHOLD,
   BATTLE_POTION_HP_RATIO,
   RETREAT_HP_RATIO,
+  INN_COST_PER_HOUR,
+  POTION_REFUND_RATE,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import {
@@ -63,8 +65,8 @@ export function processVillagerActivities(
       v.currentHp = Math.min(v.maxHp, v.currentHp + hpRecovery);
       v.stamina = Math.min(maxStamina, v.stamina + staminaRecovery);
 
-      // 宿代請求: 1時間あたり 1 + innLvl G を村人からプレイヤーへ
-      const innCost = 1 + innLvl;
+      // 宿代請求: 固定額
+      const innCost = INN_COST_PER_HOUR;
       v.gold -= innCost; // 不足時はツケ払い（マイナス）
       currentGold += innCost;
       if (innCost > 0) {
@@ -113,25 +115,43 @@ export function processVillagerActivities(
       v.travelTimeLeft -= 1;
       if (v.travelTimeLeft <= 0) {
         v.destinationAreaId = null;
-        if (v.potionCount > 0) {
-          const returnId = v.potionItemId || "potion";
-          nextInventory[returnId] = (nextInventory[returnId] || 0) + v.potionCount;
-          const pName = ITEMS[returnId]?.name || "回復薬";
+        const unusedPotionCount = v.potionCount;
+        const unusedPotionId = v.potionItemId || "potion";
+        const unusedStaminaCount = v.staminaDrinkCount;
+        const unusedStaminaId = v.staminaDrinkItemId || "stamina_drink";
+
+        if (unusedPotionCount > 0) {
+          nextInventory[unusedPotionId] = (nextInventory[unusedPotionId] || 0) + unusedPotionCount;
+          const pName = ITEMS[unusedPotionId]?.name || "回復薬";
           logs.push({
-            message: `${v.name} が未使用の${pName} ${v.potionCount} 個を倉庫に返却しました。`,
+            message: `${v.name} が未使用の${pName} ${unusedPotionCount} 個を倉庫に返却しました。`,
             type: "info",
           });
           v.potionCount = 0;
         }
-        if (v.staminaDrinkCount > 0) {
-          const returnId = v.staminaDrinkItemId || "stamina_drink";
-          nextInventory[returnId] = (nextInventory[returnId] || 0) + v.staminaDrinkCount;
-          const sdName = ITEMS[returnId]?.name || "スタミナポーション";
+        if (unusedStaminaCount > 0) {
+          nextInventory[unusedStaminaId] =
+            (nextInventory[unusedStaminaId] || 0) + unusedStaminaCount;
+          const sdName = ITEMS[unusedStaminaId]?.name || "スタミナポーション";
           logs.push({
-            message: `${v.name} が未使用の${sdName} ${v.staminaDrinkCount} 個を倉庫に返却しました。`,
+            message: `${v.name} が未使用の${sdName} ${unusedStaminaCount} 個を倉庫に返却しました。`,
             type: "info",
           });
           v.staminaDrinkCount = 0;
+        }
+        // 未使用アイテムの半額返金
+        if (unusedPotionCount > 0 || unusedStaminaCount > 0) {
+          const potionPrice = ITEMS[unusedPotionId]?.basePrice || 10;
+          const staminaPrice = ITEMS[unusedStaminaId]?.basePrice || 10;
+          const refund =
+            Math.floor(unusedPotionCount * potionPrice * POTION_REFUND_RATE) +
+            Math.floor(unusedStaminaCount * staminaPrice * POTION_REFUND_RATE);
+          v.gold += refund;
+          currentGold -= refund;
+          logs.push({
+            message: `${v.name} に未使用アイテムの返金 ${refund} G を行いました。`,
+            type: "info",
+          });
         }
         // アップグレード予約がある場合は即座に作業開始
         const reservedFacility = Object.entries(facilities).find(
@@ -221,7 +241,6 @@ export function processVillagerActivities(
 
       const isAutoGatherCompleted =
         v.order === "gather" &&
-        !v.targetGatherItemId &&
         !area.gathers.some((g) => {
           const target = targetAmounts[g.itemId] || 0;
           return target > 0 && (nextInventory[g.itemId] || 0) < target;

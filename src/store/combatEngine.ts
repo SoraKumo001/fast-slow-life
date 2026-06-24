@@ -29,7 +29,7 @@ export function getFoodBuffBonus(
 
 export function applySalaryDebuff(value: number, isUnpaid: boolean): number {
   if (!isUnpaid) return value;
-  return Math.floor(value * 0.7);
+  return Math.floor(value * 0.8);
 }
 
 export const computeEffectiveAtk = (v: Villager, buffStr: number, buffInt: number): number => {

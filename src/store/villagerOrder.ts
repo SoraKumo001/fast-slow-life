@@ -14,22 +14,12 @@ export function setVillagerOrderHelper(params: {
   villagerId: string;
   order: OrderType;
   areaId: string | null;
-  targetGatherItemId?: string | null;
   targetMonsterId?: string | null;
   villagers: Villager[];
   inventory: Record<string, number>;
   gold: number;
 }): OrderChangeResult {
-  const {
-    villagerId,
-    order,
-    areaId,
-    targetGatherItemId = null,
-    targetMonsterId = null,
-    villagers,
-    inventory,
-    gold,
-  } = params;
+  const { villagerId, order, areaId, targetMonsterId = null, villagers, inventory, gold } = params;
 
   const nextInventory = { ...inventory };
   const logs: LogPayload[] = [];
@@ -47,12 +37,6 @@ export function setVillagerOrderHelper(params: {
     let nextStaminaDrinkItemId = v.staminaDrinkItemId || "stamina_drink";
 
     const sameArea = v.destinationAreaId === areaId;
-    const nextGatherTarget =
-      targetGatherItemId !== undefined
-        ? targetGatherItemId
-        : sameArea
-          ? v.targetGatherItemId
-          : null;
     const nextMonsterTarget =
       targetMonsterId !== undefined ? targetMonsterId : sameArea ? v.targetMonsterId : null;
 
@@ -170,7 +154,6 @@ export function setVillagerOrderHelper(params: {
       status,
       destinationAreaId: dest,
       travelTimeLeft: travelTime,
-      targetGatherItemId: nextGatherTarget,
       targetMonsterId: nextMonsterTarget,
       autoTargetName: null,
       potionItemId: nextPotionItemId,
@@ -184,11 +167,7 @@ export function setVillagerOrderHelper(params: {
   const targetVillager = villagers.find((v) => v.id === villagerId);
   if (targetVillager) {
     const areaName = DUNGEONS.find((d) => d.id === areaId)?.name || "村";
-    const targetName = targetGatherItemId
-      ? ITEMS[targetGatherItemId]?.name
-      : targetMonsterId
-        ? MONSTERS[targetMonsterId]?.name
-        : null;
+    const targetName = targetMonsterId ? MONSTERS[targetMonsterId]?.name : null;
     const targetStr = targetName ? `、個別指示: ${targetName}` : "";
     logs.push({
       message: `${targetVillager.name} の方針を【${order === "rest" ? "休息" : order === "gather" ? "採取" : "討伐"}】（場所: ${areaName}${targetStr}）に変更しました。`,

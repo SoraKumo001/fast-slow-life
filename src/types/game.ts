@@ -88,7 +88,6 @@ export interface VillagerStatusInfo {
   destinationAreaId: string | null;
   travelTimeLeft: number;
   assignedCraftJobId: string | null;
-  targetGatherItemId: string | null;
   targetMonsterId: string | null;
   autoTargetName?: string | null;
 }
@@ -296,7 +295,6 @@ export interface GameActions {
     id: string;
     order: OrderType;
     areaId: string | null;
-    targetGatherItemId?: string | null;
     targetMonsterId?: string | null;
   }) => void;
   changeVillagerJob: (id: string, job: JobType) => void;

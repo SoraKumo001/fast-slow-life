@@ -129,7 +129,7 @@ export function processTrainingQueue(
 // ---------- Auto training logic ----------
 
 const TRAINING_QUEUE_MAX_LENGTH = 3;
-const TRAINING_GOLD_THRESHOLD = 300;
+const TRAINING_GOLD_THRESHOLD = 150;
 
 function getBestTrainingProgram(
   villager: Villager,

@@ -41,7 +41,6 @@ export interface Villager {
   destinationAreaId: string | null;
   travelTimeLeft: number;
   assignedCraftJobId: string | null;
-  targetGatherItemId: string | null;
   targetMonsterId: string | null;
   autoTargetName: string | null;
 
@@ -107,7 +106,7 @@ export interface Villager {
 
 ### 基本ルール
 
-- **自動選択と個別指示**: デフォルトでは自動で最適な行動を選択。プレイヤーは特定の素材や魔物を直接指定可能。
+- **自動選択**: デフォルトでは自動で最適な行動を選択。
 - **即時指示変更**: 行動中でも指示変更可能。次のアクションから反映。
 - **ボス討伐の例外**: 初討伐のボスは自動行動のターゲットに選ばれない。
 

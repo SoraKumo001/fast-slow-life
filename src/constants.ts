@@ -16,7 +16,7 @@ export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
 
 export const STARTING_GOLD = 1500;
 export const STARTING_FOOD = 80;
-export const VILLAGER_STARTING_GOLD = 100;
+export const VILLAGER_STARTING_GOLD = 200;
 
 export const HIRE_COST = 80;
 export const BASE_MAX_VILLAGERS = 5;
@@ -30,6 +30,7 @@ export const BASE_HP_RECOVERY = 10;
 export const HP_RECOVERY_PER_INN_LEVEL = 5;
 export const BASE_STAMINA_RECOVERY = 15;
 export const STAMINA_RECOVERY_PER_INN_LEVEL = 5;
+export const INN_COST_PER_HOUR = 2;
 
 export const HUNT_MAX_TURNS = 10;
 export const BOSS_BATTLE_ROUNDS = 5;
@@ -37,13 +38,14 @@ export const BOSS_REGEN_PERCENT = 0.002;
 export const STARVATION_HP_LOSS_PERCENT = 0.004;
 export const STARVATION_EFFICIENCY_PENALTY = 0.5;
 export const ZERO_STAMINA_PENALTY = 0.3;
+export const POTION_REFUND_RATE = 0.5;
 export const WARRIOR_DAMAGE_BONUS = 1.3;
 export const MIN_DAMAGE = 10;
 export const MIN_BOSS_DAMAGE = 30;
 export const DEF_EFFECT_FACTOR = 100;
 
 export const BATTLE_POTION_HP_RATIO = 0.5;
-export const RETREAT_HP_RATIO = 0.3;
+export const RETREAT_HP_RATIO = 0.2;
 export const STAMINA_DRINK_THRESHOLD = 30;
 
 export const GATHER_STAT_WEIGHT_PRIMARY = 0.7;
@@ -104,7 +106,7 @@ export const UPGRADE_COST_GOLD_MULTIPLIER = 300;
 export const UPGRADE_COST_MATERIAL_INCREMENT = 5;
 
 // クラフト工賃
-export const CRAFT_WAGE_BASE = 2;
+export const CRAFT_WAGE_BASE = 4;
 export const CRAFT_WAGE_DEX_FACTOR = 0.1;
 export const CRAFT_WAGE_CRAFTER_MULTIPLIER = 1.2;
 export const CRAFT_EXP_PER_HOUR = 2;

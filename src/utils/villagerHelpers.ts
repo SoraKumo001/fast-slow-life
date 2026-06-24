@@ -49,7 +49,6 @@ export function createVillager(options: {
     destinationAreaId: null,
     travelTimeLeft: 0,
     assignedCraftJobId: null,
-    targetGatherItemId: null,
     targetMonsterId: null,
     autoTargetName: null,
     potionItemId: "potion",
@@ -95,9 +94,7 @@ export const getVillagerPurposeText = (
     const areaName = area?.name || "ダンジョン";
     let actionStr = "";
     if (v.order === "gather") {
-      const targetName = v.targetGatherItemId
-        ? ITEMS[v.targetGatherItemId]?.name
-        : v.autoTargetName;
+      const targetName = v.autoTargetName;
       actionStr = targetName ? `採取 [${targetName}]` : "採取";
     } else if (v.order === "hunt") {
       const targetName = v.targetMonsterId ? MONSTERS[v.targetMonsterId]?.name : v.autoTargetName;

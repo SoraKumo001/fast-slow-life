@@ -91,14 +91,14 @@ describe("combatEngine", () => {
       expect(applySalaryDebuff(-10, false)).toBe(-10);
     });
 
-    it("未支給の場合は70%に切り捨てて返すこと", () => {
-      expect(applySalaryDebuff(100, true)).toBe(70);
-      expect(applySalaryDebuff(10, true)).toBe(7);
+    it("未支給の場合は80%に切り捨てて返すこと", () => {
+      expect(applySalaryDebuff(100, true)).toBe(80);
+      expect(applySalaryDebuff(10, true)).toBe(8);
       expect(applySalaryDebuff(0, true)).toBe(0);
     });
 
-    it("未支給で負の値の場合も70%に切り捨てること", () => {
-      expect(applySalaryDebuff(-10, true)).toBe(-7);
+    it("未支給で負の値の場合も80%に切り捨てること", () => {
+      expect(applySalaryDebuff(-10, true)).toBe(-8);
     });
   });
 
@@ -268,7 +268,7 @@ describe("combatEngine", () => {
         isMagicUser: false,
         isSalaryUnpaid: true,
       });
-      // effectiveStr = floor(10*0.7) = 7
+      // effectiveStr = floor(10*0.8) = 8
       // baseDamage = 7*1.5 - 3 = 7.5 -> max(10, 7) = 10
       expect(damage).toBe(10);
     });
@@ -355,8 +355,8 @@ describe("combatEngine", () => {
         isSalaryUnpaid: true,
       });
       expect(unpaid).toBeGreaterThanOrEqual(normal);
-      // effectiveVit = 7, reduction=100/107, base=93.45 -> 93
-      expect(unpaid).toBe(93);
+      // effectiveVit = 8, reduction=100/108, base=92.59 -> 92
+      expect(unpaid).toBe(92);
     });
 
     it("minDamageを指定できること", () => {
@@ -430,12 +430,12 @@ describe("combatEngine", () => {
 
     it("給料未支給時は最大HPがデバフされて閾値が下がること", () => {
       const v = makeVillager({ currentHp: 30, potionCount: 1 });
-      // effectiveMaxHp = floor(100*0.7) = 70, threshold = 35
-      // currentHp=30 <= 35 -> use potion
+      // effectiveMaxHp = floor(100*0.8) = 80, threshold = 40
+      // currentHp=30 <= 40 -> use potion
       const result = useBattlePotion(v, true);
       expect(result.used).toBe(true);
-      // maxHP is capped at 70
-      expect(result.updated.currentHp).toBe(70);
+      // maxHP is capped at 80
+      expect(result.updated.currentHp).toBe(80);
     });
 
     it("食料buffのmaxHpが閾値計算に反映されること", () => {

@@ -26,7 +26,6 @@ interface VillagerRowProps {
     id: string;
     order: OrderType;
     areaId: string | null;
-    targetGatherItemId?: string | null;
     targetMonsterId?: string | null;
   }) => void;
   dungeons: DungeonArea[];

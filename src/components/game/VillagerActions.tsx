@@ -1,6 +1,5 @@
 import React from "react";
 
-import { ITEMS } from "../../data/masterData";
 import { DungeonArea, OrderType, Villager } from "../../types/game";
 
 interface VillagerActionsProps {
@@ -10,7 +9,6 @@ interface VillagerActionsProps {
     id: string;
     order: OrderType;
     areaId: string | null;
-    targetGatherItemId?: string | null;
     targetMonsterId?: string | null;
   }) => void;
 }
@@ -78,39 +76,6 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
               帰還させる
             </button>
           </div>
-
-          {v.order === "gather" && (
-            <div className="flex items-center justify-between gap-2 text-[10px]">
-              <span className="text-slate-400">個別採取ターゲット:</span>
-              <select
-                value={v.targetGatherItemId || ""}
-                onChange={(e) => {
-                  const val = e.target.value === "" ? null : e.target.value;
-                  onSetOrder({
-                    id: v.id,
-                    order: v.order,
-                    areaId: v.destinationAreaId,
-                    targetGatherItemId: val,
-                  });
-                }}
-                className="bg-slate-900 border border-slate-800 text-[10px] text-slate-200 rounded px-1.5 py-0.5 focus:outline-none focus:border-sky-500 font-mono w-28"
-              >
-                <option value="">自動選択 (AI)</option>
-                {dungeons
-                  .find((d) => d.id === v.destinationAreaId)
-                  ?.gathers.filter(
-                    (g) =>
-                      (dungeons.find((d) => d.id === v.destinationAreaId)?.explorationProgress ||
-                        0) >= (g.unlockedAtProgress || 0),
-                  )
-                  .map((g) => (
-                    <option key={g.itemId} value={g.itemId}>
-                      {ITEMS[g.itemId].name}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          )}
 
           {v.order === "hunt" && (
             <div className="flex items-center justify-between gap-2 text-[10px]">

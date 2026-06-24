@@ -560,7 +560,7 @@ describe("gameStore", () => {
       expect(state.gold).toBe(500);
     });
 
-    it("宿屋レベル2の場合、宿代として3Gが引き落とされること", () => {
+    it("宿屋の宿代が2G引き落とされること", () => {
       useGameStore.setState((s) => ({
         gold: 100,
         villagers: [
@@ -583,9 +583,9 @@ describe("gameStore", () => {
 
       const state = useGameStore.getState();
       const v = state.villagers[0];
-      // innCost = 1 + innLvl(2) = 3G
-      expect(v.gold).toBe(2);
-      expect(state.gold).toBe(103);
+      // innCost = INN_COST_PER_HOUR(2) = 2G
+      expect(v.gold).toBe(3);
+      expect(state.gold).toBe(102);
     });
 
     it("日付変更時に食料代が村人から引き落とされプレイヤーに支払われること", () => {

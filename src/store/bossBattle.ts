@@ -212,7 +212,6 @@ export function processBossBattle(
             travelTimeLeft: distance,
             order: "rest",
             targetMonsterId: null,
-            targetGatherItemId: null,
             autoTargetName: null,
           };
         }
@@ -272,7 +271,6 @@ export function processBossBattle(
             updatedV.status = "idle";
             updatedV.order = "gather";
             updatedV.targetMonsterId = null;
-            updatedV.targetGatherItemId = null;
             updatedV.autoTargetName = null;
             return updatedV;
           }

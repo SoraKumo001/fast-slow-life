@@ -91,6 +91,8 @@ export function dispatchIdleVillagersHelper(params: {
   }
 
   // 残りのidle村民 → ダンジョン派遣（既存ロジック）
+  // 同じエリアの同じ採取対象に複数人を派遣しないよう割り当てを追跡
+  const assignedGatherTargets = new Map<string, Set<string>>();
 
   updatedVillagers = updatedVillagers.map((v) => {
     if (v.status === "idle" && v.order !== "rest") {
@@ -150,9 +152,18 @@ export function dispatchIdleVillagersHelper(params: {
               ),
           );
           if (area) {
+            // 同じエリアの同じ採取対象には1人だけ派遣
+            const areaAssigned = assignedGatherTargets.get(area.id);
+            if (areaAssigned?.has(missingId)) {
+              continue;
+            }
             targetAreaId = area.id;
             targetOrder = "gather";
             resolvedAutoTargetName = ITEMS[missingId]?.name || null;
+            if (!assignedGatherTargets.has(area.id)) {
+              assignedGatherTargets.set(area.id, new Set());
+            }
+            assignedGatherTargets.get(area.id)!.add(missingId);
             break;
           }
 
@@ -198,9 +209,20 @@ export function dispatchIdleVillagersHelper(params: {
             const availableGathers = maxUnlockedDungeon.gathers
               .filter((g) => maxUnlockedDungeon.explorationProgress >= (g.unlockedAtProgress || 0))
               .sort((a, b) => b.difficulty - a.difficulty);
-            resolvedAutoTargetName = availableGathers[0]
-              ? ITEMS[availableGathers[0].itemId]?.name || null
+            // 既に割り当て済みの採取対象はスキップ
+            const areaAssigned = assignedGatherTargets.get(maxUnlockedDungeon.id);
+            const selectedGather = availableGathers.find(
+              (g) => !areaAssigned || !areaAssigned.has(g.itemId),
+            );
+            resolvedAutoTargetName = selectedGather
+              ? ITEMS[selectedGather.itemId]?.name || null
               : null;
+            if (selectedGather) {
+              if (!assignedGatherTargets.has(maxUnlockedDungeon.id)) {
+                assignedGatherTargets.set(maxUnlockedDungeon.id, new Set());
+              }
+              assignedGatherTargets.get(maxUnlockedDungeon.id)!.add(selectedGather.itemId);
+            }
           } else {
             const availableMonsters = maxUnlockedDungeon.monsters
               .filter(

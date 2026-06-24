@@ -1,5 +1,6 @@
 import React from "react";
 
+import { CRAFT_QUEUE_MAX_LENGTH } from "../../constants";
 import { ITEMS } from "../../data/masterData";
 import type { CraftJob } from "../../types/game";
 import { ProgressBar } from "../ui/ProgressBar";
@@ -14,7 +15,7 @@ export const CraftQueueDisplay: React.FC<CraftQueueDisplayProps> = ({ craftQueue
   return (
     <div className="space-y-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-900">
       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-        進行中のキュー ({craftQueue.length}/3)
+        進行中のキュー ({craftQueue.length}/{CRAFT_QUEUE_MAX_LENGTH})
       </p>
       {craftQueue.map((job) => (
         <div key={job.id} className="space-y-0.5">

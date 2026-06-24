@@ -4,6 +4,7 @@ import {
   MAX_VILLAGERS_ABSOLUTE,
   BASE_MAX_VILLAGERS,
   VILLAGERS_PER_GUILD_LEVEL,
+  CRAFT_QUEUE_MAX_LENGTH,
 } from "../../constants";
 import { ITEMS } from "../../data/masterData";
 import type { Facility, Villager } from "../../types/game";
@@ -62,7 +63,9 @@ export const FacilityCollapsedSummary: React.FC<FacilityCollapsedSummaryProps> =
         ) : fac.craftQueue.length > 0 ? (
           <>
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-            <span className="text-sky-400 font-bold">加工中 ({fac.craftQueue.length}/3)</span>
+            <span className="text-sky-400 font-bold">
+              加工中 ({fac.craftQueue.length}/{CRAFT_QUEUE_MAX_LENGTH})
+            </span>
             <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
               • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り {fac.craftQueue[0].timeLeft}h)
             </span>

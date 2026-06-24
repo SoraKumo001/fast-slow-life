@@ -17,6 +17,16 @@ import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
 import { SortSelect } from "../ui/SortSelect";
 
+// 調理(キッチン)レシピの材料として使われるアイテムID
+const KITCHEN_INGREDIENT_IDS = new Set<string>();
+for (const recipe of Object.values(RECIPES)) {
+  if (recipe.facilityId === "kitchen") {
+    for (const req of recipe.requiredItems) {
+      KITCHEN_INGREDIENT_IDS.add(req.itemId);
+    }
+  }
+}
+
 export const InventoryPanel: React.FC = () => {
   const { inventory, targetAmounts, tradeRules } = useInventory();
   const facilities = useFacilities();
@@ -38,7 +48,7 @@ export const InventoryPanel: React.FC = () => {
       return ["ore", "herb", "mana_stone", "material"].includes(item.category);
     }
     if (activeTab === "food") {
-      return item.category === "food";
+      return item.category === "food" || KITCHEN_INGREDIENT_IDS.has(item.id);
     }
     if (activeTab === "consumable") {
       return item.category === "consumable";

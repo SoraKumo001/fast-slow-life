@@ -63,7 +63,6 @@ export const createBossActions = (set: StoreSet, get: StoreGet) => ({
             travelTimeLeft: 0,
             order: "gather" as OrderType,
             targetMonsterId: null,
-            targetGatherItemId: null,
             autoTargetName: null,
           };
         }

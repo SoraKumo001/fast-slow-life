@@ -1,4 +1,4 @@
-import { BUILDING_COST_REDUCTION } from "../../constants";
+import { BUILDING_COST_REDUCTION, CRAFT_QUEUE_MAX_LENGTH } from "../../constants";
 import { ITEMS, getRecipeForItem, getTrainingProgram } from "../../data/masterData";
 import { FacilityType, Villager, StoreSet, StoreGet } from "../../types/game";
 import { calculateCraftTime, generateId } from "../../utils/craftHelpers";
@@ -18,6 +18,11 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
       facility.level < recipe.requiredFacilityLevel
     )
       return;
+
+    if (facility.craftQueue.length >= CRAFT_QUEUE_MAX_LENGTH) {
+      state.addLog("クラフトキューの上限に達しています。", "warning");
+      return;
+    }
 
     const missing = recipe.requiredItems.filter(
       (req) => (state.inventory[req.itemId] || 0) < req.count,
