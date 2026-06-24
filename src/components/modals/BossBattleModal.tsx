@@ -2,6 +2,7 @@ import { AlertCircle, Sword } from "lucide-react";
 import React, { useState } from "react";
 
 import { useVillagers, useDungeons, useBossActions } from "../../hooks";
+import { computeEffectiveAtk } from "../../store/combatEngine";
 import { DungeonArea, Villager } from "../../types/game";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
@@ -19,7 +20,11 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
   const [selectedAttackerIds, setSelectedAttackerIds] = useState<string[]>([]);
 
   const getSelectableVillagers = () => {
-    return villagers;
+    return [...villagers].sort((a, b) => {
+      const atkA = computeEffectiveAtk(a, 0, 0);
+      const atkB = computeEffectiveAtk(b, 0, 0);
+      return atkB - atkA;
+    });
   };
 
   const getStatusLabel = (v: Villager) => {
