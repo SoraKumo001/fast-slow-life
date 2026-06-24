@@ -232,8 +232,8 @@ describe("combatEngine", () => {
         efficiency: 1.0,
         isMagicUser: false,
       });
-      // weaponAtk=15, baseDamage = 15 + 15 - 3 = 27
-      expect(physical).toBe(27);
+      // weaponAtk=30, baseDamage = 15 + 30 - 3 = 42
+      expect(physical).toBe(42);
 
       const magical = calculatePlayerDamage({
         attacker: makeVillager({ int: 10, currentJob: "魔術師", weaponId: "wooden_staff" }),
@@ -242,9 +242,9 @@ describe("combatEngine", () => {
         efficiency: 1.0,
         isMagicUser: true,
       });
-      // weaponInt=5, defenderDef = 1 + 0.5 = 1.5
-      // baseDamage = 18 + 5 - 1.5 = 21.5 -> floor = 21
-      expect(magical).toBe(21);
+      // weaponInt=8, defenderDef = 1 + 0.5 = 1.5
+      // baseDamage = 18 + 8 - 1.5 = 24.5 -> floor = 24
+      expect(magical).toBe(24);
     });
 
     it("efficiencyが0.5の場合はダメージが半減すること", () => {
@@ -327,9 +327,9 @@ describe("combatEngine", () => {
       });
       expect(withArmor).toBeLessThan(noArmor);
       // noArmor: reduction=100/110, base=90.9 -> 90
-      // withArmor: defenderDef=25, reduction=100/125=0.8, base=80 -> 80
+      // withArmor: defenderDef=40, reduction=100/140=0.714, base=71.4 -> 71
       expect(noArmor).toBe(90);
-      expect(withArmor).toBe(80);
+      expect(withArmor).toBe(71);
     });
 
     it("クリティカル時はダメージが1.8倍になること", () => {
