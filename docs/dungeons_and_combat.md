@@ -122,8 +122,8 @@ $$\text{与ダメージ} = \max\left(2, (\text{INT} \times 1.8 + \text{武器知
 
 ### ⑤ 最小ダメージ
 
-- 通常戦闘: 2（`MIN_DAMAGE`）
-- ボス戦: 5（`MIN_BOSS_DAMAGE`）
+- 通常戦闘: 10（`MIN_DAMAGE`）
+- ボス戦: 30（`MIN_BOSS_DAMAGE`）
 
 ---
 

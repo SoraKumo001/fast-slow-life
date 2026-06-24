@@ -200,10 +200,10 @@ $$\text{1時間あたりの上昇量} = \frac{\text{DEX} \times 0.8 + 10}{\text{
 
 ### 必要経験値
 
-$$\text{次のレベルに必要なEXP} = \text{EXP\_NEEDED\_PER\_LEVEL(50)} \times \text{現在レベル}$$
+$$\text{次のレベルに必要なEXP} = \text{EXP\_NEEDED\_PER\_LEVEL(40)} \times \text{現在レベル}$$
 
 ### レベルアップ時の成長
 
-- 全ステータス: 基礎値に `STAT_GROWTH_PER_LEVEL(3)` を加算
-- 最大HP: `HP_GROWTH_PER_LEVEL(15)` を加算、HP全回復
-- 最大スタミナ: `STAMINA_GROWTH_PER_LEVEL(10)` を加算、スタミナ全回復
+- 全ステータス: 基礎値に `STAT_GROWTH_PER_LEVEL(5)` を加算
+- 最大HP: `HP_GROWTH_PER_LEVEL(20)` を加算、HP全回復
+- 最大スタミナ: `STAMINA_GROWTH_PER_LEVEL(15)` を加算、スタミナ全回復
