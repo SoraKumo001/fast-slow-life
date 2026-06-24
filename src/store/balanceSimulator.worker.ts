@@ -570,7 +570,7 @@ function runSimulationChunk(
       totalGoldFromImports: finalState.stats?.totalGoldSpentOnImports || 0,
       totalGoldFromPurchases: finalState.stats?.totalGoldFromPurchases || 0,
       totalGoldFromTax: finalState.stats?.totalGoldFromTax || 0,
-      townsFinal: finalState.towns.map((t) => `${t.name}:Lv${t.level}(${t.friendship})`).join(", "),
+      townsFinal: finalState.towns.map((t) => `${t.name}(投資Lv${t.investLevel})`).join(", "),
       unpaidVillagersCount: finalState.villagers.filter((v) => v.gold < 0).length,
       caravansActiveCount: finalState.caravans.filter((c) => c.status === "trading").length,
       totalDamageDealt: finalState.stats?.totalDamageDealt || 0,

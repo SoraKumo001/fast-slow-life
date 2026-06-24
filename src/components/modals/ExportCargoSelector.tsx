@@ -1,7 +1,7 @@
 import React from "react";
 
 import { ITEMS } from "../../data/masterData";
-import type { Item, MarketTrend, Town } from "../../types/game";
+import type { Item, Town } from "../../types/game";
 import { getCargoLimit } from "../../utils/tradeHelpers";
 import { CargoItemSelector } from "./CargoItemSelector";
 
@@ -9,7 +9,6 @@ interface ExportCargoSelectorProps {
   inventory: Record<string, number>;
   exportCargo: Record<string, number>;
   activeTown: Town;
-  marketTrend: MarketTrend | null;
   marketLvl: number;
   discountLvl: number;
   onAdd: (itemId: string) => void;
@@ -21,7 +20,6 @@ export const ExportCargoSelector: React.FC<ExportCargoSelectorProps> = ({
   inventory,
   exportCargo,
   activeTown,
-  marketTrend,
   marketLvl,
   discountLvl,
   onAdd,
@@ -45,8 +43,6 @@ export const ExportCargoSelector: React.FC<ExportCargoSelectorProps> = ({
         cargo={Object.entries(exportCargo).map(([itemId, count]) => ({ itemId, count }))}
         cargoLimit={getCargoLimit(activeTown)}
         activeTown={activeTown}
-        towns={[activeTown]}
-        marketTrend={marketTrend}
         marketLvl={marketLvl}
         discountLvl={discountLvl}
         onAdd={onAdd}

@@ -92,7 +92,6 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       isPaused: result.isPaused,
       towns: result.towns,
       caravans: result.caravans,
-      marketTrend: result.marketTrend,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       stats: result.stats,
       ...(result.gameOver && !state.gameOver

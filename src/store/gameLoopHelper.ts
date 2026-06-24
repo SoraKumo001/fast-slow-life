@@ -44,7 +44,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     soulUpgrades,
     towns,
     caravans,
-    marketTrend,
     isSalaryUnpaid,
     consecutiveNegativeGoldDays,
     stats,
@@ -75,27 +74,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     } else {
       consecutiveNegativeGoldDaysNext = 0;
     }
-
-    const unlockedTowns = towns.filter((t) => t.isUnlocked);
-
-    if (unlockedTowns.length > 0) {
-      const randomTown = unlockedTowns[Math.floor(Math.random() * unlockedTowns.length)];
-      if (randomTown.demands && randomTown.demands.length > 0) {
-        const demand = randomTown.demands[Math.floor(Math.random() * randomTown.demands.length)];
-        const multiplier = Math.round((2.0 + Math.random() * 1.5) * 10) / 10;
-        marketTrend = {
-          targetTownId: randomTown.id,
-          itemId: demand.itemId,
-          type: "demand",
-          multiplier,
-        };
-        const item = ITEMS[demand.itemId];
-        logsToAppend.push({
-          message: `【経済相場】本日、${randomTown.name}で ${item?.name || demand.itemId} の需要が急増中！ 輸出価格が ${multiplier}倍になります。`,
-          type: "info",
-        });
-      }
-    }
   }
 
   if (isBankrupt(consecutiveNegativeGoldDaysNext)) {
@@ -118,7 +96,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
-      marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       stats: nextStats,
@@ -145,7 +122,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
-      marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       stats: nextStats,
@@ -267,7 +243,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
-      marketTrend,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       stats: nextStats,
@@ -326,7 +301,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       cargo: [],
       goldCost: 0,
       goldEarned: 0,
-      friendshipEarned: 0,
     };
   });
 
@@ -343,7 +317,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     gold,
     caravans,
     towns,
-    marketTrend,
   });
   gold = tradeRes.gold;
   inventory = tradeRes.inventory;
@@ -378,7 +351,6 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     logsToAppend,
     towns,
     caravans,
-    marketTrend,
     isSalaryUnpaid: isSalaryUnpaidNext,
     consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
     stats: nextStats,

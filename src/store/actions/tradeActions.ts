@@ -39,26 +39,16 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       nextInventory[entry.itemId] = current - entry.count;
     }
 
-    // 売却額と友好度上昇の計算
+    // 売却額の計算
     let totalGoldEarned = 0;
-    let totalFriendshipEarned = 0;
 
     for (const entry of cargo) {
       const item = ITEMS[entry.itemId];
       if (!item) continue;
 
-      const isTrend =
-        state.marketTrend &&
-        state.marketTrend.targetTownId === townId &&
-        state.marketTrend.itemId === entry.itemId;
-
       const finalPrice =
-        calcExportPrice(item.basePrice, entry.itemId, town, marketLvl, state.marketTrend) *
-        entry.count;
+        calcExportPrice(item.basePrice, entry.itemId, town, marketLvl) * entry.count;
       totalGoldEarned += finalPrice;
-
-      // 友好度: 通常1個につき1点、トレンドは1個につき2点
-      totalFriendshipEarned += entry.count * (isTrend ? 2 : 1);
     }
 
     // 所要時間の計算 (投資レベルで最大50%短縮)
@@ -76,7 +66,6 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       cargo,
       goldCost: 0,
       goldEarned: totalGoldEarned,
-      friendshipEarned: totalFriendshipEarned,
     };
 
     set({
@@ -130,7 +119,6 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       cargo,
       goldCost,
       goldEarned: 0,
-      friendshipEarned: 0,
     };
 
     const nextGold = state.gold - goldCost;
@@ -185,7 +173,6 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       cargo: [],
       goldCost: 0,
       goldEarned: 0,
-      friendshipEarned: 0,
       isAuto: caravan.isAuto,
     };
 

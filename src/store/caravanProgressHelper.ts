@@ -1,5 +1,4 @@
 import { ITEMS } from "../data/masterData";
-import { getFriendshipLevel } from "../data/towns";
 import { Caravan, RunStats, Town } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 
@@ -42,7 +41,6 @@ export function processCaravanProgress(
           cargo: [],
           goldCost: 0,
           goldEarned: 0,
-          friendshipEarned: 0,
         } as Caravan;
       }
 
@@ -50,18 +48,8 @@ export function processCaravanProgress(
         currentGold += caravan.goldEarned;
         stats.totalGoldFromExports += caravan.goldEarned;
 
-        currentTowns = currentTowns.map((t) => {
-          if (t.id === destTown.id) {
-            const nextFriendship = Math.min(1000, t.friendship + caravan.friendshipEarned);
-            const nextLevel = getFriendshipLevel(nextFriendship);
-            return { ...t, friendship: nextFriendship, level: nextLevel };
-          }
-          return t;
-        });
-
-        const updatedTown = currentTowns.find((t) => t.id === destTown.id)!;
         logs.push({
-          message: `【交易帰還】${destTown.name} から交易馬車が帰還！ ${caravan.goldEarned} G を獲得、友好度 +${caravan.friendshipEarned}（現在の友好度Lv: ${updatedTown.level}）。`,
+          message: `【交易帰還】${destTown.name} から交易馬車が帰還！ ${caravan.goldEarned} G を獲得。`,
           type: "info",
         });
       } else if (caravan.type === "import") {

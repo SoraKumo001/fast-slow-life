@@ -7,7 +7,6 @@ import {
   ActiveBossState,
   Town,
   Caravan,
-  MarketTrend,
   RunStats,
 } from "../types/game";
 
@@ -34,7 +33,6 @@ export interface AdvanceHourResult {
   logsToAppend: LogPayload[];
   towns: Town[];
   caravans: Caravan[];
-  marketTrend: MarketTrend | null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   stats: RunStats;

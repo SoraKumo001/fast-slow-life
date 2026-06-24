@@ -928,7 +928,6 @@ describe("gameLoopHelper", () => {
         isPaused: false,
         towns: [],
         caravans: [],
-        marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 0,
       } as unknown as import("../types/game").GameState;
@@ -966,7 +965,6 @@ describe("gameLoopHelper", () => {
         isPaused: false,
         towns: [],
         caravans: [],
-        marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 2,
       } as unknown as import("../types/game").GameState;
@@ -1006,7 +1004,6 @@ describe("gameLoopHelper", () => {
         isPaused: false,
         towns: [],
         caravans: [],
-        marketTrend: null,
         isSalaryUnpaid: false,
         consecutiveNegativeGoldDays: 2,
       } as unknown as import("../types/game").GameState;

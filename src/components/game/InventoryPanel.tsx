@@ -22,7 +22,6 @@ export const InventoryPanel: React.FC = () => {
   const facilities = useFacilities();
   const { currentTier, dungeons } = useDungeons();
   const towns = useGameStore((s) => s.towns);
-  const marketTrend = useGameStore((s) => s.marketTrend);
   const marketLvl = facilities.market?.level || 0;
 
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
@@ -115,8 +114,7 @@ export const InventoryPanel: React.FC = () => {
           .map((item) => {
             const currentCount = Math.floor(inventory[item.id] || 0);
             const target = targetAmounts[item.id] || 0;
-            const exportInfo =
-              marketLvl > 0 ? getBestExportPrice(item.id, towns, marketLvl, marketTrend) : null;
+            const exportInfo = marketLvl > 0 ? getBestExportPrice(item.id, towns, marketLvl) : null;
             const rule = tradeRules?.find((r) => r.itemId === item.id && r.type === "sell");
 
             return (
@@ -152,11 +150,7 @@ export const InventoryPanel: React.FC = () => {
                       価格: <span className="text-amber-500 font-bold">{item.basePrice} G</span>
                       {exportInfo && exportInfo.price > 0 && (
                         <span className="text-orange-400 text-[9px] ml-1">
-                          (輸出:{" "}
-                          <span className={exportInfo.isTrend ? "text-yellow-400 font-bold" : ""}>
-                            {exportInfo.price}G
-                          </span>
-                          )
+                          (輸出: {exportInfo.price}G)
                         </span>
                       )}
                     </span>

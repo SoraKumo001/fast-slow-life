@@ -1,15 +1,17 @@
 import { ITEMS } from "../data/masterData";
-import { GameState, Caravan, Town } from "../types/game";
+import { Caravan, Town } from "../types/game";
 import { getMaxCaravans } from "../utils/marketHelpers";
 import { calcExportPrice } from "../utils/tradeHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
-export function processAutoTrade(
-  state: Pick<
-    GameState,
-    "facilities" | "tradeRules" | "inventory" | "gold" | "caravans" | "towns" | "marketTrend"
-  >,
-): {
+export function processAutoTrade(state: {
+  facilities: { market: { level: number } };
+  tradeRules: { isEnabled: boolean; type: string; itemId: string; threshold: number }[];
+  inventory: Record<string, number>;
+  gold: number;
+  caravans: Caravan[];
+  towns: Town[];
+}): {
   gold: number;
   inventory: Record<string, number>;
   caravans: Caravan[];
@@ -60,11 +62,10 @@ export function processAutoTrade(
     const unlockedTowns = state.towns.filter((t) => t.isUnlocked);
     if (unlockedTowns.length === 0) continue;
 
-    let bestTown: Town | null = null;
+    let bestTown: (typeof unlockedTowns)[0] | null = null;
     let bestTownEstimates: {
       cargo: { itemId: string; count: number }[];
       goldEarned: number;
-      friendshipEarned: number;
       totalTime: number;
     } | null = null;
 
@@ -80,7 +81,6 @@ export function processAutoTrade(
       let currentCargoCount = 0;
       const tempCargo: { itemId: string; count: number }[] = [];
       let totalGoldEarned = 0;
-      let totalFriendshipEarned = 0;
 
       for (const cand of sortedCandidates) {
         if (currentCargoCount >= cargoLimit) break;
@@ -88,18 +88,11 @@ export function processAutoTrade(
         const countToLoad = Math.min(cand.excess, cargoLimit - currentCargoCount);
         if (countToLoad <= 0) continue;
 
-        const isTrend =
-          state.marketTrend &&
-          state.marketTrend.targetTownId === town.id &&
-          state.marketTrend.itemId === cand.itemId;
-
         const finalPrice =
-          calcExportPrice(cand.basePrice, cand.itemId, town, marketLvl, state.marketTrend) *
-          countToLoad;
+          calcExportPrice(cand.basePrice, cand.itemId, town, marketLvl) * countToLoad;
 
         tempCargo.push({ itemId: cand.itemId, count: countToLoad });
         totalGoldEarned += finalPrice;
-        totalFriendshipEarned += Math.floor(countToLoad * (isTrend ? 2 : 1));
         currentCargoCount += countToLoad;
       }
 
@@ -109,13 +102,12 @@ export function processAutoTrade(
       const timeReduction = Math.min(0.5, (town.investLevel - 1) * 0.1);
       const totalTime = Math.max(1, Math.ceil(town.distance * (1 - timeReduction)));
 
-      // 友好関係を考慮して、最も見込み額が高くなる街を評価
+      // 最も見込み額が高くなる街を評価
       if (!bestTownEstimates || totalGoldEarned > bestTownEstimates.goldEarned) {
         bestTown = town;
         bestTownEstimates = {
           cargo: tempCargo,
           goldEarned: totalGoldEarned,
-          friendshipEarned: totalFriendshipEarned,
           totalTime,
         };
       }
@@ -138,7 +130,6 @@ export function processAutoTrade(
         cargo: bestTownEstimates.cargo,
         goldCost: 0,
         goldEarned: bestTownEstimates.goldEarned,
-        friendshipEarned: bestTownEstimates.friendshipEarned,
         isAuto: true,
       };
 

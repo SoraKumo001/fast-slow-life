@@ -254,11 +254,8 @@ export interface Town {
   id: string;
   name: string;
   distance: number; // 往復にかかる時間 (時間単位)
-  friendship: number; // 0 - 1000 などの友好度
-  level: number; // 友好度レベル 1 - 5
   description: string;
   specialties: string[]; // 特産品アイテムID
-  demands: { itemId: string; multiplier: number }[]; // 需要アイテム
   investCost: number; // 投資費用
   investLevel: number; // 投資レベル
   isUnlocked: boolean; // 解放されているか
@@ -274,15 +271,7 @@ export interface Caravan {
   cargo: { itemId: string; count: number }[]; // 輸出アイテムまたは購入したアイテム
   goldCost: number; // 輸入の際に支払ったゴールド
   goldEarned: number; // 輸出の際に得たゴールド
-  friendshipEarned: number; // 獲得した友好度
   isAuto: boolean; // 自動交易が有効か
-}
-
-export interface MarketTrend {
-  targetTownId: string;
-  itemId: string;
-  type: "demand" | "surplus";
-  multiplier: number;
 }
 
 export interface ActiveBossState {
@@ -380,7 +369,6 @@ export interface GameWorld {
   dungeons: DungeonArea[];
   towns: Town[];
   caravans: Caravan[];
-  marketTrend: MarketTrend | null;
   activeBoss: ActiveBossState | null;
 }
 

@@ -1,9 +1,9 @@
 import { Coins } from "lucide-react";
 import React from "react";
 
-import type { Item, MarketTrend, Town } from "../../types/game";
+import type { Item, Town } from "../../types/game";
 import { getEffectiveExportPrice } from "../../utils/economyHelpers";
-import { getImportPrice, getPriceWithTrend } from "../../utils/tradeHelpers";
+import { getImportPrice } from "../../utils/tradeHelpers";
 
 export interface CargoItemSelectorProps {
   type: "export" | "import";
@@ -13,8 +13,6 @@ export interface CargoItemSelectorProps {
   cargo: { itemId: string; count: number }[];
   cargoLimit: number;
   activeTown: Town;
-  towns: Town[];
-  marketTrend: MarketTrend | null;
   /** 輸出時の交易所レベル（価格計算に使用）。 */
   marketLvl: number;
   /** 輸入時の割引レベル（価格計算に使用）。 */
@@ -31,8 +29,6 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
   cargo,
   cargoLimit,
   activeTown,
-  towns,
-  marketTrend,
   marketLvl,
   discountLvl,
   onAdd,
@@ -58,15 +54,8 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
         const loaded = cargoMap[itemId] || 0;
         const availableCount = availableCounts?.[itemId];
 
-        const trendInfo = getPriceWithTrend(item.basePrice, type, itemId, towns, marketTrend);
-
         if (type === "export") {
-          const effectivePrice = getEffectiveExportPrice(
-            itemId,
-            activeTown,
-            marketLvl,
-            marketTrend,
-          );
+          const effectivePrice = getEffectiveExportPrice(itemId, activeTown, marketLvl);
 
           return (
             <div
@@ -74,24 +63,12 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
               className="bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-2"
             >
               <div className="min-w-0">
-                <p className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                  {item.name}
-                  {trendInfo.isAnyTrend && (
-                    <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1 py-0.2 rounded font-mono">
-                      特需!
-                    </span>
-                  )}
-                </p>
+                <p className="text-xs font-bold text-slate-200">{item.name}</p>
                 <p className="text-[10px] text-slate-500 font-mono mt-0.5">
                   倉庫: {availableCount ?? 0} / 積載: {loaded}
                 </p>
                 <p className="text-[10px] font-mono mt-0.5">
-                  <span className="text-amber-400 font-bold">{effectivePrice.price} G/個</span>
-                  {effectivePrice.isTrend && (
-                    <span className="text-yellow-500 text-[9px] ml-1">
-                      (×{effectivePrice.trendMultiplier})
-                    </span>
-                  )}
+                  <span className="text-amber-400 font-bold">{effectivePrice} G/個</span>
                 </p>
               </div>
               <div className="flex items-center gap-1 shrink-0 select-none">

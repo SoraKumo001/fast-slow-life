@@ -52,7 +52,6 @@ const migrations: Record<number, SaveMigration> = {
 
     // ── Top-level フィールドのデフォルト補完 ──
     data.tradeRules = data.tradeRules ?? [];
-    data.marketTrend = data.marketTrend ?? null;
     data.isSalaryUnpaid = data.isSalaryUnpaid ?? false;
     data.consecutiveNegativeGoldDays = data.consecutiveNegativeGoldDays ?? 0;
     data.gameOverReason = data.gameOverReason ?? "";
@@ -90,7 +89,6 @@ export const partialize = (
   tradeRules: state.tradeRules,
   towns: state.towns,
   caravans: state.caravans,
-  marketTrend: state.marketTrend,
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   stats: state.stats,

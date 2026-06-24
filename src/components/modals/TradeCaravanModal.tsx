@@ -1,8 +1,7 @@
-import { TrendingUp, Truck } from "lucide-react";
+import { Truck } from "lucide-react";
 import React, { useState } from "react";
 import { shallow } from "zustand/shallow";
 
-import { ITEMS } from "../../data/masterData";
 import { useGameStore } from "../../store/gameStore";
 import {
   calculateExportEstimates,
@@ -26,7 +25,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
   const inventory = useGameStore((s) => s.inventory);
   const towns = useGameStore((s) => s.towns);
   const caravans = useGameStore((s) => s.caravans);
-  const marketTrend = useGameStore((s) => s.marketTrend);
   const facilities = useGameStore((s) => s.facilities);
 
   const { sendExportCaravan, sendImportCaravan, collectCaravan, investInTown, toggleCaravanAuto } =
@@ -60,8 +58,8 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
   const discountLvl = soulUpgrades.discount || 0;
 
   const exportEstimates = activeTown
-    ? calculateExportEstimates(activeTown, exportCargo, marketLvl, marketTrend)
-    : { gold: 0, friendship: 0, count: 0 };
+    ? calculateExportEstimates(activeTown, exportCargo, marketLvl)
+    : { gold: 0, count: 0 };
   const importEstimates = activeTown
     ? calculateImportEstimates(activeTown, importCargo, discountLvl)
     : { gold: 0, count: 0 };
@@ -126,18 +124,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
         >
           交易先と投資
         </button>
-
-        {/* トレンドの表示 */}
-        {marketTrend && (
-          <div className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-amber-950/40 border border-amber-900/60 rounded-lg text-xs text-amber-300 font-medium">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>
-              トレンド：
-              {towns.find((t) => t.id === marketTrend.targetTownId)?.name}にて 「
-              {ITEMS[marketTrend.itemId]?.name}」が {marketTrend.multiplier}倍 で取引中！
-            </span>
-          </div>
-        )}
       </div>
 
       {activeTab === "caravans" && (
@@ -242,10 +228,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                       </div>
                       <div className="flex gap-3">
                         <span>
-                          友好度:{" "}
-                          <span className="font-semibold text-sky-400">Lv.{activeTown.level}</span>
-                        </span>
-                        <span>
                           積載上限:{" "}
                           <span className="font-semibold text-amber-400">
                             {getCargoLimit(activeTown)}
@@ -260,7 +242,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                           inventory={inventory}
                           exportCargo={exportCargo}
                           activeTown={activeTown}
-                          marketTrend={marketTrend}
                           marketLvl={marketLvl}
                           discountLvl={discountLvl}
                           onAdd={(itemId) =>
@@ -283,7 +264,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                         <ImportCargoSelector
                           importCargo={importCargo}
                           activeTown={activeTown}
-                          marketTrend={marketTrend}
                           marketLvl={marketLvl}
                           discountLvl={discountLvl}
                           onAdd={(itemId) =>
@@ -320,12 +300,6 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                               推定売上:{" "}
                               <span className="font-semibold text-amber-500">
                                 {exportEstimates.gold} G
-                              </span>
-                            </div>
-                            <div>
-                              獲得友好度:{" "}
-                              <span className="font-semibold text-sky-400">
-                                +{exportEstimates.friendship}
                               </span>
                             </div>
                           </div>

@@ -1,65 +1,36 @@
 import { ITEMS } from "../data/masterData";
-import type { CraftRecipe, MarketTrend, Town } from "../types/game";
+import type { CraftRecipe, Town } from "../types/game";
 import { getMarketSellBonus } from "./marketHelpers";
 
-export interface ExportPriceInfo {
-  price: number;
-  trendMultiplier: number;
-  marketBonus: number;
-  friendshipBonus: number;
-  isTrend: boolean;
-}
-
-export function getEffectiveExportPrice(
-  itemId: string,
-  town: Town,
-  marketLvl: number,
-  marketTrend: MarketTrend | null,
-): ExportPriceInfo {
+export function getEffectiveExportPrice(itemId: string, _town: Town, marketLvl: number): number {
+  // _town kept for API compatibility
   const item = ITEMS[itemId];
-  if (!item)
-    return { price: 0, trendMultiplier: 1, marketBonus: 0, friendshipBonus: 0, isTrend: false };
-
-  let basePrice = item.basePrice;
-  let trendMultiplier = 1;
-  const isTrend =
-    marketTrend?.targetTownId === town.id &&
-    marketTrend?.itemId === itemId &&
-    marketTrend?.type === "demand";
-
-  if (isTrend && marketTrend) {
-    trendMultiplier = marketTrend.multiplier;
-    basePrice = Math.floor(basePrice * trendMultiplier);
-  }
+  if (!item) return 0;
 
   const marketBonus = getMarketSellBonus(marketLvl);
-  const friendshipBonus = (town.level - 1) * 0.05;
-  const price = Math.floor(basePrice * (1 + marketBonus + friendshipBonus));
+  const price = Math.floor(item.basePrice * (1 + marketBonus));
 
-  return { price, trendMultiplier, marketBonus, friendshipBonus, isTrend };
+  return price;
 }
 
 export function getBestExportPrice(
   itemId: string,
   towns: Town[],
   marketLvl: number,
-  marketTrend: MarketTrend | null,
-): { price: number; townName: string; isTrend: boolean } {
+): { price: number; townName: string } {
   let bestPrice = 0;
   let bestTownName = "";
-  let bestIsTrend = false;
 
   for (const town of towns) {
     if (!town.isUnlocked) continue;
-    const info = getEffectiveExportPrice(itemId, town, marketLvl, marketTrend);
-    if (info.price > bestPrice) {
-      bestPrice = info.price;
+    const price = getEffectiveExportPrice(itemId, town, marketLvl);
+    if (price > bestPrice) {
+      bestPrice = price;
       bestTownName = town.name;
-      bestIsTrend = info.isTrend;
     }
   }
 
-  return { price: bestPrice, townName: bestTownName, isTrend: bestIsTrend };
+  return { price: bestPrice, townName: bestTownName };
 }
 
 export function getResourceFacilityGValue(

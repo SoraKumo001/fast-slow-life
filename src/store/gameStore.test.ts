@@ -281,12 +281,6 @@ describe("gameStore", () => {
             isEnabled: true,
           },
         ],
-        marketTrend: {
-          targetTownId: "komorebi",
-          itemId: "potion",
-          type: "demand",
-          multiplier: 1.2,
-        },
       }));
 
       // 最初の1時間経過で、馬車がコモレビの村へ自動派遣される
@@ -307,12 +301,10 @@ describe("gameStore", () => {
 
       state = useGameStore.getState();
       // 帰還時の自動回収により、ゴールドが増加していることを確認。
-      // コモレビの村では potion が需要アイテム（ multiplier 1.2倍 ）。
-      // potion basePrice 10G * 1.2倍 = 12G。
-      // 友好度レベル1（+0%）, 交易所レベル1（+10%）。
-      // 5個売却で、 floor(floor(12 * 1.1) * 5) = 65G 獲得。
-      // gold: 100 -> 165G.
-      expect(state.gold).toBe(165);
+      // potion basePrice 10G, 交易所レベル1（+10%）。
+      // 5個売却で、 floor(10 * 1.1) * 5 = 55G 獲得。
+      // gold: 100 -> 155G.
+      expect(state.gold).toBe(155);
       expect(state.caravans[0].status).toBe("idle");
 
       const tradeLog = state.logs.find((l) => l.message.includes("コモレビ村 から交易馬車が帰還"));
@@ -522,22 +514,15 @@ describe("gameStore", () => {
         towns: s.towns.map((t) =>
           t.id === "komorebi" ? { ...t, isUnlocked: true, level: 3, friendship: 300 } : t,
         ),
-        marketTrend: {
-          targetTownId: "komorebi",
-          itemId: "potion",
-          type: "demand",
-          multiplier: 1.5,
-        },
       }));
 
       const store = useGameStore.getState();
       store.sendExportCaravan("caravan_1", "komorebi", [{ itemId: "potion", count: 5 }]);
 
       const state = useGameStore.getState();
-      // potion basePrice=10, trend 1.5x → price=15
-      // marketBonus=0.1, friendshipBonus=(3-1)*0.05=0.1
-      // finalPrice = floor(floor(15 * 1.2) * 5) = floor(18 * 5) = 90
-      expect(state.caravans[0].goldEarned).toBe(90);
+      // potion basePrice=10, marketBonus=0.1
+      // finalPrice = floor(10 * 1.1) * 5 = 55
+      expect(state.caravans[0].goldEarned).toBe(55);
       expect(state.caravans[0].status).toBe("trading");
       expect(state.inventory.potion).toBe(5);
     });
@@ -647,8 +632,6 @@ describe("gameStore", () => {
 
       const state = useGameStore.getState();
       expect(state.currentDay).toBe(2);
-      expect(state.marketTrend).not.toBeNull();
-      expect(state.marketTrend?.type).toBe("demand");
     });
 
     it("交易所レベル2の場合、2台の馬車を同時派遣できること", () => {

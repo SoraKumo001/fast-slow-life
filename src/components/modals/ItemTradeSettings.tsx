@@ -1,7 +1,7 @@
 import { Target } from "lucide-react";
 import React, { useState } from "react";
 
-import type { Item, MarketTrend, Town, TradeRule } from "../../types/game";
+import type { Item, Town, TradeRule } from "../../types/game";
 import { getEffectiveExportPrice } from "../../utils/economyHelpers";
 import { getMarketSellBonus } from "../../utils/marketHelpers";
 import { Button } from "../ui/Button";
@@ -13,7 +13,6 @@ interface ItemTradeSettingsProps {
   tradeRules: TradeRule[];
   towns: Town[];
   marketLevel: number;
-  marketTrend: MarketTrend | null;
   onSetTargetAmount: (itemId: string, count: number) => void;
   onAddTradeRule: (itemId: string, type: "sell", threshold: number) => void;
   onDeleteTradeRule: (ruleId: string) => void;
@@ -28,7 +27,6 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
   tradeRules,
   towns,
   marketLevel,
-  marketTrend,
   onSetTargetAmount,
   onAddTradeRule,
   onDeleteTradeRule,
@@ -43,9 +41,7 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
 
   // コモレビの村を基準とした自動取引の見込み価格計算
   const marketBonus = getMarketSellBonus(marketLevel);
-  const komorebi = towns.find((t) => t.id === "komorebi");
-  const friendshipBonus = komorebi ? (komorebi.level - 1) * 0.05 : 0;
-  const autoSellPrice = Math.floor(item.basePrice * (1 + marketBonus + friendshipBonus));
+  const autoSellPrice = Math.floor(item.basePrice * (1 + marketBonus));
 
   return (
     <>
@@ -132,30 +128,18 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
               {towns
                 .filter((t) => t.isUnlocked)
                 .map((t) => {
-                  const info = getEffectiveExportPrice(item.id, t, marketLevel, marketTrend);
-                  if (info.price <= 0) return null;
-                  const bonusStr = [
-                    info.isTrend && `需要×${info.trendMultiplier}`,
-                    info.friendshipBonus > 0 && `友好+${Math.round(info.friendshipBonus * 100)}%`,
-                    info.marketBonus > 0 && `市場+${Math.round(info.marketBonus * 100)}%`,
-                  ]
-                    .filter(Boolean)
-                    .join(", ");
+                  const price = getEffectiveExportPrice(item.id, t, marketLevel);
+                  if (price <= 0) return null;
+                  const bonusStr = `市場+${Math.round(marketBonus * 100)}%`;
                   return (
                     <div
                       key={t.id}
-                      className={`flex justify-between text-[11px] font-mono py-0.5 px-1 rounded ${info.isTrend ? "bg-amber-950/20" : ""}`}
+                      className="flex justify-between text-[11px] font-mono py-0.5 px-1 rounded"
                     >
                       <span className="text-slate-400">{t.name}</span>
                       <span className="flex items-center gap-1.5">
-                        <span
-                          className={`font-bold ${info.isTrend ? "text-yellow-400" : "text-amber-400"}`}
-                        >
-                          {info.price} G
-                        </span>
-                        {bonusStr && (
-                          <span className="text-[9px] text-slate-500">({bonusStr})</span>
-                        )}
+                        <span className="font-bold text-amber-400">{price} G</span>
+                        <span className="text-[9px] text-slate-500">({bonusStr})</span>
                       </span>
                     </div>
                   );

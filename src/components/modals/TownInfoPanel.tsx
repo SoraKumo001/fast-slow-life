@@ -2,11 +2,10 @@ import { Shield } from "lucide-react";
 import React from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { getSpecialtyUnlockLevel, getTownUnlockTier } from "../../data/towns";
+import { getTownUnlockTier } from "../../data/towns";
 import type { Town } from "../../types/game";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
-import { ProgressBar } from "../ui/ProgressBar";
 
 interface TownInfoPanelProps {
   towns: Town[];
@@ -70,51 +69,20 @@ export const TownInfoPanel: React.FC<TownInfoPanelProps> = ({ towns, gold, onInv
 
             {town.isUnlocked ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-slate-900 select-none">
-                {/* 友好度ステータス */}
-                <div className="space-y-3">
-                  <div className="flex justify-between text-xs font-semibold">
-                    <span className="text-slate-400">町との友好関係</span>
-                    <span className="text-sky-400 font-bold">レベル {town.level}</span>
-                  </div>
-
-                  <div className="space-y-1">
-                    <ProgressBar value={town.friendship} max={1000} height={1.5} color="sky" />
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                      <span>現在: {town.friendship} pt</span>
-                      <span>MAX: 1000 pt</span>
-                    </div>
-                  </div>
-
-                  <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/30 p-2.5 rounded-lg border border-slate-850/50">
-                    ※友好レベルが上がると、仕入れショップに新しい品物が追加されます。
-                    また、友好度に応じて輸出時の買取価格にボーナスがつきます（現在:{" "}
-                    <span className="text-emerald-400">+{(town.level - 1) * 5}%</span>）。
-                  </p>
-                </div>
-
                 {/* 特産品と仕入れ可能リスト */}
                 <div className="space-y-3">
-                  <div className="text-xs font-semibold text-slate-400">
-                    友好度での仕入れ解放アイテム
-                  </div>
+                  <div className="text-xs font-semibold text-slate-400">仕入れ可能アイテム</div>
                   <div className="flex flex-wrap gap-2">
                     {town.specialties.map((itemId) => {
                       const item = ITEMS[itemId];
                       if (!item) return null;
 
-                      const unlockLvl = getSpecialtyUnlockLevel(town.id, itemId);
-                      const isReleased = town.level >= unlockLvl;
-
                       return (
                         <span
                           key={itemId}
-                          className={`text-[10px] font-medium px-2 py-1 rounded-md border font-sans ${
-                            isReleased
-                              ? "bg-slate-900 border-slate-800 text-slate-300"
-                              : "bg-slate-950/80 border-dashed border-slate-900 text-slate-600"
-                          }`}
+                          className="text-[10px] font-medium px-2 py-1 rounded-md border font-sans bg-slate-900 border-slate-800 text-slate-300"
                         >
-                          {item.name} {!isReleased && `(Lv.${unlockLvl}解放)`}
+                          {item.name}
                         </span>
                       );
                     })}

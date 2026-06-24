@@ -8,8 +8,6 @@ function makeTown(overrides: Partial<Town> = {}): Town {
     id: "komorebi",
     name: "コモレビ村",
     distance: 12,
-    friendship: 0,
-    level: 1,
     description: "",
     specialties: [],
     demands: [],
@@ -31,7 +29,6 @@ function makeCaravan(overrides: Partial<Caravan> = {}): Caravan {
     cargo: [],
     goldCost: 0,
     goldEarned: 0,
-    friendshipEarned: 0,
     isAuto: false,
     ...overrides,
   };
@@ -67,41 +64,21 @@ describe("caravanProgressHelper", () => {
       expect(result.caravans[0].status).toBe("trading");
     });
 
-    it("輸出馬車の帰還時にゴールドが増加し友好度が上昇すること", () => {
+    it("輸出馬車の帰還時にゴールドが増加すること", () => {
       const caravan = makeCaravan({
         status: "trading",
         type: "export",
         destinationTownId: "komorebi",
         timeLeft: 1,
         goldEarned: 60,
-        friendshipEarned: 5,
       });
-      const town = makeTown({ id: "komorebi", friendship: 50, level: 1 });
+      const town = makeTown({ id: "komorebi" });
       const stats = makeStats();
       const result = processCaravanProgress([caravan], [town], 100, {}, stats);
 
       expect(result.gold).toBe(160);
       expect(result.caravans[0].status).toBe("returned");
-      expect(result.towns[0].friendship).toBe(55);
-      expect(result.towns[0].level).toBe(1);
       expect(stats.totalGoldFromExports).toBe(60);
-    });
-
-    it("輸出馬車の帰還で友好度が閾値を超えてLvアップすること", () => {
-      // friendship 99 + 1 = 100 → Lv2
-      const caravan = makeCaravan({
-        status: "trading",
-        type: "export",
-        destinationTownId: "komorebi",
-        timeLeft: 1,
-        goldEarned: 60,
-        friendshipEarned: 1,
-      });
-      const town = makeTown({ id: "komorebi", friendship: 99, level: 1 });
-      const result = processCaravanProgress([caravan], [town], 100, {}, makeStats());
-
-      expect(result.towns[0].friendship).toBe(100);
-      expect(result.towns[0].level).toBe(2);
     });
 
     it("輸入馬車の帰還時に在庫が追加されること", () => {
@@ -121,21 +98,6 @@ describe("caravanProgressHelper", () => {
       expect(result.caravans[0].status).toBe("returned");
       expect(stats.totalGoldSpentOnImports).toBe(30);
       expect(result.gold).toBe(100);
-    });
-
-    it("友好度が最大1000を超えないこと", () => {
-      const caravan = makeCaravan({
-        status: "trading",
-        type: "export",
-        destinationTownId: "komorebi",
-        timeLeft: 1,
-        goldEarned: 60,
-        friendshipEarned: 100,
-      });
-      const town = makeTown({ id: "komorebi", friendship: 980, level: 5 });
-      const result = processCaravanProgress([caravan], [town], 100, {}, makeStats());
-
-      expect(result.towns[0].friendship).toBe(1000);
     });
 
     it("目的地の街が見つからない場合はreturnedにリセットされること", () => {
@@ -159,7 +121,6 @@ describe("caravanProgressHelper", () => {
         destinationTownId: "komorebi",
         timeLeft: 1,
         goldEarned: 60,
-        friendshipEarned: 5,
       });
       const town = makeTown({ id: "komorebi", name: "コモレビ村" });
       const result = processCaravanProgress([caravan], [town], 100, {}, makeStats());

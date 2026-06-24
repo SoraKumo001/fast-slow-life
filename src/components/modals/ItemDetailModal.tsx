@@ -26,7 +26,6 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
   const tradeRules = useGameStore((s) => s.tradeRules);
   const towns = useGameStore((s) => s.towns);
   const facilities = useGameStore((s) => s.facilities);
-  const marketTrend = useGameStore((s) => s.marketTrend);
 
   const { setTargetAmount, addTradeRule, deleteTradeRule, toggleTradeRule } = useGameStore(
     (s) => ({
@@ -64,7 +63,6 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
           tradeRules={tradeRules}
           towns={towns}
           marketLevel={marketLevel}
-          marketTrend={marketTrend}
           onSetTargetAmount={setTargetAmount}
           onAddTradeRule={addTradeRule}
           onDeleteTradeRule={deleteTradeRule}

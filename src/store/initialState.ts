@@ -7,7 +7,7 @@ import {
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
 import { DUNGEONS, ITEMS } from "../data/masterData";
-import { TOWNS_DATA, getFriendshipLevel } from "../data/towns";
+import { TOWNS_DATA } from "../data/towns";
 import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager, generateRandomName } from "../utils/villagerHelpers";
@@ -250,9 +250,6 @@ export function getInitialTowns(): import("../types/game").Town[] {
     distance: t.distance,
     description: t.description,
     specialties: t.specialties,
-    demands: t.demands,
-    friendship: 50,
-    level: getFriendshipLevel(50),
     investLevel: 1,
     investCost: 500,
     isUnlocked: t.unlockedAtTier === 1,
@@ -271,7 +268,6 @@ export function getInitialCaravans(): import("../types/game").Caravan[] {
       cargo: [],
       goldCost: 0,
       goldEarned: 0,
-      friendshipEarned: 0,
       isAuto: false,
     },
     {
@@ -284,7 +280,6 @@ export function getInitialCaravans(): import("../types/game").Caravan[] {
       cargo: [],
       goldCost: 0,
       goldEarned: 0,
-      friendshipEarned: 0,
       isAuto: false,
     },
     {
@@ -297,7 +292,6 @@ export function getInitialCaravans(): import("../types/game").Caravan[] {
       cargo: [],
       goldCost: 0,
       goldEarned: 0,
-      friendshipEarned: 0,
       isAuto: false,
     },
   ];
