@@ -107,6 +107,7 @@ export const UPGRADE_COST_MATERIAL_INCREMENT = 5;
 export const CRAFT_WAGE_BASE = 2;
 export const CRAFT_WAGE_DEX_FACTOR = 0.1;
 export const CRAFT_WAGE_CRAFTER_MULTIPLIER = 1.2;
+export const CRAFT_EXP_PER_HOUR = 2;
 
 export const CATEGORY_FOOD = "food";
 export const CATEGORY_ORE = "ore";

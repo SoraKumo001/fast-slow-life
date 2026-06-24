@@ -65,6 +65,7 @@ export function createVillager(options: {
     bonusMaxStamina: 0,
     activeFoodBuffId: null,
     gold: VILLAGER_STARTING_GOLD,
+    lastTrainingDay: 0,
     pool: {},
   };
 }

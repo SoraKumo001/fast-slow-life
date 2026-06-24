@@ -6,20 +6,24 @@ import {
   CRAFT_WAGE_BASE,
   CRAFT_WAGE_DEX_FACTOR,
   CRAFT_WAGE_CRAFTER_MULTIPLIER,
+  CRAFT_EXP_PER_HOUR,
+  EDUCATION_EXP_BONUS,
 } from "../constants";
 import { getUpgradeMaterialsForLevel } from "../data/facilityUpgradeMaterials";
 import { ITEMS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
 import { Villager, Facility, FacilityType, RunStats } from "../types/game";
 import { calculateCraftTime, generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
+import { tryLevelUp } from "./levelUpHelper";
 import { processTrainingQueue } from "./trainingLogic";
 
 export function processCraftingAndUpgrades(
   facilities: Record<FacilityType, Facility>,
   villagers: Villager[],
   inventory: Record<string, number>,
-  _soulUpgrades: Record<string, number>,
+  soulUpgrades: Record<string, number>,
   gold: number = 0,
+  currentDay: number = 1,
   stats?: RunStats,
 ) {
   const logs: LogPayload[] = [];
@@ -107,6 +111,36 @@ export function processCraftingAndUpgrades(
               type: "info",
             });
 
+            // クラフト経験値
+            const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
+            const expGained = Math.max(
+              1,
+              Math.floor((recipe?.requiredTime || 1) * CRAFT_EXP_PER_HOUR * eduBonus),
+            );
+            worker.exp += expGained;
+            logs.push({
+              message: `${worker.name} がクラフトで経験値 ${expGained} を獲得。`,
+              type: "craft",
+            });
+
+            const { leveled, updated: leveledV } = tryLevelUp(worker);
+            if (leveled) {
+              worker.level = leveledV.level;
+              worker.exp = leveledV.exp;
+              worker.str = leveledV.str;
+              worker.int = leveledV.int;
+              worker.dex = leveledV.dex;
+              worker.agi = leveledV.agi;
+              worker.vit = leveledV.vit;
+              worker.maxHp = leveledV.maxHp;
+              worker.maxStamina = leveledV.maxStamina;
+              worker.currentHp = leveledV.currentHp;
+              logs.push({
+                message: `${worker.name} が レベル ${worker.level} に上がりました！`,
+                type: "info",
+              });
+            }
+
             nextVillagers[idx] = {
               ...worker,
               status: "idle",
@@ -122,7 +156,7 @@ export function processCraftingAndUpgrades(
 
     // 訓練キュー処理（trainingLogic に委譲）
     if (fac.id === "training_ground" && fac.trainingQueue.length > 0) {
-      const trainRes = processTrainingQueue(fac, nextVillagers, currentGold);
+      const trainRes = processTrainingQueue(fac, nextVillagers, currentGold, currentDay);
       currentGold = trainRes.gold;
       logs.push(...trainRes.logs);
       // 村人の更新は trainRes.villagers を nextVillagers のインデックスで反映

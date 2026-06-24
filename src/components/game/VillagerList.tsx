@@ -5,7 +5,6 @@ import { useVillagers, useDungeons, useVillagerActions, useFacilities } from "..
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { useGameStore } from "../../store/gameStore";
 import { JobType, Villager } from "../../types/game";
-import { EquipmentModal } from "../modals/EquipmentModal";
 import { JobChangeModal } from "../modals/JobChangeModal";
 import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
@@ -19,7 +18,15 @@ type JobGroup = "all" | "production" | "combat";
 const getSalary = (v: Villager) =>
   v.currentJob === "無職" ? 0 : Math.floor((v.str + v.int + v.dex + v.agi + v.vit) * 0.1);
 
-type SortOption = "level-desc" | "level-asc" | "wage-desc" | "wage-asc" | "id-asc" | "id-desc";
+type SortOption =
+  | "added"
+  | "added-reverse"
+  | "level-desc"
+  | "level-asc"
+  | "wage-desc"
+  | "wage-asc"
+  | "id-asc"
+  | "id-desc";
 
 export const VillagerList: React.FC = () => {
   const dungeonsData = useDungeons();
@@ -27,14 +34,14 @@ export const VillagerList: React.FC = () => {
   const facilities = useFacilities();
   const { setVillagerOrder } = useVillagerActions();
   const [selectedVillager, setSelectedVillager] = useState<Villager | null>(null);
-  const [activeModal, setActiveModal] = useState<"job" | "equip" | null>(null);
+  const [activeModal, setActiveModal] = useState<"job" | null>(null);
   const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
 
   const payVillagerDebts = useGameStore((state) => state.payVillagerDebts);
   const gold = useGameStore((state) => state.gold);
 
   const [jobGroup, setJobGroup] = useState<JobGroup>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("id-asc");
+  const [sortBy, setSortBy] = useState<SortOption>("added");
 
   const totalDebts = useMemo(
     () => villagers.reduce((sum, v) => sum + (v.gold < 0 ? -v.gold : 0), 0),
@@ -50,26 +57,30 @@ export const VillagerList: React.FC = () => {
       result = result.filter((v) => COMBAT_JOBS.includes(v.currentJob));
     }
 
-    result.sort((a, b) => {
-      if (sortBy === "id-asc" || sortBy === "id-desc") {
-        const numA = parseInt(a.id.replace(/^v_?/, ""), 10);
-        const numB = parseInt(b.id.replace(/^v_?/, ""), 10);
+    if (sortBy === "added-reverse") {
+      result = [...result].reverse();
+    } else if (sortBy !== "added") {
+      result.sort((a, b) => {
+        if (sortBy === "id-asc" || sortBy === "id-desc") {
+          const numA = parseInt(a.id.replace(/^v_?/, ""), 10);
+          const numB = parseInt(b.id.replace(/^v_?/, ""), 10);
+          let cmp = 0;
+          if (!isNaN(numA) && !isNaN(numB)) cmp = numA - numB;
+          else if (!isNaN(numA)) cmp = -1;
+          else if (!isNaN(numB)) cmp = 1;
+          else cmp = a.id.localeCompare(b.id);
+          return sortBy === "id-asc" ? cmp : -cmp;
+        }
+        const [field, dir] = sortBy.split("-") as ["level" | "wage", "asc" | "desc"];
         let cmp = 0;
-        if (!isNaN(numA) && !isNaN(numB)) cmp = numA - numB;
-        else if (!isNaN(numA)) cmp = -1;
-        else if (!isNaN(numB)) cmp = 1;
-        else cmp = a.id.localeCompare(b.id);
-        return sortBy === "id-asc" ? cmp : -cmp;
-      }
-      const [field, dir] = sortBy.split("-") as ["level" | "wage", "asc" | "desc"];
-      let cmp = 0;
-      if (field === "level") {
-        cmp = a.level - b.level;
-      } else {
-        cmp = getSalary(a) - getSalary(b);
-      }
-      return dir === "asc" ? cmp : -cmp;
-    });
+        if (field === "level") {
+          cmp = a.level - b.level;
+        } else {
+          cmp = getSalary(a) - getSalary(b);
+        }
+        return dir === "asc" ? cmp : -cmp;
+      });
+    }
 
     return result;
   }, [villagers, jobGroup, sortBy]);
@@ -77,11 +88,6 @@ export const VillagerList: React.FC = () => {
   const openJobModal = (v: Villager) => {
     setSelectedVillager(v);
     setActiveModal("job");
-  };
-
-  const openEquipModal = (v: Villager) => {
-    setSelectedVillager(v);
-    setActiveModal("equip");
   };
 
   return (
@@ -93,8 +99,10 @@ export const VillagerList: React.FC = () => {
         value={sortBy}
         onChange={(val) => setSortBy(val as SortOption)}
         options={[
-          { value: "id-asc", label: "登録順 (昇順)" },
-          { value: "id-desc", label: "登録順 (降順)" },
+          { value: "added", label: "追加順" },
+          { value: "added-reverse", label: "追加順 (降順)" },
+          { value: "id-asc", label: "ID順" },
+          { value: "id-desc", label: "ID順 (降順)" },
           { value: "level-desc", label: "Lv順 (降順)" },
           { value: "level-asc", label: "Lv順 (昇順)" },
           { value: "wage-desc", label: "賃金順 (降順)" },
@@ -147,7 +155,6 @@ export const VillagerList: React.FC = () => {
               isExpanded={isExpandedFn(v.id)}
               onToggleExpand={toggleExpand}
               onOpenJobModal={openJobModal}
-              onOpenEquipModal={openEquipModal}
               onSetOrder={setVillagerOrder}
               dungeons={dungeonsData.dungeons}
               facilities={facilities}
@@ -158,16 +165,6 @@ export const VillagerList: React.FC = () => {
 
       {activeModal === "job" && selectedVillager && (
         <JobChangeModal
-          villager={selectedVillager}
-          onClose={() => {
-            setActiveModal(null);
-            setSelectedVillager(null);
-          }}
-        />
-      )}
-
-      {activeModal === "equip" && selectedVillager && (
-        <EquipmentModal
           villager={selectedVillager}
           onClose={() => {
             setActiveModal(null);

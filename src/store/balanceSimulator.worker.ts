@@ -412,14 +412,18 @@ function runSimulationChunk(
                 // 訓練後に即座に破産しないように最低限のゴールドを残す
                 v.gold - cheapestCost >= 50,
             );
+            // 高いレベルの訓練プログラムを優先するため降順ソート
+            const programsByLevel = [...availablePrograms].sort(
+              (a, b) => b.requiredFacilityLevel - a.requiredFacilityLevel,
+            );
             for (const v of idleForTraining) {
               if (trainingGround.trainingQueue.length >= 3) break;
               // 最も低い基本ステータスを伸ばす訓練を選択
               const baseStats = { str: v.str, int: v.int, dex: v.dex, agi: v.agi, vit: v.vit };
               const sortedStats = Object.entries(baseStats).sort(([, a], [, b]) => a - b);
-              let chosenProgram = availablePrograms[0];
+              let chosenProgram = programsByLevel[0];
               for (const [stat] of sortedStats) {
-                const prog = availablePrograms.find((p) => {
+                const prog = programsByLevel.find((p) => {
                   const bonus = p.statBonus[stat as keyof typeof p.statBonus];
                   return bonus !== undefined && bonus > 0 && v.gold >= p.goldCost;
                 });

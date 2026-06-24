@@ -61,6 +61,7 @@ export function processTrainingQueue(
   fac: Facility,
   villagers: Villager[],
   gold: number,
+  currentDay: number,
 ): { villagers: Villager[]; gold: number; logs: LogPayload[] } {
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
@@ -104,6 +105,7 @@ export function processTrainingQueue(
         const isGreatSuccess = Math.random() < successRate;
         const { updated, statParts } = applyTrainingBonus(v, program.statBonus, isGreatSuccess);
 
+        updated.lastTrainingDay = currentDay;
         updated.status = "idle";
         updated.assignedCraftJobId = null;
         nextVillagers[vIdx] = updated;
@@ -141,22 +143,29 @@ function getBestTrainingProgram(
     vit: villager.vit,
   };
 
+  // 最も低いステータスを特定
   const sorted = Object.entries(baseStats).sort(([, a], [, b]) => a - b);
 
+  // availablePrograms を必要施設Lv降順にソートし、最も高Lvのプログラムを優先
+  const sortedByLevel = [...availablePrograms].sort(
+    (a, b) => b.requiredFacilityLevel - a.requiredFacilityLevel,
+  );
+
   for (const [stat] of sorted) {
-    const program = availablePrograms.find((p) => {
+    const program = sortedByLevel.find((p) => {
       const bonus = p.statBonus[stat as keyof typeof p.statBonus];
       return bonus !== undefined && bonus > 0;
     });
     if (program) return program;
   }
 
-  return availablePrograms[0];
+  return sortedByLevel[0];
 }
 
 export function processAutoTraining(
   facilities: Record<FacilityType, Facility>,
   villagers: Villager[],
+  currentDay: number,
 ) {
   const logs: LogPayload[] = [];
   const nextFacilities = { ...facilities };
@@ -179,6 +188,7 @@ export function processAutoTraining(
     if (queue.length >= TRAINING_QUEUE_MAX_LENGTH) break;
     if (v.status !== "idle") continue;
     if (v.gold < TRAINING_GOLD_THRESHOLD) continue;
+    if (currentDay - (v.lastTrainingDay ?? 0) < 1) continue; // 同一村人は1日以上間隔を空ける
 
     const program = getBestTrainingProgram(v, availablePrograms);
     if (!program) continue;

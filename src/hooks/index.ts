@@ -83,9 +83,6 @@ export const useVillagerActions = () =>
     shallow,
   );
 
-export const useEquipmentActions = () =>
-  useGameStore((s) => ({ equipItem: s.equipItem, unequipItem: s.unequipItem }), shallow);
-
 export const useCraftActions = () =>
   useGameStore(
     (s) => ({

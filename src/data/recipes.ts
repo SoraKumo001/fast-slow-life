@@ -104,7 +104,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     id: "crystal_powder",
     resultItemId: "crystal_powder",
     facilityId: "workshop",
-    requiredFacilityLevel: 4,
+    requiredFacilityLevel: 3,
     requiredItems: [{ itemId: "crystal_fragment", count: 3 }],
     requiredTime: 8,
     outputCount: 1,
@@ -113,7 +113,7 @@ export const RECIPES: Record<string, CraftRecipe> = {
     id: "dark_ingot",
     resultItemId: "dark_ingot",
     facilityId: "workshop",
-    requiredFacilityLevel: 5,
+    requiredFacilityLevel: 4,
     requiredItems: [
       { itemId: "dark_crystal", count: 2 },
       { itemId: "silver_ingot", count: 1 },

@@ -190,6 +190,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     inventory,
     soulUpgrades,
     gold,
+    currentDay,
     nextStats,
   );
   facilities = craftRes.facilities;
@@ -275,7 +276,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   inventory = { ...inventory, ...autoRes.inventory };
   logsToAppend.push(...autoRes.logs);
 
-  const trainingRes = processAutoTraining(facilities, villagers);
+  const trainingRes = processAutoTraining(facilities, villagers, currentDay);
   facilities = trainingRes.facilities;
   villagers = trainingRes.villagers;
   logsToAppend.push(...trainingRes.logs);

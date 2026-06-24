@@ -122,6 +122,7 @@ export interface Villager
   name: string;
   activeFoodBuffId: string | null;
   gold: number;
+  lastTrainingDay: number;
   pool: Record<string, number>;
   isStarving?: boolean;
 }

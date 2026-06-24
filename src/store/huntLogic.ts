@@ -50,6 +50,20 @@ function selectHuntTarget(
     return { enemy: { ...targetedMonster }, enemyIdx: targetedMonsterIdx };
   }
 
+  // 現在の自動選択標的がまだ有効なら継続（進行度をリセットしないため）
+  if (v.autoTargetName) {
+    const currentIdx = area.monsters.findIndex(
+      (m) =>
+        m.name === v.autoTargetName &&
+        !m.isBoss &&
+        progress >= (m.unlockedAtProgress || 0) &&
+        !(m.respawnTimeLeft && m.respawnTimeLeft > 0),
+    );
+    if (currentIdx !== -1) {
+      return { enemy: { ...area.monsters[currentIdx] }, enemyIdx: currentIdx };
+    }
+  }
+
   // 自動選択: 通常モンスターから最適な標的を選ぶ
   const availableMonsters = area.monsters.filter(
     (m) =>
