@@ -7,6 +7,7 @@ import {
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
 import { DUNGEONS, ITEMS } from "../data/masterData";
+import { FACILITY_UPGRADE_MATERIALS } from "../data/facilityUpgradeMaterials";
 import { TOWNS_DATA } from "../data/towns";
 import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
@@ -104,7 +105,6 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     name: string;
     initialLevel: number;
     upgradeGold: number;
-    upgradeMaterials: { itemId: string; count: number }[];
   }[] = [
     // 初期Lv1
     {
@@ -112,34 +112,24 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       name: "宿屋",
       initialLevel: 1,
       upgradeGold: 200,
-      upgradeMaterials: [{ itemId: "wood", count: 10 }],
     },
     {
       id: "workshop",
       name: "加工工房",
       initialLevel: 1,
       upgradeGold: 300,
-      upgradeMaterials: [
-        { itemId: "wood", count: 15 },
-        { itemId: "stone", count: 10 },
-      ],
     },
     {
       id: "farm",
       name: "農場",
       initialLevel: 1,
       upgradeGold: 200,
-      upgradeMaterials: [{ itemId: "wood", count: 10 }],
     },
     {
       id: "kitchen",
       name: "調理場",
       initialLevel: 1,
       upgradeGold: 250,
-      upgradeMaterials: [
-        { itemId: "wood_plank", count: 5 },
-        { itemId: "stone", count: 10 },
-      ],
     },
     // 初期Lv0 (未建設)
     {
@@ -147,66 +137,48 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       name: "錬金工房",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [
-        { itemId: "wood_plank", count: 8 },
-        { itemId: "iron_ingot", count: 3 },
-      ],
     },
     {
       id: "market",
       name: "交易所",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [{ itemId: "wood", count: 5 }],
     },
     {
       id: "guild",
       name: "冒険者ギルド",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [
-        { itemId: "wood", count: 10 },
-        { itemId: "stone", count: 5 },
-      ],
     },
     {
       id: "weapon_shop",
       name: "武器屋",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [
-        { itemId: "wood_plank", count: 10 },
-        { itemId: "stone", count: 10 },
-      ],
     },
     {
       id: "lumberyard",
       name: "伐採所",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [{ itemId: "stone", count: 10 }],
     },
     {
       id: "quarry",
       name: "採石場",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [{ itemId: "wood", count: 10 }],
     },
     {
       id: "training_ground",
       name: "訓練場",
       initialLevel: 0,
       upgradeGold: 0,
-      upgradeMaterials: [
-        { itemId: "wood", count: 15 },
-        { itemId: "stone", count: 10 },
-      ],
     },
   ];
 
   const facilities = {} as Record<FacilityType, Facility>;
   for (const b of blueprints) {
+    const targetLevel = b.initialLevel + 1; // initialLevel=0→建設(Lv1), initialLevel=1→最初の強化(Lv2)
     facilities[b.id] = {
       id: b.id,
       name: b.name,
@@ -214,7 +186,10 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       maxLevel: MAX_LEVEL,
       upgradeTimeLeft: 0,
       upgradeTotalTime: 0,
-      upgradeCost: { gold: b.upgradeGold, materials: b.upgradeMaterials },
+      upgradeCost: {
+        gold: b.upgradeGold,
+        materials: FACILITY_UPGRADE_MATERIALS[b.id]?.[targetLevel] ?? [],
+      },
       craftQueue: [],
       trainingQueue: [],
       upgradeAssignedVillagerId: null,

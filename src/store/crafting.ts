@@ -2,12 +2,12 @@ import {
   BASE_GREAT_SUCCESS_RATE,
   CRAFT_QUEUE_MAX_LENGTH,
   UPGRADE_COST_GOLD_MULTIPLIER,
-  UPGRADE_COST_MATERIAL_INCREMENT,
   CRAFT_DEX_FACTOR,
   CRAFT_WAGE_BASE,
   CRAFT_WAGE_DEX_FACTOR,
   CRAFT_WAGE_CRAFTER_MULTIPLIER,
 } from "../constants";
+import { getUpgradeMaterialsForLevel } from "../data/facilityUpgradeMaterials";
 import { ITEMS, getRecipeForItem, getRecipesForFacility } from "../data/masterData";
 import { Villager, Facility, FacilityType, RunStats } from "../types/game";
 import { calculateCraftTime, generateId } from "../utils/craftHelpers";
@@ -55,10 +55,7 @@ export function processCraftingAndUpgrades(
 
         fac.upgradeCost = {
           gold: fac.level * UPGRADE_COST_GOLD_MULTIPLIER,
-          materials: fac.upgradeCost.materials.map((m) => ({
-            ...m,
-            count: m.count + UPGRADE_COST_MATERIAL_INCREMENT,
-          })),
+          materials: getUpgradeMaterialsForLevel(fac.id, fac.level + 1),
         };
       }
     }
