@@ -3,6 +3,7 @@ import React, { useState } from "react";
 
 import { SOUL_UPGRADES } from "../../data/masterData";
 import {
+  useBankruptcyWarning,
   useGameTime,
   usePlayerResources,
   useGameStatus,
@@ -25,6 +26,7 @@ export const Header: React.FC = () => {
   const { currentTier, bossDefeated } = useDungeons();
   const soulUpgrades = useSoulUpgrades();
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
+  const { consecutiveNegativeGoldDays } = useBankruptcyWarning();
   const logs = useLogs();
 
   const [showSoulShopModal, setShowSoulShopModal] = useState(false);
@@ -61,6 +63,11 @@ export const Header: React.FC = () => {
             <span className="text-amber-400 font-mono font-bold text-lg">
               {Math.floor(gold).toLocaleString()} G
             </span>
+            {gold < 0 && (
+              <span className="text-red-400 font-bold font-mono text-xs">
+                (破産まであと{3 - consecutiveNegativeGoldDays}日)
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
