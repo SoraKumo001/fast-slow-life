@@ -35,5 +35,6 @@ export interface AdvanceHourResult {
   caravans: Caravan[];
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
+  lastSchedulerTick: number;
   stats: RunStats;
 }

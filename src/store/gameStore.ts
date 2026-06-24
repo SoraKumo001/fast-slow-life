@@ -71,6 +71,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   caravans: getInitialCaravans(),
   isSalaryUnpaid: false,
   consecutiveNegativeGoldDays: 0,
+  lastSchedulerTick: -4,
   stats: getInitialStats(),
 
   ...createLogActions(set as StoreSet, get as StoreGet),

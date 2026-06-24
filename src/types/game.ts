@@ -380,6 +380,7 @@ export interface GameProgression {
   gameOver: boolean;
   gameOverReason: string;
   consecutiveNegativeGoldDays: number;
+  lastSchedulerTick: number;
 }
 
 export interface GameUI {

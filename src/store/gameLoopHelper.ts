@@ -11,9 +11,11 @@ import { getInitialStats } from "./initialState";
 import { processItemPoolPurchase } from "./poolPurchase";
 import { processResourceFacilities } from "./resourceFacilitiesHelper";
 import { processRespawns } from "./respawns";
+import { SCHEDULER_INTERVAL_HOURS } from "./schedulerConfig";
 import { processStarvation } from "./starvation";
 import { processAutoTraining } from "./trainingLogic";
 import { processVillagerActivities } from "./villagerAI";
+import { runVillagerScheduler } from "./villagerScheduler";
 
 export type { AdvanceHourResult, LogPayload } from "./gameLoopTypes";
 
@@ -46,6 +48,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     caravans,
     isSalaryUnpaid,
     consecutiveNegativeGoldDays,
+    lastSchedulerTick,
     stats,
   } = state;
 
@@ -98,6 +101,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      lastSchedulerTick,
       stats: nextStats,
     };
   }
@@ -124,6 +128,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      lastSchedulerTick,
       stats: nextStats,
     };
   }
@@ -246,8 +251,23 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+      lastSchedulerTick,
       stats: nextStats,
     };
+  }
+
+  // スケジューリング処理（一定間隔でターゲットを再割り当て）
+  const cumulativeTick = currentDay * 24 + currentHour;
+  if (cumulativeTick - lastSchedulerTick >= SCHEDULER_INTERVAL_HOURS) {
+    const schedRes = runVillagerScheduler({
+      villagers,
+      dungeons,
+      inventory,
+      targetAmounts,
+    });
+    villagers = schedRes.villagers;
+    logsToAppend.push(...schedRes.logs);
+    lastSchedulerTick = cumulativeTick;
   }
 
   const actRes = processVillagerActivities(
@@ -354,6 +374,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     caravans,
     isSalaryUnpaid: isSalaryUnpaidNext,
     consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
+    lastSchedulerTick,
     stats: nextStats,
   };
 }

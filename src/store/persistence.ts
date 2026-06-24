@@ -91,6 +91,7 @@ export const partialize = (
   caravans: state.caravans,
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
+  lastSchedulerTick: state.lastSchedulerTick,
   stats: state.stats,
   saveVersion: SAVE_VERSION,
 });

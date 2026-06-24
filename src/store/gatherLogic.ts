@@ -50,71 +50,80 @@ export function processVillagerGather(
   const effectiveInt = applySalaryDebuff(v.int + buffInt, v.gold < 0);
   const effectiveDex = applySalaryDebuff(v.dex + buffDex, v.gold < 0);
   const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, v.gold < 0);
-
   let maxScore = -1;
   const availableGathers = area.gathers.filter(
     (g) => progress >= (g.unlockedAtProgress || 0) && !(g.respawnTimeLeft && g.respawnTimeLeft > 0),
   );
 
-  availableGathers.forEach((gather) => {
-    const item = ITEMS[gather.itemId];
-    if (!item) return;
-    const baseMultiplier = 1.0 / gather.difficulty;
-
-    let jobMod = 1.0;
-    const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
-    if (jobAdapt) jobMod = jobAdapt;
-
-    let statVal = 0;
-    if (
-      item.category === CATEGORY_FOOD ||
-      item.category === CATEGORY_ORE ||
-      item.category === CATEGORY_MATERIAL
-    ) {
-      statVal =
-        effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
-    } else {
-      statVal =
-        effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
+  // スケジューラーで割り当て済みのターゲットが有効ならそれを優先
+  if (v.autoTargetName) {
+    const preAssigned = availableGathers.find((g) => ITEMS[g.itemId]?.name === v.autoTargetName);
+    if (preAssigned) {
+      bestItemId = preAssigned.itemId;
     }
+  }
 
-    const currentCount = nextInventory[gather.itemId] || 0;
-    const targetCount = targetAmounts[gather.itemId] || 0;
-    let targetPenalty = 1.0;
-    if (targetCount === 0) {
-      targetPenalty = AUTO_GATHER_TARGET_PENALTY;
-    } else if (currentCount >= targetCount) {
-      targetPenalty = AUTO_GATHER_EXCEED_PENALTY;
-    }
+  if (!bestItemId) {
+    availableGathers.forEach((gather) => {
+      const item = ITEMS[gather.itemId];
+      if (!item) return;
+      const baseMultiplier = 1.0 / gather.difficulty;
 
-    let dupPenalty = 1.0;
-    const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
-      if (idx === i) return false;
+      let jobMod = 1.0;
+      const jobAdapt = JOBS[v.currentJob]?.adaptability[item.category];
+      if (jobAdapt) jobMod = jobAdapt;
+
+      let statVal = 0;
       if (
-        (otherV.status !== "active" && otherV.status !== "traveling_to") ||
-        otherV.destinationAreaId !== v.destinationAreaId
-      )
-        return false;
-      const otherTarget = otherV.autoTargetName;
-      return otherTarget === gather.itemId || otherTarget === item.name;
-    });
-    if (isTargetedByOthers) {
-      dupPenalty = 0.05;
-    }
+        item.category === CATEGORY_FOOD ||
+        item.category === CATEGORY_ORE ||
+        item.category === CATEGORY_MATERIAL
+      ) {
+        statVal =
+          effectiveStr * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
+      } else {
+        statVal =
+          effectiveInt * GATHER_STAT_WEIGHT_PRIMARY + effectiveDex * GATHER_STAT_WEIGHT_SECONDARY;
+      }
 
-    const score =
-      baseMultiplier *
-      Math.pow(jobMod, 2) *
-      statVal *
-      (1.0 + effectiveAgi * 0.01) *
-      efficiency *
-      targetPenalty *
-      dupPenalty;
-    if (score > maxScore) {
-      maxScore = score;
-      bestItemId = gather.itemId;
-    }
-  });
+      const currentCount = nextInventory[gather.itemId] || 0;
+      const targetCount = targetAmounts[gather.itemId] || 0;
+      let targetPenalty = 1.0;
+      if (targetCount === 0) {
+        targetPenalty = AUTO_GATHER_TARGET_PENALTY;
+      } else if (currentCount >= targetCount) {
+        targetPenalty = AUTO_GATHER_EXCEED_PENALTY;
+      }
+
+      let dupPenalty = 1.0;
+      const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
+        if (idx === i) return false;
+        if (
+          (otherV.status !== "active" && otherV.status !== "traveling_to") ||
+          otherV.destinationAreaId !== v.destinationAreaId
+        )
+          return false;
+        const otherTarget = otherV.autoTargetName;
+        return otherTarget === gather.itemId || otherTarget === item.name;
+      });
+      if (isTargetedByOthers) {
+        dupPenalty = 0.05;
+      }
+
+      const score =
+        baseMultiplier *
+        Math.pow(jobMod, 2) *
+        statVal *
+        (1.0 + effectiveAgi * 0.01) *
+        efficiency *
+        targetPenalty *
+        dupPenalty;
+      if (score > maxScore) {
+        maxScore = score;
+        bestItemId = gather.itemId;
+      }
+    });
+  }
 
   v.autoTargetName = bestItemId ? ITEMS[bestItemId]?.name || null : null;
 
