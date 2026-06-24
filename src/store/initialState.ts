@@ -6,8 +6,8 @@ import {
   HARD_MONSTER_RESPAWN_HOURS,
   BOSS_MONSTER_RESPAWN_HOURS,
 } from "../constants";
-import { DUNGEONS, ITEMS } from "../data/masterData";
 import { FACILITY_UPGRADE_MATERIALS } from "../data/facilityUpgradeMaterials";
+import { DUNGEONS, ITEMS } from "../data/masterData";
 import { TOWNS_DATA } from "../data/towns";
 import type { RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
