@@ -1,16 +1,7 @@
 import { Hammer, Home, TreePine } from "lucide-react";
 import React from "react";
 
-import { BUILDING_COST_REDUCTION } from "../../constants";
-import {
-  useFacilities,
-  usePlayerResources,
-  useSoulUpgrades,
-  useVillagers,
-  useCraftActions,
-  useVillagerActions,
-  useInventory,
-} from "../../hooks";
+import { useFacilities, useCraftActions, useVillagerActions } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { FacilityType } from "../../types/game";
 import { Panel } from "../ui/Panel";
@@ -30,16 +21,9 @@ interface FacilityListProps {}
 
 export const FacilityList: React.FC<FacilityListProps> = () => {
   const facilities = useFacilities();
-  const { inventory, tradeRules } = useInventory();
-  const { gold } = usePlayerResources();
-  const soulUpgrades = useSoulUpgrades();
-  const villagers = useVillagers();
   const { startFacilityUpgrade } = useCraftActions();
   const { hireVillager } = useVillagerActions();
   const { isExpanded: isExpandedFn, toggleExpand } = useExpandedState();
-
-  const buildLvl = soulUpgrades.building || 0;
-  const costReduction = 1 - buildLvl * BUILDING_COST_REDUCTION;
 
   return (
     <Panel title="村の施設・クラフト" icon={<Home className="w-5 h-5 text-sky-400" />}>
@@ -57,11 +41,6 @@ export const FacilityList: React.FC<FacilityListProps> = () => {
                 <FacilityCard
                   key={fac.id}
                   fac={fac}
-                  inventory={inventory}
-                  gold={gold}
-                  villagers={villagers}
-                  tradeRules={tradeRules}
-                  costReduction={costReduction}
                   expanded={isExpandedFn(fac.id)}
                   onToggleExpand={toggleExpand}
                   onStartUpgrade={startFacilityUpgrade}

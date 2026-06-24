@@ -1,6 +1,7 @@
 import { ITEMS } from "../data/masterData";
 import { GameState, Caravan, Town } from "../types/game";
-import { getMarketSellBonus, getMaxCaravans } from "../utils/marketHelpers";
+import { getMaxCaravans } from "../utils/marketHelpers";
+import { calcExportPrice } from "../utils/tradeHelpers";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processAutoTrade(
@@ -26,7 +27,6 @@ export function processAutoTrade(
   }
 
   const maxCaravans = getMaxCaravans(marketLvl);
-  const marketBonus = getMarketSellBonus(marketLvl);
 
   // 1. 待機中（idle）の馬車をスロット枠内で探す
   for (let i = 0; i < maxCaravans; i++) {
@@ -88,20 +88,14 @@ export function processAutoTrade(
         const countToLoad = Math.min(cand.excess, cargoLimit - currentCargoCount);
         if (countToLoad <= 0) continue;
 
-        let price = cand.basePrice;
         const isTrend =
           state.marketTrend &&
           state.marketTrend.targetTownId === town.id &&
           state.marketTrend.itemId === cand.itemId;
 
-        if (isTrend && state.marketTrend?.type === "demand") {
-          price = Math.floor(price * state.marketTrend.multiplier);
-        }
-
-        const friendshipBonus = (town.level - 1) * 0.05;
-        const finalPrice = Math.floor(
-          Math.floor(price * (1 + marketBonus + friendshipBonus)) * countToLoad,
-        );
+        const finalPrice =
+          calcExportPrice(cand.basePrice, cand.itemId, town, marketLvl, state.marketTrend) *
+          countToLoad;
 
         tempCargo.push({ itemId: cand.itemId, count: countToLoad });
         totalGoldEarned += finalPrice;

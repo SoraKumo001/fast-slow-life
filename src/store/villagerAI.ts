@@ -42,7 +42,7 @@ export function processVillagerActivities(
 
   const logs: LogPayload[] = [];
   const nextVillagers = [...villagers];
-  const nextInventory = { ...inventory };
+  let nextInventory = { ...inventory };
   const nextDungeons = dungeons.map((d) => ({
     ...d,
     gathers: d.gathers.map((g) => ({ ...g })),
@@ -264,6 +264,7 @@ export function processVillagerActivities(
           stats,
         );
         currentGold = gatherResult.gold;
+        nextInventory = gatherResult.inventory;
         logs.push(...gatherResult.logs);
       } else if (v.order === "hunt") {
         const huntResult = processVillagerHunt(
@@ -280,6 +281,7 @@ export function processVillagerActivities(
           stats,
         );
         currentGold = huntResult.gold;
+        nextInventory = huntResult.inventory;
         logs.push(...huntResult.logs);
         if (v.currentHp <= 0) {
           v.status = "traveling_back";

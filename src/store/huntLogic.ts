@@ -12,10 +12,8 @@ import { Villager, DungeonArea, DungeonMonster } from "../types/game";
 import type { RunStats } from "../types/game";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
-  calculateHitRate,
-  calculateCritRate,
-  calculatePlayerDamage,
-  calculateEnemyDamage,
+  executePlayerAttack,
+  executeEnemyAttack,
   useBattlePotion,
   getFoodBuffBonus,
   applySalaryDebuff,
@@ -122,24 +120,23 @@ export function processVillagerHunt(
   i: number,
   area: DungeonArea,
   nextVillagers: Villager[],
-  nextInventory: Record<string, number>,
+  inventory: Record<string, number>,
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
   gold: number,
   _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
-): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
+): { logs: LogPayload[]; areaUpdated: boolean; gold: number; inventory: Record<string, number> } {
   const logs: LogPayload[] = [];
   let currentGold = gold;
+  let nextInventory = inventory;
 
   const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
-  const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
   const buffInt = getFoodBuffBonus(v.activeFoodBuffId || null, "int");
   const buffMaxHp = getFoodBuffBonus(v.activeFoodBuffId || null, "maxHp");
 
   const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, v.gold < 0);
-  const effectiveDex = applySalaryDebuff(v.dex + buffDex, v.gold < 0);
   const effectiveInt = applySalaryDebuff(v.int + buffInt, v.gold < 0);
   const effectiveMaxHp = applySalaryDebuff(v.maxHp + buffMaxHp, v.gold < 0);
 
@@ -205,38 +202,21 @@ export function processVillagerHunt(
         }
 
         if (!isHealed) {
-          const hitRate = calculateHitRate(effectiveDex, enemy.agi);
-          const isHit = Math.random() * 100 < hitRate;
+          const playerAttackResult = executePlayerAttack({
+            attacker: v,
+            defender: enemy,
+            efficiency,
+            isMagicUser,
+            isSalaryUnpaid: v.gold < 0,
+            stats,
+            logPrefix: `[Turn ${turn}] `,
+            attackerName: v.name,
+            defenderName: ` ${enemy.name} `,
+          });
 
-          if (stats) stats.totalAttacksAttempted += 1;
-
-          if (!isHit) {
-            logs.push({
-              message: `[Turn ${turn}] ${v.name} の攻撃！ しかし ${enemy.name} に回避された。`,
-              type: "combat",
-            });
-          } else {
-            if (stats) stats.totalAttacksLanded += 1;
-            const critRate = calculateCritRate(effectiveDex);
-            const isCritical = Math.random() * 100 < critRate;
-
-            const damage = calculatePlayerDamage({
-              attacker: v,
-              defender: enemy,
-              isCritical,
-              efficiency,
-              isMagicUser,
-              isSalaryUnpaid: v.gold < 0,
-            });
-
-            if (isCritical && stats) stats.totalCriticalHits += 1;
-            if (stats) stats.totalDamageDealt += damage;
-
-            enemyHp -= damage;
-            logs.push({
-              message: `[Turn ${turn}] ${v.name} の攻撃！ ${enemy.name} に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
-              type: "combat",
-            });
+          logs.push(playerAttackResult.log);
+          if (playerAttackResult.hit) {
+            enemyHp -= playerAttackResult.damage;
           }
 
           if (enemyHp <= 0) {
@@ -245,31 +225,20 @@ export function processVillagerHunt(
           }
         }
 
-        const enemyHitRate = calculateHitRate(enemy.dex, effectiveAgi);
-        const isEnemyHit = Math.random() * 100 < enemyHitRate;
+        const enemyAttackResult = executeEnemyAttack({
+          attacker: enemy,
+          defender: v,
+          isSalaryUnpaid: v.gold < 0,
+          stats,
+          logPrefix: `[Turn ${turn}] `,
+          attackerName: ` ${enemy.name} `,
+          defenderName: v.name,
+          attackLabel: "反撃",
+        });
 
-        if (!isEnemyHit) {
-          logs.push({
-            message: `[Turn ${turn}] ${enemy.name} の反撃！ しかし ${v.name} は回避した。`,
-            type: "combat",
-          });
-        } else {
-          const enemyCritRate = calculateCritRate(enemy.dex);
-          const isEnemyCrit = Math.random() * 100 < enemyCritRate;
-
-          const damageToVillager = calculateEnemyDamage({
-            attacker: enemy,
-            defender: v,
-            isCritical: isEnemyCrit,
-            isSalaryUnpaid: v.gold < 0,
-          });
-
-          v.currentHp = Math.max(0, v.currentHp - damageToVillager);
-          if (stats) stats.totalDamageReceived += damageToVillager;
-          logs.push({
-            message: `[Turn ${turn}] ${enemy.name} の反撃！ ${v.name} は ${damageToVillager} ダメージを受けた。${isEnemyCrit ? " (クリティカル！)" : ""}`,
-            type: "combat",
-          });
+        logs.push(enemyAttackResult.log);
+        if (enemyAttackResult.hit) {
+          v.currentHp = Math.max(0, v.currentHp - enemyAttackResult.damage);
         }
 
         if (v.currentHp <= 0) {
@@ -312,8 +281,7 @@ export function processVillagerHunt(
           if (Math.random() < drop.chance * hunterBonus) {
             const acqRes = processItemAcquisition(v, drop.itemId, 1, currentGold, nextInventory);
             currentGold = acqRes.playerGold;
-            Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
-            Object.assign(nextInventory, acqRes.inventory);
+            nextInventory = { ...acqRes.inventory };
             logs.push(...acqRes.logs);
           }
         });
@@ -338,5 +306,5 @@ export function processVillagerHunt(
     }
   }
 
-  return { logs, areaUpdated: true, gold: currentGold };
+  return { logs, areaUpdated: true, gold: currentGold, inventory: nextInventory };
 }

@@ -11,10 +11,8 @@ import { MONSTERS } from "../data/masterData";
 import { Villager, DungeonArea, ActiveBossState, RunStats } from "../types/game";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
-  calculateHitRate,
-  calculateCritRate,
-  calculatePlayerDamage,
-  calculateEnemyDamage,
+  executePlayerAttack,
+  executeEnemyAttack,
   useBattlePotion,
   getFoodBuffBonus,
   applySalaryDebuff,
@@ -79,9 +77,7 @@ export function processBossBattle(
           // 2. 攻撃処理
           const currentV = nextVillagers[i];
           const cvBuffInt = getFoodBuffBonus(currentV.activeFoodBuffId || null, "int");
-          const cvBuffDex = getFoodBuffBonus(currentV.activeFoodBuffId || null, "dex");
           const cvEffectiveInt = applySalaryDebuff(currentV.int + cvBuffInt, currentV.gold < 0);
-          const cvEffectiveDex = applySalaryDebuff(currentV.dex + cvBuffDex, currentV.gold < 0);
           let isHealed = false;
 
           if (currentV.currentJob === "僧侶") {
@@ -136,42 +132,29 @@ export function processBossBattle(
             continue;
           }
 
-          const hitRate = calculateHitRate(cvEffectiveDex, monster.agi);
-          const isHit = Math.random() * 100 < hitRate;
+          const isMagicUser = isMagicJob(currentV.currentJob);
+          const efficiency =
+            (currentV.isStarving ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
+            (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
 
-          if (stats) stats.totalAttacksAttempted += 1;
+          const playerAttackResult = executePlayerAttack({
+            attacker: currentV,
+            defender: monster,
+            efficiency,
+            isMagicUser,
+            isSalaryUnpaid: currentV.gold < 0,
+            stats,
+            logPrefix: "[ボス戦] ",
+            attackerName: currentV.name,
+            defenderName: `【${monster.name}】`,
+          });
 
-          if (!isHit) {
-            logs.push({
-              message: `[ボス戦] ${currentV.name} の攻撃！ しかし【${monster.name}】に回避された。`,
-              type: "combat",
-            });
-          } else {
-            if (stats) stats.totalAttacksLanded += 1;
-            const critRate = calculateCritRate(cvEffectiveDex);
-            const isCritical = Math.random() * 100 < critRate;
-            const isMagicUser = isMagicJob(currentV.currentJob);
-            const efficiency =
-              (currentV.isStarving ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
-              (currentV.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
-
-            const damage = calculatePlayerDamage({
-              attacker: currentV,
-              defender: monster,
-              isCritical,
-              efficiency,
-              isMagicUser,
-              isSalaryUnpaid: currentV.gold < 0,
-            });
-
-            if (isCritical && stats) stats.totalCriticalHits += 1;
-            if (stats) stats.totalDamageDealt += damage;
-
-            nextActiveBoss.currentHp = Math.max(0, nextActiveBoss.currentHp - damage);
-            logs.push({
-              message: `[ボス戦] ${currentV.name} の攻撃！【${monster.name}】に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
-              type: "combat",
-            });
+          logs.push(playerAttackResult.log);
+          if (playerAttackResult.hit) {
+            nextActiveBoss.currentHp = Math.max(
+              0,
+              nextActiveBoss.currentHp - playerAttackResult.damage,
+            );
           }
         }
 
@@ -191,35 +174,21 @@ export function processBossBattle(
 
           const villager = { ...nextVillagers[vIdx] };
 
-          const vBuffAgi = getFoodBuffBonus(villager.activeFoodBuffId || null, "agi");
-          const vEffectiveAgi = applySalaryDebuff(villager.agi + vBuffAgi, villager.gold < 0);
-          const enemyHitRate = calculateHitRate(monster.dex, vEffectiveAgi);
-          const isEnemyHit = Math.random() * 100 < enemyHitRate;
+          const enemyAttackResult = executeEnemyAttack({
+            attacker: monster,
+            defender: villager,
+            minDamage: MIN_BOSS_DAMAGE,
+            isSalaryUnpaid: villager.gold < 0,
+            stats,
+            logPrefix: "[ボス戦] ",
+            attackerName: `【${monster.name}】`,
+            defenderName: villager.name,
+          });
 
-          if (!isEnemyHit) {
-            logs.push({
-              message: `[ボス戦]【${monster.name}】の攻撃！ しかし ${villager.name} は回避した。`,
-              type: "combat",
-            });
-          } else {
-            const enemyCritRate = calculateCritRate(monster.dex);
-            const isEnemyCrit = Math.random() * 100 < enemyCritRate;
-
-            const damageToVillager = calculateEnemyDamage({
-              attacker: monster,
-              defender: villager,
-              isCritical: isEnemyCrit,
-              minDamage: MIN_BOSS_DAMAGE,
-              isSalaryUnpaid: villager.gold < 0,
-            });
-
-            villager.currentHp = Math.max(0, villager.currentHp - damageToVillager);
+          logs.push(enemyAttackResult.log);
+          if (enemyAttackResult.hit) {
+            villager.currentHp = Math.max(0, villager.currentHp - enemyAttackResult.damage);
             nextVillagers[vIdx] = villager;
-            if (stats) stats.totalDamageReceived += damageToVillager;
-            logs.push({
-              message: `[ボス戦]【${monster.name}】の攻撃！ ${villager.name} は ${damageToVillager} ダメージを受けた。${isEnemyCrit ? " (クリティカル！)" : ""}`,
-              type: "combat",
-            });
           }
         }
       }

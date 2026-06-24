@@ -130,3 +130,40 @@ export function getTownShopItems(townId: string, level: number): string[] {
 export function getInvestCost(level: number): number {
   return 500 * Math.pow(2, level - 1); // 500 -> 1000 -> 2000 -> 4000 -> 8000
 }
+
+/**
+ * 特産品アイテムが友好度ショップで解放されるレベルを返す。
+ * getTownShopItems の解放条件と一致する。
+ */
+export function getSpecialtyUnlockLevel(townId: string, itemId: string): number {
+  if (townId === "komorebi") {
+    if (itemId === "wood_plank") return 2;
+    if (itemId === "leather_cloak") return 3;
+    if (itemId === "ancient_bark") return 4;
+    if (itemId === "elixir") return 5;
+    return 1;
+  }
+  if (townId === "ironport") {
+    if (itemId === "iron_ingot") return 2;
+    if (itemId === "iron_sword" || itemId === "iron_armor") return 3;
+    if (itemId === "silver_ore" || itemId === "silver_ingot") return 4;
+    if (itemId === "silver_rapier" || itemId === "silver_chainmail") return 5;
+    return 1;
+  }
+  if (townId === "magica") {
+    if (itemId === "mana_stone" || itemId === "stamina_drink") return 2;
+    if (itemId === "potion" || itemId === "mid_potion") return 3;
+    if (itemId === "dark_crystal" || itemId === "wooden_staff") return 4;
+    if (itemId === "mythril_staff" || itemId === "mythril_robe") return 5;
+    return 1;
+  }
+  return 1;
+}
+
+/**
+ * 町が解放される開拓Tierを返す。
+ */
+export function getTownUnlockTier(townId: string): number {
+  const town = TOWNS_DATA.find((t) => t.id === townId);
+  return town?.unlockedAtTier ?? 1;
+}

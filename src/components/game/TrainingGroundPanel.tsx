@@ -2,14 +2,13 @@ import { Sword, Clock, Users } from "lucide-react";
 import React, { useState } from "react";
 
 import { getTrainingProgramsForFacility } from "../../data/masterData";
-import { useCraftActions } from "../../hooks";
-import { Facility, Villager } from "../../types/game";
+import { useCraftActions, useVillagers } from "../../hooks";
+import { Facility } from "../../types/game";
 import { ProgressBar } from "../ui/ProgressBar";
 import { Tooltip } from "../ui/Tooltip";
 
 interface TrainingGroundPanelProps {
   fac: Facility;
-  villagers: Villager[];
 }
 
 interface TrainingProgramInfo {
@@ -28,7 +27,8 @@ const StatBadge: React.FC<{ label: string; value: number }> = ({ label, value })
   </span>
 );
 
-export const TrainingGroundPanel: React.FC<TrainingGroundPanelProps> = ({ fac, villagers }) => {
+export const TrainingGroundPanel: React.FC<TrainingGroundPanelProps> = ({ fac }) => {
+  const villagers = useVillagers();
   const { startTraining } = useCraftActions();
   const [selectedVillagerId, setSelectedVillagerId] = useState<string>("");
   const programs = getTrainingProgramsForFacility(fac.level);

@@ -44,3 +44,5 @@ out/
 *.tsbuildinfo
 
 debug/
+.omo/
+  

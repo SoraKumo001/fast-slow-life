@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import React, { useEffect } from "react";
+import React, { useEffect, useId, useRef } from "react";
 
 export interface ModalProps {
   isOpen?: boolean;
@@ -20,6 +20,10 @@ export const Modal: React.FC<ModalProps> = ({
   showCloseButton = false,
   className = "",
 }) => {
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  const titleId = useId();
+
   // ESCキーで閉じる処理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,6 +41,60 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [isOpen, onClose]);
 
+  // フォーカストラップ処理
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // 現在フォーカスされている要素を保存
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const getFocusableElements = (): HTMLElement[] => {
+      const selector =
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+      return Array.from(modal.querySelectorAll<HTMLElement>(selector));
+    };
+
+    // モーダル内の最初のフォーカス可能要素にフォーカスを当てる
+    const focusableElements = getFocusableElements();
+    if (focusableElements.length > 0) {
+      focusableElements[0].focus();
+    } else {
+      modal.focus();
+    }
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleTabKey);
+
+    return () => {
+      document.removeEventListener("keydown", handleTabKey);
+      // フォーカスを元の要素に戻す
+      previouslyFocusedRef.current?.focus();
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const sizeStyles: Record<string, string> = {
@@ -53,6 +111,11 @@ export const Modal: React.FC<ModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 cursor-pointer"
     >
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={typeof title === "string" ? titleId : undefined}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className={`bg-slate-900 border border-slate-800 rounded-xl w-full p-6 cursor-default relative shadow-2xl ${sizeStyles[size]} ${className} transition-all duration-200`}
       >
@@ -68,7 +131,9 @@ export const Modal: React.FC<ModalProps> = ({
         {title && (
           <div className="border-b border-slate-850 pb-3 mb-4">
             {typeof title === "string" ? (
-              <h3 className="text-lg font-bold text-slate-100">{title}</h3>
+              <h3 id={titleId} className="text-lg font-bold text-slate-100">
+                {title}
+              </h3>
             ) : (
               title
             )}

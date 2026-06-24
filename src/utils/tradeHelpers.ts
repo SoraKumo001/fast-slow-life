@@ -21,6 +21,23 @@ export interface ExportEstimate {
 }
 
 /**
+ * 輸出価格（1個あたり）の計算。
+ * 市場売却ボーナス、友好度ボーナス、需要トレンド倍率を適用する。
+ */
+export function calcExportPrice(
+  basePrice: number,
+  itemId: string,
+  town: Town,
+  marketLvl: number,
+  marketTrend: MarketTrend | null,
+): number {
+  const priceWithTrend = getPriceWithTrend(basePrice, "export", itemId, [town], marketTrend);
+  const marketBonus = getMarketSellBonus(marketLvl);
+  const friendshipBonus = (town.level - 1) * 0.05;
+  return Math.floor(priceWithTrend.price * (1 + marketBonus + friendshipBonus));
+}
+
+/**
  * 輸出総額と友好度上昇量の推定
  */
 export function calculateExportEstimates(
@@ -33,22 +50,14 @@ export function calculateExportEstimates(
   let totalFriendship = 0;
   let totalCount = 0;
 
-  const marketBonus = getMarketSellBonus(marketLvl);
-
   Object.entries(exportCargo).forEach(([itemId, count]) => {
     const item = ITEMS[itemId];
     if (!item || count <= 0) return;
 
-    let price = item.basePrice;
     const isTrend =
       marketTrend && marketTrend.targetTownId === activeTown.id && marketTrend.itemId === itemId;
-
-    if (isTrend && marketTrend?.type === "demand") {
-      price = Math.floor(price * marketTrend.multiplier);
-    }
-
-    const friendshipBonus = (activeTown.level - 1) * 0.05;
-    const finalPrice = Math.floor(price * (1 + marketBonus + friendshipBonus)) * count;
+    const finalPrice =
+      calcExportPrice(item.basePrice, itemId, activeTown, marketLvl, marketTrend) * count;
 
     totalGold += finalPrice;
     totalFriendship += count * (isTrend ? 2 : 1);
@@ -89,4 +98,45 @@ export function calculateImportEstimates(
  */
 export function getCargoLimit(town: Town): number {
   return 15 + (town.investLevel - 1) * 10;
+}
+
+export interface PriceWithTrendInfo {
+  price: number;
+  isTrend: boolean;
+  isAnyTrend: boolean;
+  trendMultiplier: number;
+}
+
+/**
+ * トレンド倍率を考慮した価格計算。
+ * type が "export" の場合、指定した町群のいずれかに該当アイテムのトレンドが存在すれば倍率を適用する。
+ * - isAnyTrend: トレンド有無（需要/余剰問わず）。特需バッジ表示用。
+ * - isTrend: 需要トレンドのみ。価格倍率表示用。
+ * type が "import" の場合はトレンドは適用されない。
+ */
+export function getPriceWithTrend(
+  basePrice: number,
+  type: "export" | "import",
+  itemId: string,
+  towns: Town[],
+  marketTrend: MarketTrend | null,
+): PriceWithTrendInfo {
+  if (type === "import" || !marketTrend) {
+    return { price: basePrice, isTrend: false, isAnyTrend: false, trendMultiplier: 1 };
+  }
+
+  const isAnyTrend =
+    marketTrend.itemId === itemId && towns.some((t) => t.id === marketTrend.targetTownId);
+  const isTrend = isAnyTrend && marketTrend.type === "demand";
+
+  if (isTrend) {
+    return {
+      price: Math.floor(basePrice * marketTrend.multiplier),
+      isTrend: true,
+      isAnyTrend: true,
+      trendMultiplier: marketTrend.multiplier,
+    };
+  }
+
+  return { price: basePrice, isTrend: false, isAnyTrend, trendMultiplier: 1 };
 }

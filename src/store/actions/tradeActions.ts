@@ -1,7 +1,8 @@
 import { ITEMS } from "../../data/masterData";
 import { getInvestCost } from "../../data/towns";
 import { StoreGet, StoreSet } from "../../types/game";
-import { getMarketSellBonus, getMaxCaravans } from "../../utils/marketHelpers";
+import { getMaxCaravans } from "../../utils/marketHelpers";
+import { calcExportPrice } from "../../utils/tradeHelpers";
 
 export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
   sendExportCaravan: (
@@ -39,7 +40,6 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
     }
 
     // 売却額と友好度上昇の計算
-    const marketBonus = getMarketSellBonus(marketLvl);
     let totalGoldEarned = 0;
     let totalFriendshipEarned = 0;
 
@@ -47,18 +47,14 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
       const item = ITEMS[entry.itemId];
       if (!item) continue;
 
-      let price = item.basePrice;
       const isTrend =
         state.marketTrend &&
         state.marketTrend.targetTownId === townId &&
         state.marketTrend.itemId === entry.itemId;
 
-      if (isTrend && state.marketTrend?.type === "demand") {
-        price = Math.floor(price * state.marketTrend.multiplier);
-      }
-
-      const friendshipBonus = (town.level - 1) * 0.05;
-      const finalPrice = Math.floor(price * (1 + marketBonus + friendshipBonus)) * entry.count;
+      const finalPrice =
+        calcExportPrice(item.basePrice, entry.itemId, town, marketLvl, state.marketTrend) *
+        entry.count;
       totalGoldEarned += finalPrice;
 
       // 友好度: 通常1個につき1点、トレンドは1個につき2点

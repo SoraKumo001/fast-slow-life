@@ -358,7 +358,7 @@ describe("gameStore", () => {
         }),
       };
 
-      const nextInventory = { ...stateBefore.inventory, wheat: 0 };
+      let nextInventory = { ...stateBefore.inventory, wheat: 0 };
       const villagersCopy = [...stateBefore.villagers];
       const v = villagersCopy[0];
 
@@ -373,6 +373,7 @@ describe("gameStore", () => {
         {},
         10, // プレイヤーゴールド 10G
       );
+      nextInventory = res.inventory;
 
       expect(res.gold).toBe(-7); // プレイヤーゴールドは -7G に減少 (10 - 17 = -7)
       expect(v.gold).toBe(67); // 村人のゴールドは 50 + 17 = 67G に増加

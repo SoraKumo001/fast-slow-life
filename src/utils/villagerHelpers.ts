@@ -1,6 +1,6 @@
 import { VILLAGER_STARTING_GOLD } from "../constants";
-import { VILLAGER_NAMES } from "../data/masterData";
-import { Villager } from "../types/game";
+import { ITEMS, MONSTERS, VILLAGER_NAMES } from "../data/masterData";
+import { DungeonArea, Facility, FacilityType, Villager } from "../types/game";
 
 export function generateRandomName(existingNames: string[]): string {
   const available = VILLAGER_NAMES.filter((n) => !existingNames.includes(n));
@@ -72,3 +72,37 @@ export function createVillager(options: {
 export function isMagicJob(job: string): boolean {
   return ["魔術師", "僧侶", "薬師"].includes(job);
 }
+
+export const getVillagerPurposeText = (
+  v: Villager,
+  facilities: Record<FacilityType, Facility>,
+  dungeons: DungeonArea[],
+): string => {
+  if (v.status === "resting") return "宿屋で休息中";
+  if (v.assignedCraftJobId) {
+    let craftItemName = "";
+    Object.values(facilities).forEach((f) => {
+      const job = f.craftQueue.find((j) => j.id === v.assignedCraftJobId);
+      if (job) {
+        craftItemName = ITEMS[job.itemId]?.name || "";
+      }
+    });
+    return `クラフト中: ${craftItemName || "加工"}`;
+  }
+  if (v.destinationAreaId) {
+    const area = dungeons.find((d) => d.id === v.destinationAreaId);
+    const areaName = area?.name || "ダンジョン";
+    let actionStr = "";
+    if (v.order === "gather") {
+      const targetName = v.targetGatherItemId
+        ? ITEMS[v.targetGatherItemId]?.name
+        : v.autoTargetName;
+      actionStr = targetName ? `採取 [${targetName}]` : "採取";
+    } else if (v.order === "hunt") {
+      const targetName = v.targetMonsterId ? MONSTERS[v.targetMonsterId]?.name : v.autoTargetName;
+      actionStr = targetName ? `討伐 [${targetName}]` : "討伐";
+    }
+    return `${areaName} : ${actionStr}`;
+  }
+  return "待機中 (方針なし)";
+};

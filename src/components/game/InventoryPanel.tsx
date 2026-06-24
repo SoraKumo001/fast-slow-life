@@ -1,7 +1,7 @@
 import { ShoppingBag } from "lucide-react";
 import React, { useState } from "react";
 
-import { ITEMS, getRecipeForItem } from "../../data/masterData";
+import { ITEMS, RECIPES } from "../../data/masterData";
 import { useDungeons, useFacilities, useInventory } from "../../hooks";
 import { useGameStore } from "../../store/gameStore";
 import type { Item } from "../../types/game";
@@ -10,6 +10,7 @@ import {
   getCategoryBadgeColor,
   getCategoryLabel,
   getEquipmentBonusString,
+  isItemAvailable,
 } from "../../utils/itemHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 import { FilterTabs } from "../ui/FilterTabs";
@@ -71,47 +72,7 @@ export const InventoryPanel: React.FC = () => {
     return 0;
   };
 
-  // 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
-  const isItemAvailable = (item: Item, visited = new Set<string>()): boolean => {
-    if (visited.has(item.id)) return false;
-    visited.add(item.id);
-
-    if ((inventory[item.id] || 0) > 0) return true;
-
-    const isGatherable = dungeons.some((d) => {
-      if (d.unlockedAtTier > currentTier) return false;
-      return d.gathers.some((g) => {
-        if (g.itemId !== item.id) return false;
-        return d.explorationProgress >= (g.unlockedAtProgress || 0);
-      });
-    });
-    if (isGatherable) return true;
-
-    const isDroppable = dungeons.some((d) => {
-      if (d.unlockedAtTier > currentTier) return false;
-      return d.monsters.some((m) => {
-        const isMonsUnlocked = d.explorationProgress >= (m.unlockedAtProgress || 0);
-        if (!isMonsUnlocked) return false;
-        return m.drops.some((drop) => drop.itemId === item.id);
-      });
-    });
-    if (isDroppable) return true;
-
-    const recipe = getRecipeForItem(item.id);
-    if (recipe) {
-      const facilityLevel = facilities[recipe.facilityId]?.level || 0;
-      const isFacilityUnlocked = facilityLevel >= recipe.requiredFacilityLevel;
-      if (isFacilityUnlocked) {
-        return recipe.requiredItems.every((req) => {
-          const reqItem = ITEMS[req.itemId];
-          if (!reqItem) return false;
-          return isItemAvailable(reqItem, new Set(visited));
-        });
-      }
-    }
-
-    return false;
-  };
+  const recipes = Object.values(RECIPES);
 
   return (
     <Panel
@@ -146,7 +107,9 @@ export const InventoryPanel: React.FC = () => {
       {/* 倉庫一覧リスト */}
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {Object.values(ITEMS)
-          .filter((item) => isItemAvailable(item))
+          .filter((item) =>
+            isItemAvailable(item.id, dungeons, recipes, inventory, facilities, currentTier),
+          )
           .filter(filterItem)
           .sort(sortItems)
           .map((item) => {

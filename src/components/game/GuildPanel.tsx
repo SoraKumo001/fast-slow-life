@@ -6,23 +6,18 @@ import {
   VILLAGERS_PER_GUILD_LEVEL,
   HIRE_COST,
 } from "../../constants";
-import { Facility, Villager } from "../../types/game";
+import { usePlayerResources, useVillagers } from "../../hooks";
+import { Facility } from "../../types/game";
 
 interface GuildPanelProps {
   fac: Facility;
-  villagers: Villager[];
-  gold: number;
   isUnlocked: boolean;
   onHireVillager: () => void;
 }
 
-export const GuildPanel: React.FC<GuildPanelProps> = ({
-  fac,
-  villagers,
-  gold,
-  isUnlocked,
-  onHireVillager,
-}) => {
+export const GuildPanel: React.FC<GuildPanelProps> = ({ fac, isUnlocked, onHireVillager }) => {
+  const villagers = useVillagers();
+  const { gold } = usePlayerResources();
   const maxVillagers = Math.min(
     MAX_VILLAGERS_ABSOLUTE,
     BASE_MAX_VILLAGERS + fac.level * VILLAGERS_PER_GUILD_LEVEL,

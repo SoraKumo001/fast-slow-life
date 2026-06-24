@@ -9,7 +9,14 @@ import {
   DEF_EFFECT_FACTOR,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { Villager, VillagerBaseStats, VillagerEquipment, VillagerJobInfo } from "../types/game";
+import {
+  Villager,
+  VillagerBaseStats,
+  VillagerEquipment,
+  VillagerJobInfo,
+  RunStats,
+} from "../types/game";
+import { LogPayload } from "./gameLoopTypes";
 
 export function getFoodBuffBonus(
   buffId: string | null,
@@ -24,6 +31,27 @@ export function applySalaryDebuff(value: number, isUnpaid: boolean): number {
   if (!isUnpaid) return value;
   return Math.floor(value * 0.7);
 }
+
+export const computeEffectiveAtk = (v: Villager, buffStr: number, buffInt: number): number => {
+  const isSalaryUnpaid = v.gold < 0;
+  const weaponAtk = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0;
+  const weaponInt = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0;
+  const rawStr = v.str + buffStr;
+  const rawInt = v.int + buffInt;
+  const effectiveStr = applySalaryDebuff(rawStr, isSalaryUnpaid);
+  const effectiveInt = applySalaryDebuff(rawInt, isSalaryUnpaid);
+  const physical = Math.floor(effectiveStr * 1.5 + weaponAtk);
+  const magical = Math.floor(effectiveInt * 1.8 + weaponInt);
+  return Math.max(physical, magical);
+};
+
+export const computeEffectiveDef = (v: Villager, buffVit: number): number => {
+  const isSalaryUnpaid = v.gold < 0;
+  const armorDef = v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0;
+  const rawVit = v.vit + buffVit;
+  const effectiveVit = applySalaryDebuff(rawVit, isSalaryUnpaid);
+  return Math.floor(effectiveVit + armorDef);
+};
 
 export function calculateHitRate(attackerDex: number, defenderAgi: number): number {
   return Math.max(
@@ -137,5 +165,152 @@ export function useBattlePotion(
     },
     healed: healAmt,
     used: true,
+  };
+}
+
+export interface ExecutePlayerAttackParams {
+  attacker: Villager;
+  defender: { agi: number; def?: number; mdef?: number; vit?: number; int?: number };
+  efficiency: number;
+  isMagicUser: boolean;
+  isSalaryUnpaid?: boolean;
+  stats?: RunStats;
+  logPrefix: string;
+  attackerName: string;
+  defenderName: string;
+}
+
+export function executePlayerAttack(params: ExecutePlayerAttackParams): {
+  hit: boolean;
+  damage: number;
+  isCritical: boolean;
+  log: LogPayload;
+} {
+  const {
+    attacker,
+    defender,
+    efficiency,
+    isMagicUser,
+    isSalaryUnpaid = false,
+    stats,
+    logPrefix,
+    attackerName,
+    defenderName,
+  } = params;
+
+  const buffDex = getFoodBuffBonus(attacker.activeFoodBuffId || null, "dex");
+  const effectiveDex = applySalaryDebuff(attacker.dex + buffDex, isSalaryUnpaid);
+  const hitRate = calculateHitRate(effectiveDex, defender.agi);
+  const isHit = Math.random() * 100 < hitRate;
+
+  if (stats) stats.totalAttacksAttempted += 1;
+
+  if (!isHit) {
+    return {
+      hit: false,
+      damage: 0,
+      isCritical: false,
+      log: {
+        message: `${logPrefix}${attackerName} の攻撃！ しかし${defenderName}に回避された。`,
+        type: "combat",
+      },
+    };
+  }
+
+  if (stats) stats.totalAttacksLanded += 1;
+  const critRate = calculateCritRate(effectiveDex);
+  const isCritical = Math.random() * 100 < critRate;
+
+  const damage = calculatePlayerDamage({
+    attacker,
+    defender: defender as { def: number; mdef: number; vit: number; int: number; agi: number },
+    isCritical,
+    efficiency,
+    isMagicUser,
+    isSalaryUnpaid,
+  });
+
+  if (isCritical && stats) stats.totalCriticalHits += 1;
+  if (stats) stats.totalDamageDealt += damage;
+
+  return {
+    hit: true,
+    damage,
+    isCritical,
+    log: {
+      message: `${logPrefix}${attackerName} の攻撃！${defenderName}に ${damage} ダメージを与えた。${isCritical ? " (クリティカル！)" : ""}`,
+      type: "combat",
+    },
+  };
+}
+
+export interface ExecuteEnemyAttackParams {
+  attacker: { dex: number; atk: number };
+  defender: Villager;
+  minDamage?: number;
+  isSalaryUnpaid?: boolean;
+  stats?: RunStats;
+  logPrefix: string;
+  attackerName: string;
+  defenderName: string;
+  attackLabel?: string;
+}
+
+export function executeEnemyAttack(params: ExecuteEnemyAttackParams): {
+  hit: boolean;
+  damage: number;
+  isCritical: boolean;
+  log: LogPayload;
+} {
+  const {
+    attacker,
+    defender,
+    minDamage,
+    isSalaryUnpaid = false,
+    stats,
+    logPrefix,
+    attackerName,
+    defenderName,
+    attackLabel = "攻撃",
+  } = params;
+
+  const buffAgi = getFoodBuffBonus(defender.activeFoodBuffId || null, "agi");
+  const effectiveAgi = applySalaryDebuff(defender.agi + buffAgi, isSalaryUnpaid);
+  const hitRate = calculateHitRate(attacker.dex, effectiveAgi);
+  const isHit = Math.random() * 100 < hitRate;
+
+  if (!isHit) {
+    return {
+      hit: false,
+      damage: 0,
+      isCritical: false,
+      log: {
+        message: `${logPrefix}${attackerName}の${attackLabel}！ しかし ${defenderName} は回避した。`,
+        type: "combat",
+      },
+    };
+  }
+
+  const critRate = calculateCritRate(attacker.dex);
+  const isCritical = Math.random() * 100 < critRate;
+
+  const damage = calculateEnemyDamage({
+    attacker,
+    defender,
+    isCritical,
+    minDamage,
+    isSalaryUnpaid,
+  });
+
+  if (stats) stats.totalDamageReceived += damage;
+
+  return {
+    hit: true,
+    damage,
+    isCritical,
+    log: {
+      message: `${logPrefix}${attackerName}の${attackLabel}！ ${defenderName} は ${damage} ダメージを受けた。${isCritical ? " (クリティカル！)" : ""}`,
+      type: "combat",
+    },
   };
 }

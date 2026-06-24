@@ -1,20 +1,20 @@
-import { Truck, TrendingUp, Coins, Shield } from "lucide-react";
+import { TrendingUp, Truck } from "lucide-react";
 import React, { useState } from "react";
+import { shallow } from "zustand/shallow";
 
 import { ITEMS } from "../../data/masterData";
-import { getTownShopItems } from "../../data/towns";
 import { useGameStore } from "../../store/gameStore";
-import { getEffectiveExportPrice } from "../../utils/economyHelpers";
 import {
-  getImportPrice,
   calculateExportEstimates,
   calculateImportEstimates,
   getCargoLimit,
 } from "../../utils/tradeHelpers";
-import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { Modal } from "../ui/Modal";
-import { ProgressBar } from "../ui/ProgressBar";
+import { CaravanSlotList } from "./CaravanSlotList";
+import { ExportCargoSelector } from "./ExportCargoSelector";
+import { ImportCargoSelector } from "./ImportCargoSelector";
+import { TownInfoPanel } from "./TownInfoPanel";
 
 interface TradeCaravanModalProps {
   isOpen: boolean;
@@ -22,19 +22,24 @@ interface TradeCaravanModalProps {
 }
 
 export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, onClose }) => {
-  const state = useGameStore();
-  const {
-    gold,
-    inventory,
-    towns,
-    caravans,
-    marketTrend,
-    facilities,
-    sendExportCaravan,
-    sendImportCaravan,
-    collectCaravan,
-    investInTown,
-  } = state;
+  const gold = useGameStore((s) => s.gold);
+  const inventory = useGameStore((s) => s.inventory);
+  const towns = useGameStore((s) => s.towns);
+  const caravans = useGameStore((s) => s.caravans);
+  const marketTrend = useGameStore((s) => s.marketTrend);
+  const facilities = useGameStore((s) => s.facilities);
+
+  const { sendExportCaravan, sendImportCaravan, collectCaravan, investInTown, toggleCaravanAuto } =
+    useGameStore(
+      (s) => ({
+        sendExportCaravan: s.sendExportCaravan,
+        sendImportCaravan: s.sendImportCaravan,
+        collectCaravan: s.collectCaravan,
+        investInTown: s.investInTown,
+        toggleCaravanAuto: s.toggleCaravanAuto,
+      }),
+      shallow,
+    );
 
   const marketLvl = facilities.market?.level || 0;
   const maxCaravans = marketLvl === 1 ? 1 : marketLvl === 2 ? 2 : 3;
@@ -51,7 +56,8 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
 
   const activeTown = towns.find((t) => t.id === selectedTownId);
 
-  const discountLvl = state.soulUpgrades.discount || 0;
+  const soulUpgrades = useGameStore((s) => s.soulUpgrades);
+  const discountLvl = soulUpgrades.discount || 0;
 
   const exportEstimates = activeTown
     ? calculateExportEstimates(activeTown, exportCargo, marketLvl, marketTrend)
@@ -137,104 +143,14 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
       {activeTab === "caravans" && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-120 min-h-0 overflow-hidden font-sans">
           {/* 馬車リスト */}
-          <div className="lg:col-span-1 border border-slate-800 rounded-xl p-4 bg-slate-950/40 flex flex-col gap-4 overflow-y-auto">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              交易馬車スロット
-            </h3>
-            {caravans.slice(0, maxCaravans).map((caravan, index) => {
-              const townName = towns.find((t) => t.id === caravan.destinationTownId)?.name || "";
-              const isSelected = selectedCaravanId === caravan.id;
-
-              return (
-                <div
-                  key={caravan.id}
-                  onClick={() => caravan.status === "idle" && setSelectedCaravanId(caravan.id)}
-                  className={`border rounded-lg p-3 transition cursor-pointer ${
-                    caravan.status === "idle"
-                      ? isSelected
-                        ? "border-sky-500 bg-sky-950/20"
-                        : "border-slate-850 bg-slate-900/40 hover:border-slate-700"
-                      : "border-slate-900 bg-slate-950/20 cursor-default"
-                  }`}
-                >
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="text-xs font-bold text-slate-300">馬車 #{index + 1}</span>
-                    {caravan.status === "idle" && (
-                      <Badge variant="info" className="text-[10px]">
-                        待機中
-                      </Badge>
-                    )}
-                    {caravan.status === "trading" && (
-                      <Badge variant="warning" className="text-[10px] animate-pulse">
-                        交易中
-                      </Badge>
-                    )}
-                    {caravan.status === "returned" && (
-                      <Badge variant="success" className="text-[10px]">
-                        帰還
-                      </Badge>
-                    )}
-                  </div>
-
-                  {caravan.status === "trading" && (
-                    <div className="space-y-1 mt-2">
-                      <div className="flex justify-between text-[10px] text-slate-400 font-mono">
-                        <span>{townName} 往復中</span>
-                        <span>残り {caravan.timeLeft}時間</span>
-                      </div>
-                      <ProgressBar
-                        value={caravan.totalTime - caravan.timeLeft}
-                        max={caravan.totalTime}
-                        height={1}
-                        color="amber"
-                      />
-                    </div>
-                  )}
-
-                  {caravan.status === "returned" && (
-                    <div className="mt-3">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          collectCaravan(caravan.id);
-                        }}
-                        variant="success"
-                        size="sm"
-                        className="w-full text-xs"
-                      >
-                        報告を受け取る
-                      </Button>
-                    </div>
-                  )}
-
-                  {caravan.status === "idle" && (
-                    <div className="text-[10px] text-slate-500 mt-1 italic">
-                      クリックして派遣を指示
-                    </div>
-                  )}
-
-                  {/* 自動交易トグル */}
-                  <div className="mt-3 pt-2.5 border-t border-slate-900/60 flex items-center justify-between select-none">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      自動交易
-                    </span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={caravan.isAuto}
-                        onChange={(e) => {
-                          e.stopPropagation();
-                          state.toggleCaravanAuto(caravan.id);
-                        }}
-                        className="sr-only peer"
-                      />
-                      <div className="w-7 h-4 bg-slate-800 rounded-full peer peer-focus:ring-0 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-500 after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-sky-500 peer-checked:after:bg-white"></div>
-                    </label>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <CaravanSlotList
+            caravans={caravans.slice(0, maxCaravans)}
+            towns={towns}
+            selectedCaravanId={selectedCaravanId}
+            onSelectCaravan={setSelectedCaravanId}
+            onCollect={collectCaravan}
+            onToggleAuto={toggleCaravanAuto}
+          />
 
           {/* 派遣設定 */}
           <div className="lg:col-span-2 border border-slate-800 rounded-xl p-4 bg-slate-950/20 flex flex-col overflow-hidden">
@@ -340,158 +256,52 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
 
                     <div className="flex-1 overflow-y-auto pr-1">
                       {tradeMode === "export" ? (
-                        /* 輸出アイテムの選択 */
-                        <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            倉庫から積み込む（輸出可能なアイテム）
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {Object.entries(inventory)
-                              .filter(([_, count]) => count > 0)
-                              .map(([itemId, count]) => {
-                                const item = ITEMS[itemId];
-                                if (!item) return null;
-                                const loaded = exportCargo[itemId] || 0;
-                                const isTrend =
-                                  marketTrend &&
-                                  marketTrend.targetTownId === activeTown.id &&
-                                  marketTrend.itemId === itemId;
-                                const effectivePrice = getEffectiveExportPrice(
-                                  itemId,
-                                  activeTown,
-                                  marketLvl,
-                                  marketTrend,
-                                );
-
-                                return (
-                                  <div
-                                    key={itemId}
-                                    className="bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-2"
-                                  >
-                                    <div className="min-w-0">
-                                      <p className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
-                                        {item.name}
-                                        {isTrend && (
-                                          <span className="text-[9px] bg-amber-500/20 text-amber-400 px-1 py-0.2 rounded font-mono">
-                                            特需!
-                                          </span>
-                                        )}
-                                      </p>
-                                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                        倉庫: {count} / 積載: {loaded}
-                                      </p>
-                                      <p className="text-[10px] font-mono mt-0.5">
-                                        <span className="text-amber-400 font-bold">
-                                          {effectivePrice.price} G/個
-                                        </span>
-                                        {effectivePrice.isTrend && (
-                                          <span className="text-yellow-500 text-[9px] ml-1">
-                                            (×{effectivePrice.trendMultiplier})
-                                          </span>
-                                        )}
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0 select-none">
-                                      <button
-                                        onClick={() =>
-                                          setExportCargo((prev) => ({
-                                            ...prev,
-                                            [itemId]: Math.max(0, loaded - 1),
-                                          }))
-                                        }
-                                        className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
-                                      >
-                                        -
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          const totalLoaded = Object.values(exportCargo).reduce(
-                                            (a, b) => a + b,
-                                            0,
-                                          );
-                                          if (
-                                            totalLoaded < getCargoLimit(activeTown) &&
-                                            loaded < count
-                                          ) {
-                                            setExportCargo((prev) => ({
-                                              ...prev,
-                                              [itemId]: loaded + 1,
-                                            }));
-                                          }
-                                        }}
-                                        className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
-                                      >
-                                        +
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </div>
+                        <ExportCargoSelector
+                          inventory={inventory}
+                          exportCargo={exportCargo}
+                          activeTown={activeTown}
+                          marketTrend={marketTrend}
+                          marketLvl={marketLvl}
+                          discountLvl={discountLvl}
+                          onAdd={(itemId) =>
+                            setExportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: (prev[itemId] || 0) + 1,
+                            }))
+                          }
+                          onRemove={(itemId) =>
+                            setExportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: Math.max(0, (prev[itemId] || 0) - 1),
+                            }))
+                          }
+                          onSetQuantity={(itemId, count) =>
+                            setExportCargo((prev) => ({ ...prev, [itemId]: count }))
+                          }
+                        />
                       ) : (
-                        /* 輸入アイテムの選択 */
-                        <div className="space-y-3">
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-                            友好度ショップ（仕入れ商品）
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {getTownShopItems(activeTown.id, activeTown.level).map((itemId) => {
-                              const item = ITEMS[itemId];
-                              if (!item) return null;
-                              const loaded = importCargo[itemId] || 0;
-                              const buyPrice = getImportPrice(itemId, activeTown, discountLvl);
-
-                              return (
-                                <div
-                                  key={itemId}
-                                  className="bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-2"
-                                >
-                                  <div className="min-w-0">
-                                    <p className="text-xs font-bold text-slate-200">{item.name}</p>
-                                    <p className="text-[10px] text-amber-500 font-mono mt-0.5 flex items-center gap-0.5">
-                                      <Coins className="w-3 h-3" />
-                                      {buyPrice} G / 1個
-                                    </p>
-                                    <p className="text-[9px] text-slate-500 font-mono">
-                                      仕入れ注文数: {loaded}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-1 shrink-0 select-none">
-                                    <button
-                                      onClick={() =>
-                                        setImportCargo((prev) => ({
-                                          ...prev,
-                                          [itemId]: Math.max(0, loaded - 1),
-                                        }))
-                                      }
-                                      className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
-                                    >
-                                      -
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        const totalLoaded = Object.values(importCargo).reduce(
-                                          (a, b) => a + b,
-                                          0,
-                                        );
-                                        if (totalLoaded < getCargoLimit(activeTown)) {
-                                          setImportCargo((prev) => ({
-                                            ...prev,
-                                            [itemId]: loaded + 1,
-                                          }));
-                                        }
-                                      }}
-                                      className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
+                        <ImportCargoSelector
+                          importCargo={importCargo}
+                          activeTown={activeTown}
+                          marketTrend={marketTrend}
+                          marketLvl={marketLvl}
+                          discountLvl={discountLvl}
+                          onAdd={(itemId) =>
+                            setImportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: (prev[itemId] || 0) + 1,
+                            }))
+                          }
+                          onRemove={(itemId) =>
+                            setImportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: Math.max(0, (prev[itemId] || 0) - 1),
+                            }))
+                          }
+                          onSetQuantity={(itemId, count) =>
+                            setImportCargo((prev) => ({ ...prev, [itemId]: count }))
+                          }
+                        />
                       )}
                     </div>
 
@@ -576,149 +386,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
         </div>
       )}
 
-      {activeTab === "towns" && (
-        <div className="h-120 overflow-y-auto pr-1 space-y-6 font-sans">
-          {towns.map((town) => {
-            const isKomorebi = town.id === "komorebi";
-
-            return (
-              <div
-                key={town.id}
-                className={`border rounded-xl p-5 ${
-                  town.isUnlocked
-                    ? "bg-slate-950/40 border-slate-800"
-                    : "bg-slate-950/10 border-slate-900 opacity-60"
-                }`}
-              >
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4 select-none">
-                  <div>
-                    <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                      {town.name}
-                      {town.isUnlocked ? (
-                        <Badge variant="success" className="text-[10px]">
-                          往路: {town.distance}h
-                        </Badge>
-                      ) : (
-                        <Badge variant="default" className="text-[10px]">
-                          未発見
-                        </Badge>
-                      )}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 leading-relaxed max-w-xl">
-                      {town.description}
-                    </p>
-                  </div>
-
-                  {town.isUnlocked && (
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-right">
-                        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
-                          投資レベル {town.investLevel}
-                        </div>
-                        <div className="text-xs text-slate-300 font-mono mt-0.5">
-                          次コスト: {town.investCost} G
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => investInTown(town.id)}
-                        disabled={gold < town.investCost}
-                        variant="primary"
-                        size="sm"
-                      >
-                        投資する
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {town.isUnlocked ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-3 border-t border-slate-900 select-none">
-                    {/* 友好度ステータス */}
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-xs font-semibold">
-                        <span className="text-slate-400">町との友好関係</span>
-                        <span className="text-sky-400 font-bold">レベル {town.level}</span>
-                      </div>
-
-                      <div className="space-y-1">
-                        <ProgressBar value={town.friendship} max={1000} height={1.5} color="sky" />
-                        <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                          <span>現在: {town.friendship} pt</span>
-                          <span>MAX: 1000 pt</span>
-                        </div>
-                      </div>
-
-                      <p className="text-[10px] text-slate-400 leading-relaxed bg-slate-900/30 p-2.5 rounded-lg border border-slate-850/50">
-                        ※友好レベルが上がると、仕入れショップに新しい品物が追加されます。
-                        また、友好度に応じて輸出時の買取価格にボーナスがつきます（現在:{" "}
-                        <span className="text-emerald-400">+{(town.level - 1) * 5}%</span>）。
-                      </p>
-                    </div>
-
-                    {/* 特産品と仕入れ可能リスト */}
-                    <div className="space-y-3">
-                      <div className="text-xs font-semibold text-slate-400">
-                        友好度での仕入れ解放アイテム
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {town.specialties.map((itemId) => {
-                          const item = ITEMS[itemId];
-                          if (!item) return null;
-
-                          // 解放レベルを簡易推測
-                          let unlockLvl = 1;
-                          if (town.id === "komorebi") {
-                            if (itemId === "wood_plank") unlockLvl = 2;
-                            else if (itemId === "leather_cloak") unlockLvl = 3;
-                            else if (itemId === "ancient_bark") unlockLvl = 4;
-                            else if (itemId === "elixir") unlockLvl = 5;
-                          } else if (town.id === "ironport") {
-                            if (itemId === "iron_ingot") unlockLvl = 2;
-                            else if (["iron_sword", "iron_armor"].includes(itemId)) unlockLvl = 3;
-                            else if (["silver_ore", "silver_ingot"].includes(itemId)) unlockLvl = 4;
-                            else if (["silver_rapier", "silver_chainmail"].includes(itemId))
-                              unlockLvl = 5;
-                          } else if (town.id === "magica") {
-                            if (["mana_stone", "stamina_drink"].includes(itemId)) unlockLvl = 2;
-                            else if (["potion", "mid_potion"].includes(itemId)) unlockLvl = 3;
-                            else if (["dark_crystal", "wooden_staff"].includes(itemId))
-                              unlockLvl = 4;
-                            else if (["mythril_staff", "mythril_robe"].includes(itemId))
-                              unlockLvl = 5;
-                          }
-
-                          const isReleased = town.level >= unlockLvl;
-
-                          return (
-                            <span
-                              key={itemId}
-                              className={`text-[10px] font-medium px-2 py-1 rounded-md border font-sans ${
-                                isReleased
-                                  ? "bg-slate-900 border-slate-800 text-slate-300"
-                                  : "bg-slate-950/80 border-dashed border-slate-900 text-slate-600"
-                              }`}
-                            >
-                              {item.name} {!isReleased && `(Lv.${unlockLvl}解放)`}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-xs text-slate-500 font-medium py-3 border-t border-slate-900/60 select-none">
-                    <Shield className="w-4 h-4 text-slate-600" />
-                    <span>
-                      この町を訪問するには、村の開拓 Tier を上げてください（解放Tier:{" "}
-                      {isKomorebi ? 1 : town.id === "ironport" ? 2 : 3}）。
-                    </span>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {activeTab === "towns" && <TownInfoPanel towns={towns} gold={gold} onInvest={investInTown} />}
     </Modal>
   );
 };

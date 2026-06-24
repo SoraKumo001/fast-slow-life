@@ -1,14 +1,11 @@
-import { Hammer, ArrowUpCircle } from "lucide-react";
+import { ArrowUpCircle } from "lucide-react";
 import React, { useState } from "react";
 
-import {
-  MAX_VILLAGERS_ABSOLUTE,
-  BASE_MAX_VILLAGERS,
-  VILLAGERS_PER_GUILD_LEVEL,
-} from "../../constants";
-import { ITEMS, getCraftableItemsForFacility, getRecipeForItem } from "../../data/masterData";
-import type { Facility, FacilityType, Item, Villager } from "../../types/game";
-import { getRecipeValueInfo, getResourceFacilityGValue } from "../../utils/economyHelpers";
+import { BUILDING_COST_REDUCTION } from "../../constants";
+import { getCraftableItemsForFacility } from "../../data/masterData";
+import { useInventory, usePlayerResources, useSoulUpgrades, useVillagers } from "../../hooks";
+import type { Facility, FacilityType, Item } from "../../types/game";
+import { getResourceFacilityGValue } from "../../utils/economyHelpers";
 import {
   getNextLevelResourceProduction,
   getResourceProductionInfo,
@@ -16,9 +13,13 @@ import {
 } from "../../utils/facilityHelpers";
 import { ItemDetailModal } from "../modals/ItemDetailModal";
 import { ProgressBar } from "../ui/ProgressBar";
+import { CraftQueueDisplay } from "./CraftQueueDisplay";
+import { CraftRecipeGrid } from "./CraftRecipeGrid";
+import { FacilityCollapsedSummary } from "./FacilityCollapsedSummary";
 import { GuildPanel } from "./GuildPanel";
 import { TradeRulePanel } from "./TradeRulePanel";
 import { TrainingGroundPanel } from "./TrainingGroundPanel";
+import { UpgradeCostDisplay } from "./UpgradeCostDisplay";
 
 const FACILITY_DESCRIPTIONS: Record<string, string> = {
   inn: "休息中の村人のHP/スタミナ回復速度が上昇します。レベルアップで回復量がさらに増加します。",
@@ -44,11 +45,6 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
 
 interface FacilityCardProps {
   fac: Facility;
-  inventory: Record<string, number>;
-  gold: number;
-  villagers: Villager[];
-  tradeRules: { id: string; itemId: string; type: string; threshold: number; isEnabled: boolean }[];
-  costReduction: number;
   expanded: boolean;
   onToggleExpand: (id: string) => void;
   onStartUpgrade: (facilityId: FacilityType) => void;
@@ -57,17 +53,18 @@ interface FacilityCardProps {
 
 export const FacilityCard: React.FC<FacilityCardProps> = ({
   fac,
-  inventory,
-  gold,
-  villagers,
-  tradeRules,
-  costReduction,
   expanded,
   onToggleExpand,
   onStartUpgrade,
   onHireVillager,
 }) => {
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const { inventory, tradeRules } = useInventory();
+  const { gold } = usePlayerResources();
+  const villagers = useVillagers();
+  const soulUpgrades = useSoulUpgrades();
+  const buildLvl = soulUpgrades.building || 0;
+  const costReduction = 1 - buildLvl * BUILDING_COST_REDUCTION;
   const isUnlocked = fac.level > 0;
   const canUpgrade = fac.level < fac.maxLevel;
   const goldCost = Math.floor(fac.upgradeCost.gold * costReduction);
@@ -77,6 +74,14 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
     return Math.floor(inventory[req.itemId] || 0) >= reqCount;
   });
   const canAffordUpgrade = gold >= goldCost && hasUpgradeMaterials && fac.upgradeTimeLeft === 0;
+
+  const reducedCost = {
+    gold: goldCost,
+    materials: fac.upgradeCost.materials.map((m) => ({
+      itemId: m.itemId,
+      count: Math.floor(m.count * costReduction),
+    })),
+  };
 
   const craftableItems = getCraftableItemsForFacility(fac.id, fac.level > 0 ? fac.level : 1);
 
@@ -140,70 +145,14 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
         )}
 
         {!expanded && (
-          <div className="mt-2 text-[11px] text-slate-400 font-mono flex flex-wrap items-center gap-1.5">
-            {isUnlocked ? (
-              fac.id === "inn" ? (
-                <span className="text-slate-500">休息機能利用可能</span>
-              ) : fac.id === "guild" ? (
-                <span className="text-slate-500">
-                  雇用上限:{" "}
-                  {Math.min(
-                    MAX_VILLAGERS_ABSOLUTE,
-                    BASE_MAX_VILLAGERS + fac.level * VILLAGERS_PER_GUILD_LEVEL,
-                  )}
-                  人 (現在: {villagers.length}人)
-                </span>
-              ) : fac.id === "training_ground" ? (
-                fac.trainingQueue.length > 0 ? (
-                  <>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                    <span className="text-amber-400 font-bold">
-                      訓練中 ({fac.trainingQueue.length}/3)
-                    </span>
-                    <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
-                      • {fac.trainingQueue[0].timeLeft}時間残
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-slate-500">待機中の村人を訓練可能</span>
-                )
-              ) : isResourceFacility(fac.id) ? (
-                <span className="text-emerald-500 font-semibold">
-                  自動生産中: {getResourceProductionInfo(fac).label}/12h
-                </span>
-              ) : fac.craftQueue.length > 0 ? (
-                <>
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" />
-                  <span className="text-sky-400 font-bold">加工中 ({fac.craftQueue.length}/3)</span>
-                  <span className="text-slate-500 text-[10px] truncate max-w-37.5 sm:max-w-xs">
-                    • {ITEMS[fac.craftQueue[0].itemId]?.name}等生産中 (残り{" "}
-                    {fac.craftQueue[0].timeLeft}h)
-                  </span>
-                </>
-              ) : (
-                <span className="text-slate-500">生産停止中 (待機)</span>
-              )
-            ) : (
-              <>
-                <span className="text-slate-500 font-semibold">建設条件: </span>
-                <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
-                  {goldCost}G
-                </span>
-                {fac.upgradeCost.materials.map((m) => {
-                  const reqCount = Math.floor(m.count * costReduction);
-                  const current = Math.floor(inventory[m.itemId] || 0);
-                  return (
-                    <span
-                      key={m.itemId}
-                      className={current >= reqCount ? "text-slate-400" : "text-red-400"}
-                    >
-                      {ITEMS[m.itemId].name}({current}/{reqCount})
-                    </span>
-                  );
-                })}
-              </>
-            )}
-          </div>
+          <FacilityCollapsedSummary
+            fac={fac}
+            villagers={villagers}
+            inventory={inventory}
+            gold={gold}
+            reducedCost={reducedCost}
+            isUnlocked={isUnlocked}
+          />
         )}
 
         {expanded && (
@@ -213,108 +162,22 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             </p>
 
             {canUpgrade && fac.upgradeTimeLeft === 0 && (
-              <div className="text-[10px] text-slate-400 bg-slate-900/40 p-2 rounded border border-slate-800/50 leading-relaxed">
-                <span className="font-semibold text-slate-300">必要: </span>
-                <span className={gold >= goldCost ? "text-amber-400" : "text-red-400"}>
-                  {goldCost} G
-                </span>
-                {fac.upgradeCost.materials.map((m) => {
-                  const reqCount = Math.floor(m.count * costReduction);
-                  const current = Math.floor(inventory[m.itemId] || 0);
-                  return (
-                    <span
-                      key={m.itemId}
-                      className={`ml-2 whitespace-nowrap ${current >= reqCount ? "text-slate-300" : "text-red-400"}`}
-                    >
-                      {ITEMS[m.itemId].name}({current}/{reqCount})
-                    </span>
-                  );
-                })}
-              </div>
+              <UpgradeCostDisplay cost={reducedCost} inventory={inventory} gold={gold} isExpanded />
             )}
 
-            {craftableItems.length > 0 && (
-              <div className="space-y-2.5">
-                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                  <Hammer className="w-3 h-3 text-sky-400" />
-                  {isUnlocked ? "生産レシピ (最大3枠)" : "解放される生産レシピ"}
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {craftableItems.map((item) => {
-                    const recipe = getRecipeForItem(item.id)!;
-                    const valueInfo = getRecipeValueInfo(recipe);
-                    return (
-                      <div
-                        key={item.id}
-                        className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-850 flex flex-col gap-1"
-                      >
-                        <p
-                          className="text-xs font-bold text-sky-300 hover:text-sky-200 cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedItem(item);
-                          }}
-                        >
-                          {item.name}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono">
-                          必要:{" "}
-                          {recipe.requiredItems.map((r, i) => (
-                            <React.Fragment key={r.itemId}>
-                              {i > 0 && <span>, </span>}
-                              <span
-                                className="text-sky-300 hover:text-sky-200 cursor-pointer"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const reqItem = ITEMS[r.itemId];
-                                  if (reqItem) setSelectedItem(reqItem);
-                                }}
-                              >
-                                {ITEMS[r.itemId]?.name}x{r.count}
-                              </span>
-                            </React.Fragment>
-                          ))}
-                        </p>
-                        <p className="text-[10px] text-slate-400 font-mono">
-                          所要時間: {recipe.requiredTime}時間
-                          {valueInfo.valueAdd !== 0 && (
-                            <span
-                              className={`ml-1.5 font-bold ${valueInfo.valueAdd > 0 ? "text-emerald-400" : "text-red-400"}`}
-                            >
-                              {valueInfo.valueAdd > 0 ? "+" : ""}
-                              {valueInfo.valueAdd}G ({valueInfo.valuePerHour >= 0 ? "+" : ""}
-                              {valueInfo.valuePerHour}G/h)
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <CraftRecipeGrid
+              facilityId={fac.id}
+              facilityLevel={fac.level > 0 ? fac.level : 1}
+              inventory={inventory}
+              gold={gold}
+              villagers={villagers}
+              craftableItems={craftableItems}
+              isUnlocked={isUnlocked}
+              onStartCraft={() => {}}
+              onSelectItem={setSelectedItem}
+            />
 
-            {fac.craftQueue.length > 0 && (
-              <div className="space-y-2 bg-slate-900/40 p-2.5 rounded-lg border border-slate-900">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                  進行中のキュー ({fac.craftQueue.length}/3)
-                </p>
-                {fac.craftQueue.map((job) => (
-                  <div key={job.id} className="space-y-0.5">
-                    <div className="flex justify-between text-[10px] font-mono text-slate-300">
-                      <span>{ITEMS[job.itemId].name}</span>
-                      <span>残り {job.timeLeft}時間</span>
-                    </div>
-                    <ProgressBar
-                      value={job.totalTime - job.timeLeft}
-                      max={job.totalTime}
-                      height={1}
-                      color="sky"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+            <CraftQueueDisplay craftQueue={fac.craftQueue} />
 
             {fac.id === "inn" && (
               <p className="text-[10px] text-slate-400 italic leading-relaxed">
@@ -323,9 +186,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
               </p>
             )}
 
-            {fac.id === "training_ground" && isUnlocked && (
-              <TrainingGroundPanel fac={fac} villagers={villagers} />
-            )}
+            {fac.id === "training_ground" && isUnlocked && <TrainingGroundPanel fac={fac} />}
 
             {isResourceFacility(fac.id) && (
               <p className="text-[10px] text-slate-400 italic leading-relaxed">
@@ -361,13 +222,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             )}
 
             {fac.id === "guild" && (
-              <GuildPanel
-                fac={fac}
-                villagers={villagers}
-                gold={gold}
-                isUnlocked={isUnlocked}
-                onHireVillager={onHireVillager}
-              />
+              <GuildPanel fac={fac} isUnlocked={isUnlocked} onHireVillager={onHireVillager} />
             )}
 
             {fac.id === "market" && isUnlocked && <TradeRulePanel tradeRules={tradeRules} />}

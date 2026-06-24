@@ -1,8 +1,9 @@
 import { Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
 import React from "react";
 
-import { ITEMS, MONSTERS } from "../../data/masterData";
+import { ITEMS } from "../../data/masterData";
 import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
+import { getVillagerPurposeText } from "../../utils/villagerHelpers";
 import { ProgressBar } from "../ui/ProgressBar";
 import { VillagerActions } from "./VillagerActions";
 import { VillagerStats } from "./VillagerStats";
@@ -38,38 +39,6 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
     const price = (ITEMS[itemId]?.basePrice || 0) * 2;
     return sum + price * count;
   }, 0);
-
-  const getVillagerPurpose = (villager: Villager) => {
-    if (villager.status === "resting") return "宿屋で休息中";
-    if (villager.assignedCraftJobId) {
-      let craftItemName = "";
-      Object.values(facilities).forEach((f) => {
-        const job = f.craftQueue.find((j) => j.id === villager.assignedCraftJobId);
-        if (job) {
-          craftItemName = ITEMS[job.itemId]?.name || "";
-        }
-      });
-      return `クラフト中: ${craftItemName || "加工"}`;
-    }
-    if (villager.destinationAreaId) {
-      const area = dungeons.find((d) => d.id === villager.destinationAreaId);
-      const areaName = area?.name || "ダンジョン";
-      let actionStr = "";
-      if (villager.order === "gather") {
-        const targetName = villager.targetGatherItemId
-          ? ITEMS[villager.targetGatherItemId]?.name
-          : villager.autoTargetName;
-        actionStr = targetName ? `採取 [${targetName}]` : "採取";
-      } else if (villager.order === "hunt") {
-        const targetName = villager.targetMonsterId
-          ? MONSTERS[villager.targetMonsterId]?.name
-          : villager.autoTargetName;
-        actionStr = targetName ? `討伐 [${targetName}]` : "討伐";
-      }
-      return `${areaName} : ${actionStr}`;
-    }
-    return "待機中 (方針なし)";
-  };
 
   return (
     <div className="bg-slate-950/80 border border-slate-800/80 hover:border-slate-700/80 rounded-lg p-3 transition duration-200">
@@ -144,7 +113,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               </span>
             </div>
             <span className="text-[10px] text-slate-300 font-medium mt-0.5 block">
-              {getVillagerPurpose(v)}
+              {getVillagerPurposeText(v, facilities, dungeons)}
             </span>
           </div>
           {!isExpanded && (

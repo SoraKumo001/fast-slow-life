@@ -2,32 +2,16 @@ import { Heart, Zap } from "lucide-react";
 import React from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { getFoodBuffBonus, applySalaryDebuff } from "../../store/combatEngine";
+import {
+  applySalaryDebuff,
+  computeEffectiveAtk,
+  computeEffectiveDef,
+  getFoodBuffBonus,
+} from "../../store/combatEngine";
 import { useGameStore } from "../../store/gameStore";
 import { Villager } from "../../types/game";
 import { ProgressBar } from "../ui/ProgressBar";
-import { Tooltip } from "../ui/Tooltip";
-
-const computeEffectiveAtk = (v: Villager, buffStr: number, buffInt: number): number => {
-  const isSalaryUnpaid = v.gold < 0;
-  const weaponAtk = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0;
-  const weaponInt = v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0;
-  const rawStr = v.str + buffStr;
-  const rawInt = v.int + buffInt;
-  const effectiveStr = applySalaryDebuff(rawStr, isSalaryUnpaid);
-  const effectiveInt = applySalaryDebuff(rawInt, isSalaryUnpaid);
-  const physical = Math.floor(effectiveStr * 1.5 + weaponAtk);
-  const magical = Math.floor(effectiveInt * 1.8 + weaponInt);
-  return Math.max(physical, magical);
-};
-
-const computeEffectiveDef = (v: Villager, buffVit: number): number => {
-  const isSalaryUnpaid = v.gold < 0;
-  const armorDef = v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0;
-  const rawVit = v.vit + buffVit;
-  const effectiveVit = applySalaryDebuff(rawVit, isSalaryUnpaid);
-  return Math.floor(effectiveVit + armorDef);
-};
+import { StatRow } from "./StatRow";
 
 interface VillagerStatsProps {
   villager: Villager;
@@ -112,61 +96,44 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
       <ProgressBar value={v.stamina} max={effectiveMaxStamina} height={1} color="amber" />
       <div className="grid grid-cols-2 gap-2 text-xs pt-1">
         <div className="space-y-1 text-[11px] font-mono text-slate-400">
-          <p>
-            <Tooltip
-              content={`攻撃力: ${computeEffectiveAtk(v, buffStr, buffInt)} (STR ${v.str + (v.bonusStr || 0) + buffStr - debuffStr}×1.5 + 武器ATK ${v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0})`}
-            >
-              <span className="border-b border-dotted border-slate-600">STR</span>
-            </Tooltip>
-            : <span className="text-slate-200 font-bold">{v.str}</span>
-            {(v.bonusStr || 0) > 0 && (
-              <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusStr}</span>
-            )}
-            {buffStr > 0 && <span className="text-emerald-400 text-[10px] ml-1">+{buffStr}</span>}
-            {debuffStr > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffStr}</span>}
-          </p>
-          <p>
-            <Tooltip
-              content={`魔法攻撃力: ${Math.floor((v.int + buffInt - debuffInt) * 1.8 + (v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0))} (INT ${v.int + (v.bonusInt || 0) + buffInt - debuffInt}×1.8 + 武器INT)`}
-            >
-              <span className="border-b border-dotted border-slate-600">INT</span>
-            </Tooltip>
-            : <span className="text-slate-200 font-bold">{v.int}</span>
-            {(v.bonusInt || 0) > 0 && (
-              <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusInt}</span>
-            )}
-            {buffInt > 0 && <span className="text-emerald-400 text-[10px] ml-1">+{buffInt}</span>}
-            {debuffInt > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffInt}</span>}
-          </p>
-          <p>
-            DEX: <span className="text-slate-200 font-bold">{v.dex}</span>
-            {(v.bonusDex || 0) > 0 && (
-              <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusDex}</span>
-            )}
-            {buffDex > 0 && <span className="text-emerald-400 text-[10px] ml-1">+{buffDex}</span>}
-            {debuffDex > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffDex}</span>}
-          </p>
-          <p>
-            AGI: <span className="text-slate-200 font-bold">{v.agi}</span>
-            {(v.bonusAgi || 0) > 0 && (
-              <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusAgi}</span>
-            )}
-            {buffAgi > 0 && <span className="text-emerald-400 text-[10px] ml-1">+{buffAgi}</span>}
-            {debuffAgi > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffAgi}</span>}
-          </p>
-          <p>
-            <Tooltip
-              content={`防御力: ${computeEffectiveDef(v, buffVit)} (VIT ${v.vit + (v.bonusVit || 0) + buffVit - debuffVit} + 防具DEF ${v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0})`}
-            >
-              <span className="border-b border-dotted border-slate-600">VIT</span>
-            </Tooltip>
-            : <span className="text-slate-200 font-bold">{v.vit}</span>
-            {(v.bonusVit || 0) > 0 && (
-              <span className="text-emerald-400 text-[10px] ml-1">+{v.bonusVit}</span>
-            )}
-            {buffVit > 0 && <span className="text-emerald-400 text-[10px] ml-1">+{buffVit}</span>}
-            {debuffVit > 0 && <span className="text-red-400 text-[10px] ml-1">-{debuffVit}</span>}
-          </p>
+          <StatRow
+            label="STR"
+            base={v.str}
+            bonus={v.bonusStr || 0}
+            buff={buffStr}
+            debuff={debuffStr}
+            tooltipContent={`攻撃力: ${computeEffectiveAtk(v, buffStr, buffInt)} (STR ${v.str + (v.bonusStr || 0) + buffStr - debuffStr}×1.5 + 武器ATK ${v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.attack || 0 : 0})`}
+          />
+          <StatRow
+            label="INT"
+            base={v.int}
+            bonus={v.bonusInt || 0}
+            buff={buffInt}
+            debuff={debuffInt}
+            tooltipContent={`魔法攻撃力: ${Math.floor((v.int + buffInt - debuffInt) * 1.8 + (v.weaponId !== "none" ? ITEMS[v.weaponId]?.equipment?.bonuses?.int || 0 : 0))} (INT ${v.int + (v.bonusInt || 0) + buffInt - debuffInt}×1.8 + 武器INT)`}
+          />
+          <StatRow
+            label="DEX"
+            base={v.dex}
+            bonus={v.bonusDex || 0}
+            buff={buffDex}
+            debuff={debuffDex}
+          />
+          <StatRow
+            label="AGI"
+            base={v.agi}
+            bonus={v.bonusAgi || 0}
+            buff={buffAgi}
+            debuff={debuffAgi}
+          />
+          <StatRow
+            label="VIT"
+            base={v.vit}
+            bonus={v.bonusVit || 0}
+            buff={buffVit}
+            debuff={debuffVit}
+            tooltipContent={`防御力: ${computeEffectiveDef(v, buffVit)} (VIT ${v.vit + (v.bonusVit || 0) + buffVit - debuffVit} + 防具DEF ${v.armorId !== "none" ? ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0 : 0})`}
+          />
           <p className="pt-1 text-[10px] text-slate-500 font-sans">
             ATK {computeEffectiveAtk(v, buffStr, buffInt)} / DEF {computeEffectiveDef(v, buffVit)}
           </p>

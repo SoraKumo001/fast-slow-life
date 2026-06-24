@@ -1,5 +1,13 @@
 import { STAT_LABEL_MAP } from "../constants";
-import { ItemCategory, Item } from "../types/game";
+import { ITEMS } from "../data/masterData";
+import {
+  CraftRecipe,
+  DungeonArea,
+  Facility,
+  FacilityType,
+  Item,
+  ItemCategory,
+} from "../types/game";
 
 export const getCategoryBadgeColor = (cat: ItemCategory) => {
   switch (cat) {
@@ -45,6 +53,34 @@ export const getCategoryLabel = (cat: ItemCategory): string => {
   }
 };
 
+export const getBonusDiff = (
+  item: Item,
+  currentItem: Item | null,
+): { stat: string; before: number; after: number; diff: number }[] => {
+  type BonusKey = "attack" | "defense" | "str" | "int" | "dex" | "agi" | "vit";
+  const diffs: { stat: string; before: number; after: number; diff: number }[] = [];
+  const allStats = new Set<BonusKey>([
+    ...Object.keys(item.equipment?.bonuses || {}),
+    ...Object.keys(currentItem?.equipment?.bonuses || {}),
+  ] as BonusKey[]);
+
+  allStats.forEach((stat) => {
+    const before = currentItem?.equipment?.bonuses?.[stat] || 0;
+    const after = item.equipment?.bonuses?.[stat] || 0;
+    const diff = after - before;
+    if (before !== 0 || after !== 0) {
+      diffs.push({
+        stat: STAT_LABEL_MAP[stat] || stat.toUpperCase(),
+        before,
+        after,
+        diff,
+      });
+    }
+  });
+
+  return diffs;
+};
+
 export const getEquipmentBonusString = (item: Item): string => {
   if (!item.equipment?.bonuses) return "";
   const parts: string[] = [];
@@ -58,4 +94,62 @@ export const getEquipmentBonusString = (item: Item): string => {
   }
 
   return parts.join(" ");
+};
+
+// 製造または入手が可能か（現在所持しているか、解放エリアで採取・ドロップできるか、施設でクラフトできるか）
+export const isItemAvailable = (
+  itemId: string,
+  dungeons: DungeonArea[],
+  recipes: CraftRecipe[],
+  inventory: Record<string, number>,
+  facilities: Record<FacilityType, Facility>,
+  currentTier: number,
+  visited = new Set<string>(),
+): boolean => {
+  if (visited.has(itemId)) return false;
+  visited.add(itemId);
+
+  if ((inventory[itemId] || 0) > 0) return true;
+
+  const isGatherable = dungeons.some((d) => {
+    if (d.unlockedAtTier > currentTier) return false;
+    return d.gathers.some((g) => {
+      if (g.itemId !== itemId) return false;
+      return d.explorationProgress >= (g.unlockedAtProgress || 0);
+    });
+  });
+  if (isGatherable) return true;
+
+  const isDroppable = dungeons.some((d) => {
+    if (d.unlockedAtTier > currentTier) return false;
+    return d.monsters.some((m) => {
+      const isMonsUnlocked = d.explorationProgress >= (m.unlockedAtProgress || 0);
+      if (!isMonsUnlocked) return false;
+      return m.drops.some((drop) => drop.itemId === itemId);
+    });
+  });
+  if (isDroppable) return true;
+
+  const recipe = recipes.find((r) => r.resultItemId === itemId);
+  if (recipe) {
+    const facilityLevel = facilities[recipe.facilityId]?.level || 0;
+    const isFacilityUnlocked = facilityLevel >= recipe.requiredFacilityLevel;
+    if (isFacilityUnlocked) {
+      return recipe.requiredItems.every((req) => {
+        const reqItem = ITEMS[req.itemId];
+        if (!reqItem) return false;
+        return isItemAvailable(
+          reqItem.id,
+          dungeons,
+          recipes,
+          inventory,
+          facilities,
+          currentTier,
+          new Set(visited),
+        );
+      });
+    }
+  }
+
+  return false;
 };

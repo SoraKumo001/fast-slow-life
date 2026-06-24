@@ -27,15 +27,16 @@ export function processVillagerGather(
   i: number,
   area: DungeonArea,
   nextVillagers: Villager[],
-  nextInventory: Record<string, number>,
+  inventory: Record<string, number>,
   targetAmounts: Record<string, number>,
   efficiency: number,
   soulUpgrades: Record<string, number>,
   gold: number,
   _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
-): { logs: LogPayload[]; areaUpdated: boolean; gold: number } {
+): { logs: LogPayload[]; areaUpdated: boolean; gold: number; inventory: Record<string, number> } {
   const logs: LogPayload[] = [];
+  let nextInventory = inventory;
 
   let bestItemId = "";
   const progress = area.explorationProgress;
@@ -167,9 +168,7 @@ export function processVillagerGather(
 
         const acqRes = processItemAcquisition(v, bestItemId, amount, gold, nextInventory);
         gold = acqRes.playerGold;
-        // nextInventoryを更新（ミュータブルに反映するため、プロパティを上書き）
-        Object.keys(nextInventory).forEach((k) => delete nextInventory[k]);
-        Object.assign(nextInventory, acqRes.inventory);
+        nextInventory = { ...acqRes.inventory };
         logs.push(...acqRes.logs);
 
         const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
@@ -207,5 +206,5 @@ export function processVillagerGather(
     }
   }
 
-  return { logs, areaUpdated: true, gold };
+  return { logs, areaUpdated: true, gold, inventory: nextInventory };
 }
