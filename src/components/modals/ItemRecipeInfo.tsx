@@ -56,7 +56,7 @@ export const ItemRecipeInfo: React.FC<ItemRecipeInfoProps> = ({ item, onSelectIt
 
       {/* 装備性能 */}
       {item.equipment && (
-        <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1">
+        <div className="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-1">
           <span className="font-semibold text-slate-400 block mb-1">装備性能:</span>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-slate-300 font-mono text-[11px]">
             {Object.entries(item.equipment.bonuses).map(([stat, val]) => {
@@ -86,7 +86,7 @@ export const ItemRecipeInfo: React.FC<ItemRecipeInfoProps> = ({ item, onSelectIt
         const recipe = getRecipeForItem(item.id) as CraftRecipe | undefined;
         if (!recipe) return null;
         return (
-          <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1">
+          <div className="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-1">
             <span className="font-semibold text-slate-400 block mb-1">クラフトレシピ:</span>
             <div className="space-y-0.5 text-slate-300 font-mono text-[11px]">
               {recipe.requiredItems.map((req: { itemId: string; count: number }) => {

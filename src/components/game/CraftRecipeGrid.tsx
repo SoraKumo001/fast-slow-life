@@ -37,7 +37,7 @@ export const CraftRecipeGrid: React.FC<CraftRecipeGridProps> = ({
           return (
             <div
               key={item.id}
-              className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-850 flex flex-col gap-1"
+              className="bg-slate-950/80 p-2.5 rounded-lg border border-slate-800 flex flex-col gap-1"
             >
               <p
                 className="text-xs font-bold text-sky-300 hover:text-sky-200 cursor-pointer"

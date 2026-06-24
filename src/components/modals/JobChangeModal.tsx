@@ -148,7 +148,7 @@ export const JobChangeModal: React.FC<JobChangeModalProps> = ({ villager, onClos
               size="xs"
               className={`w-full py-1.5 rounded-lg font-bold text-xs transition-all flex justify-center items-center gap-1 cursor-pointer disabled:cursor-not-allowed ${
                 !isReqMet
-                  ? "bg-slate-800 text-slate-500 border border-slate-850"
+                  ? "bg-slate-800 text-slate-500 border border-slate-800"
                   : cost === 0
                     ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-950/50"
                     : "bg-sky-600 hover:bg-sky-500 text-white shadow-sm shadow-sky-950/50"

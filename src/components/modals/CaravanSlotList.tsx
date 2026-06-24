@@ -39,7 +39,7 @@ export const CaravanSlotList: React.FC<CaravanSlotListProps> = ({
               caravan.status === "idle"
                 ? isSelected
                   ? "border-sky-500 bg-sky-950/20"
-                  : "border-slate-850 bg-slate-900/40 hover:border-slate-700"
+                  : "border-slate-800 bg-slate-900/40 hover:border-slate-700"
                 : "border-slate-900 bg-slate-950/20 cursor-default"
             }`}
           >

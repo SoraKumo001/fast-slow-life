@@ -120,6 +120,7 @@ export const Header: React.FC = () => {
             size="custom"
             className="px-2.5 py-2 rounded-lg text-xs font-mono font-bold text-slate-300 hover:text-white"
             title="1日スキップ（一時停止中のみ）"
+            aria-label="1日スキップ"
           >
             +24h
           </Button>
@@ -136,6 +137,7 @@ export const Header: React.FC = () => {
                     ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
                     : "text-slate-400 border border-transparent hover:text-slate-200"
                 }`}
+                aria-label={speed === "normal" ? "通常速度" : speed === "fast" ? "3倍速" : "10倍速"}
               >
                 {speed === "normal" ? "1x" : speed === "fast" ? "3x" : "10x"}
               </Button>
@@ -146,7 +148,7 @@ export const Header: React.FC = () => {
             onClick={() => setShowHistoryModal(true)}
             variant="secondary"
             size="custom"
-            className="flex items-center gap-2 font-medium text-xs px-3.5 py-2 rounded-lg hover:border-slate-650"
+            className="flex items-center gap-2 font-medium text-xs px-3.5 py-2 rounded-lg hover:border-slate-600"
             title="過去のログ履歴を表示"
           >
             <Terminal className="w-4 h-4 text-sky-400" />
@@ -157,7 +159,7 @@ export const Header: React.FC = () => {
             onClick={() => setShowResultModal(true)}
             variant="secondary"
             size="custom"
-            className="flex items-center gap-2 font-medium text-xs px-3.5 py-2 rounded-lg hover:border-slate-650"
+            className="flex items-center gap-2 font-medium text-xs px-3.5 py-2 rounded-lg hover:border-slate-600"
             title="リザルトを表示"
           >
             <BarChart3 className="w-4 h-4 text-sky-400" />

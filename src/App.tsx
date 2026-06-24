@@ -259,7 +259,7 @@ export default function App() {
           </ul>
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-slate-850">
+        <div className="flex justify-end pt-2 border-t border-slate-800">
           <Button onClick={() => setShowHelpModal(false)} variant="primary" size="md">
             了解
           </Button>

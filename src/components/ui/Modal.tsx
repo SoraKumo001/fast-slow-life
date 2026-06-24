@@ -129,7 +129,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {title && (
-          <div className="border-b border-slate-850 pb-3 mb-4">
+          <div className="border-b border-slate-800 pb-3 mb-4">
             {typeof title === "string" ? (
               <h3 id={titleId} className="text-lg font-bold text-slate-100">
                 {title}

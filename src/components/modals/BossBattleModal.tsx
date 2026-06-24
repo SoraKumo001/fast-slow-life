@@ -79,7 +79,7 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
   };
 
   return (
-    <Modal onClose={onClose} size="md">
+    <Modal onClose={onClose} size="md" showCloseButton>
       <div className="space-y-6">
         <div className="text-center">
           <span className="text-amber-500 font-black tracking-widest text-xs uppercase mb-1 block">

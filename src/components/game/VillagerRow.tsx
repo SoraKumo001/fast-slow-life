@@ -1,4 +1,13 @@
-import { Shield, Sword, Heart, Zap, CheckCircle } from "lucide-react";
+import {
+  CircleDollarSign,
+  FlaskConical,
+  Package,
+  Shield,
+  Sword,
+  Heart,
+  Zap,
+  CheckCircle,
+} from "lucide-react";
 import React from "react";
 
 import { ITEMS } from "../../data/masterData";
@@ -74,7 +83,8 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               v.gold < 0 ? `ツケ（未払い宿代・食料代）: ${-v.gold} G` : `所持ゴールド: ${v.gold} G`
             }
           >
-            🪙 {v.gold < 0 ? `0 G (ツケ: ${-v.gold} G)` : `${v.gold} G`}
+            <CircleDollarSign className="w-2.5 h-2.5 inline" />{" "}
+            {v.gold < 0 ? `0 G (ツケ: ${-v.gold} G)` : `${v.gold} G`}
           </span>
 
           {v.pool && Object.keys(v.pool).length > 0 && (
@@ -82,7 +92,8 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
               className="text-[10px] text-sky-400 bg-sky-950/40 border border-sky-900/60 px-1.5 py-0.5 rounded ml-2 font-mono inline-flex items-center gap-0.5"
               title={`プレイヤーのゴールド不足により仮置きされているアイテム（見込み買取額: ${poolTotalValue} G）`}
             >
-              📦 {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個 (未払:{" "}
+              <Package className="w-2.5 h-2.5 inline" />{" "}
+              {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個 (未払:{" "}
               {poolTotalValue} G)
             </span>
           )}
@@ -146,7 +157,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
                   title={ITEMS[v.potionItemId || "potion"]?.name || "回復薬"}
                   className="flex items-center gap-1 shrink-0 bg-indigo-950/40 border border-indigo-900/60 px-1.5 py-0.5 rounded text-[9px] text-indigo-400 font-bold"
                 >
-                  🧪 x{v.potionCount}
+                  <FlaskConical className="w-2.5 h-2.5 inline" /> x{v.potionCount}
                 </div>
               )}
               {v.staminaDrinkCount > 0 && (
@@ -156,7 +167,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
                   }
                   className="flex items-center gap-1 shrink-0 bg-amber-950/40 border border-amber-900/60 px-1.5 py-0.5 rounded text-[9px] text-amber-400 font-bold"
                 >
-                  ⚡️ x{v.staminaDrinkCount}
+                  <Zap className="w-2.5 h-2.5 inline" /> x{v.staminaDrinkCount}
                 </div>
               )}
             </div>
@@ -174,7 +185,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
           {v.pool && Object.keys(v.pool).length > 0 && (
             <div className="bg-slate-900/60 border border-slate-800 rounded p-2.5 space-y-1">
               <p className="text-[10px] font-bold text-sky-400 flex items-center gap-1.5">
-                📦 仮置き場（プール中アイテム）:
+                <Package className="w-3 h-3" /> 仮置き場（プール中アイテム）:
               </p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px] font-mono text-slate-300">
                 {Object.entries(v.pool).map(([itemId, count]) => {
@@ -223,7 +234,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             {v.potionCount > 0 && (
               <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">
                 <span className="flex items-center gap-1 text-[10px]">
-                  <span className="text-[11px] leading-none shrink-0 font-sans">🧪</span>
+                  <FlaskConical className="w-3 h-3 shrink-0" />
                   {ITEMS[v.potionItemId || "potion"]?.name || "回復薬"} x{v.potionCount}
                 </span>
               </div>
@@ -231,7 +242,7 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             {v.staminaDrinkCount > 0 && (
               <div className="flex items-center justify-between px-2 py-1 rounded bg-amber-950/20 border border-amber-900/40 text-[10px] text-amber-400">
                 <span className="flex items-center gap-1 text-[10px]">
-                  <span className="text-[11.5px] leading-none shrink-0 font-sans">⚡️</span>
+                  <Zap className="w-3 h-3 shrink-0" />
                   {ITEMS[v.staminaDrinkItemId || "stamina_drink"]?.name ||
                     "スタミナポーション"} x
                   {v.staminaDrinkCount}

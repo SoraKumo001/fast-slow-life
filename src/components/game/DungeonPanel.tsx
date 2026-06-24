@@ -256,8 +256,8 @@ export const DungeonPanel: React.FC = () => {
                             key={v.id}
                             className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
                               v.status === "active"
-                                ? "bg-sky-950/40 border-sky-850 text-sky-400"
-                                : "bg-amber-955/20 border-amber-900 text-amber-400"
+                                ? "bg-sky-950/40 border-sky-800 text-sky-400"
+                                : "bg-amber-950/20 border-amber-900 text-amber-400"
                             }`}
                             title={`現在方針: ${v.order === "gather" ? "採取" : "討伐"}`}
                           >
@@ -275,7 +275,7 @@ export const DungeonPanel: React.FC = () => {
                         (currentTier === area.unlockedAtTier && bossDefeated) ? (
                           <span className="text-emerald-400 font-bold">撃破済</span>
                         ) : (
-                          <span className="text-amber-505 font-bold flex items-center gap-1">
+                          <span className="text-amber-500 font-bold flex items-center gap-1">
                             <ShieldAlert className="w-3.5 h-3.5" /> 未撃破
                           </span>
                         )}

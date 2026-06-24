@@ -60,7 +60,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
           return (
             <div
               key={itemId}
-              className="bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-2"
+              className="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between gap-2"
             >
               <div className="min-w-0">
                 <p className="text-xs font-bold text-slate-200">{item.name}</p>
@@ -74,7 +74,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
               <div className="flex items-center gap-1 shrink-0 select-none">
                 <button
                   onClick={() => onRemove(itemId)}
-                  className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
+                  className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-800 cursor-pointer"
                 >
                   -
                 </button>
@@ -84,7 +84,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
                       onAdd(itemId);
                     }
                   }}
-                  className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
+                  className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-800 cursor-pointer"
                 >
                   +
                 </button>
@@ -99,7 +99,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
         return (
           <div
             key={itemId}
-            className="bg-slate-950/60 border border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-2"
+            className="bg-slate-950/60 border border-slate-800 p-2.5 rounded-lg flex items-center justify-between gap-2"
           >
             <div className="min-w-0">
               <p className="text-xs font-bold text-slate-200">{item.name}</p>
@@ -112,7 +112,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
             <div className="flex items-center gap-1 shrink-0 select-none">
               <button
                 onClick={() => onRemove(itemId)}
-                className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
+                className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-800 cursor-pointer"
               >
                 -
               </button>
@@ -122,7 +122,7 @@ export const CargoItemSelector: React.FC<CargoItemSelectorProps> = ({
                     onAdd(itemId);
                   }
                 }}
-                className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-850 cursor-pointer"
+                className="w-6 h-6 rounded bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-bold flex items-center justify-center border border-slate-800 cursor-pointer"
               >
                 +
               </button>

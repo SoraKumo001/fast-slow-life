@@ -50,7 +50,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
             </Badge>
           </div>
           {item.description && (
-            <p className="text-xs text-slate-400 leading-relaxed mt-2 bg-slate-950 p-2.5 rounded border border-slate-850">
+            <p className="text-xs text-slate-400 leading-relaxed mt-2 bg-slate-950 p-2.5 rounded border border-slate-800">
               {item.description}
             </p>
           )}

@@ -35,7 +35,7 @@ export const TradeRulePanel: React.FC<TradeRulePanelProps> = ({ tradeRules }) =>
             return (
               <div
                 key={rule.id}
-                className="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-lg border border-slate-850/80 text-xs"
+                className="flex justify-between items-center bg-slate-950/80 p-2.5 rounded-lg border border-slate-800/80 text-xs"
               >
                 <div className="flex flex-col gap-0.5">
                   <span className="font-bold text-slate-200">{item.name}</span>

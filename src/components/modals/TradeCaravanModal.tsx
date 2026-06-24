@@ -219,7 +219,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                 {/* 派遣設定のメイン部分 */}
                 {activeTown && (
                   <div className="flex-1 flex flex-col min-h-0">
-                    <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-850/60 mb-4 text-xs text-slate-300 flex justify-between items-center select-none">
+                    <div className="bg-slate-900/40 p-3 rounded-lg border border-slate-800/60 mb-4 text-xs text-slate-300 flex justify-between items-center select-none">
                       <div>
                         <span className="font-semibold text-slate-200">{activeTown.name}</span>
                         <span className="text-[10px] text-slate-400 ml-2">

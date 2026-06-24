@@ -32,7 +32,7 @@ export const ToastContainer: React.FC = () => {
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`pointer-events-auto flex items-start gap-2.5 px-4 py-3 rounded-lg border ${borderMap[t.type]} ${bgMap[t.type]} backdrop-blur-md shadow-lg animate-slide-in max-w-sm`}
+          className={`pointer-events-auto flex items-start gap-2.5 px-4 py-3 rounded-lg border ${borderMap[t.type]} ${bgMap[t.type]} backdrop-blur-md shadow-lg max-w-sm`}
           style={{ animation: "slideIn 0.3s ease-out" }}
         >
           {iconMap[t.type]}

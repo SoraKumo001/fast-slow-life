@@ -121,7 +121,7 @@ export const InventoryPanel: React.FC = () => {
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-slate-950/80 border border-slate-850 hover:border-slate-750 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition cursor-pointer"
+                className="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition cursor-pointer"
               >
                 {/* 名前 & カテゴリ */}
                 <div className="flex-1 min-w-0">

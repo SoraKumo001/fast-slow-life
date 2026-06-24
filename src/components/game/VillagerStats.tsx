@@ -146,7 +146,7 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
           家計・収支情報
         </div>
         <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
-          <div className="bg-slate-900/60 border border-slate-850 p-2 rounded space-y-1 flex flex-col justify-between">
+          <div className="bg-slate-900/60 border border-slate-800 p-2 rounded space-y-1 flex flex-col justify-between">
             <div>
               <div className="text-[9px] text-slate-500 font-sans font-semibold mb-0.5">
                 資産状況
@@ -167,7 +167,7 @@ export const VillagerStats: React.FC<VillagerStatsProps> = ({ villager: v }) => 
               <span className="text-sky-400 font-bold">{poolTotalValue} G</span>
             </p>
           </div>
-          <div className="bg-slate-900/60 border border-slate-850 p-2 rounded space-y-1">
+          <div className="bg-slate-900/60 border border-slate-800 p-2 rounded space-y-1">
             <div className="text-[9px] text-slate-500 font-sans font-semibold mb-0.5">
               見込み支出
             </div>

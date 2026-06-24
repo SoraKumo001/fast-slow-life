@@ -46,7 +46,7 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
   return (
     <>
       {/* 所持数 & 目標設定セクション */}
-      <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 space-y-2.5">
+      <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800 space-y-2.5">
         <div className="flex justify-between items-center text-xs">
           <span className="text-slate-400">現在の所持数:</span>
           <span className="text-slate-100 font-bold font-mono text-sm">
@@ -122,7 +122,7 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
 
         {/* 街別輸出価格 */}
         {isSellable && (
-          <div className="bg-slate-950 p-2.5 rounded border border-slate-850 space-y-1.5">
+          <div className="bg-slate-950 p-2.5 rounded border border-slate-800 space-y-1.5">
             <span className="font-semibold text-slate-400 block text-[10px]">輸出価格 (街別):</span>
             <div className="space-y-1">
               {towns
@@ -153,7 +153,7 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
 
       {/* 自動交易設定セクション */}
       {isSellable ? (
-        <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-850 space-y-3">
+        <div className="bg-slate-950/60 p-3 rounded-lg border border-slate-800 space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
               自動交易（売却）設定
@@ -243,7 +243,7 @@ export const ItemTradeSettings: React.FC<ItemTradeSettingsProps> = ({
           )}
         </div>
       ) : (
-        <div className="text-[11px] text-slate-500 text-center py-2 border border-slate-850 bg-slate-950/20 rounded">
+        <div className="text-[11px] text-slate-500 text-center py-2 border border-slate-800 bg-slate-950/20 rounded">
           交易所が建設された後、自動交易売却を設定できます。
         </div>
       )}
