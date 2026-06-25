@@ -14,6 +14,7 @@ import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
+import { useBossDefeatDetector } from "./hooks/useBossDefeatDetector";
 import { useToastStore } from "./hooks/useToastStore";
 
 export default function App() {
@@ -24,6 +25,9 @@ export default function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [gameOverTab, setGameOverTab] = useState<"result" | "soul">("result");
   const lastLogIdRef = useRef<string | null>(null);
+
+  // Detect boss defeats and show announcement banner (was in timeActions.ts)
+  useBossDefeatDetector();
 
   // 新しいログを監視してToast通知
   useEffect(() => {

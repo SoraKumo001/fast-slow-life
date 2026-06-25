@@ -8,7 +8,7 @@ import {
   processVillagerActivities,
   processCraftingAndUpgrades,
   calculateAdvanceHour,
-} from "./gameLoopHelper";
+} from "./gameLoop";
 
 describe("gameLoopHelper", () => {
   describe("processStarvation", () => {
