@@ -1,34 +1,32 @@
-import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/react/shallow";
 
 import { useGameStore } from "../store/gameStore";
 
 export const useGameTime = () =>
-  useGameStore((s) => ({ currentDay: s.currentDay, currentHour: s.currentHour }), shallow);
+  useGameStore(useShallow((s) => ({ currentDay: s.currentDay, currentHour: s.currentHour })));
 
 export const usePlayerResources = () =>
-  useGameStore((s) => ({ gold: s.gold, soulPoints: s.soulPoints }), shallow);
+  useGameStore(useShallow((s) => ({ gold: s.gold, soulPoints: s.soulPoints })));
 
 export const useInventory = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       inventory: s.inventory,
       targetAmounts: s.targetAmounts,
       tradeRules: s.tradeRules,
       caravans: s.caravans,
-    }),
-    shallow,
+    })),
   );
 
 export const useInventoryActions = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       setTargetAmount: s.setTargetAmount,
       addTradeRule: s.addTradeRule,
       updateTradeRule: s.updateTradeRule,
       deleteTradeRule: s.deleteTradeRule,
       toggleTradeRule: s.toggleTradeRule,
-    }),
-    shallow,
+    })),
   );
 
 export const useVillagers = () => useGameStore((s) => s.villagers);
@@ -37,25 +35,23 @@ export const useFacilities = () => useGameStore((s) => s.facilities);
 
 export const useDungeons = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       dungeons: s.dungeons,
       currentTier: s.currentTier,
       activeBoss: s.activeBoss,
       bossDefeated: s.bossDefeated,
-    }),
-    shallow,
+    })),
   );
 
 export const useGameStatus = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       isPaused: s.isPaused,
       playSpeed: s.playSpeed,
       gameOver: s.gameOver,
       gameOverReason: s.gameOverReason,
       gameLimitDays: s.gameLimitDays,
-    }),
-    shallow,
+    })),
   );
 
 export const useLogs = () => useGameStore((s) => s.logs);
@@ -64,58 +60,55 @@ export const useSoulUpgrades = () => useGameStore((s) => s.soulUpgrades);
 
 export const useGameControls = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       togglePause: s.togglePause,
       setPlaySpeed: s.setPlaySpeed,
       advanceDay: s.advanceDay,
       advanceHour: s.advanceHour,
-    }),
-    shallow,
+    })),
   );
 
 export const useVillagerActions = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       setVillagerOrder: s.setVillagerOrder,
       changeVillagerJob: s.changeVillagerJob,
       hireVillager: s.hireVillager,
-    }),
-    shallow,
+    })),
   );
 
 export const useCraftActions = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       startCraft: s.startCraft,
       startFacilityUpgrade: s.startFacilityUpgrade,
       startTraining: s.startTraining,
-    }),
-    shallow,
+    })),
   );
 
 export const useBossActions = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       startBossBattle: s.startBossBattle,
       withdrawFromBossBattle: s.withdrawFromBossBattle,
-    }),
-    shallow,
+    })),
   );
 
 export const useSoulActions = () =>
   useGameStore(
-    (s) => ({
+    useShallow((s) => ({
       buySoulUpgrade: s.buySoulUpgrade,
       downgradeSoulUpgrade: s.downgradeSoulUpgrade,
       resetGame: s.resetGame,
-    }),
-    shallow,
+    })),
   );
 
 export const useGameStats = () => useGameStore((s) => s.stats);
 
 export const useBankruptcyWarning = () =>
   useGameStore(
-    (s) => ({ gold: s.gold, consecutiveNegativeGoldDays: s.consecutiveNegativeGoldDays }),
-    shallow,
+    useShallow((s) => ({
+      gold: s.gold,
+      consecutiveNegativeGoldDays: s.consecutiveNegativeGoldDays,
+    })),
   );

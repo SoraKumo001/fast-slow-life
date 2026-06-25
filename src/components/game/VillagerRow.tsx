@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import React from "react";
 
+import { EXP_NEEDED_PER_LEVEL } from "../../constants";
 import { ITEMS } from "../../data/masterData";
 import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
 import { getVillagerPurposeText } from "../../utils/villagerHelpers";
@@ -67,7 +68,8 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
           <span className="text-xs text-slate-400 font-mono ml-2">
             Lv.{v.level}{" "}
             <span className="text-[10px] text-slate-500 font-normal">
-              <CheckCircle className="w-2.5 h-2.5 text-sky-400 inline" /> {v.exp}/{v.level * 100}
+              <CheckCircle className="w-2.5 h-2.5 text-sky-400 inline" /> {v.exp}/
+              {v.level * EXP_NEEDED_PER_LEVEL}
             </span>
           </span>
           <span

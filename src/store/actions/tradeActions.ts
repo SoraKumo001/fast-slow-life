@@ -36,7 +36,10 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
         );
         return;
       }
-      nextInventory[entry.itemId] = current - entry.count;
+    }
+    // 全ての在庫を確認した後に消費
+    for (const entry of cargo) {
+      nextInventory[entry.itemId] = (nextInventory[entry.itemId] || 0) - entry.count;
     }
 
     // 売却額の計算

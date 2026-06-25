@@ -65,8 +65,9 @@ export function processVillagerActivities(
       v.currentHp = Math.min(v.maxHp, v.currentHp + hpRecovery);
       v.stamina = Math.min(maxStamina, v.stamina + staminaRecovery);
 
-      // 宿代請求: 固定額
-      const innCost = INN_COST_PER_HOUR;
+      // 宿代請求: 無職は無料
+      const isUnemployed = v.currentJob === "無職";
+      const innCost = isUnemployed ? 0 : INN_COST_PER_HOUR;
       v.gold -= innCost; // 不足時はツケ払い（マイナス）
       currentGold += innCost;
       if (innCost > 0) {

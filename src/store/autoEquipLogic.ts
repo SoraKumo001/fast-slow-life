@@ -70,15 +70,6 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
     }
   });
 
-  villagers.forEach((v) => {
-    if (v.weaponId && v.weaponId !== "none") {
-      weaponPool[v.weaponId] = (weaponPool[v.weaponId] || 0) + 1;
-    }
-    if (v.armorId && v.armorId !== "none") {
-      armorPool[v.armorId] = (armorPool[v.armorId] || 0) + 1;
-    }
-  });
-
   const getJobPriority = (job: string) => {
     if (["戦士", "魔術師", "僧侶"].includes(job)) return 3;
     if (["猟師"].includes(job)) return 2;
@@ -114,6 +105,7 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
     let bestWeaponId = "none";
     let bestWeaponScore = -1;
     let weaponCost = 0;
+    let isSameWeapon = false;
 
     Object.entries(weaponPool).forEach(([itemId, count]) => {
       if (count <= 0) return;
@@ -127,20 +119,41 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
           bestWeaponScore = score;
           bestWeaponId = itemId;
           weaponCost = cost;
+          isSameWeapon = isSame;
         }
       }
     });
 
     let remainingGold = currentGold;
     if (bestWeaponId !== "none") {
-      weaponPool[bestWeaponId]--;
-      remainingGold -= weaponCost;
-      playerGold += weaponCost;
+      if (isSameWeapon) {
+        // Best choice is current equipment (free), keep it — no pool/gold change
+      } else {
+        // Bug 2: check availability before decrementing (another villager may have taken it)
+        if (weaponPool[bestWeaponId] > 0) {
+          weaponPool[bestWeaponId]--;
+          remainingGold -= weaponCost;
+          playerGold += weaponCost;
+          // Bug 1: return old weapon to pool for reallocation
+          if (v.weaponId && v.weaponId !== "none") {
+            weaponPool[v.weaponId] = (weaponPool[v.weaponId] || 0) + 1;
+          }
+        } else {
+          // Item already taken by another villager, keep current equipment
+          bestWeaponId = v.weaponId || "none";
+          weaponCost = 0;
+        }
+      }
+    } else {
+      // No better pool item, keep current equipment
+      bestWeaponId = v.weaponId || "none";
+      weaponCost = 0;
     }
 
     let bestArmorId = "none";
     let bestArmorScore = -1;
     let armorCost = 0;
+    let isSameArmor = false;
 
     Object.entries(armorPool).forEach(([itemId, count]) => {
       if (count <= 0) return;
@@ -154,14 +167,30 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
           bestArmorScore = score;
           bestArmorId = itemId;
           armorCost = cost;
+          isSameArmor = isSame;
         }
       }
     });
 
     if (bestArmorId !== "none") {
-      armorPool[bestArmorId]--;
-      remainingGold -= armorCost;
-      playerGold += armorCost;
+      if (isSameArmor) {
+        // Best choice is current armor (free), keep it — no pool/gold change
+      } else {
+        if (armorPool[bestArmorId] > 0) {
+          armorPool[bestArmorId]--;
+          remainingGold -= armorCost;
+          playerGold += armorCost;
+          if (v.armorId && v.armorId !== "none") {
+            armorPool[v.armorId] = (armorPool[v.armorId] || 0) + 1;
+          }
+        } else {
+          bestArmorId = v.armorId || "none";
+          armorCost = 0;
+        }
+      }
+    } else {
+      bestArmorId = v.armorId || "none";
+      armorCost = 0;
     }
 
     const originalWeapon = v.weaponId;

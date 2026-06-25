@@ -1,6 +1,5 @@
 import { Truck } from "lucide-react";
 import React, { useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { useGameStore } from "../../store/gameStore";
 import {
@@ -28,16 +27,7 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
   const facilities = useGameStore((s) => s.facilities);
 
   const { sendExportCaravan, sendImportCaravan, collectCaravan, investInTown, toggleCaravanAuto } =
-    useGameStore(
-      (s) => ({
-        sendExportCaravan: s.sendExportCaravan,
-        sendImportCaravan: s.sendImportCaravan,
-        collectCaravan: s.collectCaravan,
-        investInTown: s.investInTown,
-        toggleCaravanAuto: s.toggleCaravanAuto,
-      }),
-      shallow,
-    );
+    useGameStore();
 
   const marketLvl = facilities.market?.level || 0;
   const maxCaravans = marketLvl === 1 ? 1 : marketLvl === 2 ? 2 : 3;

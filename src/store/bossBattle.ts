@@ -27,9 +27,7 @@ export function processBossBattle(
   currentTier: number,
   bossDefeated: boolean,
   gameLimitDays: number,
-  _hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
-  _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
 ) {
   const logs: LogPayload[] = [];

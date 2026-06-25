@@ -58,13 +58,19 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
       });
 
       const updatedFacilities = { ...state.facilities };
-      updatedFacilities[facilityId].craftQueue.push({
-        id: jobId,
-        itemId,
-        timeLeft: timeNeeded,
-        totalTime: timeNeeded,
-        assignedVillagerId: assignedId,
-      });
+      updatedFacilities[facilityId] = {
+        ...updatedFacilities[facilityId],
+        craftQueue: [
+          ...updatedFacilities[facilityId].craftQueue,
+          {
+            id: jobId,
+            itemId,
+            timeLeft: timeNeeded,
+            totalTime: timeNeeded,
+            assignedVillagerId: assignedId,
+          },
+        ],
+      };
 
       const updatedVillagers = state.villagers.map((v) => {
         if (v.id === assignedId) {
@@ -141,14 +147,20 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
 
     set((state) => {
       const updatedFacilities = { ...state.facilities };
-      updatedFacilities.training_ground.trainingQueue.push({
-        id: jobId,
-        programId,
-        timeLeft: program.requiredTime,
-        totalTime: program.requiredTime,
-        assignedVillagerId: villagerId,
-        goldPerHour,
-      });
+      updatedFacilities.training_ground = {
+        ...updatedFacilities.training_ground,
+        trainingQueue: [
+          ...updatedFacilities.training_ground.trainingQueue,
+          {
+            id: jobId,
+            programId,
+            timeLeft: program.requiredTime,
+            totalTime: program.requiredTime,
+            assignedVillagerId: villagerId,
+            goldPerHour,
+          },
+        ],
+      };
 
       const updatedVillagers = state.villagers.map((v) => {
         if (v.id === villagerId) {

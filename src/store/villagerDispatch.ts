@@ -242,16 +242,17 @@ export function dispatchIdleVillagersHelper(params: {
 
         let assignedPotionCount = 0;
         let assignedPotionId = "potion";
+        let remainingGold = v.gold;
         for (const pId of POTION_PRIORITY) {
           const countInInv = nextInventory[pId] || 0;
           if (countInInv > 0) {
             const price = ITEMS[pId]?.basePrice || 0;
-            const maxCanBuy = Math.floor(v.gold / price);
+            const maxCanBuy = Math.floor(remainingGold / price);
             const toBuy = Math.min(MAX_POTIONS_PER_VILLAGER, countInInv, maxCanBuy);
             if (toBuy > 0) {
               assignedPotionId = pId;
               assignedPotionCount = toBuy;
-              v.gold -= toBuy * price;
+              remainingGold -= toBuy * price;
               nextGold += toBuy * price;
               nextInventory[pId] = countInInv - toBuy;
               break;
@@ -264,11 +265,11 @@ export function dispatchIdleVillagersHelper(params: {
         const staminaDrinkInInv = nextInventory[staminaDrinkId] || 0;
         if (staminaDrinkInInv > 0) {
           const price = ITEMS[staminaDrinkId]?.basePrice || 0;
-          const maxCanBuy = Math.floor(v.gold / price);
+          const maxCanBuy = Math.floor(remainingGold / price);
           const toBuy = Math.min(2, staminaDrinkInInv, maxCanBuy);
           if (toBuy > 0) {
             assignedStaminaCount = toBuy;
-            v.gold -= toBuy * price;
+            remainingGold -= toBuy * price;
             nextGold += toBuy * price;
             nextInventory[staminaDrinkId] = staminaDrinkInInv - toBuy;
           }
@@ -301,6 +302,7 @@ export function dispatchIdleVillagersHelper(params: {
           potionCount: assignedPotionCount,
           staminaDrinkItemId: staminaDrinkId,
           staminaDrinkCount: assignedStaminaCount,
+          gold: remainingGold,
         } as Villager;
       }
     }

@@ -1,6 +1,6 @@
 import { StateStorage, createJSONStorage } from "zustand/middleware";
 
-import { GameState, GameActions, FacilityType } from "../types/game";
+import { GameState, GameActions, FacilityType, Town, Caravan } from "../types/game";
 import { getInitialFacilities } from "./initialState";
 
 // ==========================================
@@ -56,6 +56,12 @@ const migrations: Record<number, SaveMigration> = {
     data.consecutiveNegativeGoldDays = data.consecutiveNegativeGoldDays ?? 0;
     data.gameOverReason = data.gameOverReason ?? "";
     data.stats = data.stats ?? null;
+
+    // ── Fields added after initial release ──
+    data.towns = data.towns ?? null;
+    data.caravans = data.caravans ?? null;
+    data.soulUpgrades = data.soulUpgrades ?? null;
+    data.lastSchedulerTick = data.lastSchedulerTick ?? -4;
 
     data.saveVersion = 1;
   },
@@ -119,6 +125,15 @@ export const merge = <S extends GameState & GameActions>(
 
   // currentState（初期値）とマージ
   const merged: S = { ...currentState, ...persisted } as S;
+
+  // 永続化データに null/undefined が含まれていると currentState の初期値を上書きしてしまうため、
+  // 重要なフィールドは null 合体演算子で保護する
+  merged.towns = (persisted.towns as Town[]) ?? currentState.towns;
+  merged.caravans = (persisted.caravans as Caravan[]) ?? currentState.caravans;
+  merged.soulUpgrades =
+    (persisted.soulUpgrades as Record<string, number>) ?? currentState.soulUpgrades;
+  merged.lastSchedulerTick =
+    (persisted.lastSchedulerTick as number) ?? currentState.lastSchedulerTick;
 
   // フラットな Record は shallow merge
   merged.inventory = {

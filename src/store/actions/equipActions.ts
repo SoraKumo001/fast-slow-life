@@ -1,5 +1,5 @@
 import { ITEMS } from "../../data/masterData";
-import { StoreSet, StoreGet } from "../../types/game";
+import { Villager, StoreSet, StoreGet } from "../../types/game";
 import { autoEquipAllHelper } from "../autoEquipLogic";
 
 export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
@@ -32,7 +32,7 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
       const updated = state.villagers.map((v) => {
         if (v.id !== villagerId) return v;
 
-        v.gold -= price;
+        const newGold = v.gold - price;
         playerGold += price;
 
         if (oldEquipId && oldEquipId !== "none") {
@@ -43,8 +43,9 @@ export const createEquipActions = (set: StoreSet, get: StoreGet) => ({
 
         return {
           ...v,
+          gold: newGold,
           [slot === "weapon" ? "weaponId" : "armorId"]: itemId,
-        };
+        } as Villager;
       });
 
       return { villagers: updated, inventory: inv, gold: playerGold };

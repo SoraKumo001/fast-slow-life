@@ -35,6 +35,7 @@ export function setVillagerOrderHelper(params: {
     let nextPotionItemId = v.potionItemId || "potion";
     let nextStaminaDrinkCount = v.staminaDrinkCount || 0;
     let nextStaminaDrinkItemId = v.staminaDrinkItemId || "stamina_drink";
+    let nextGoldAmount = v.gold;
 
     const sameArea = v.destinationAreaId === areaId;
     const nextMonsterTarget =
@@ -97,7 +98,7 @@ export function setVillagerOrderHelper(params: {
             if (toBuy > 0) {
               assignedId = pId;
               assignedCount = toBuy;
-              v.gold -= toBuy * price;
+              nextGoldAmount -= toBuy * price;
               nextGold += toBuy * price;
               nextInventory[pId] = countInInv - toBuy;
               break;
@@ -125,7 +126,7 @@ export function setVillagerOrderHelper(params: {
           const toBuy = Math.min(2, staminaDrinkInInv, maxCanBuy);
           if (toBuy > 0) {
             assignedStaminaCount = toBuy;
-            v.gold -= toBuy * price;
+            nextGoldAmount -= toBuy * price;
             nextGold += toBuy * price;
             nextInventory[staminaDrinkId] = staminaDrinkInInv - toBuy;
           }
@@ -150,6 +151,7 @@ export function setVillagerOrderHelper(params: {
 
     return {
       ...v,
+      gold: nextGoldAmount,
       order,
       status,
       destinationAreaId: dest,

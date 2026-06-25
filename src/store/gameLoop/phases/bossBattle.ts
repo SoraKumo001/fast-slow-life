@@ -15,9 +15,7 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
     acc.currentTier,
     acc.bossDefeated,
     acc.gameLimitDays,
-    acc.hasStarvation,
     acc.soulUpgrades,
-    acc.isSalaryUnpaid,
     acc.nextStats,
   );
   acc.activeBoss = bossRes.activeBoss;

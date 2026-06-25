@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { shallow } from "zustand/shallow";
 
 import { useGameStore } from "../../store/gameStore";
 import type { Item } from "../../types/game";
@@ -27,15 +26,7 @@ export const ItemDetailModal: React.FC<ItemDetailModalProps> = ({ item: initialI
   const towns = useGameStore((s) => s.towns);
   const facilities = useGameStore((s) => s.facilities);
 
-  const { setTargetAmount, addTradeRule, deleteTradeRule, toggleTradeRule } = useGameStore(
-    (s) => ({
-      setTargetAmount: s.setTargetAmount,
-      addTradeRule: s.addTradeRule,
-      deleteTradeRule: s.deleteTradeRule,
-      toggleTradeRule: s.toggleTradeRule,
-    }),
-    shallow,
-  );
+  const { setTargetAmount, addTradeRule, deleteTradeRule, toggleTradeRule } = useGameStore();
 
   const marketLevel = facilities.market?.level || 0;
 

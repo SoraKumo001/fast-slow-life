@@ -96,7 +96,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
             soulPoints:
               state.soulPoints +
               calculateEarnedSp({
-                gold: state.gold,
+                gold: result.gold,
                 inventory: result.inventory,
                 currentTier: result.currentTier,
                 bossDefeated: result.bossDefeated,

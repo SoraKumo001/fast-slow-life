@@ -63,6 +63,11 @@ export function processStarvation(
       }
     }
 
+    // Round down to prevent fractional inventory values
+    Object.keys(nextInventory).forEach((key) => {
+      nextInventory[key] = Math.floor(nextInventory[key]);
+    });
+
     return {
       inventory: nextInventory,
       villagers: villagers,
@@ -110,7 +115,7 @@ export function processStarvation(
 
         // 価格が 3G 以下の食料（パン、生の食材など）や無職の村人は所持金に関係なく消費可能。
         // それ以外は所持金が価格以上である場合のみ消費可能。
-        const canAfford = price <= 4 || v.gold >= price;
+        const canAfford = price <= 3 || v.gold >= price;
 
         if (canAfford) {
           consumedId = foodId;
@@ -163,6 +168,11 @@ export function processStarvation(
   if (starvedCount > 0) {
     logs.push(`【警告】食料が不足しており、${starvedCount}名の村人が飢餓状態になっています！`);
   }
+
+  // Round down to prevent fractional inventory values
+  Object.keys(nextInventory).forEach((key) => {
+    nextInventory[key] = Math.floor(nextInventory[key]);
+  });
 
   return {
     inventory: nextInventory,

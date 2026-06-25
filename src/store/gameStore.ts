@@ -87,7 +87,10 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   ...createSalaryActions(set as StoreSet, get as StoreGet),
 });
 
-export const useGameStore = globalThis.IS_TEST_ENVIRONMENT
+import type { UseBoundStore } from "zustand/react";
+import type { StoreApi } from "zustand/vanilla";
+
+export const useGameStore = (globalThis.IS_TEST_ENVIRONMENT
   ? create<FullStore>()(createStore)
   : create<FullStore>()(
       persist<FullStore, [], [], GameState>(createStore, {
@@ -96,4 +99,4 @@ export const useGameStore = globalThis.IS_TEST_ENVIRONMENT
         merge,
         storage: customStorage,
       }),
-    );
+    )) as unknown as UseBoundStore<StoreApi<FullStore>>;
