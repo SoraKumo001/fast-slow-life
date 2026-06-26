@@ -4,11 +4,50 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
 
-import { CATEGORY_GEAR_WEAPON, CATEGORY_GEAR_ARMOR } from "../constants";
+import { CATEGORY_GEAR_ARMOR, CATEGORY_GEAR_WEAPON } from "../constants";
 import { ITEMS, JOBS, SOUL_UPGRADES, getTrainingProgramsForFacility } from "../data/masterData";
-import { FacilityType, JobType } from "../types/game";
+import { FacilityType, JobType, Villager } from "../types/game";
 import { formatGameTime } from "../utils/timeHelpers";
 import { useGameStore } from "./gameStore";
+
+/**
+ * 倉庫にある武器から、現在の装備より attack が高い武器を選ぶ。
+ * 自動アサイン専用ヘルパー (balanceSimulator 内で store action を呼ばないため)。
+ */
+function bestWeaponIdFor(v: Villager, inventoryItems: string[]): string {
+  const weapons = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_WEAPON);
+  if (weapons.length === 0) return v.weaponId;
+
+  let bestId = v.weaponId;
+  let bestAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
+  for (const wId of weapons) {
+    const atk = ITEMS[wId]?.equipment?.bonuses.attack || 0;
+    if (atk > bestAtk) {
+      bestAtk = atk;
+      bestId = wId;
+    }
+  }
+  return bestId;
+}
+
+/**
+ * 倉庫にある防具から、現在の装備より defense が高い防具を選ぶ。
+ */
+function bestArmorIdFor(v: Villager, inventoryItems: string[]): string {
+  const armors = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_ARMOR);
+  if (armors.length === 0) return v.armorId;
+
+  let bestId = v.armorId;
+  let bestDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
+  for (const aId of armors) {
+    const def = ITEMS[aId]?.equipment?.bonuses.defense || 0;
+    if (def > bestDef) {
+      bestDef = def;
+      bestId = aId;
+    }
+  }
+  return bestId;
+}
 
 interface SimulationResult {
   run: number;
@@ -274,50 +313,15 @@ function runSimulationChunk(
           totalHired++;
         }
 
-        // 4. 自動装備アサイン
+        // 4. 自動装備アサイン (ヘルパー関数で直接 state を更新)
         const inventoryItems = Object.keys(state.inventory).filter(
           (id) => (state.inventory[id] || 0) > 0,
         );
-        state.villagers.forEach((v) => {
-          // 武器の自動アサイン
-          const weapons = inventoryItems.filter(
-            (id) => ITEMS[id]?.category === CATEGORY_GEAR_WEAPON,
-          );
-          if (weapons.length > 0) {
-            let bestWeaponId = "none";
-            let maxAtk = -1;
-            weapons.forEach((wId) => {
-              const atk = ITEMS[wId]?.equipment?.bonuses.attack || 0;
-              if (atk > maxAtk) {
-                maxAtk = atk;
-                bestWeaponId = wId;
-              }
-            });
-
-            const currentAtk = ITEMS[v.weaponId]?.equipment?.bonuses.attack || 0;
-            if (maxAtk > currentAtk && bestWeaponId !== "none") {
-              store.equipItem(v.id, bestWeaponId, "weapon");
-            }
-          }
-
-          // 防具の自動アサイン
-          const armors = inventoryItems.filter((id) => ITEMS[id]?.category === CATEGORY_GEAR_ARMOR);
-          if (armors.length > 0) {
-            let bestArmorId = "none";
-            let maxDef = -1;
-            armors.forEach((aId) => {
-              const d = ITEMS[aId]?.equipment?.bonuses.defense || 0;
-              if (d > maxDef) {
-                maxDef = d;
-                bestArmorId = aId;
-              }
-            });
-
-            const currentDef = ITEMS[v.armorId]?.equipment?.bonuses.defense || 0;
-            if (maxDef > currentDef && bestArmorId !== "none") {
-              store.equipItem(v.id, bestArmorId, "armor");
-            }
-          }
+        state.villagers = state.villagers.map((v) => {
+          const newWeaponId = bestWeaponIdFor(v, inventoryItems);
+          const newArmorId = bestArmorIdFor(v, inventoryItems);
+          if (newWeaponId === v.weaponId && newArmorId === v.armorId) return v;
+          return { ...v, weaponId: newWeaponId, armorId: newArmorId };
         });
 
         // 5. 自動転職

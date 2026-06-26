@@ -1,4 +1,4 @@
-import { BASE_GREAT_SUCCESS_RATE } from "../constants";
+import { BASE_GREAT_SUCCESS_RATE, TRAINING_COOLDOWN_DAYS } from "../constants";
 import { getTrainingProgram, getTrainingProgramsForFacility } from "../data/masterData";
 import { Villager, VillagerBonuses, Facility, FacilityType } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
@@ -188,7 +188,7 @@ export function processAutoTraining(
     if (queue.length >= TRAINING_QUEUE_MAX_LENGTH) break;
     if (v.status !== "idle") continue;
     if (v.gold < TRAINING_GOLD_THRESHOLD) continue;
-    if (currentDay - (v.lastTrainingDay ?? 0) < 1) continue; // 同一村人は1日以上間隔を空ける
+    if (v.lastTrainingDay && currentDay - v.lastTrainingDay < TRAINING_COOLDOWN_DAYS) continue; // 同一村人は TRAINING_COOLDOWN_DAYS 日以上間隔を空ける (lastTrainingDay=0 は未訓練)
 
     const program = getBestTrainingProgram(v, availablePrograms);
     if (!program) continue;

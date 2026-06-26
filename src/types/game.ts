@@ -300,8 +300,6 @@ export interface GameActions {
     targetMonsterId?: string | null;
   }) => void;
   changeVillagerJob: (id: string, job: JobType) => void;
-  equipItem: (villagerId: string, itemId: string, slot: "weapon" | "armor") => void;
-  unequipItem: (villagerId: string, slot: "weapon" | "armor") => void;
   autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType, villagerId?: string) => void;
@@ -337,6 +335,7 @@ export interface GameActions {
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
   payVillagerDebts: () => void;
+  payVillagerReward: (villagerId: string, amount: number) => void;
 }
 
 export interface RunStats {

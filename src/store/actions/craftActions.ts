@@ -1,4 +1,4 @@
-import { CRAFT_QUEUE_MAX_LENGTH } from "../../constants";
+import { CRAFT_QUEUE_MAX_LENGTH, TRAINING_COOLDOWN_DAYS } from "../../constants";
 import { ITEMS, getRecipeForItem, getTrainingProgram } from "../../data/masterData";
 import { FacilityType, Villager, StoreSet, StoreGet } from "../../types/game";
 import { calculateCraftTime, generateId } from "../../utils/craftHelpers";
@@ -134,6 +134,21 @@ export const createCraftActions = (set: StoreSet, get: StoreGet) => ({
       state.addLog("訓練には待機中の村人を割り当ててください。", "warning");
       return;
     }
+
+    // クールダウンチェック: 前回訓練から TRAINING_COOLDOWN_DAYS 日以内なら開始不可
+    // lastTrainingDay === 0 は「未訓練」として扱う (初期値センティネル)
+    if (villager.lastTrainingDay) {
+      const daysSinceLastTraining = state.currentDay - villager.lastTrainingDay;
+      if (daysSinceLastTraining < TRAINING_COOLDOWN_DAYS) {
+        const daysRemaining = TRAINING_COOLDOWN_DAYS - daysSinceLastTraining;
+        state.addLog(
+          `${villager.name} は前回の訓練から ${daysRemaining} 日経過していないため、訓練を開始できません（最低 ${TRAINING_COOLDOWN_DAYS} 日間隔が必要）。`,
+          "warning",
+        );
+        return;
+      }
+    }
+
     if (villager.gold < program.goldCost) {
       state.addLog(
         `${villager.name} の所持金が不足しています（必要: ${program.goldCost} G、現在: ${villager.gold} G）。`,

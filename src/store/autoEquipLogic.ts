@@ -102,10 +102,18 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
   sortedVillagerIndices.forEach(({ v, index }) => {
     const currentGold = villagers[index].gold;
 
-    let bestWeaponId = "none";
+    let bestWeaponId = v.weaponId || "none";
     let bestWeaponScore = -1;
     let weaponCost = 0;
-    let isSameWeapon = false;
+    let isSameWeapon = true;
+
+    // 重要: 現在装備品のスコアを初期値にする (弱い装備への強制交換を防ぐ)
+    if (v.weaponId && v.weaponId !== "none") {
+      const currentItem = ITEMS[v.weaponId];
+      if (currentItem) {
+        bestWeaponScore = getWeaponScore(currentItem, v);
+      }
+    }
 
     Object.entries(weaponPool).forEach(([itemId, count]) => {
       if (count <= 0) return;
@@ -115,6 +123,7 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
 
       if (currentGold >= cost) {
         const score = getWeaponScore(item, v);
+        // 重要: 同点なら変更しない (現在の装備を維持)
         if (score > bestWeaponScore) {
           bestWeaponScore = score;
           bestWeaponId = itemId;
@@ -150,10 +159,18 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
       weaponCost = 0;
     }
 
-    let bestArmorId = "none";
+    let bestArmorId = v.armorId || "none";
     let bestArmorScore = -1;
     let armorCost = 0;
-    let isSameArmor = false;
+    let isSameArmor = true;
+
+    // 重要: 現在装備品のスコアを初期値にする (弱い装備への強制交換を防ぐ)
+    if (v.armorId && v.armorId !== "none") {
+      const currentItem = ITEMS[v.armorId];
+      if (currentItem) {
+        bestArmorScore = getArmorScore(currentItem, v);
+      }
+    }
 
     Object.entries(armorPool).forEach(([itemId, count]) => {
       if (count <= 0) return;
@@ -163,6 +180,7 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
 
       if (remainingGold >= cost) {
         const score = getArmorScore(item, v);
+        // 重要: 同点なら変更しない (現在の装備を維持)
         if (score > bestArmorScore) {
           bestArmorScore = score;
           bestArmorId = itemId;

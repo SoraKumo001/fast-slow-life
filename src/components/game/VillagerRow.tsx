@@ -8,13 +8,15 @@ import {
   Zap,
   CheckCircle,
 } from "lucide-react";
-import React from "react";
+import React, { useState } from "react";
 
 import { EXP_NEEDED_PER_LEVEL } from "../../constants";
 import { ITEMS } from "../../data/masterData";
+import { useGameStore } from "../../store/gameStore";
 import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
 import { getPartyLabel } from "../../utils/partyHelpers";
 import { getVillagerPurposeText } from "../../utils/villagerHelpers";
+import { Button } from "../ui/Button";
 import { MissionBadge } from "../ui/MissionBadge";
 import { ProgressBar } from "../ui/ProgressBar";
 import { VillagerActions } from "./VillagerActions";
@@ -54,6 +56,13 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
     const price = (ITEMS[itemId]?.basePrice || 0) * 2;
     return sum + price * count;
   }, 0);
+
+  // 報奨金 UI 用
+  const playerGold = useGameStore((s) => s.gold);
+  const payVillagerReward = useGameStore((s) => s.payVillagerReward);
+  const [rewardInput, setRewardInput] = useState("");
+  const parsedReward = parseInt(rewardInput, 10);
+  const parsedRewardValid = Number.isFinite(parsedReward) && parsedReward > 0;
 
   // パーティバッジ用データ
   const partyKey = v.autoTargetName ?? "";
@@ -170,6 +179,75 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
       {isExpanded && (
         <div className="mt-3 pt-3 border-t border-slate-900 space-y-3">
           <VillagerStats villager={v} />
+
+          {/* 報奨金セクション */}
+          <div className="bg-emerald-950/20 border border-emerald-900/40 rounded p-2.5 space-y-2">
+            <p className="text-[10px] font-bold text-emerald-400 flex items-center justify-between gap-1.5">
+              <span className="flex items-center gap-1.5">
+                <CircleDollarSign className="w-3 h-3" /> 報奨金を支払う
+              </span>
+              <span className="text-[10px] text-slate-300 font-mono font-normal">
+                所持金: {Math.floor(playerGold).toLocaleString()} G
+              </span>
+            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {[10, 50, 100, 500, 1000].map((amount) => {
+                const affordable = playerGold >= amount;
+                return (
+                  <Button
+                    key={amount}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      payVillagerReward(v.id, amount);
+                    }}
+                    disabled={!affordable}
+                    variant="custom"
+                    size="custom"
+                    className={`px-2 py-1 rounded text-[10px] font-mono font-bold transition ${
+                      affordable
+                        ? "bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 cursor-pointer"
+                        : "bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed"
+                    }`}
+                    title={`${v.name} に ${amount} G 支払う`}
+                  >
+                    {amount}G
+                  </Button>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <input
+                type="number"
+                min="1"
+                max={playerGold}
+                placeholder="任意額 (1G以上)"
+                value={rewardInput}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setRewardInput(e.target.value)}
+                className="flex-1 min-w-0 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-[10px] text-slate-200 font-mono focus:border-emerald-500 focus:outline-none"
+              />
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (parsedRewardValid) {
+                    payVillagerReward(v.id, parsedReward);
+                    setRewardInput("");
+                  }
+                }}
+                disabled={!parsedRewardValid || playerGold < parsedReward}
+                variant="custom"
+                size="custom"
+                className="px-3 py-1 rounded text-[10px] font-bold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white border border-emerald-600 disabled:border-slate-700 transition cursor-pointer disabled:cursor-not-allowed"
+              >
+                支給
+              </Button>
+            </div>
+            {v.gold < 0 && (
+              <p className="text-[10px] text-red-400 font-mono">
+                ⚠ 借金を完済するには: <span className="font-bold">{-v.gold} G</span> 必要
+              </p>
+            )}
+          </div>
 
           {v.pool && Object.keys(v.pool).length > 0 && (
             <div className="bg-slate-900/60 border border-slate-800 rounded p-2.5 space-y-1">

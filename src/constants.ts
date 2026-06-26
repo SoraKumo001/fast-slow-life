@@ -1,5 +1,8 @@
 export const TIER_LIMIT_DAYS = [0, 60, 180, 450, 700, 900];
 
+/** 訓練完了後、同じ村人が再度訓練可能になるまでの日数 */
+export const TRAINING_COOLDOWN_DAYS = 5;
+
 export const HOURS_PER_DAY = 24;
 export const MAX_LOG_COUNT = 100;
 
