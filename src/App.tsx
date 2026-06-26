@@ -110,18 +110,6 @@ export default function App() {
         {/* Toast通知 */}
         <ToastContainer />
 
-        <div className="bg-slate-900/40 border-b border-slate-900 px-6 py-2 flex items-center gap-4 text-xs text-slate-400 shrink-0 select-none">
-          <div className="flex items-center gap-1.5">
-            <span>村を発展させ、ボス討伐期限までにダンジョンを攻略しましょう。</span>
-            <button
-              onClick={() => setShowHelpModal(true)}
-              className="text-sky-400 hover:underline flex items-center gap-0.5"
-            >
-              <HelpCircle className="w-3.5 h-3.5" /> 遊び方
-            </button>
-          </div>
-        </div>
-
         {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
         <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
           {/* 1. 素材・アイテム */}
