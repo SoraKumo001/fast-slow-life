@@ -1,19 +1,21 @@
-import { Compass, ShieldAlert, Users, Sword, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Compass, ShieldAlert, Users, Sword, ChevronDown, ChevronUp } from "lucide-react";
 import React, { useState } from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { useDungeons, useVillagers, useBossActions } from "../../hooks";
+import { useDungeons, useVillagers } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
+import { useGameStore } from "../../store/gameStore";
 import { DungeonArea } from "../../types/game";
+import { getPartyColor, getPartyLabel } from "../../utils/partyHelpers";
 import { BossBattleModal } from "../modals/BossBattleModal";
 import { Panel } from "../ui/Panel";
 import { ProgressBar } from "../ui/ProgressBar";
 import { DungeonResourceItem } from "./DungeonResourceItem";
 
 export const DungeonPanel: React.FC = () => {
-  const { dungeons, currentTier, bossDefeated, activeBoss } = useDungeons();
+  const { dungeons, currentTier, bossDefeated } = useDungeons();
   const villagers = useVillagers();
-  const { withdrawFromBossBattle } = useBossActions();
+  const activeBoss = useGameStore((s) => s.activeBoss);
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
   const { isExpanded: isAreaExpanded, toggleExpand: toggleAreaExpand } = useExpandedState();
@@ -27,61 +29,40 @@ export const DungeonPanel: React.FC = () => {
     setShowBossModal(true);
   };
 
+  // P2-2: 解放済みエリア集計
+  const unlockedAreas = dungeons.filter((area) => area.unlockedAtTier <= currentTier);
+  const maxRecommendedLevel =
+    unlockedAreas.length > 0 ? Math.max(...unlockedAreas.map((a) => a.recommendedLevel)) : 0;
+  const avgExploration =
+    unlockedAreas.length > 0
+      ? Math.round(
+          unlockedAreas.reduce((sum, a) => sum + a.explorationProgress, 0) / unlockedAreas.length,
+        )
+      : 0;
+  const tierNames = ["", "始まりの森", "廃鉱山", "魔獣の谷", "世界樹の根", "深淵の奈落"];
+
   return (
-    <Panel title="ダンジョン・探索派遣" icon={<Compass className="w-5 h-5 text-sky-400" />}>
-      {/* アクティブなボス戦表示 */}
-      {activeBoss && (
-        <div className="mb-6 p-4 bg-red-950/30 border border-red-900/50 rounded-xl animate-pulse-slow">
-          <div className="flex justify-between items-end mb-2">
-            <div>
-              <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
-                Decision Battle
-              </span>
-              <h3 className="text-lg font-black text-white italic">
-                VS{" "}
-                {dungeons
-                  .find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId))
-                  ?.monsters.find((m) => m.id === activeBoss.monsterId)?.name || "Boss"}
-              </h3>
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] text-slate-400 font-mono">BOSS HP</span>
-              <div className="text-sm font-black text-red-400 font-mono">
-                {Math.ceil(activeBoss.currentHp)} / {activeBoss.maxHp}
-              </div>
-            </div>
-          </div>
-          <div className="w-full bg-slate-950 rounded-full h-3 border border-red-900/30 overflow-hidden mb-3">
-            <div
-              className="bg-linear-to-r from-red-600 to-rose-500 h-full transition-all duration-500"
-              style={{ width: `${(activeBoss.currentHp / activeBoss.maxHp) * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between items-center">
-            <div className="flex -space-x-2">
-              {activeBoss.attackerIds.map((id) => {
-                const v = villagers.find((vil) => vil.id === id);
-                return (
-                  <div
-                    key={id}
-                    className="w-7 h-7 rounded-full bg-slate-800 border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-sky-400"
-                    title={v?.name}
-                  >
-                    {v?.name[0]}
-                  </div>
-                );
-              })}
-            </div>
-            <button
-              onClick={withdrawFromBossBattle}
-              className="px-3 py-1 bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white rounded text-[10px] font-bold transition flex items-center gap-1"
-            >
-              <X className="w-3 h-3" />
-              撤退する
-            </button>
-          </div>
+    <Panel
+      title="ダンジョン・探索派遣"
+      icon={<Compass className="w-5 h-5 text-sky-400" />}
+      actions={
+        <div className="flex items-center gap-3 text-[10px] font-normal">
+          <span className="text-slate-500">
+            Tier{" "}
+            <span className="text-indigo-400 font-bold">
+              {tierNames[currentTier] || currentTier}
+            </span>
+          </span>
+          <span className="text-slate-500">
+            推奨Lv <span className="text-amber-400 font-bold">{maxRecommendedLevel}</span>
+          </span>
+          <span className="text-slate-500">
+            全体 <span className="text-sky-400 font-bold">{avgExploration}%</span>
+          </span>
         </div>
-      )}
+      }
+    >
+      {/* アクティブなボス戦は ActiveBossBar (上部固定) で表示 (P2-3) */}
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {dungeons
@@ -251,19 +232,89 @@ export const DungeonPanel: React.FC = () => {
                       {activeInArea.length === 0 ? (
                         <span className="text-[10px] text-slate-500 italic">なし</span>
                       ) : (
-                        activeInArea.map((v) => (
-                          <span
-                            key={v.id}
-                            className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
-                              v.status === "active"
-                                ? "bg-sky-950/40 border-sky-800 text-sky-400"
-                                : "bg-amber-950/20 border-amber-900 text-amber-400"
-                            }`}
-                            title={`現在方針: ${v.order === "gather" ? "採取" : "討伐"}`}
-                          >
-                            {v.name} ({v.order === "gather" ? "採" : "討"})
-                          </span>
-                        ))
+                        (() => {
+                          // AUTO-PARTY: 討伐隊を autoTargetName でグルーピング
+                          const hunters = activeInArea.filter((v) => v.order === "hunt");
+                          const gatherers = activeInArea.filter((v) => v.order !== "hunt");
+
+                          const parties = new Map<string, typeof hunters>();
+                          for (const v of hunters) {
+                            const key = v.autoTargetName || `__solo_${v.id}`;
+                            const list = parties.get(key) || [];
+                            list.push(v);
+                            parties.set(key, list);
+                          }
+
+                          // 全パーティキーを抽出（ラベル安定ソート用）
+                          const allPartyKeys = Array.from(
+                            new Set(
+                              hunters
+                                .map((v) => v.autoTargetName)
+                                .filter((k): k is string => Boolean(k)),
+                            ),
+                          ).sort();
+
+                          return (
+                            <>
+                              {Array.from(parties.entries()).map(([target, members]) =>
+                                target.startsWith("__solo_")
+                                  ? // ターゲット未設定の単独ハンター
+                                    members.map((v) => (
+                                      <span
+                                        key={v.id}
+                                        className="text-[10px] px-2 py-0.5 rounded font-medium border bg-red-950/40 border-red-800 text-red-300"
+                                        title="待機中"
+                                      >
+                                        {v.name} (討)
+                                      </span>
+                                    ))
+                                  : // パーティ表示 (色分け適用)
+                                    (() => {
+                                      const color = getPartyColor(target);
+                                      const label = getPartyLabel(target, allPartyKeys);
+                                      return (
+                                        <div key={target} className="flex items-center gap-1">
+                                          <Sword
+                                            className={`w-3 h-3 shrink-0 ${color?.text ?? "text-red-400"}`}
+                                          />
+                                          <span className="text-[9px] text-slate-500">
+                                            PT-{label} {target}:
+                                          </span>
+                                          {members.map((v) => (
+                                            <span
+                                              key={v.id}
+                                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium border ${
+                                                v.currentHp > 0
+                                                  ? color
+                                                    ? `${color.bg} ${color.border} ${color.text}`
+                                                    : "bg-red-950/40 border-red-800 text-red-300"
+                                                  : "bg-slate-900 border-slate-700 text-slate-500 line-through"
+                                              }`}
+                                              title={`Lv.${v.level} HP:${v.currentHp}/${v.maxHp} (${v.currentJob})`}
+                                            >
+                                              {v.name}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      );
+                                    })(),
+                              )}
+                              {gatherers.map((v) => (
+                                <span
+                                  key={v.id}
+                                  className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
+                                    v.status === "active"
+                                      ? "bg-sky-950/40 border-sky-800 text-sky-400"
+                                      : "bg-amber-950/20 border-amber-900 text-amber-400"
+                                  }`}
+                                  title={`現在方針: 採取`}
+                                >
+                                  {v.name} (採)
+                                </span>
+                              ))}
+                            </>
+                          );
+                        })()
                       )}
                     </div>
 

@@ -4,13 +4,13 @@ import React, { useEffect, useState } from "react";
 import { useBossDefeatStore } from "../../hooks/useBossDefeatStore";
 
 export const BossDefeatAnnouncement: React.FC = () => {
-  const info = useBossDefeatStore((s) => s.info);
+  const result = useBossDefeatStore((s) => s.result);
   const clear = useBossDefeatStore((s) => s.clear);
   const [visible, setVisible] = useState(false);
   const [animatingOut, setAnimatingOut] = useState(false);
 
   useEffect(() => {
-    if (info) {
+    if (result && result.type === "victory") {
       setVisible(true);
       setAnimatingOut(false);
       const timer = setTimeout(() => {
@@ -22,9 +22,9 @@ export const BossDefeatAnnouncement: React.FC = () => {
       }, 3500);
       return () => clearTimeout(timer);
     }
-  }, [info, clear]);
+  }, [result, clear]);
 
-  if (!visible || !info) return null;
+  if (!visible || !result || result.type !== "victory") return null;
 
   return (
     <div
@@ -64,7 +64,7 @@ export const BossDefeatAnnouncement: React.FC = () => {
 
           <h2 className="text-2xl font-extrabold text-white">
             エリアボス
-            <span className="text-amber-400 ml-2">【{info.bossName}】</span>
+            <span className="text-amber-400 ml-2">【{result.bossName}】</span>
             を撃破！
           </h2>
 
@@ -72,9 +72,9 @@ export const BossDefeatAnnouncement: React.FC = () => {
 
           <div className="text-slate-300 text-sm space-y-1">
             <p>
-              Tier <span className="text-amber-400 font-bold">{info.tier}</span> に進行しました！
+              Tier <span className="text-amber-400 font-bold">{result.tier}</span> に進行しました！
             </p>
-            <p className="text-slate-500 text-xs">次の期限: {info.gameLimitDays}日目 まで</p>
+            <p className="text-slate-500 text-xs">次の期限: {result.gameLimitDays}日目 まで</p>
           </div>
 
           <p className="text-slate-500 text-[10px] mt-2">クリックで閉じる</p>

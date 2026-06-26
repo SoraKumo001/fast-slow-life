@@ -90,6 +90,8 @@ export interface VillagerStatusInfo {
   assignedCraftJobId: string | null;
   targetMonsterId: string | null;
   autoTargetName?: string | null;
+  /** 自動パーティーのステッガーオフセット (0〜SCHEDULER_INTERVAL_HOURS-1) */
+  partyEngagementOffset?: number;
 }
 
 export interface VillagerInventory {

@@ -11,7 +11,7 @@ import {
   getResourceProductionInfo,
   isResourceFacility,
 } from "../../utils/facilityHelpers";
-import { ItemDetailModal } from "../modals/ItemDetailModal";
+import { ItemDetailDrawer } from "../modals/ItemDetailDrawer";
 import { ProgressBar } from "../ui/ProgressBar";
 import { CraftQueueDisplay } from "./CraftQueueDisplay";
 import { CraftRecipeGrid } from "./CraftRecipeGrid";
@@ -230,7 +230,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
         )}
       </div>
       {selectedItem && (
-        <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
+        <ItemDetailDrawer item={selectedItem} onClose={() => setSelectedItem(null)} />
       )}
     </>
   );

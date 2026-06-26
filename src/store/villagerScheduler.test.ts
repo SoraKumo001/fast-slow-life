@@ -362,3 +362,123 @@ describe("runVillagerScheduler - logs", () => {
     expect(v1.autoTargetName).toBe("ウルフ");
   });
 });
+
+// ── PARTY_SIZE 上限 (P-3 fix) ──
+
+import { PARTY_SIZE } from "./schedulerConfig";
+
+describe("runVillagerScheduler - PARTY_SIZE 上限", () => {
+  it("3 ハンター + 1 モンスター: 全員配備、待機 0", () => {
+    const hunters = ["v1", "v2", "v3"].map((id) =>
+      makeVillager({ id, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [makeArea()],
+      inventory: {},
+      targetAmounts: { raw_meat: 10 },
+    });
+    const assigned = result.villagers.filter((v) => v.autoTargetName !== null);
+    expect(assigned.length).toBe(3);
+    // 全員同じパーティ (PT-A 相当)
+    expect(new Set(assigned.map((v) => v.autoTargetName)).size).toBe(1);
+  });
+
+  it("4 ハンター + 1 モンスター: 3 配備、1 待機 (autoTargetName = null)", () => {
+    const hunters = ["v1", "v2", "v3", "v4"].map((id) =>
+      makeVillager({ id, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [makeArea()],
+      inventory: {},
+      targetAmounts: { raw_meat: 10 },
+    });
+    const assigned = result.villagers.filter((v) => v.autoTargetName !== null);
+    const waiting = result.villagers.filter((v) => v.autoTargetName === null);
+    expect(assigned.length).toBe(3);
+    expect(waiting.length).toBe(1);
+  });
+
+  it("5 ハンター + 1 モンスター: 3 配備、2 待機", () => {
+    const hunters = ["v1", "v2", "v3", "v4", "v5"].map((id) =>
+      makeVillager({ id, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [makeArea()],
+      inventory: {},
+      targetAmounts: { raw_meat: 10 },
+    });
+    const assigned = result.villagers.filter((v) => v.autoTargetName !== null);
+    const waiting = result.villagers.filter((v) => v.autoTargetName === null);
+    expect(assigned.length).toBe(3);
+    expect(waiting.length).toBe(2);
+    // パーティサイズ上限を超えない
+    const partySize = assigned.length;
+    expect(partySize).toBeLessThanOrEqual(PARTY_SIZE);
+  });
+
+  it("9 ハンター + 3 モンスター: 9 配備、3 パーティ (待機なし)", () => {
+    const area = makeArea({
+      monsters: [
+        makeMonster({ id: "wolf", name: "ウルフ" }),
+        makeMonster({ id: "bear", name: "ベア" }),
+        makeMonster({ id: "tiger", name: "タイガー" }),
+      ],
+    });
+    const hunters = Array.from({ length: 9 }, (_, i) =>
+      makeVillager({ id: `v${i + 1}`, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [area],
+      inventory: {},
+      targetAmounts: { raw_meat: 30 },
+    });
+    const assigned = result.villagers.filter((v) => v.autoTargetName !== null);
+    expect(assigned.length).toBe(9);
+    // 3 パーティに分散
+    const partyKeys = new Set(assigned.map((v) => v.autoTargetName));
+    expect(partyKeys.size).toBe(3);
+  });
+
+  it("10 ハンター + 3 モンスター: 9 配備、1 待機", () => {
+    const area = makeArea({
+      monsters: [
+        makeMonster({ id: "wolf", name: "ウルフ" }),
+        makeMonster({ id: "bear", name: "ベア" }),
+        makeMonster({ id: "tiger", name: "タイガー" }),
+      ],
+    });
+    const hunters = Array.from({ length: 10 }, (_, i) =>
+      makeVillager({ id: `v${i + 1}`, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [area],
+      inventory: {},
+      targetAmounts: { raw_meat: 30 },
+    });
+    const assigned = result.villagers.filter((v) => v.autoTargetName !== null);
+    const waiting = result.villagers.filter((v) => v.autoTargetName === null);
+    expect(assigned.length).toBe(9);
+    expect(waiting.length).toBe(1);
+  });
+
+  it("オーバーフロー時、待機ログメッセージが生成されること", () => {
+    const hunters = ["v1", "v2", "v3", "v4", "v5"].map((id) =>
+      makeVillager({ id, order: "hunt", currentJob: "戦士" }),
+    );
+    const result = runVillagerScheduler({
+      villagers: hunters,
+      dungeons: [makeArea()],
+      inventory: {},
+      targetAmounts: { raw_meat: 10 },
+    });
+    const waitLog = result.logs.find((l) => l.message.includes("待機"));
+    expect(waitLog).toBeDefined();
+    expect(waitLog?.message).toContain("2 人");
+    expect(waitLog?.message).toContain("全パーティ上限到達");
+  });
+});

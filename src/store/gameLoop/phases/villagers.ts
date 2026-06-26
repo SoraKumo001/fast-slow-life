@@ -36,6 +36,7 @@ export const villagersPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator 
     acc.hasStarvation,
     acc.soulUpgrades,
     acc.gold,
+    acc.currentHour,
     acc.isSalaryUnpaid,
     acc.nextStats,
   );

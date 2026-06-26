@@ -63,9 +63,9 @@ export function processStarvation(
       }
     }
 
-    // Round down to prevent fractional inventory values
+    // Clamp negative values to 0 (preserve fractional values for precision)
     Object.keys(nextInventory).forEach((key) => {
-      nextInventory[key] = Math.floor(nextInventory[key]);
+      if (nextInventory[key] < 0) nextInventory[key] = 0;
     });
 
     return {
@@ -169,9 +169,9 @@ export function processStarvation(
     logs.push(`【警告】食料が不足しており、${starvedCount}名の村人が飢餓状態になっています！`);
   }
 
-  // Round down to prevent fractional inventory values
+  // Clamp negative values to 0 (preserve fractional values for precision)
   Object.keys(nextInventory).forEach((key) => {
-    nextInventory[key] = Math.floor(nextInventory[key]);
+    if (nextInventory[key] < 0) nextInventory[key] = 0;
   });
 
   return {

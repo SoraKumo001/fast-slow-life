@@ -2,7 +2,12 @@ import { ITEMS, JOBS } from "../data/masterData";
 import { Villager, DungeonArea, DungeonMonster, DungeonGather, Item } from "../types/game";
 import { isMagicJob } from "../utils/villagerHelpers";
 import { LogPayload } from "./gameLoopTypes";
-import { MAX_HUNTERS_PER_MONSTER, MAX_GATHERERS_PER_RESOURCE } from "./schedulerConfig";
+import {
+  PARTY_SIZE,
+  PARTY_STAGGER_HOURS,
+  SCHEDULER_INTERVAL_HOURS,
+  MAX_GATHERERS_PER_RESOURCE,
+} from "./schedulerConfig";
 
 export interface SchedulerInput {
   villagers: Villager[];
@@ -42,9 +47,10 @@ export function runVillagerScheduler(input: SchedulerInput): SchedulerResult {
     return { villagers: updatedVillagers, logs };
   }
 
-  // autoTargetName をいったんクリア（スケジューラーが完全再割り当てする）
+  // autoTargetName / partyEngagementOffset をいったんクリア（スケジューラーが完全再割り当てする）
   for (const v of eligible) {
     v.autoTargetName = null;
+    v.partyEngagementOffset = undefined;
   }
 
   // エリアごとにグループ化
@@ -120,13 +126,13 @@ function assignHuntTargets(
   const assigned = new Set<string>();
   const countPerMonster = new Map<string, number>();
 
-  // 需要順にモンスターを処理
+  // 需要順にモンスターを処理 (AUTO-PARTY: PARTY_SIZE 上限)
   for (const { monster } of demandScores) {
     const unassigned = hunters.filter((v) => !assigned.has(v.id));
     if (unassigned.length === 0) break;
 
     const currentCount = countPerMonster.get(monster.name) ?? 0;
-    const slotsLeft = MAX_HUNTERS_PER_MONSTER - currentCount;
+    const slotsLeft = PARTY_SIZE - currentCount;
     if (slotsLeft <= 0) continue;
 
     // 戦闘適性順にソートして上限まで割り当て
@@ -142,13 +148,31 @@ function assignHuntTargets(
     countPerMonster.set(monster.name, currentCount + candidates.length);
   }
 
-  // 余剰ハンター → 需要最高のモンスターに（cap無視）
+  // 余剰ハンターは待機状態（第一ループで全モンスターのスロットが満杯）
+  // 次回スケジューラ実行 (SCHEDULER_INTERVAL_HOURS 時間後) で再配備される
   const remaining = hunters.filter((v) => !assigned.has(v.id));
   if (remaining.length > 0) {
-    const overflowTarget = demandScores[0].monster;
-    for (const v of remaining) {
-      v.autoTargetName = overflowTarget.name;
+    logs.push({
+      message: `【配備】${area.name} の討伐希望 ${remaining.length} 人は全パーティ上限到達により待機します（次回 ${SCHEDULER_INTERVAL_HOURS} 時間後に再配備）。`,
+      type: "system",
+    });
+  }
+
+  // パーティごとにステッガーオフセットを割り当て
+  const parties = new Map<string, Villager[]>(); // monsterName → members
+  for (const v of hunters) {
+    if (!v.autoTargetName) continue;
+    const list = parties.get(v.autoTargetName) || [];
+    list.push(v);
+    parties.set(v.autoTargetName, list);
+  }
+  let partyIndex = 0;
+  for (const [, members] of parties.entries()) {
+    const offset = (partyIndex * PARTY_STAGGER_HOURS) % SCHEDULER_INTERVAL_HOURS;
+    for (const v of members) {
+      v.partyEngagementOffset = offset;
     }
+    partyIndex++;
   }
 
   const assignedCount = hunters.filter((v) => v.autoTargetName).length;

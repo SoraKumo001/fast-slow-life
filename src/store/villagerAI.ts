@@ -24,7 +24,8 @@ import {
 } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
 import { processVillagerGather } from "./gatherLogic";
-import { processVillagerHunt } from "./huntLogic";
+import { processVillagerHunt, processPartyHunt } from "./huntLogic";
+import { SCHEDULER_INTERVAL_HOURS, PARTY_SIZE } from "./schedulerConfig";
 
 export function processVillagerActivities(
   villagers: Villager[],
@@ -37,6 +38,7 @@ export function processVillagerActivities(
   _hasStarvation: boolean,
   soulUpgrades: Record<string, number>,
   gold: number,
+  currentHour: number,
   isSalaryUnpaid: boolean = false,
   stats?: RunStats,
 ) {
@@ -52,6 +54,8 @@ export function processVillagerActivities(
   }));
   let gameOver = false;
   let isPaused = false;
+
+  const processedParties = new Set<string>();
 
   for (let i = 0; i < nextVillagers.length; i++) {
     const v = { ...nextVillagers[i] };
@@ -287,27 +291,89 @@ export function processVillagerActivities(
         nextInventory = gatherResult.inventory;
         logs.push(...gatherResult.logs);
       } else if (v.order === "hunt") {
-        const huntResult = processVillagerHunt(
-          v,
-          i,
-          area,
-          nextVillagers,
-          nextInventory,
-          targetAmounts,
-          efficiency,
-          soulUpgrades,
-          currentGold,
-          isSalaryUnpaid,
-          stats,
-        );
-        currentGold = huntResult.gold;
-        nextInventory = huntResult.inventory;
-        logs.push(...huntResult.logs);
-        if (v.currentHp <= 0) {
-          v.status = "traveling_back";
-          v.travelTimeLeft = area.distance;
-          v.order = "rest";
-          v.autoTargetName = null;
+        const offset = v.partyEngagementOffset;
+
+        // ステッガーオフセット不一致 → 待機
+        if (offset !== undefined && currentHour % SCHEDULER_INTERVAL_HOURS !== offset) {
+          nextVillagers[i] = v;
+          continue;
+        }
+
+        if (offset !== undefined && v.autoTargetName) {
+          // ── パーティバトル ──
+          const partyKey = `${v.destinationAreaId}:${v.autoTargetName}`;
+          if (processedParties.has(partyKey)) {
+            // 既に代表者が処理済み → 待機
+            nextVillagers[i] = v;
+            continue;
+          }
+          processedParties.add(partyKey);
+
+          // 同一エリア + 同一 autoTargetName のアクティブハンターを全探索
+          const partyMembers: Villager[] = [];
+          for (const pv of nextVillagers) {
+            if (partyMembers.length >= PARTY_SIZE) break;
+            if (
+              pv.id !== v.id &&
+              pv.status === "active" &&
+              pv.order === "hunt" &&
+              pv.destinationAreaId === v.destinationAreaId &&
+              pv.autoTargetName === v.autoTargetName
+            ) {
+              partyMembers.push(pv);
+            }
+          }
+          // リーダーを先頭に
+          partyMembers.unshift(v);
+
+          const huntResult = processPartyHunt(
+            partyMembers,
+            area,
+            nextInventory,
+            targetAmounts,
+            efficiency,
+            soulUpgrades,
+            currentGold,
+            isSalaryUnpaid,
+            stats,
+          );
+          currentGold = huntResult.gold;
+          nextInventory = huntResult.inventory;
+          logs.push(...huntResult.logs);
+
+          // 死亡メンバーを帰還状態に設定
+          for (const member of partyMembers) {
+            if (member.currentHp <= 0) {
+              member.status = "traveling_back" as Villager["status"];
+              member.travelTimeLeft = area.distance;
+              member.order = "rest" as Villager["order"];
+              member.autoTargetName = null;
+            }
+          }
+        } else {
+          // ── 単独バトル (現状維持) ──
+          const huntResult = processVillagerHunt(
+            v,
+            i,
+            area,
+            nextVillagers,
+            nextInventory,
+            targetAmounts,
+            efficiency,
+            soulUpgrades,
+            currentGold,
+            isSalaryUnpaid,
+            stats,
+          );
+          currentGold = huntResult.gold;
+          nextInventory = huntResult.inventory;
+          logs.push(...huntResult.logs);
+          if (v.currentHp <= 0) {
+            v.status = "traveling_back" as Villager["status"];
+            v.travelTimeLeft = area.distance;
+            v.order = "rest" as Villager["order"];
+            v.autoTargetName = null;
+          }
         }
       }
     }

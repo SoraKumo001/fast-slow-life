@@ -12,7 +12,7 @@ import {
   getEquipmentBonusString,
   isItemAvailable,
 } from "../../utils/itemHelpers";
-import { ItemDetailModal } from "../modals/ItemDetailModal";
+import { ItemDetailDrawer } from "../modals/ItemDetailDrawer";
 import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
 import { SortSelect } from "../ui/SortSelect";
@@ -62,6 +62,15 @@ export const InventoryPanel: React.FC = () => {
   const sortItems = (itemA: Item, itemB: Item) => {
     const countA = Math.floor(inventory[itemA.id] || 0);
     const countB = Math.floor(inventory[itemB.id] || 0);
+
+    // P2-4: 目標未達 (target > 0 && count < target) のアイテムを最優先
+    const targetA = targetAmounts[itemA.id] || 0;
+    const targetB = targetAmounts[itemB.id] || 0;
+    const aShortage = targetA > 0 && countA < targetA ? 1 : 0;
+    const bShortage = targetB > 0 && countB < targetB ? 1 : 0;
+    if (aShortage !== bShortage) {
+      return bShortage - aShortage; // shortage first
+    }
 
     if (sortBy === "count-desc") {
       return countB - countA;
@@ -127,11 +136,17 @@ export const InventoryPanel: React.FC = () => {
             const exportInfo = marketLvl > 0 ? getBestExportPrice(item.id, towns, marketLvl) : null;
             const rule = tradeRules?.find((r) => r.itemId === item.id && r.type === "sell");
 
+            const isShortage = target > 0 && currentCount < target;
+
             return (
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-slate-950/80 border border-slate-800 hover:border-slate-700 p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition cursor-pointer"
+                className={`border p-3 rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition cursor-pointer ${
+                  isShortage
+                    ? "bg-red-950/30 border-red-900/60 hover:border-red-700"
+                    : "bg-slate-950/80 border-slate-800 hover:border-slate-700"
+                }`}
               >
                 {/* 名前 & カテゴリ */}
                 <div className="flex-1 min-w-0">
@@ -142,6 +157,12 @@ export const InventoryPanel: React.FC = () => {
                     >
                       {getCategoryLabel(item.category)}
                     </span>
+                    {/* P2-4: 目標未達バッジ */}
+                    {isShortage && (
+                      <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-red-500/20 text-red-300 border border-red-500/30">
+                        ! 不足
+                      </span>
+                    )}
                   </div>
                   <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex flex-wrap gap-x-2 items-center">
                     <span>
@@ -181,10 +202,8 @@ export const InventoryPanel: React.FC = () => {
           })}
       </div>
 
-      {/* 詳細モーダル */}
-      {selectedItem && (
-        <ItemDetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
-      )}
+      {/* 詳細ドロワー (右からスライドイン、在庫リストはクリック可能のまま) */}
+      <ItemDetailDrawer item={selectedItem} onClose={() => setSelectedItem(null)} />
     </Panel>
   );
 };

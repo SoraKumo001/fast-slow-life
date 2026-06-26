@@ -76,18 +76,7 @@ describe("bossBattle", () => {
     it("activeBossがnullの場合は状態が変更されないこと", () => {
       vi.spyOn(Math, "random").mockReturnValue(0);
       const villagers = [makeVillager()];
-      const result = processBossBattle(
-        null,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(null, villagers, [], 1, false, 60, {}, makeStats());
 
       expect(result.activeBoss).toBeNull();
       expect(result.villagers).toEqual(villagers);
@@ -118,18 +107,7 @@ describe("bossBattle", () => {
       ];
       const stats = makeStats();
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        stats,
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, stats);
 
       expect(result.activeBoss).not.toBeNull();
       expect(result.activeBoss?.currentHp).toBeLessThan(800);
@@ -148,18 +126,7 @@ describe("bossBattle", () => {
       };
       const villagers = [makeVillager({ id: "v1", str: 100, dex: 300, currentJob: "戦士" })];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, makeStats());
 
       expect(result.activeBoss).toBeNull();
       expect(result.bossDefeated).toBe(false);
@@ -190,18 +157,7 @@ describe("bossBattle", () => {
         }),
       ];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, makeStats());
 
       expect(result.activeBoss).toBeNull();
       expect(result.villagers[0].currentHp).toBe(0);
@@ -230,18 +186,7 @@ describe("bossBattle", () => {
         }),
       ];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, makeStats());
 
       // regen = floor(800 * 0.002) = 1, player deals 10*5 = 50 over 5 rounds
       expect(result.activeBoss?.currentHp).toBe(651);
@@ -280,18 +225,7 @@ describe("bossBattle", () => {
         }),
       ];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, makeStats());
 
       const warrior = result.villagers.find((v) => v.id === "warrior1")!;
       expect(warrior.currentHp).toBe(35);
@@ -308,18 +242,7 @@ describe("bossBattle", () => {
       };
       const villagers = [makeVillager({ id: "v1", str: 100, dex: 300 })];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        5,
-        false,
-        900,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 5, false, 900, {}, makeStats());
 
       expect(result.gameOver).toBe(true);
       expect(result.gameOverReason).toBe("クリア");
@@ -346,9 +269,7 @@ describe("bossBattle", () => {
         1,
         false,
         60,
-        false,
         { education: 1 },
-        false,
         makeStats(),
       );
 
@@ -367,18 +288,7 @@ describe("bossBattle", () => {
       };
       const villagers = [makeVillager({ id: "v1", status: "traveling_to" })];
 
-      const result = processBossBattle(
-        activeBoss,
-        villagers,
-        [],
-        1,
-        false,
-        60,
-        false,
-        {},
-        false,
-        makeStats(),
-      );
+      const result = processBossBattle(activeBoss, villagers, [], 1, false, 60, {}, makeStats());
 
       expect(result.activeBoss?.currentHp).toBe(601);
       expect(result.logs).toHaveLength(0);

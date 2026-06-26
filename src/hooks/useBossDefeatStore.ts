@@ -1,24 +1,29 @@
 import { create } from "zustand";
 
-export interface BossDefeatInfo {
+/**
+ * Boss battle result information displayed in the announcement banner.
+ * - victory: プレイヤーがボスを倒した
+ * - defeat: プレイヤーのアタッカーが全滅した
+ */
+export type BossBattleResultType = "victory" | "defeat";
+
+export interface BossBattleResult {
+  type: BossBattleResultType;
   bossName: string;
   tier: number;
   gameLimitDays: number;
 }
 
-interface BossDefeatState {
-  info: BossDefeatInfo | null;
-  announce: (info: BossDefeatInfo) => void;
+interface BossBattleResultState {
+  result: BossBattleResult | null;
+  announce: (result: BossBattleResult) => void;
   clear: () => void;
 }
 
-export const useBossDefeatStore = create<BossDefeatState>((set) => ({
-  info: null,
-  announce: (info) => {
-    set({ info });
-    setTimeout(() => {
-      set({ info: null });
-    }, 4000);
+export const useBossDefeatStore = create<BossBattleResultState>((set) => ({
+  result: null,
+  announce: (result) => {
+    set({ result });
   },
-  clear: () => set({ info: null }),
+  clear: () => set({ result: null }),
 }));

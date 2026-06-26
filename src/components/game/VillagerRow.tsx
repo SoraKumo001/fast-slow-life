@@ -13,7 +13,9 @@ import React from "react";
 import { EXP_NEEDED_PER_LEVEL } from "../../constants";
 import { ITEMS } from "../../data/masterData";
 import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
+import { getPartyLabel } from "../../utils/partyHelpers";
 import { getVillagerPurposeText } from "../../utils/villagerHelpers";
+import { MissionBadge } from "../ui/MissionBadge";
 import { ProgressBar } from "../ui/ProgressBar";
 import { VillagerActions } from "./VillagerActions";
 import { VillagerStats } from "./VillagerStats";
@@ -31,6 +33,10 @@ interface VillagerRowProps {
   }) => void;
   dungeons: DungeonArea[];
   facilities: Record<FacilityType, Facility>;
+  /** 全パーティキー一覧（ラベルの安定ソート用） */
+  allPartyKeys: string[];
+  /** パーティキーごとのサイズ Map */
+  partySizeMap: Record<string, number>;
 }
 
 export const VillagerRow: React.FC<VillagerRowProps> = ({
@@ -41,11 +47,18 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
   onSetOrder,
   dungeons,
   facilities,
+  allPartyKeys,
+  partySizeMap,
 }) => {
   const poolTotalValue = Object.entries(v.pool || {}).reduce((sum, [itemId, count]) => {
     const price = (ITEMS[itemId]?.basePrice || 0) * 2;
     return sum + price * count;
   }, 0);
+
+  // パーティバッジ用データ
+  const partyKey = v.autoTargetName ?? "";
+  const partyLabel = partyKey ? getPartyLabel(partyKey, allPartyKeys) : "";
+  const partySize = partyKey ? (partySizeMap[partyKey] ?? 0) : 0;
 
   return (
     <div className="bg-slate-950/80 border border-slate-800/80 hover:border-slate-700/80 rounded-lg p-3 transition duration-200">
@@ -97,31 +110,8 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             </span>
           )}
 
-          <div className="mt-1 flex gap-0.5 items-center">
-            <div>
-              <span
-                className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${
-                  v.status === "idle"
-                    ? "bg-slate-800 text-slate-400"
-                    : v.status === "resting"
-                      ? "bg-emerald-950/80 border border-emerald-900 text-emerald-400"
-                      : v.status === "active"
-                        ? "bg-red-950/80 border border-red-900 text-red-400"
-                        : "bg-amber-950/80 border border-amber-900 text-amber-400"
-                }`}
-              >
-                {v.status === "idle"
-                  ? "待機"
-                  : v.status === "resting"
-                    ? "休息中"
-                    : v.status === "active"
-                      ? "活動中"
-                      : v.status === "traveling_to"
-                        ? "移動中"
-                        : "帰還中"}
-                {v.travelTimeLeft}h
-              </span>
-            </div>
+          <div className="mt-1 flex gap-1.5 items-center flex-wrap">
+            <MissionBadge villager={v} partyLabel={partyLabel} partySize={partySize} />
             <span className="text-[10px] text-slate-300 font-medium mt-0.5 block">
               {getVillagerPurposeText(v, facilities, dungeons)}
             </span>

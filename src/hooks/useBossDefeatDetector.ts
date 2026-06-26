@@ -1,6 +1,7 @@
 /**
- * Detects boss defeat by watching tier progression and triggers the announcement banner.
- * This replaces the direct UI store call previously embedded in timeActions.ts.
+ * Detects boss battle results (victory / defeat) and triggers the announcement banner.
+ * - victory: currentTier progressed (boss was slain)
+ * - defeat:  activeBoss was cleared without tier progression (attackers wiped out)
  */
 import { useEffect, useRef } from "react";
 
@@ -13,16 +14,30 @@ export function useBossDefeatDetector(): void {
   const activeBoss = useGameStore((s) => s.activeBoss);
   const gameLimitDays = useGameStore((s) => s.gameLimitDays);
   const prevTierRef = useRef(currentTier);
+  const prevActiveBossRef = useRef(activeBoss);
 
   useEffect(() => {
-    if (currentTier > prevTierRef.current && activeBoss) {
-      const monster = MONSTERS[activeBoss.monsterId];
+    // 撃破検出: currentTier が進行 (= ボス撃破成功)
+    if (currentTier > prevTierRef.current && prevActiveBossRef.current) {
+      const monster = MONSTERS[prevActiveBossRef.current.monsterId];
       useBossDefeatStore.getState().announce({
-        bossName: monster?.name || activeBoss.monsterId,
+        type: "victory",
+        bossName: monster?.name || prevActiveBossRef.current.monsterId,
+        tier: currentTier,
+        gameLimitDays,
+      });
+    }
+    // 全滅検出: activeBoss が消え、tier は不変 (= 撃破ではない)
+    else if (!activeBoss && prevActiveBossRef.current && currentTier === prevTierRef.current) {
+      const monster = MONSTERS[prevActiveBossRef.current.monsterId];
+      useBossDefeatStore.getState().announce({
+        type: "defeat",
+        bossName: monster?.name || prevActiveBossRef.current.monsterId,
         tier: currentTier,
         gameLimitDays,
       });
     }
     prevTierRef.current = currentTier;
+    prevActiveBossRef.current = activeBoss;
   }, [currentTier, activeBoss, gameLimitDays]);
 }

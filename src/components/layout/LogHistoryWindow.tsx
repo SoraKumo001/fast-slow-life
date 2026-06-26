@@ -2,6 +2,7 @@ import { Terminal } from "lucide-react";
 import React, { useState } from "react";
 
 import { GameLog } from "../../types/game";
+import { getLogColorClass } from "../../utils/logHelpers";
 import { Button } from "../ui/Button";
 import { DraggableWindow } from "../ui/DraggableWindow";
 
@@ -9,27 +10,6 @@ interface LogHistoryWindowProps {
   logs: GameLog[];
   onClose: () => void;
 }
-
-const getLogColorClass = (type: GameLog["type"]) => {
-  switch (type) {
-    case "combat":
-      return "text-red-400";
-    case "gather":
-      return "text-emerald-400";
-    case "craft":
-      return "text-sky-400";
-    case "upgrade":
-      return "text-amber-400";
-    case "system":
-      return "text-purple-400 font-bold";
-    case "warning":
-      return "text-yellow-400 font-semibold";
-    case "error":
-      return "text-red-500 font-bold";
-    default:
-      return "text-slate-300";
-  }
-};
 
 const FILTER_TYPES = ["all", "combat", "gather", "craft", "upgrade", "system"] as const;
 

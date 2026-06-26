@@ -5,6 +5,7 @@ import { useVillagers, useDungeons, useVillagerActions, useFacilities } from "..
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { useGameStore } from "../../store/gameStore";
 import { JobType, Villager } from "../../types/game";
+import { getAllPartyKeys } from "../../utils/partyHelpers";
 import { JobChangeModal } from "../modals/JobChangeModal";
 import { FilterTabs } from "../ui/FilterTabs";
 import { Panel } from "../ui/Panel";
@@ -47,6 +48,16 @@ export const VillagerList: React.FC = () => {
     () => villagers.reduce((sum, v) => sum + (v.gold < 0 ? -v.gold : 0), 0),
     [villagers],
   );
+
+  const allPartyKeys = useMemo(() => getAllPartyKeys(villagers), [villagers]);
+  const partySizeMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const v of villagers) {
+      const key = v.autoTargetName;
+      if (key) map[key] = (map[key] || 0) + 1;
+    }
+    return map;
+  }, [villagers]);
 
   const filteredVillagers = useMemo(() => {
     let result = [...villagers];
@@ -158,6 +169,8 @@ export const VillagerList: React.FC = () => {
               onSetOrder={setVillagerOrder}
               dungeons={dungeonsData.dungeons}
               facilities={facilities}
+              allPartyKeys={allPartyKeys}
+              partySizeMap={partySizeMap}
             />
           ))
         )}

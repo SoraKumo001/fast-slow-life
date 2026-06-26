@@ -383,6 +383,7 @@ describe("gameLoopHelper", () => {
         false,
         {},
         500,
+        0,
       );
 
       expect(result.inventory["wheat"]).toBeGreaterThan(0);
@@ -508,6 +509,7 @@ describe("gameLoopHelper", () => {
         false,
         {},
         500,
+        0,
       );
 
       expect(result.villagers[0].potionCount).toBe(0);
@@ -571,6 +573,7 @@ describe("gameLoopHelper", () => {
         false,
         {},
         500,
+        0,
       );
 
       expect(result.villagers[0].potionCount).toBe(1);
@@ -680,6 +683,7 @@ describe("gameLoopHelper", () => {
         false,
         {},
         500,
+        0,
       );
 
       // オークが選ばれて、autoTargetNameが「オーク」になること
@@ -763,6 +767,7 @@ describe("gameLoopHelper", () => {
         false,
         {},
         500,
+        0,
       );
 
       // 村人が削除されていないこと
