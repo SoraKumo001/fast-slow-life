@@ -113,7 +113,7 @@ export default function App() {
         {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
         <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
           {/* 1. 素材・アイテム */}
-          <div className="h-125 lg:h-full overflow-hidden">
+          <div className="h-125 lg:h-full min-w-0">
             <InventoryPanel />
           </div>
 
