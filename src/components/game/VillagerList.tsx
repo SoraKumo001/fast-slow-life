@@ -57,15 +57,17 @@ export const VillagerList: React.FC = () => {
   const [jobGroup, setJobGroup] = useState<JobGroup>("all");
   const [sortBy, setSortBy] = useState<SortOption>("added");
 
-  const allPartyKeys = useMemo(() => getAllPartyKeys(villagers), [villagers]);
+  // 採取 (order="gather") にはパーティという概念がないため、PT ラベル/サイズは hunter のみで計算する
+  const hunterVillagers = useMemo(() => villagers.filter((v) => v.order === "hunt"), [villagers]);
+  const allPartyKeys = useMemo(() => getAllPartyKeys(hunterVillagers), [hunterVillagers]);
   const partySizeMap = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const v of villagers) {
+    for (const v of hunterVillagers) {
       const key = v.autoTargetName;
       if (key) map[key] = (map[key] || 0) + 1;
     }
     return map;
-  }, [villagers]);
+  }, [hunterVillagers]);
 
   const filteredVillagers = useMemo(() => {
     let result = [...villagers];

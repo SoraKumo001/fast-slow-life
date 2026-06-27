@@ -67,7 +67,8 @@ export const MissionBadge: React.FC<MissionBadgeProps> = ({
 }) => {
   const status = getStatus(villager);
   const timeLabel = `${villager.travelTimeLeft}h`;
-  const solo = isSolo(villager);
+  // 採取にはパーティという概念がないため、order="gather" も単騎扱いにする
+  const solo = isSolo(villager) || villager.order === "gather";
 
   // 単騎 → 状態バッジのみ表示
   if (solo) {
