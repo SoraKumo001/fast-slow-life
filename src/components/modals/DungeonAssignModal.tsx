@@ -30,7 +30,8 @@ export const DungeonAssignModal: React.FC<DungeonAssignModalProps> = ({ area, on
         <div>
           <h3 className="text-lg font-bold text-slate-100">村人を {area.name} へ派遣</h3>
           <p className="text-xs text-slate-400 font-mono">
-            推奨レベル: {area.recommendedLevel} • 必要移動時間: {area.distance}時間
+            推奨レベル: {area.recommendedLevel} • 必要移動時間: {area.distance}
+            時間
           </p>
         </div>
 

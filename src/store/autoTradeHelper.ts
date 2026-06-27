@@ -6,7 +6,12 @@ import { LogPayload } from "./gameLoopTypes";
 
 export function processAutoTrade(state: {
   facilities: { market: { level: number } };
-  tradeRules: { isEnabled: boolean; type: string; itemId: string; threshold: number }[];
+  tradeRules: {
+    isEnabled: boolean;
+    type: string;
+    itemId: string;
+    threshold: number;
+  }[];
   inventory: Record<string, number>;
   gold: number;
   caravans: Caravan[];
@@ -37,7 +42,11 @@ export function processAutoTrade(state: {
 
     // 2. 有効化された tradeRules をチェック
     // 倉庫内のアイテム数（今積載決定した分を差し引いた残り）が threshold を超えているものをリストアップ
-    const cargoCandidates: { itemId: string; excess: number; basePrice: number }[] = [];
+    const cargoCandidates: {
+      itemId: string;
+      excess: number;
+      basePrice: number;
+    }[] = [];
 
     for (const rule of state.tradeRules) {
       if (!rule.isEnabled || rule.type !== "sell") continue;

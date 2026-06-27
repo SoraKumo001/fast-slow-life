@@ -35,7 +35,10 @@ export const ImportCargoSelector: React.FC<ImportCargoSelectorProps> = ({
         items={getTownShopItems(activeTown.id).map(
           (itemId) => [itemId, ITEMS[itemId]] as [string, Item],
         )}
-        cargo={Object.entries(importCargo).map(([itemId, count]) => ({ itemId, count }))}
+        cargo={Object.entries(importCargo).map(([itemId, count]) => ({
+          itemId,
+          count,
+        }))}
         cargoLimit={getCargoLimit(activeTown)}
         activeTown={activeTown}
         marketLvl={marketLvl}

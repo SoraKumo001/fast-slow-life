@@ -195,7 +195,11 @@ describe("threatLogic", () => {
       // Tier 2 のダンジョン mine (unlockedAtTier=2) の threatLevel が
       // 旧バグ: 永遠に 0 (tierStartDays[2]=60 を参照していた)
       // 修正後: tierStartDay=10 から即座に上昇開始
-      const mine = makeDungeon({ id: "mine", unlockedAtTier: 2, threatLevel: 0 });
+      const mine = makeDungeon({
+        id: "mine",
+        unlockedAtTier: 2,
+        threatLevel: 0,
+      });
       // 10日目 12時 (= day=10, hour=12, totalHours = 9*24+12 = 228)
       const result = updateAllThreatLevels([mine], 2, false, 10, 12, 10);
       const afterT2 = result.dungeons[0].threatLevel;
@@ -213,7 +217,11 @@ describe("threatLogic", () => {
 
     it("Tier 1 攻略前のダンジョン (unlockedAtTier=1) は Tier 2 では対象外", () => {
       // Tier 1 を攻略済み → currentTier=2 → forest (unlockedAtTier=1) は対象外
-      const forest = makeDungeon({ id: "forest", unlockedAtTier: 1, threatLevel: 0 });
+      const forest = makeDungeon({
+        id: "forest",
+        unlockedAtTier: 1,
+        threatLevel: 0,
+      });
       const result = updateAllThreatLevels([forest], 2, true, 20, 0, 10);
       // 対象外なのでそのまま (0 のまま)
       expect(result.dungeons[0].threatLevel).toBe(0);
@@ -221,7 +229,11 @@ describe("threatLogic", () => {
 
     it("Tier 1 のダンジョンは常に day 1 を基準にする (bossDefeated=false)", () => {
       // Tier 1 (unlockedAtTier=1) は tierStartDay に関係なく day 1 を基準にする
-      const forest = makeDungeon({ id: "forest", unlockedAtTier: 1, threatLevel: 0 });
+      const forest = makeDungeon({
+        id: "forest",
+        unlockedAtTier: 1,
+        threatLevel: 0,
+      });
       // tierStartDay=100 でも Tier 1 なら day 1 から数える
       const result = updateAllThreatLevels([forest], 1, false, 5, 0, 100);
       const t = result.dungeons[0].threatLevel;

@@ -57,7 +57,11 @@ function makeStats(): RunStats {
 describe("caravanProgressHelper", () => {
   describe("processCaravanProgress", () => {
     it("trading中の馬車のtimeLeftが1減少すること", () => {
-      const caravan = makeCaravan({ status: "trading", timeLeft: 5, totalTime: 12 });
+      const caravan = makeCaravan({
+        status: "trading",
+        timeLeft: 5,
+        totalTime: 12,
+      });
       const result = processCaravanProgress([caravan], [], 100, {}, makeStats());
 
       expect(result.caravans[0].timeLeft).toBe(4);
@@ -159,7 +163,11 @@ describe("caravanProgressHelper", () => {
     it("Tier2で港町アイアンポートがアンロックされること", () => {
       const towns = [
         makeTown({ id: "komorebi", isUnlocked: true }),
-        makeTown({ id: "ironport", name: "港町アイアンポート", isUnlocked: false }),
+        makeTown({
+          id: "ironport",
+          name: "港町アイアンポート",
+          isUnlocked: false,
+        }),
         makeTown({ id: "magica", isUnlocked: false }),
       ];
       const result = unlockTownsByTier(towns, 2);

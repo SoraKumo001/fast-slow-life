@@ -163,7 +163,13 @@ describe("huntLogic - processVillagerHunt", () => {
 
   it("HP50%以下で potion を持っている場合は自動使用して HP が回復すること", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.5); // 中立値
-    const v = makeVillager({ vit: 1, dex: 300, str: 50, currentHp: 30, potionCount: 2 });
+    const v = makeVillager({
+      vit: 1,
+      dex: 300,
+      str: 50,
+      currentHp: 30,
+      potionCount: 2,
+    });
     const area = makeArea();
     area.monsters[0].currentProgress = 100;
     const result = processVillagerHunt(v, 0, area, [v], { potion: 5 }, {}, 1.0, {}, 1000, false);

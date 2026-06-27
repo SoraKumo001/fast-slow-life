@@ -25,13 +25,34 @@ export const ResultScreen: React.FC = () => {
     { label: "生存日数", value: `${currentDay} 日` },
     { label: "討伐モンスター", value: `${stats.totalMonstersDefeated} 体` },
     { label: "ボス討伐数", value: `${stats.totalBossesDefeated} 体` },
-    { label: "採取アイテム総数", value: `${stats.totalItemsGathered.toLocaleString()} 個` },
-    { label: "交易輸出総額", value: `${stats.totalGoldFromExports.toLocaleString()} G` },
-    { label: "交易輸入総額", value: `${stats.totalGoldSpentOnImports.toLocaleString()} G` },
-    { label: "アイテム買取数", value: `${stats.totalItemsPurchased.toLocaleString()} 個` },
-    { label: "買取支出", value: `${stats.totalGoldFromPurchases.toLocaleString()} G` },
-    { label: "クラフト完了数", value: `${stats.totalItemsCrafted.toLocaleString()} 回` },
-    { label: "村人からの税収", value: `${stats.totalGoldFromTax.toLocaleString()} G` },
+    {
+      label: "採取アイテム総数",
+      value: `${stats.totalItemsGathered.toLocaleString()} 個`,
+    },
+    {
+      label: "交易輸出総額",
+      value: `${stats.totalGoldFromExports.toLocaleString()} G`,
+    },
+    {
+      label: "交易輸入総額",
+      value: `${stats.totalGoldSpentOnImports.toLocaleString()} G`,
+    },
+    {
+      label: "アイテム買取数",
+      value: `${stats.totalItemsPurchased.toLocaleString()} 個`,
+    },
+    {
+      label: "買取支出",
+      value: `${stats.totalGoldFromPurchases.toLocaleString()} G`,
+    },
+    {
+      label: "クラフト完了数",
+      value: `${stats.totalItemsCrafted.toLocaleString()} 回`,
+    },
+    {
+      label: "村人からの税収",
+      value: `${stats.totalGoldFromTax.toLocaleString()} G`,
+    },
     { label: "最終ゴールド", value: `${Math.floor(gold).toLocaleString()} G` },
     { label: "獲得SP見込み", value: `${sp} SP` },
   ];

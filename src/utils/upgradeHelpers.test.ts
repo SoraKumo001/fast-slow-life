@@ -95,28 +95,56 @@ describe("upgradeHelpers - selectBestUpgradeVillager", () => {
 
   it("idle 村人から優先的に選択すること", () => {
     const idle = makeVillager({ id: "v1", status: "idle", currentJob: "農民" });
-    const active = makeVillager({ id: "v2", status: "active", currentJob: "職人" });
+    const active = makeVillager({
+      id: "v2",
+      status: "active",
+      currentJob: "職人",
+    });
     const result = selectBestUpgradeVillager([active, idle]);
     expect(result?.id).toBe("v1");
   });
 
   it("idle の中に職人がいれば最優先", () => {
-    const crafter = makeVillager({ id: "v1", status: "idle", currentJob: "職人" });
-    const farmer = makeVillager({ id: "v2", status: "idle", currentJob: "農民" });
-    const miner = makeVillager({ id: "v3", status: "idle", currentJob: "鉱夫" });
+    const crafter = makeVillager({
+      id: "v1",
+      status: "idle",
+      currentJob: "職人",
+    });
+    const farmer = makeVillager({
+      id: "v2",
+      status: "idle",
+      currentJob: "農民",
+    });
+    const miner = makeVillager({
+      id: "v3",
+      status: "idle",
+      currentJob: "鉱夫",
+    });
     const result = selectBestUpgradeVillager([farmer, miner, crafter]);
     expect(result?.id).toBe("v1");
   });
 
   it("idle に職人がいなければ鉱夫を優先", () => {
-    const farmer = makeVillager({ id: "v1", status: "idle", currentJob: "農民" });
-    const miner = makeVillager({ id: "v2", status: "idle", currentJob: "鉱夫" });
+    const farmer = makeVillager({
+      id: "v1",
+      status: "idle",
+      currentJob: "農民",
+    });
+    const miner = makeVillager({
+      id: "v2",
+      status: "idle",
+      currentJob: "鉱夫",
+    });
     const result = selectBestUpgradeVillager([farmer, miner]);
     expect(result?.id).toBe("v2");
   });
 
   it("assignedCraftJobId がある村人は対象外", () => {
-    const assigned = makeVillager({ id: "v1", status: "idle", assignedCraftJobId: "job_1" });
+    const assigned = makeVillager({
+      id: "v1",
+      status: "idle",
+      assignedCraftJobId: "job_1",
+    });
     const free = makeVillager({ id: "v2", status: "idle" });
     const result = selectBestUpgradeVillager([assigned, free]);
     expect(result?.id).toBe("v2");

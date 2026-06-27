@@ -121,7 +121,9 @@ describe("poolPurchase", () => {
 
     it("存在しないアイテムIDの場合は何も変化しないこと", () => {
       const v = makeVillager({ gold: 0 });
-      const result = processItemAcquisition(v, "nonexistent_item", 5, 10, { wheat: 3 });
+      const result = processItemAcquisition(v, "nonexistent_item", 5, 10, {
+        wheat: 3,
+      });
 
       expect(result.playerGold).toBe(10);
       expect(result.inventory.wheat).toBe(3);

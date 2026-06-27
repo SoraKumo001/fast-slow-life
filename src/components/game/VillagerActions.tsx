@@ -49,7 +49,11 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder({ id: v.id, order: "gather", areaId: v.destinationAreaId });
+                onSetOrder({
+                  id: v.id,
+                  order: "gather",
+                  areaId: v.destinationAreaId,
+                });
               }}
               disabled={v.order === "gather"}
               className="py-1 text-center rounded bg-emerald-950/40 hover:bg-emerald-900 border border-emerald-900 text-[9px] font-bold text-emerald-400 hover:text-emerald-200 transition disabled:opacity-40"
@@ -59,7 +63,11 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder({ id: v.id, order: "hunt", areaId: v.destinationAreaId });
+                onSetOrder({
+                  id: v.id,
+                  order: "hunt",
+                  areaId: v.destinationAreaId,
+                });
               }}
               disabled={v.order === "hunt"}
               className="py-1 text-center rounded bg-red-950/40 hover:bg-red-900 border border-red-900 text-[9px] font-bold text-red-400 hover:text-red-200 transition disabled:opacity-40"
@@ -69,7 +77,11 @@ export const VillagerActions: React.FC<VillagerActionsProps> = ({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onSetOrder({ id: v.id, order: "rest", areaId: v.destinationAreaId });
+                onSetOrder({
+                  id: v.id,
+                  order: "rest",
+                  areaId: v.destinationAreaId,
+                });
               }}
               className="py-1 text-center rounded bg-slate-900 hover:bg-slate-850 border border-slate-800 text-[9px] font-bold text-slate-400 hover:text-slate-200 transition"
             >

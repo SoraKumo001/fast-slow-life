@@ -86,7 +86,11 @@ export function hireVillagerHelper(params: {
   const existingNames = villagers.map((v) => v.name);
   const name = generateRandomName(existingNames);
   const sb = (soulUpgrades.body || 0) * 2;
-  const newVillager = createVillager({ id: "v_" + generateId(), name, statBonus: sb });
+  const newVillager = createVillager({
+    id: "v_" + generateId(),
+    name,
+    statBonus: sb,
+  });
 
   return {
     success: true,

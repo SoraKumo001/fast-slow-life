@@ -12,8 +12,14 @@ import {
 
 describe("itemHelpers - getCategoryBadgeColor", () => {
   const categories: ItemCategory[] = [
-    "food", "ore", "herb", "mana_stone", "material",
-    "gear_weapon", "gear_armor", "consumable",
+    "food",
+    "ore",
+    "herb",
+    "mana_stone",
+    "material",
+    "gear_weapon",
+    "gear_armor",
+    "consumable",
   ];
 
   it("全カテゴリでクラス文字列が返ること", () => {
@@ -327,14 +333,7 @@ describe("itemHelpers - isItemAvailable", () => {
     } as Record<FacilityType, Facility>;
     // 無限ループしないこと
     const start = Date.now();
-    const result = isItemAvailable(
-      "item_a",
-      [],
-      cycleRecipes,
-      {},
-      facilities,
-      1,
-    );
+    const result = isItemAvailable("item_a", [], cycleRecipes, {}, facilities, 1);
     const elapsed = Date.now() - start;
     expect(elapsed).toBeLessThan(100); // 100ms 以内
     expect(result).toBe(false);

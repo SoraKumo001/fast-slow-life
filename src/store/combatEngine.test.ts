@@ -152,7 +152,11 @@ describe("combatEngine", () => {
   describe("calculatePlayerDamage", () => {
     it("物理攻撃の基本ダメージを計算すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -165,7 +169,11 @@ describe("combatEngine", () => {
 
     it("クリティカル時は防御を無視してダメージが増加すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: true,
         efficiency: 1.0,
@@ -179,14 +187,22 @@ describe("combatEngine", () => {
 
     it("戦士の場合は職業ボーナスが乗ること", () => {
       const normal = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
         isMagicUser: false,
       });
       const warrior = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "戦士", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "戦士",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -199,7 +215,11 @@ describe("combatEngine", () => {
 
     it("魔法攻撃の場合はINTとMDEFで計算すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ int: 10, currentJob: "魔術師", weaponId: "none" }),
+        attacker: makeVillager({
+          int: 10,
+          currentJob: "魔術師",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 4, vit: 2, int: 6, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -212,7 +232,11 @@ describe("combatEngine", () => {
 
     it("魔法クリティカル時はダメージが増加すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ int: 10, currentJob: "魔術師", weaponId: "none" }),
+        attacker: makeVillager({
+          int: 10,
+          currentJob: "魔術師",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 4, vit: 2, int: 6, agi: 10 },
         isCritical: true,
         efficiency: 1.0,
@@ -226,7 +250,11 @@ describe("combatEngine", () => {
 
     it("武器の攻撃力・INTが加算されること", () => {
       const physical = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "iron_sword" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "iron_sword",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -236,7 +264,11 @@ describe("combatEngine", () => {
       expect(physical).toBe(42);
 
       const magical = calculatePlayerDamage({
-        attacker: makeVillager({ int: 10, currentJob: "魔術師", weaponId: "wooden_staff" }),
+        attacker: makeVillager({
+          int: 10,
+          currentJob: "魔術師",
+          weaponId: "wooden_staff",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -249,7 +281,11 @@ describe("combatEngine", () => {
 
     it("efficiencyが0.5の場合はダメージが半減すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 0.5,
@@ -261,7 +297,11 @@ describe("combatEngine", () => {
 
     it("給料未支給時はSTR/INTがデバフされてダメージが減少すること", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ str: 10, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 10,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 2, mdef: 1, vit: 2, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,
@@ -275,7 +315,11 @@ describe("combatEngine", () => {
 
     it("計算結果がMIN_DAMAGEを下回る場合は下限ダメージを返すこと", () => {
       const damage = calculatePlayerDamage({
-        attacker: makeVillager({ str: 1, currentJob: "農民", weaponId: "none" }),
+        attacker: makeVillager({
+          str: 1,
+          currentJob: "農民",
+          weaponId: "none",
+        }),
         defender: { def: 50, mdef: 1, vit: 50, int: 1, agi: 10 },
         isCritical: false,
         efficiency: 1.0,

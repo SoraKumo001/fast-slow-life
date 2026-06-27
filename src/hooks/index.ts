@@ -3,7 +3,12 @@ import { useShallow } from "zustand/react/shallow";
 import { useGameStore } from "../store/gameStore";
 
 export const useGameTime = () =>
-  useGameStore(useShallow((s) => ({ currentDay: s.currentDay, currentHour: s.currentHour })));
+  useGameStore(
+    useShallow((s) => ({
+      currentDay: s.currentDay,
+      currentHour: s.currentHour,
+    })),
+  );
 
 export const usePlayerResources = () =>
   useGameStore(useShallow((s) => ({ gold: s.gold, soulPoints: s.soulPoints })));

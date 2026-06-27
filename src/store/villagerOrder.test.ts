@@ -104,7 +104,11 @@ describe("villagerOrder - setVillagerOrderHelper", () => {
     });
 
     it("同じエリアへの再指示では移動しないこと (既に active)", () => {
-      const v = makeVillager({ status: "active", destinationAreaId: "forest", travelTimeLeft: 0 });
+      const v = makeVillager({
+        status: "active",
+        destinationAreaId: "forest",
+        travelTimeLeft: 0,
+      });
       const result = setVillagerOrderHelper({
         villagerId: "v1",
         order: "gather",
@@ -167,7 +171,11 @@ describe("villagerOrder - setVillagerOrderHelper", () => {
 
   describe("ポーションの自動補充", () => {
     it("エリアへの指示変更時に倉庫から potion を購入して村人が携帯すること", () => {
-      const v = makeVillager({ status: "idle", gold: 100, destinationAreaId: null });
+      const v = makeVillager({
+        status: "idle",
+        gold: 100,
+        destinationAreaId: null,
+      });
       const result = setVillagerOrderHelper({
         villagerId: "v1",
         order: "gather",
@@ -183,7 +191,11 @@ describe("villagerOrder - setVillagerOrderHelper", () => {
     });
 
     it("村人の所持金が少ないと購入できないこと", () => {
-      const v = makeVillager({ status: "idle", gold: 0, destinationAreaId: null });
+      const v = makeVillager({
+        status: "idle",
+        gold: 0,
+        destinationAreaId: null,
+      });
       const result = setVillagerOrderHelper({
         villagerId: "v1",
         order: "gather",
@@ -197,7 +209,11 @@ describe("villagerOrder - setVillagerOrderHelper", () => {
     });
 
     it("倉庫に potion がない場合は補充されないこと", () => {
-      const v = makeVillager({ status: "idle", gold: 100, destinationAreaId: null });
+      const v = makeVillager({
+        status: "idle",
+        gold: 100,
+        destinationAreaId: null,
+      });
       const result = setVillagerOrderHelper({
         villagerId: "v1",
         order: "gather",

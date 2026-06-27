@@ -119,7 +119,13 @@ export function updateAllThreatLevels(
     return { ...d, threatLevel: capped };
   });
 
-  return { dungeons: nextDungeons, logs, maxThreatReached: maxThreat, gameOver, gameOverReason };
+  return {
+    dungeons: nextDungeons,
+    logs,
+    maxThreatReached: maxThreat,
+    gameOver,
+    gameOverReason,
+  };
 }
 
 /**
@@ -158,7 +164,11 @@ export function canOffer(
   gold: number,
 ): { ok: boolean; cost: number; reason?: string } {
   if (percentToReduce <= 0 || percentToReduce > 100) {
-    return { ok: false, cost: 0, reason: "軽減率は 1〜100% の間で指定してください。" };
+    return {
+      ok: false,
+      cost: 0,
+      reason: "軽減率は 1〜100% の間で指定してください。",
+    };
   }
   if (dungeon.threatLevel <= 0) {
     return { ok: false, cost: 0, reason: "脅威度は既に 0% です。" };

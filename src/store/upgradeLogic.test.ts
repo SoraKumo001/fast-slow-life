@@ -1,9 +1,9 @@
 import "./setupMockStorage";
 import { describe, it, expect } from "vitest";
 
+import type { GameState, Villager, Facility, FacilityType, DungeonArea } from "../types/game";
 import { getInitialFacilities, getInitialTowns, getInitialCaravans } from "./initialState";
 import { startFacilityUpgradeHelper } from "./upgradeLogic";
-import type { GameState, Villager, Facility, FacilityType, DungeonArea } from "../types/game";
 
 function makeVillager(overrides: Partial<Villager> = {}): Villager {
   return {
@@ -73,7 +73,14 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     gameOverReason: "",
     isPaused: false,
     playSpeed: "normal",
-    soulUpgrades: { heritage: 0, storage: 0, education: 0, body: 0, building: 0, discount: 0 },
+    soulUpgrades: {
+      heritage: 0,
+      storage: 0,
+      education: 0,
+      body: 0,
+      building: 0,
+      discount: 0,
+    },
     towns: getInitialTowns(),
     caravans: getInitialCaravans(),
     isSalaryUnpaid: false,
@@ -98,7 +105,10 @@ describe("upgradeLogic - startFacilityUpgradeHelper", () => {
 
     it("最大レベルの場合は null を返すこと", () => {
       const facilities = getInitialFacilities();
-      const innFacility = { ...facilities.inn, level: facilities.inn.maxLevel } as Facility;
+      const innFacility = {
+        ...facilities.inn,
+        level: facilities.inn.maxLevel,
+      } as Facility;
       facilities.inn = innFacility;
       const state = makeState({ facilities });
       const result = startFacilityUpgradeHelper(state, "inn");
@@ -206,15 +216,30 @@ describe("upgradeLogic - startFacilityUpgradeHelper", () => {
       const stateNoBuff = makeState({
         gold: 10000,
         inventory: { wood: 100, stone: 100 },
-        soulUpgrades: { heritage: 0, storage: 0, education: 0, body: 0, building: 0, discount: 0 },
+        soulUpgrades: {
+          heritage: 0,
+          storage: 0,
+          education: 0,
+          body: 0,
+          building: 0,
+          discount: 0,
+        },
       });
       const stateWithBuff = makeState({
         gold: 10000,
         inventory: { wood: 100, stone: 100 },
-        soulUpgrades: { heritage: 0, storage: 0, education: 0, body: 0, building: 3, discount: 0 },
+        soulUpgrades: {
+          heritage: 0,
+          storage: 0,
+          education: 0,
+          body: 0,
+          building: 3,
+          discount: 0,
+        },
       });
       const costNoBuff = stateNoBuff.gold - startFacilityUpgradeHelper(stateNoBuff, "inn")!.gold;
-      const costWithBuff = stateWithBuff.gold - startFacilityUpgradeHelper(stateWithBuff, "inn")!.gold;
+      const costWithBuff =
+        stateWithBuff.gold - startFacilityUpgradeHelper(stateWithBuff, "inn")!.gold;
       // building バフで減額 → コストが小さい
       expect(costWithBuff).toBeLessThan(costNoBuff);
     });

@@ -1,9 +1,9 @@
 import "./setupMockStorage";
 import { describe, it, expect, vi, afterEach } from "vitest";
 
-import { getInitialFacilities } from "./initialState";
-import { processAutoCraft, processCraftingAndUpgrades } from "./crafting";
 import type { Villager, Facility, FacilityType } from "../types/game";
+import { processAutoCraft, processCraftingAndUpgrades } from "./crafting";
+import { getInitialFacilities } from "./initialState";
 
 function makeVillager(overrides: Partial<Villager> = {}): Villager {
   return {
@@ -86,7 +86,11 @@ describe("crafting - processCraftingAndUpgrades: 施設アップグレード", (
 
   it("アップグレード進行中で完了しない場合は時間が減るだけ", () => {
     const facilities = makeFacilities({
-      workshop: { level: 1, upgradeTimeLeft: 5, upgradeTotalTime: 10 } as Partial<Facility>,
+      workshop: {
+        level: 1,
+        upgradeTimeLeft: 5,
+        upgradeTotalTime: 10,
+      } as Partial<Facility>,
     });
     const result = processCraftingAndUpgrades(facilities, [makeVillager()], {}, {}, 0, 1);
     expect(result.facilities.workshop.level).toBe(1);
@@ -95,7 +99,11 @@ describe("crafting - processCraftingAndUpgrades: 施設アップグレード", (
 
   it("アップグレード完了時にログが出力されること", () => {
     const facilities = makeFacilities({
-      inn: { level: 1, upgradeTimeLeft: 1, upgradeTotalTime: 1 } as Partial<Facility>,
+      inn: {
+        level: 1,
+        upgradeTimeLeft: 1,
+        upgradeTotalTime: 1,
+      } as Partial<Facility>,
     });
     const result = processCraftingAndUpgrades(facilities, [makeVillager()], {}, {}, 0, 1);
     const log = result.logs.find((l) => l.message.includes("アップグレードが完了"));
@@ -192,7 +200,14 @@ describe("crafting - processCraftingAndUpgrades: クラフト完了", () => {
         ],
       } as Partial<Facility>,
     });
-    const villagers = [makeVillager({ id: "v1", status: "active", assignedCraftJobId: "job1", dex: 20 })];
+    const villagers = [
+      makeVillager({
+        id: "v1",
+        status: "active",
+        assignedCraftJobId: "job1",
+        dex: 20,
+      }),
+    ];
     const result = processCraftingAndUpgrades(facilities, villagers, {}, {}, 1000, 1);
     // プレイヤーゴールド減少・村人ゴールド増加
     expect(result.gold).toBeLessThan(1000);
@@ -227,7 +242,13 @@ describe("crafting - processCraftingAndUpgrades: クラフト完了", () => {
       workshop: {
         level: 1,
         craftQueue: [
-          { id: "job1", itemId: "iron_ingot", timeLeft: 1, totalTime: 1, assignedVillagerId: null },
+          {
+            id: "job1",
+            itemId: "iron_ingot",
+            timeLeft: 1,
+            totalTime: 1,
+            assignedVillagerId: null,
+          },
         ],
       } as Partial<Facility>,
     });
@@ -266,7 +287,9 @@ describe("crafting - processAutoCraft", () => {
     const villagers = [makeVillager()];
     // wood_plank: wood 3個が必要
     const inventory = { wood: 5 };
-    const result = processAutoCraft(facilities, villagers, inventory, { wood_plank: 3 });
+    const result = processAutoCraft(facilities, villagers, inventory, {
+      wood_plank: 3,
+    });
     // キューにクラフトジョブが追加される
     expect(result.facilities.workshop.craftQueue.length).toBeGreaterThan(0);
     // 素材が消費される
@@ -280,7 +303,9 @@ describe("crafting - processAutoCraft", () => {
     const villagers = [makeVillager()];
     // wood_plank を既に 3 持っている → target 3 で達成
     const inventory = { wood_plank: 3, wood: 5 };
-    const result = processAutoCraft(facilities, villagers, inventory, { wood_plank: 3 });
+    const result = processAutoCraft(facilities, villagers, inventory, {
+      wood_plank: 3,
+    });
     expect(result.facilities.workshop.craftQueue).toHaveLength(0);
   });
 
@@ -290,7 +315,9 @@ describe("crafting - processAutoCraft", () => {
     });
     const villagers = [makeVillager({ id: "v1", status: "idle" })];
     const inventory = { wood: 5 };
-    const result = processAutoCraft(facilities, villagers, inventory, { wood_plank: 3 });
+    const result = processAutoCraft(facilities, villagers, inventory, {
+      wood_plank: 3,
+    });
     // 担当にされた村人は active になり、craftJobId が設定される
     const assignedVillager = result.villagers[0];
     expect(assignedVillager.status).toBe("active");
@@ -302,17 +329,49 @@ describe("crafting - processAutoCraft", () => {
       workshop: {
         level: 1,
         craftQueue: [
-          { id: "j1", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j2", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j3", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j4", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j5", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
+          {
+            id: "j1",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j2",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j3",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j4",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j5",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
         ],
       } as Partial<Facility>,
     });
     const villagers = [makeVillager()];
     const inventory = { wood: 5 };
-    const result = processAutoCraft(facilities, villagers, inventory, { wood_plank: 10 });
+    const result = processAutoCraft(facilities, villagers, inventory, {
+      wood_plank: 10,
+    });
     // キューは5のまま
     expect(result.facilities.workshop.craftQueue).toHaveLength(5);
   });
@@ -324,9 +383,27 @@ describe("crafting - processAutoCraft", () => {
       workshop: {
         level: 3,
         craftQueue: [
-          { id: "j1", itemId: "wood_plank", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j2", itemId: "iron_ingot", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
-          { id: "j3", itemId: "silver_ingot", timeLeft: 5, totalTime: 5, assignedVillagerId: null },
+          {
+            id: "j1",
+            itemId: "wood_plank",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j2",
+            itemId: "iron_ingot",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
+          {
+            id: "j3",
+            itemId: "silver_ingot",
+            timeLeft: 5,
+            totalTime: 5,
+            assignedVillagerId: null,
+          },
         ],
       } as Partial<Facility>,
     });

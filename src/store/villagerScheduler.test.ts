@@ -88,7 +88,11 @@ function makeArea(overrides?: Partial<DungeonArea>): DungeonArea {
 
 describe("runVillagerScheduler - hunter assignment", () => {
   it("需要の高いモンスターに優先的に割り当てられること", () => {
-    const hunter = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
+    const hunter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      currentJob: "戦士",
+    });
     const result = runVillagerScheduler({
       villagers: [hunter],
       dungeons: [makeArea()],
@@ -114,8 +118,16 @@ describe("runVillagerScheduler - hunter assignment", () => {
   it("2種類のモンスターがいる場合、各ハンターが異なるモンスターに割り当てられること（需要差による）", () => {
     const area = makeArea({
       monsters: [
-        makeMonster({ id: "wolf", name: "ウルフ", drops: [{ itemId: "raw_meat", chance: 0.6 }] }),
-        makeMonster({ id: "bear", name: "ベア", drops: [{ itemId: "raw_meat", chance: 0.8 }] }),
+        makeMonster({
+          id: "wolf",
+          name: "ウルフ",
+          drops: [{ itemId: "raw_meat", chance: 0.6 }],
+        }),
+        makeMonster({
+          id: "bear",
+          name: "ベア",
+          drops: [{ itemId: "raw_meat", chance: 0.8 }],
+        }),
       ],
     });
     const h1 = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
@@ -158,7 +170,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
   });
 
   it("active でない村人はスケジューリング対象外になること", () => {
-    const resting = makeVillager({ id: "v1", order: "hunt", status: "resting" });
+    const resting = makeVillager({
+      id: "v1",
+      order: "hunt",
+      status: "resting",
+    });
     const result = runVillagerScheduler({
       villagers: [resting],
       dungeons: [makeArea()],
@@ -173,7 +189,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
     const area = makeArea({
       monsters: [makeMonster({ id: "wolf", name: "ウルフ", respawnTimeLeft: 2 })],
     });
-    const hunter = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
+    const hunter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      currentJob: "戦士",
+    });
     const result = runVillagerScheduler({
       villagers: [hunter],
       dungeons: [area],
@@ -188,7 +208,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
     const area = makeArea({
       monsters: [makeMonster({ id: "boss", name: "ボス", isBoss: true })],
     });
-    const hunter = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
+    const hunter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      currentJob: "戦士",
+    });
     const result = runVillagerScheduler({
       villagers: [hunter],
       dungeons: [area],
@@ -199,7 +223,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
   });
 
   it("assignedCraftJobId のある村人はスケジューリング対象外になること", () => {
-    const crafter = makeVillager({ id: "v1", order: "hunt", assignedCraftJobId: "upgrade_inn" });
+    const crafter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      assignedCraftJobId: "upgrade_inn",
+    });
     const result = runVillagerScheduler({
       villagers: [crafter],
       dungeons: [makeArea()],
@@ -212,7 +240,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
   it("余剰ハンターは需要最高のモンスターにオーバーフロー割り当てされること（cap超過）", () => {
     const area = makeArea({
       monsters: [
-        makeMonster({ id: "wolf", name: "ウルフ", drops: [{ itemId: "raw_meat", chance: 0.6 }] }),
+        makeMonster({
+          id: "wolf",
+          name: "ウルフ",
+          drops: [{ itemId: "raw_meat", chance: 0.6 }],
+        }),
       ],
     });
     const h1 = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
@@ -233,7 +265,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
     const area = makeArea({
       monsters: [makeMonster({ id: "wolf", name: "ウルフ" })],
     });
-    const hunter = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
+    const hunter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      currentJob: "戦士",
+    });
     const result = runVillagerScheduler({
       villagers: [hunter],
       dungeons: [area],
@@ -249,7 +285,11 @@ describe("runVillagerScheduler - hunter assignment", () => {
 
 describe("runVillagerScheduler - gatherer assignment", () => {
   it("採取ポイントに採取者が割り当てられること", () => {
-    const gatherer = makeVillager({ id: "v1", order: "gather", currentJob: "農民" });
+    const gatherer = makeVillager({
+      id: "v1",
+      order: "gather",
+      currentJob: "農民",
+    });
     const result = runVillagerScheduler({
       villagers: [gatherer],
       dungeons: [makeArea()],
@@ -271,7 +311,11 @@ describe("runVillagerScheduler - gatherer assignment", () => {
         },
       ],
     });
-    const gatherer = makeVillager({ id: "v1", order: "gather", currentJob: "農民" });
+    const gatherer = makeVillager({
+      id: "v1",
+      order: "gather",
+      currentJob: "農民",
+    });
     const result = runVillagerScheduler({
       villagers: [gatherer],
       dungeons: [area],
@@ -322,7 +366,11 @@ describe("runVillagerScheduler - gatherer assignment", () => {
 
 describe("runVillagerScheduler - logs", () => {
   it("割り当てが行われた場合にログが出力されること", () => {
-    const hunter = makeVillager({ id: "v1", order: "hunt", currentJob: "戦士" });
+    const hunter = makeVillager({
+      id: "v1",
+      order: "hunt",
+      currentJob: "戦士",
+    });
     const result = runVillagerScheduler({
       villagers: [hunter],
       dungeons: [makeArea()],

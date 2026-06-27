@@ -12,8 +12,16 @@ const FACILITY_CATEGORIES: {
   icon: React.ComponentType<{ className?: string }>;
   ids: FacilityType[];
 }[] = [
-  { label: "宿泊・雇用・訓練", icon: Home, ids: ["inn", "guild", "training_ground", "market"] },
-  { label: "加工・クラフト", icon: Hammer, ids: ["workshop", "kitchen", "alchemy", "weapon_shop"] },
+  {
+    label: "宿泊・雇用・訓練",
+    icon: Home,
+    ids: ["inn", "guild", "training_ground", "market"],
+  },
+  {
+    label: "加工・クラフト",
+    icon: Hammer,
+    ids: ["workshop", "kitchen", "alchemy", "weapon_shop"],
+  },
   { label: "資源生産", icon: TreePine, ids: ["farm", "lumberyard", "quarry"] },
 ];
 

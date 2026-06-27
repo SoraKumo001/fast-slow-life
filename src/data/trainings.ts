@@ -161,7 +161,15 @@ export const TRAINING_PROGRAMS: TrainingProgram[] = [
     requiredFacilityLevel: 5,
     requiredTime: 48,
     goldCost: 4000,
-    statBonus: { str: 5, int: 5, dex: 5, agi: 5, vit: 5, maxHp: 50, maxStamina: 30 },
+    statBonus: {
+      str: 5,
+      int: 5,
+      dex: 5,
+      agi: 5,
+      vit: 5,
+      maxHp: 50,
+      maxStamina: 30,
+    },
   },
 ];
 

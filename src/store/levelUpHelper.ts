@@ -6,7 +6,10 @@ import {
 } from "../constants";
 import { Villager } from "../types/game";
 
-export function tryLevelUp(villager: Villager): { leveled: boolean; updated: Villager } {
+export function tryLevelUp(villager: Villager): {
+  leveled: boolean;
+  updated: Villager;
+} {
   const expNeeded = villager.level * EXP_NEEDED_PER_LEVEL;
   if (villager.exp < expNeeded) {
     return { leveled: false, updated: villager };

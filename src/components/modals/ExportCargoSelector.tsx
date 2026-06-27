@@ -40,7 +40,10 @@ export const ExportCargoSelector: React.FC<ExportCargoSelectorProps> = ({
         availableCounts={Object.fromEntries(
           Object.entries(inventory).filter(([, count]) => count > 0),
         )}
-        cargo={Object.entries(exportCargo).map(([itemId, count]) => ({ itemId, count }))}
+        cargo={Object.entries(exportCargo).map(([itemId, count]) => ({
+          itemId,
+          count,
+        }))}
         cargoLimit={getCargoLimit(activeTown)}
         activeTown={activeTown}
         marketLvl={marketLvl}

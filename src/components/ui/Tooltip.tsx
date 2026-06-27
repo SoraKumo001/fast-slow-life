@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 
-export const Tooltip: React.FC<{ content: string; children: React.ReactNode }> = ({
-  content,
-  children,
-}) => {
+export const Tooltip: React.FC<{
+  content: string;
+  children: React.ReactNode;
+}> = ({ content, children }) => {
   const [show, setShow] = useState(false);
 
   return (

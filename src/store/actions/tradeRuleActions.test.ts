@@ -44,7 +44,10 @@ describe("tradeRuleActions - addTradeRule", () => {
 
   it("交易所 Lv0 の場合は追加されないこと (warning ログ)", () => {
     useGameStore.setState((s) => ({
-      facilities: { ...s.facilities, market: { ...s.facilities.market, level: 0 } },
+      facilities: {
+        ...s.facilities,
+        market: { ...s.facilities.market, level: 0 },
+      },
     }));
     useGameStore.getState().addTradeRule("potion", "sell", 10);
     const after = useGameStore.getState();

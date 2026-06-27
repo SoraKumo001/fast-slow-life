@@ -46,7 +46,11 @@ describe("economyHelpers - getBestExportPrice", () => {
   it("複数の街から最も高い価格を返すこと", () => {
     const towns = [
       makeTown({ id: "komorebi", name: "コモレビ村", isUnlocked: true }),
-      makeTown({ id: "ironport", name: "港町アイアンポート", isUnlocked: true }),
+      makeTown({
+        id: "ironport",
+        name: "港町アイアンポート",
+        isUnlocked: true,
+      }),
     ];
     const result = getBestExportPrice("potion", towns, 1);
     expect(result.price).toBeGreaterThan(0);
@@ -56,7 +60,11 @@ describe("economyHelpers - getBestExportPrice", () => {
   it("アンロックされていない街は対象外", () => {
     const towns = [
       makeTown({ id: "komorebi", name: "コモレビ村", isUnlocked: true }),
-      makeTown({ id: "ironport", name: "港町アイアンポート", isUnlocked: false }),
+      makeTown({
+        id: "ironport",
+        name: "港町アイアンポート",
+        isUnlocked: false,
+      }),
     ];
     const result = getBestExportPrice("potion", towns, 1);
     // komorebi のみが対象
@@ -66,7 +74,10 @@ describe("economyHelpers - getBestExportPrice", () => {
 
 describe("economyHelpers - getResourceFacilityGValue", () => {
   it("Lv0 の場合は gValue=0, label='なし'", () => {
-    expect(getResourceFacilityGValue("farm", 0)).toEqual({ label: "なし", gValue: 0 });
+    expect(getResourceFacilityGValue("farm", 0)).toEqual({
+      label: "なし",
+      gValue: 0,
+    });
   });
 
   it("農場 Lv1: 小麦が生成される", () => {
@@ -102,7 +113,10 @@ describe("economyHelpers - getResourceFacilityGValue", () => {
   });
 
   it("未対応の施設ID は {label:'なし', gValue:0}", () => {
-    expect(getResourceFacilityGValue("inn", 5)).toEqual({ label: "なし", gValue: 0 });
+    expect(getResourceFacilityGValue("inn", 5)).toEqual({
+      label: "なし",
+      gValue: 0,
+    });
   });
 });
 

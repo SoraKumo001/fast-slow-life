@@ -19,7 +19,13 @@ export function getInitialVillagers(bodyLvl: number = 0): ReturnType<typeof crea
 
   const makeVillager = (
     id: string,
-    overrides: Partial<{ str: number; int: number; dex: number; agi: number; vit: number }> = {},
+    overrides: Partial<{
+      str: number;
+      int: number;
+      dex: number;
+      agi: number;
+      vit: number;
+    }> = {},
   ) => {
     const name = generateRandomName(existingNames);
     existingNames.push(name);

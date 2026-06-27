@@ -216,7 +216,11 @@ function runSimulationChunk(
         const currentTier = state.currentTier;
 
         // 1. 目標アイテム設定 of update
-        const newTargets: Record<string, number> = { wheat: 20, vegetable: 20, raw_meat: 10 }; // 食材は常にキープ
+        const newTargets: Record<string, number> = {
+          wheat: 20,
+          vegetable: 20,
+          raw_meat: 10,
+        }; // 食材は常にキープ
         if (currentTier >= 1) {
           newTargets.wood = 30;
           newTargets.wood_plank = isMarketBuilt ? 15 : 0; // 交易所やアップグレードに必要な中間素材（交易所が建つまではクラフトしない）
@@ -417,7 +421,13 @@ function runSimulationChunk(
             for (const v of idleForTraining) {
               if (trainingGround.trainingQueue.length >= 3) break;
               // 最も低い基本ステータスを伸ばす訓練を選択
-              const baseStats = { str: v.str, int: v.int, dex: v.dex, agi: v.agi, vit: v.vit };
+              const baseStats = {
+                str: v.str,
+                int: v.int,
+                dex: v.dex,
+                agi: v.agi,
+                vit: v.vit,
+              };
               const sortedStats = Object.entries(baseStats).sort(([, a], [, b]) => a - b);
               let chosenProgram = programsByLevel[0];
               for (const [stat] of sortedStats) {

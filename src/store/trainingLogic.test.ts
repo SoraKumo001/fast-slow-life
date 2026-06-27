@@ -109,7 +109,11 @@ describe("trainingLogic - クールダウン", () => {
     });
 
     it("lastTrainingDay が未設定 (undefined) の村人は即座に訓練可能", () => {
-      const v = makeVillager({ id: "v1", gold: 500, lastTrainingDay: undefined });
+      const v = makeVillager({
+        id: "v1",
+        gold: 500,
+        lastTrainingDay: undefined,
+      });
       const fac = makeTrainingGround({ level: 1, trainingQueue: [] });
 
       useGameStore.setState((s) => ({
@@ -220,7 +224,12 @@ describe("trainingLogic - クールダウン", () => {
 
   describe("processTrainingQueue: クールダウンフラグ更新", () => {
     it("訓練完了時に lastTrainingDay が更新される", () => {
-      const v = makeVillager({ id: "v_complete", gold: 100, lastTrainingDay: 0, status: "active" });
+      const v = makeVillager({
+        id: "v_complete",
+        gold: 100,
+        lastTrainingDay: 0,
+        status: "active",
+      });
       const fac = makeTrainingGround({
         level: 1,
         trainingQueue: [

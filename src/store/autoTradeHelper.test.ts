@@ -60,7 +60,15 @@ describe("autoTradeHelper", () => {
       // totalTime = max(1, ceil(12*1)) = 12
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -79,7 +87,15 @@ describe("autoTradeHelper", () => {
       // finalPrice = floor(10*1.1)*5 = 55
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -94,7 +110,15 @@ describe("autoTradeHelper", () => {
       // excess=20, 15個だけ積載
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 30 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -108,7 +132,15 @@ describe("autoTradeHelper", () => {
     it("投資Lv3の場合、積載上限が35になること", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 0, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 0,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 40 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -123,13 +155,25 @@ describe("autoTradeHelper", () => {
       // potion x5 → floor(10*1.1)*5 = 55
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
         towns: [
           makeTown({ id: "komorebi", name: "コモレビ村", distance: 12 }),
-          makeTown({ id: "ironport", name: "港町アイアンポート", distance: 24 }),
+          makeTown({
+            id: "ironport",
+            name: "港町アイアンポート",
+            distance: 24,
+          }),
         ],
       });
 
@@ -144,8 +188,20 @@ describe("autoTradeHelper", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
         tradeRules: [
-          { id: "r1", itemId: "potion", type: "sell", threshold: 0, isEnabled: true },
-          { id: "r2", itemId: "wheat", type: "sell", threshold: 0, isEnabled: true },
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 0,
+            isEnabled: true,
+          },
+          {
+            id: "r2",
+            itemId: "wheat",
+            type: "sell",
+            threshold: 0,
+            isEnabled: true,
+          },
         ],
         inventory: { potion: 20, wheat: 20 },
         gold: 100,
@@ -161,7 +217,15 @@ describe("autoTradeHelper", () => {
     it("アンロックされていない街は選択されないこと", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -174,7 +238,15 @@ describe("autoTradeHelper", () => {
     it("idle以外の馬車は派遣されないこと", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan({ status: "trading" })],
@@ -187,7 +259,15 @@ describe("autoTradeHelper", () => {
     it("無効化されたtradeRuleはスキップされること", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: false }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: false,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -201,7 +281,15 @@ describe("autoTradeHelper", () => {
     it("交易所レベル2の場合、2台の馬車が派遣されること", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(2),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 40 },
         gold: 100,
         caravans: [makeCaravan({ id: "caravan_1" }), makeCaravan({ id: "caravan_2" })],
@@ -222,7 +310,15 @@ describe("autoTradeHelper", () => {
       // totalTime=max(1, ceil(12*0.8))=ceil(9.6)=10
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],
@@ -235,7 +331,15 @@ describe("autoTradeHelper", () => {
     it("派遣ログが出力されること", () => {
       const result = processAutoTrade({
         facilities: makeMarketFacility(1),
-        tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 10, isEnabled: true }],
+        tradeRules: [
+          {
+            id: "r1",
+            itemId: "potion",
+            type: "sell",
+            threshold: 10,
+            isEnabled: true,
+          },
+        ],
         inventory: { potion: 15 },
         gold: 100,
         caravans: [makeCaravan()],

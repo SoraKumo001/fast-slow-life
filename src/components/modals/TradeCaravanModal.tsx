@@ -247,7 +247,10 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                             }))
                           }
                           onSetQuantity={(itemId, count) =>
-                            setExportCargo((prev) => ({ ...prev, [itemId]: count }))
+                            setExportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: count,
+                            }))
                           }
                         />
                       ) : (
@@ -269,7 +272,10 @@ export const TradeCaravanModal: React.FC<TradeCaravanModalProps> = ({ isOpen, on
                             }))
                           }
                           onSetQuantity={(itemId, count) =>
-                            setImportCargo((prev) => ({ ...prev, [itemId]: count }))
+                            setImportCargo((prev) => ({
+                              ...prev,
+                              [itemId]: count,
+                            }))
                           }
                         />
                       )}

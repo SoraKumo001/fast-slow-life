@@ -68,7 +68,13 @@ export interface PlayerAttackParams {
   attacker: VillagerBaseStats &
     Pick<VillagerJobInfo, "currentJob"> &
     Pick<VillagerEquipment, "weaponId"> & { activeFoodBuffId?: string | null };
-  defender: { def: number; mdef: number; vit: number; int: number; agi: number };
+  defender: {
+    def: number;
+    mdef: number;
+    vit: number;
+    int: number;
+    agi: number;
+  };
   isCritical: boolean;
   efficiency: number;
   isMagicUser: boolean;
@@ -170,7 +176,13 @@ export function useBattlePotion(
 
 export interface ExecutePlayerAttackParams {
   attacker: Villager;
-  defender: { agi: number; def?: number; mdef?: number; vit?: number; int?: number };
+  defender: {
+    agi: number;
+    def?: number;
+    mdef?: number;
+    vit?: number;
+    int?: number;
+  };
   efficiency: number;
   isMagicUser: boolean;
   isSalaryUnpaid?: boolean;
@@ -223,7 +235,13 @@ export function executePlayerAttack(params: ExecutePlayerAttackParams): {
 
   const damage = calculatePlayerDamage({
     attacker,
-    defender: defender as { def: number; mdef: number; vit: number; int: number; agi: number },
+    defender: defender as {
+      def: number;
+      mdef: number;
+      vit: number;
+      int: number;
+      agi: number;
+    },
     isCritical,
     efficiency,
     isMagicUser,

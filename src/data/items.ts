@@ -310,7 +310,10 @@ export const ITEMS: Record<string, Item> = {
     category: "gear_armor",
     basePrice: 500,
     difficulty: 1.0,
-    equipment: { slot: "armor", bonuses: { defense: 55, int: 25, dex: 8, vit: 15 } },
+    equipment: {
+      slot: "armor",
+      bonuses: { defense: 55, int: 25, dex: 8, vit: 15 },
+    },
   },
   dragon_scale_mail: {
     id: "dragon_scale_mail",
@@ -437,7 +440,15 @@ export const ITEMS: Record<string, Item> = {
     difficulty: 1.0,
     description:
       "竜の肉を使用した贅沢な極上鍋。村人の全能力、最大HP、最大スタミナを爆発的に上昇させる。",
-    foodBuff: { str: 20, int: 20, vit: 20, dex: 15, agi: 15, maxHp: 50, maxStamina: 30 },
+    foodBuff: {
+      str: 20,
+      int: 20,
+      vit: 20,
+      dex: 15,
+      agi: 15,
+      maxHp: 50,
+      maxStamina: 30,
+    },
   },
   food_herb_banquet: {
     id: "food_herb_banquet",
@@ -456,7 +467,15 @@ export const ITEMS: Record<string, Item> = {
     difficulty: 1.0,
     description:
       "竜の肉と魔力素材を極限まで活かした伝説の料理。村人の全能力と最大HP、最大スタミナを劇的に上昇させる。",
-    foodBuff: { str: 25, int: 25, vit: 25, dex: 20, agi: 20, maxHp: 60, maxStamina: 40 },
+    foodBuff: {
+      str: 25,
+      int: 25,
+      vit: 25,
+      dex: 20,
+      agi: 20,
+      maxHp: 60,
+      maxStamina: 40,
+    },
   },
   food_bread: {
     id: "food_bread",

@@ -34,7 +34,12 @@ export function processVillagerGather(
   gold: number,
   _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
-): { logs: LogPayload[]; areaUpdated: boolean; gold: number; inventory: Record<string, number> } {
+): {
+  logs: LogPayload[];
+  areaUpdated: boolean;
+  gold: number;
+  inventory: Record<string, number>;
+} {
   const logs: LogPayload[] = [];
   let nextInventory = inventory;
 

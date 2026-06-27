@@ -26,7 +26,10 @@ export const DraggableWindow: React.FC<DraggableWindowProps> = ({
 
   useEffect(() => {
     const defaultX = Math.max(20, window.innerWidth / 2 - 288);
-    setWindowPos({ x: initialX !== undefined ? initialX : defaultX, y: initialY });
+    setWindowPos({
+      x: initialX !== undefined ? initialX : defaultX,
+      y: initialY,
+    });
   }, [initialX, initialY]);
 
   useEffect(() => {

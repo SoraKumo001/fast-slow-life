@@ -50,7 +50,10 @@ export function getResourceProductionInfo(fac: Facility): ResourceProductionInfo
  * 資源施設の次レベルでの生産情報を返す。
  */
 export function getNextLevelResourceProduction(fac: Facility): ResourceProductionInfo {
-  const nextFac: Facility = { ...fac, level: Math.min(fac.level + 1, fac.maxLevel) };
+  const nextFac: Facility = {
+    ...fac,
+    level: Math.min(fac.level + 1, fac.maxLevel),
+  };
   return getResourceProductionInfo(nextFac);
 }
 

@@ -53,9 +53,21 @@ describe("gameStore", () => {
     useGameStore.setState((s) => ({
       villagers: s.villagers.map((v, idx) => {
         if (idx === 0)
-          return { ...v, currentJob: "戦士", weaponId: "none", armorId: "none", gold: 1000 };
+          return {
+            ...v,
+            currentJob: "戦士",
+            weaponId: "none",
+            armorId: "none",
+            gold: 1000,
+          };
         if (idx === 1)
-          return { ...v, currentJob: "魔術師", weaponId: "none", armorId: "none", gold: 1000 };
+          return {
+            ...v,
+            currentJob: "魔術師",
+            weaponId: "none",
+            armorId: "none",
+            gold: 1000,
+          };
         return { ...v, weaponId: "none", armorId: "none", gold: 1000 };
       }),
       inventory: {
@@ -487,7 +499,11 @@ describe("gameStore", () => {
         },
         villagers: s.villagers.map((v) => {
           if (v.id === "v2") {
-            return { ...v, status: "active", assignedCraftJobId: "upgrade_workshop" };
+            return {
+              ...v,
+              status: "active",
+              assignedCraftJobId: "upgrade_workshop",
+            };
           }
           return v;
         }),
@@ -520,7 +536,10 @@ describe("gameStore", () => {
       useGameStore.setState((s) => ({
         gold: 100,
         inventory: { ...s.inventory, potion: 10 },
-        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
         towns: s.towns.map((t) =>
           t.id === "komorebi" ? { ...t, isUnlocked: true, level: 3, friendship: 300 } : t,
         ),
@@ -540,7 +559,10 @@ describe("gameStore", () => {
     it("sendImportCaravan: 所持ゴールド不足の場合は派遣されないこと", () => {
       useGameStore.setState((s) => ({
         gold: 10,
-        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
         towns: s.towns.map((t) => (t.id === "komorebi" ? { ...t, isUnlocked: true, level: 1 } : t)),
       }));
 
@@ -615,7 +637,13 @@ describe("gameStore", () => {
               pool: {},
             };
           }
-          return { ...v, status: "idle", order: "gather", destinationAreaId: null, pool: {} };
+          return {
+            ...v,
+            status: "idle",
+            order: "gather",
+            destinationAreaId: null,
+            pool: {},
+          };
         }),
         inventory: { ...s.inventory, food_bread: 100, wheat: 100 },
       }));
@@ -634,7 +662,10 @@ describe("gameStore", () => {
         currentDay: 1,
         villagers: [],
         towns: s.towns.map((t) => ({ ...t, isUnlocked: true })),
-        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 1 } },
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 1 },
+        },
       }));
 
       const store = useGameStore.getState();
@@ -648,7 +679,10 @@ describe("gameStore", () => {
       useGameStore.setState((s) => ({
         gold: 100,
         inventory: { ...s.inventory, potion: 30 },
-        facilities: { ...s.facilities, market: { ...s.facilities.market, level: 2 } },
+        facilities: {
+          ...s.facilities,
+          market: { ...s.facilities.market, level: 2 },
+        },
         towns: s.towns.map((t) => (t.id === "komorebi" ? { ...t, isUnlocked: true, level: 1 } : t)),
       }));
 

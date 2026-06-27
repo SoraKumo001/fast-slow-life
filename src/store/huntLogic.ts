@@ -147,13 +147,23 @@ export function processPartyHunt(
   gold: number,
   _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
-): { logs: LogPayload[]; areaUpdated: boolean; gold: number; inventory: Record<string, number> } {
+): {
+  logs: LogPayload[];
+  areaUpdated: boolean;
+  gold: number;
+  inventory: Record<string, number>;
+} {
   const logs: LogPayload[] = [];
   let currentGold = gold;
   let nextInventory = inventory;
 
   if (party.length === 0)
-    return { logs, areaUpdated: false, gold: currentGold, inventory: nextInventory };
+    return {
+      logs,
+      areaUpdated: false,
+      gold: currentGold,
+      inventory: nextInventory,
+    };
 
   const leader = party[0];
 
@@ -167,7 +177,12 @@ export function processPartyHunt(
   );
   if (enemyIdx === -1) {
     // 有効なターゲットなし → 待機
-    return { logs, areaUpdated: false, gold: currentGold, inventory: nextInventory };
+    return {
+      logs,
+      areaUpdated: false,
+      gold: currentGold,
+      inventory: nextInventory,
+    };
   }
 
   const monsterState = { ...area.monsters[enemyIdx] };
@@ -193,7 +208,12 @@ export function processPartyHunt(
 
   if (monsterState.currentProgress < 100) {
     // まだ遭遇していない
-    return { logs, areaUpdated: true, gold: currentGold, inventory: nextInventory };
+    return {
+      logs,
+      areaUpdated: true,
+      gold: currentGold,
+      inventory: nextInventory,
+    };
   }
 
   // ════════════════════════════════════════════
@@ -394,7 +414,12 @@ export function processPartyHunt(
     // 全滅時は呼び出し元で処理
   }
 
-  return { logs, areaUpdated: true, gold: currentGold, inventory: nextInventory };
+  return {
+    logs,
+    areaUpdated: true,
+    gold: currentGold,
+    inventory: nextInventory,
+  };
 }
 
 export function processVillagerHunt(
@@ -409,7 +434,12 @@ export function processVillagerHunt(
   gold: number,
   _isSalaryUnpaid: boolean = false,
   stats?: RunStats,
-): { logs: LogPayload[]; areaUpdated: boolean; gold: number; inventory: Record<string, number> } {
+): {
+  logs: LogPayload[];
+  areaUpdated: boolean;
+  gold: number;
+  inventory: Record<string, number>;
+} {
   const logs: LogPayload[] = [];
   let currentGold = gold;
   let nextInventory = inventory;
@@ -588,5 +618,10 @@ export function processVillagerHunt(
     }
   }
 
-  return { logs, areaUpdated: true, gold: currentGold, inventory: nextInventory };
+  return {
+    logs,
+    areaUpdated: true,
+    gold: currentGold,
+    inventory: nextInventory,
+  };
 }

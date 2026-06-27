@@ -43,10 +43,10 @@ export const GuildPanel: React.FC<GuildPanelProps> = ({ fac, isUnlocked, onHireV
         <br />
         ・Lv0: {BASE_MAX_VILLAGERS}人 / ・Lv1: {BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL}人 /
         ・Lv2: {BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 2}人 / ・Lv3:{" "}
-        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 3)}人 /
-        ・Lv4:{" "}
-        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 4)}人 /
-        ・Lv5: {MAX_VILLAGERS_ABSOLUTE}人
+        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 3)}
+        人 / ・Lv4:{" "}
+        {Math.min(MAX_VILLAGERS_ABSOLUTE, BASE_MAX_VILLAGERS + VILLAGERS_PER_GUILD_LEVEL * 4)}
+        人 / ・Lv5: {MAX_VILLAGERS_ABSOLUTE}人
       </p>
 
       <button

@@ -59,7 +59,11 @@ describe("bossActions - startBossBattle", () => {
     useGameStore.setState({
       isPaused: true,
       villagers: [
-        makeVillager({ id: "v1", status: "active", destinationAreaId: "forest" }),
+        makeVillager({
+          id: "v1",
+          status: "active",
+          destinationAreaId: "forest",
+        }),
         makeVillager({ id: "v2", status: "idle" }),
       ],
     });
@@ -117,7 +121,13 @@ describe("bossActions - startBossBattle", () => {
         workshop: {
           ...s.facilities.workshop,
           craftQueue: [
-            { id: "job_1", itemId: "iron_ingot", timeLeft: 5, totalTime: 5, assignedVillagerId: "v1" },
+            {
+              id: "job_1",
+              itemId: "iron_ingot",
+              timeLeft: 5,
+              totalTime: 5,
+              assignedVillagerId: "v1",
+            },
           ],
         },
       },
@@ -146,7 +156,12 @@ describe("bossActions - withdrawFromBossBattle", () => {
   it("正常系: ボス戦から撤退し activeBoss が null になること", () => {
     useGameStore.setState({
       villagers: [
-        makeVillager({ id: "v1", status: "active", order: "hunt", targetMonsterId: "goblin_leader" }),
+        makeVillager({
+          id: "v1",
+          status: "active",
+          order: "hunt",
+          targetMonsterId: "goblin_leader",
+        }),
       ],
     });
     useGameStore.getState().startBossBattle("goblin_leader", ["v1"]);
@@ -160,7 +175,12 @@ describe("bossActions - withdrawFromBossBattle", () => {
   it("撤退時に attackerIds の村人が idle 状態に戻ること", () => {
     useGameStore.setState({
       villagers: [
-        makeVillager({ id: "v1", status: "active", order: "hunt", targetMonsterId: "goblin_leader" }),
+        makeVillager({
+          id: "v1",
+          status: "active",
+          order: "hunt",
+          targetMonsterId: "goblin_leader",
+        }),
       ],
     });
     useGameStore.getState().startBossBattle("goblin_leader", ["v1"]);
@@ -174,7 +194,12 @@ describe("bossActions - withdrawFromBossBattle", () => {
   it("撤退時に info ログが追加されること", () => {
     useGameStore.setState({
       villagers: [
-        makeVillager({ id: "v1", status: "active", order: "hunt", targetMonsterId: "goblin_leader" }),
+        makeVillager({
+          id: "v1",
+          status: "active",
+          order: "hunt",
+          targetMonsterId: "goblin_leader",
+        }),
       ],
     });
     useGameStore.getState().startBossBattle("goblin_leader", ["v1"]);

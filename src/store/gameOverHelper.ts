@@ -31,6 +31,9 @@ export function buildGameOverLog(
         type: "error",
       };
     case "クリア":
-      return { message: "ボスを討伐し、Tierをクリアしました！", type: "system" };
+      return {
+        message: "ボスを討伐し、Tierをクリアしました！",
+        type: "system",
+      };
   }
 }

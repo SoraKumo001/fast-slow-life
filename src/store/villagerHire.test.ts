@@ -195,7 +195,9 @@ describe("villagerHire - hireVillagerHelper", () => {
       const guild = makeGuild(1);
       // Lv1 なら 7 人まで雇用可能、6 人から 7 人への追加は成功
       const villagers = Array.from(
-        { length: BASE_MAX_VILLAGERS + guild.level * VILLAGERS_PER_GUILD_LEVEL - 1 },
+        {
+          length: BASE_MAX_VILLAGERS + guild.level * VILLAGERS_PER_GUILD_LEVEL - 1,
+        },
         (_, i) => makeVillager(`v${i}`, `村人${i}`),
       );
       const result = hireVillagerHelper({

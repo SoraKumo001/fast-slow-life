@@ -1,9 +1,9 @@
 import "./setupMockStorage";
 import { describe, it, expect } from "vitest";
 
+import type { Villager, DungeonArea, Facility, FacilityType } from "../types/game";
 import { getInitialFacilities } from "./initialState";
 import { dispatchIdleVillagersHelper } from "./villagerDispatch";
-import type { Villager, DungeonArea, Facility, FacilityType } from "../types/game";
 
 function makeVillager(overrides: Partial<Villager> = {}): Villager {
   return {

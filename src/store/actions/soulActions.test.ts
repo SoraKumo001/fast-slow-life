@@ -263,7 +263,12 @@ describe("soulActions - resetGame", () => {
     useGameStore.setState({
       logs: [
         ...useGameStore.getState().logs,
-        { id: "old", timestamp: "10日目 12:00", message: "古いログ", type: "info" as const },
+        {
+          id: "old",
+          timestamp: "10日目 12:00",
+          message: "古いログ",
+          type: "info" as const,
+        },
       ],
     });
 
@@ -309,7 +314,10 @@ describe("soulActions - resetGame", () => {
     // HERITAGE_GOLD_PER_LEVEL × heritage Lv + STARTING_GOLD
     const heritageLvl = 3;
     useGameStore.setState({
-      soulUpgrades: { ...useGameStore.getState().soulUpgrades, heritage: heritageLvl },
+      soulUpgrades: {
+        ...useGameStore.getState().soulUpgrades,
+        heritage: heritageLvl,
+      },
     });
 
     useGameStore.getState().resetGame(false);
@@ -321,7 +329,15 @@ describe("soulActions - resetGame", () => {
 
   it("リセット後に tradeRules が空配列に戻ること", () => {
     useGameStore.setState({
-      tradeRules: [{ id: "r1", itemId: "potion", type: "sell", threshold: 5, isEnabled: true }],
+      tradeRules: [
+        {
+          id: "r1",
+          itemId: "potion",
+          type: "sell",
+          threshold: 5,
+          isEnabled: true,
+        },
+      ],
     });
 
     useGameStore.getState().resetGame(false);

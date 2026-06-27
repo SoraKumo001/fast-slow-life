@@ -68,7 +68,11 @@ describe("villagerJob - changeVillagerJobHelper", () => {
 
     it("前提職業を持たない場合は転職できないこと (warning ログ)", () => {
       // 戦士になるには猟師 (lv5) が必要
-      const v = makeVillager({ level: 10, currentJob: "農民", jobHistory: ["農民"] });
+      const v = makeVillager({
+        level: 10,
+        currentJob: "農民",
+        jobHistory: ["農民"],
+      });
       const result = changeVillagerJobHelper({
         villagerId: "v1",
         job: "戦士",
@@ -84,7 +88,11 @@ describe("villagerJob - changeVillagerJobHelper", () => {
 
     it("必要レベルを満たさない場合は転職できないこと", () => {
       // 戦士は lv5 必須
-      const v = makeVillager({ level: 3, currentJob: "猟師", jobHistory: ["農民", "猟師"] });
+      const v = makeVillager({
+        level: 3,
+        currentJob: "猟師",
+        jobHistory: ["農民", "猟師"],
+      });
       const result = changeVillagerJobHelper({
         villagerId: "v1",
         job: "戦士",

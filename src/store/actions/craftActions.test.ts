@@ -10,7 +10,10 @@ describe("craftActions - startCraft", () => {
     globalThis.IS_TEST_ENVIRONMENT = false;
     // ワークショップを Lv1 以上に + wood_plank 用の素材を用意
     useGameStore.setState((s) => ({
-      facilities: { ...s.facilities, workshop: { ...s.facilities.workshop, level: 1 } },
+      facilities: {
+        ...s.facilities,
+        workshop: { ...s.facilities.workshop, level: 1 },
+      },
       inventory: { ...s.inventory, wood: 10, iron_ore: 10 },
     }));
   });
@@ -65,7 +68,10 @@ describe("craftActions - startCraft", () => {
 
   it("施設レベルが足りない場合はクラフト開始されないこと", () => {
     useGameStore.setState((s) => ({
-      facilities: { ...s.facilities, weapon_shop: { ...s.facilities.weapon_shop, level: 0 } },
+      facilities: {
+        ...s.facilities,
+        weapon_shop: { ...s.facilities.weapon_shop, level: 0 },
+      },
     }));
     useGameStore.getState().startCraft("weapon_shop", "iron_sword");
     const after = useGameStore.getState();
@@ -201,9 +207,7 @@ describe("craftActions - startTraining", () => {
 
   it("active な村人は訓練対象にならず warning ログが出ること", () => {
     useGameStore.setState((s) => ({
-      villagers: s.villagers.map((v, idx) =>
-        idx === 0 ? { ...v, status: "active" as const } : v,
-      ),
+      villagers: s.villagers.map((v, idx) => (idx === 0 ? { ...v, status: "active" as const } : v)),
     }));
     const v1Id = useGameStore.getState().villagers[0].id;
     useGameStore.getState().startTraining("training_str_1", v1Id);
@@ -215,7 +219,10 @@ describe("craftActions - startTraining", () => {
 
   it("訓練場 Lv0 の場合は warning ログが出ること", () => {
     useGameStore.setState((s) => ({
-      facilities: { ...s.facilities, training_ground: { ...s.facilities.training_ground, level: 0 } },
+      facilities: {
+        ...s.facilities,
+        training_ground: { ...s.facilities.training_ground, level: 0 },
+      },
     }));
     const v1Id = useGameStore.getState().villagers[0].id;
     useGameStore.getState().startTraining("training_str_1", v1Id);

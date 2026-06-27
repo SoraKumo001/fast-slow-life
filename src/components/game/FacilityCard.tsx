@@ -51,8 +51,16 @@ interface ResourceRule {
 
 const RESOURCE_RULES: Record<string, ResourceRule[]> = {
   farm: [
-    { itemId: "wheat", requiredLevel: 1, getAmountText: (lvl) => `${Math.floor((1 + lvl) / 2)}個` },
-    { itemId: "vegetable", requiredLevel: 2, getAmountText: (lvl) => `${Math.floor(lvl / 2)}個` },
+    {
+      itemId: "wheat",
+      requiredLevel: 1,
+      getAmountText: (lvl) => `${Math.floor((1 + lvl) / 2)}個`,
+    },
+    {
+      itemId: "vegetable",
+      requiredLevel: 2,
+      getAmountText: (lvl) => `${Math.floor(lvl / 2)}個`,
+    },
     {
       itemId: "raw_meat",
       requiredLevel: 2,
@@ -84,7 +92,11 @@ const RESOURCE_RULES: Record<string, ResourceRule[]> = {
       requiredLevel: 4,
       getAmountText: (lvl) => `確率 ${Math.round((lvl - 3) * 20)}% で 1個`,
     },
-    { itemId: "silver_ore", requiredLevel: 5, getAmountText: () => `確率 25% で 1個` },
+    {
+      itemId: "silver_ore",
+      requiredLevel: 5,
+      getAmountText: () => `確率 25% で 1個`,
+    },
   ],
 };
 
@@ -285,7 +297,8 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
                   /12時間
                   {fac.level > 0 && (
                     <span className="text-amber-400 font-bold font-mono ml-1">
-                      (約{getResourceFacilityGValue(fac.id, fac.level).gValue}G相当)
+                      (約{getResourceFacilityGValue(fac.id, fac.level).gValue}
+                      G相当)
                     </span>
                   )}
                   {fac.level > 0 && fac.level < fac.maxLevel && (

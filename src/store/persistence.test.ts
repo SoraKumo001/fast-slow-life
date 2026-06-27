@@ -71,7 +71,14 @@ function makeBaseState(): GameState & GameActions {
     gameOverReason: "",
     isPaused: true,
     playSpeed: "normal",
-    soulUpgrades: { heritage: 0, storage: 0, education: 0, body: 0, building: 0, discount: 0 },
+    soulUpgrades: {
+      heritage: 0,
+      storage: 0,
+      education: 0,
+      body: 0,
+      building: 0,
+      discount: 0,
+    },
     towns: [],
     caravans: [],
     isSalaryUnpaid: false,
@@ -184,7 +191,10 @@ describe("persistence.merge - 重要フィールドの null 保護", () => {
   it("lastSchedulerTick が undefined の場合は currentState の値が維持されること", () => {
     const state = makeBaseState();
     state.lastSchedulerTick = 100;
-    const persisted = { lastSchedulerTick: undefined, saveVersion: SAVE_VERSION };
+    const persisted = {
+      lastSchedulerTick: undefined,
+      saveVersion: SAVE_VERSION,
+    };
     const merged = merge(persisted, state);
     expect(merged.lastSchedulerTick).toBe(100);
   });
@@ -205,7 +215,10 @@ describe("persistence.merge - inventory / targetAmounts の shallow merge", () =
   it("targetAmounts も同様に shallow merge されること", () => {
     const state = makeBaseState();
     state.targetAmounts = { wood: 5 };
-    const persisted = { targetAmounts: { stone: 20 }, saveVersion: SAVE_VERSION };
+    const persisted = {
+      targetAmounts: { stone: 20 },
+      saveVersion: SAVE_VERSION,
+    };
     const merged = merge(persisted, state);
     expect(merged.targetAmounts.wood).toBe(5);
     expect(merged.targetAmounts.stone).toBe(20);
