@@ -12,7 +12,6 @@ import { useBossDefeatStore } from "./useBossDefeatStore";
 export function useBossDefeatDetector(): void {
   const currentTier = useGameStore((s) => s.currentTier);
   const activeBoss = useGameStore((s) => s.activeBoss);
-  const gameLimitDays = useGameStore((s) => s.gameLimitDays);
   const prevTierRef = useRef(currentTier);
   const prevActiveBossRef = useRef(activeBoss);
 
@@ -24,7 +23,6 @@ export function useBossDefeatDetector(): void {
         type: "victory",
         bossName: monster?.name || prevActiveBossRef.current.monsterId,
         tier: currentTier,
-        gameLimitDays,
       });
     }
     // 全滅検出: activeBoss が消え、tier は不変 (= 撃破ではない)
@@ -34,10 +32,9 @@ export function useBossDefeatDetector(): void {
         type: "defeat",
         bossName: monster?.name || prevActiveBossRef.current.monsterId,
         tier: currentTier,
-        gameLimitDays,
       });
     }
     prevTierRef.current = currentTier;
     prevActiveBossRef.current = activeBoss;
-  }, [currentTier, activeBoss, gameLimitDays]);
+  }, [currentTier, activeBoss]);
 }

@@ -152,7 +152,7 @@ describe("gatherLogic - processVillagerGather", () => {
     const area = makeArea();
     // wheat の currentProgress が十分高いので wheat が選ばれる想定
     area.gathers[0].currentProgress = 50;
-    const result = processVillagerGather(v, 0, area, [v], {}, { wheat: 50 }, 1.0, {}, 1000, false);
+    processVillagerGather(v, 0, area, [v], {}, { wheat: 50 }, 1.0, {}, 1000, false);
     // 何かしらの autoTargetName が設定される
     expect(v.autoTargetName).not.toBeNull();
   });

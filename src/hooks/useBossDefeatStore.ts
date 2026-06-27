@@ -11,7 +11,6 @@ export interface BossBattleResult {
   type: BossBattleResultType;
   bossName: string;
   tier: number;
-  gameLimitDays: number;
 }
 
 interface BossBattleResultState {

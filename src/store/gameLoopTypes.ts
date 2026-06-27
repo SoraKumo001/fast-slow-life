@@ -26,7 +26,6 @@ export interface AdvanceHourResult {
   currentTier: number;
   activeBoss: ActiveBossState | null;
   bossDefeated: boolean;
-  gameLimitDays: number;
   gameOver: boolean;
   gameOverReason: string;
   isPaused: boolean;

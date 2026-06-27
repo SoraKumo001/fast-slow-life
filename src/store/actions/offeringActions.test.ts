@@ -31,10 +31,10 @@ describe("offeringActions - offerToDungeon", () => {
   });
 
   it("正常系: ゴールドを消費し脅威度が低下すること", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 10000,
       dungeons: [makeDungeon({ threatLevel: 50 })],
-    }));
+    });
 
     const result = useGameStore.getState().offerToDungeon("forest", 30);
     expect(result).toBeNull(); // 成功
@@ -44,10 +44,10 @@ describe("offeringActions - offerToDungeon", () => {
   });
 
   it("正常系: お布施ログが追加されること", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 10000,
       dungeons: [makeDungeon({ threatLevel: 50 })],
-    }));
+    });
 
     useGameStore.getState().offerToDungeon("forest", 30);
     const after = useGameStore.getState();
@@ -64,19 +64,19 @@ describe("offeringActions - offerToDungeon", () => {
   });
 
   it("脅威度 0 のダンジョンには適用不可 (エラーメッセージ)", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 10000,
       dungeons: [makeDungeon({ threatLevel: 0 })],
-    }));
+    });
     const result = useGameStore.getState().offerToDungeon("forest", 30);
     expect(result).not.toBeNull();
   });
 
   it("ゴールド不足の場合はエラーメッセージを返すこと", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 1, // ゴールド不足
       dungeons: [makeDungeon({ threatLevel: 50 })],
-    }));
+    });
     const result = useGameStore.getState().offerToDungeon("forest", 30);
     expect(result).not.toBeNull();
     expect(result).toContain("ゴールド");
@@ -85,19 +85,19 @@ describe("offeringActions - offerToDungeon", () => {
   });
 
   it("軽減率 0 や 100 超はエラーメッセージを返すこと", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 10000,
       dungeons: [makeDungeon({ threatLevel: 50 })],
-    }));
+    });
     expect(useGameStore.getState().offerToDungeon("forest", 0)).not.toBeNull();
     expect(useGameStore.getState().offerToDungeon("forest", 101)).not.toBeNull();
   });
 
   it("実行後はゴールドが実際に消費された金額分減少すること", () => {
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 100000,
       dungeons: [makeDungeon({ threatLevel: 50 })],
-    }));
+    });
     const before = useGameStore.getState().gold;
     useGameStore.getState().offerToDungeon("forest", 30);
     const after = useGameStore.getState();

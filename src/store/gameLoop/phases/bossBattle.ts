@@ -14,7 +14,6 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
     acc.dungeons,
     acc.currentTier,
     acc.bossDefeated,
-    acc.gameLimitDays,
     acc.soulUpgrades,
     acc.nextStats,
     acc.currentDay,
@@ -25,7 +24,6 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
   acc.dungeons = bossRes.dungeons;
   acc.bossDefeated = bossRes.bossDefeated;
   acc.currentTier = bossRes.currentTier;
-  acc.gameLimitDays = bossRes.gameLimitDays;
   acc.tierStartDay = bossRes.tierStartDay;
   acc.logsToAppend.push(...bossRes.logs);
 

@@ -74,7 +74,6 @@ export const BossDefeatAnnouncement: React.FC = () => {
             <p>
               Tier <span className="text-amber-400 font-bold">{result.tier}</span> に進行しました！
             </p>
-            <p className="text-slate-500 text-xs">次の期限: {result.gameLimitDays}日目 まで</p>
           </div>
 
           <p className="text-slate-500 text-[10px] mt-2">クリックで閉じる</p>

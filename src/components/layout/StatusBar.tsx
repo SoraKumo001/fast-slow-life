@@ -1,28 +1,17 @@
 import { Terminal } from "lucide-react";
 import React from "react";
 
-import { TIER_LIMIT_DAYS } from "../../constants";
-import {
-  useDungeons,
-  useGameStatus,
-  useGameTime,
-  useInventory,
-  useLogs,
-  useVillagers,
-} from "../../hooks";
+import { useDungeons, useInventory, useLogs, useVillagers } from "../../hooks";
 import { getDailyFoodConsumption, getFoodDaysRemaining } from "../../utils/economyHelpers";
 import { getLogColorClass } from "../../utils/logHelpers";
-import { ProgressBar } from "../ui/ProgressBar";
 
 interface StatusBarProps {
   onOpenLogHistory?: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({ onOpenLogHistory }) => {
-  const { currentDay } = useGameTime();
-  const { gameLimitDays } = useGameStatus();
   const villagers = useVillagers();
-  const { currentTier, bossDefeated } = useDungeons();
+  const { currentTier } = useDungeons();
   const { inventory } = useInventory();
   const logs = useLogs();
 
@@ -30,10 +19,6 @@ export const StatusBar: React.FC<StatusBarProps> = ({ onOpenLogHistory }) => {
     villagers.length > 0
       ? (villagers.reduce((sum, v) => sum + v.level, 0) / villagers.length).toFixed(1)
       : "0.0";
-
-  const daysElapsed = currentDay;
-  const limitDays = TIER_LIMIT_DAYS[currentTier] || gameLimitDays;
-  const progressPct = Math.min(100, Math.round((daysElapsed / limitDays) * 100));
 
   const tierNames = ["", "始まりの森", "廃鉱山", "魔獣の谷", "世界樹の根", "深淵の奈落"];
 
@@ -78,43 +63,15 @@ export const StatusBar: React.FC<StatusBarProps> = ({ onOpenLogHistory }) => {
           </span>
           <span className="text-slate-600 text-[9px]">(-{dailyConsumption}/日)</span>
         </span>
-
-        <span className="w-px h-3 bg-slate-800 shrink-0" />
-
-        <span className="flex items-center gap-1.5 shrink-0">
-          <span className="text-slate-500">進行度</span>
-          <div className="w-16">
-            <ProgressBar
-              value={progressPct}
-              height={1.5}
-              color={bossDefeated ? "emerald" : "sky"}
-              className="border border-slate-900"
-            />
-          </div>
-          <span
-            className={`font-mono font-bold ${bossDefeated ? "text-emerald-400" : "text-sky-400"}`}
-          >
-            {progressPct}%
-          </span>
-        </span>
       </div>
 
-      {/* Row 2: 地域 / 期限 / ログ */}
+      {/* Row 2: 地域 / ログ */}
       <div className="px-6 py-1 flex items-center gap-5 text-[10px] text-slate-400 border-t border-slate-800/50">
         <span className="flex items-center gap-1.5 shrink-0">
           <span className="text-slate-500">地域</span>
           <span className="text-indigo-400 font-bold">
             {tierNames[currentTier] || `Tier ${currentTier}`}
           </span>
-        </span>
-
-        <span className="w-px h-3 bg-slate-800 shrink-0" />
-
-        <span
-          className={`flex items-center gap-1.5 shrink-0 ${bossDefeated ? "text-emerald-500" : "text-red-400"}`}
-        >
-          <span className="text-slate-500">期限</span>
-          <span className="font-bold font-mono">残り{Math.max(0, limitDays - daysElapsed)}日</span>
         </span>
 
         {onOpenLogHistory && (

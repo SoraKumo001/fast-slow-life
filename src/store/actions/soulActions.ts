@@ -82,7 +82,6 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       currentTier: result.currentTier,
       activeBoss: result.activeBoss,
       bossDefeated: result.bossDefeated,
-      gameLimitDays: result.gameLimitDays,
       tierStartDay: result.tierStartDay,
       gameOver: result.gameOver,
       gameOverReason: result.gameOverReason,

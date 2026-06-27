@@ -28,13 +28,6 @@ describe("gameOverHelper", () => {
       expect(log.type).toBe("error");
     });
 
-    it("期限切れログに制限日数が含まれること", () => {
-      const log = buildGameOverLog("期限切れ", 30);
-      expect(log.message).toContain("30");
-      expect(log.message).toContain("ゲームオーバー");
-      expect(log.type).toBe("error");
-    });
-
     it("クリアログのメッセージとタイプが正しいこと", () => {
       const log = buildGameOverLog("クリア");
       expect(log.message).toContain("Tier");

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-import { STARTING_GOLD, TIER_LIMIT_DAYS } from "../constants";
+import { STARTING_GOLD } from "../constants";
 import { GameState, GameActions, StoreSet, StoreGet } from "../types/game";
 import { createBossActions } from "./actions/bossActions";
 import { createCraftActions } from "./actions/craftActions";
@@ -55,7 +55,6 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   currentTier: 1,
   activeBoss: null,
   bossDefeated: false,
-  gameLimitDays: TIER_LIMIT_DAYS[1],
   gameOver: false,
   gameOverReason: "",
   isPaused: true,

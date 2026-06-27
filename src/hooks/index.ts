@@ -55,7 +55,6 @@ export const useGameStatus = () =>
       playSpeed: s.playSpeed,
       gameOver: s.gameOver,
       gameOverReason: s.gameOverReason,
-      gameLimitDays: s.gameLimitDays,
     })),
   );
 

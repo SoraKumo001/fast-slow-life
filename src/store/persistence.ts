@@ -119,7 +119,6 @@ export const partialize = (
   currentTier: state.currentTier,
   activeBoss: state.activeBoss,
   bossDefeated: state.bossDefeated,
-  gameLimitDays: state.gameLimitDays,
   gameOver: state.gameOver,
   gameOverReason: state.gameOverReason,
   isPaused: state.isPaused,

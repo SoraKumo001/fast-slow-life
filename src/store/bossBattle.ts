@@ -1,5 +1,4 @@
 import {
-  TIER_LIMIT_DAYS,
   BOSS_BATTLE_ROUNDS,
   BOSS_REGEN_PERCENT,
   STARVATION_EFFICIENCY_PENALTY,
@@ -27,7 +26,6 @@ export function processBossBattle(
   dungeons: DungeonArea[],
   currentTier: number,
   bossDefeated: boolean,
-  gameLimitDays: number,
   soulUpgrades: Record<string, number>,
   stats: RunStats | undefined,
   currentDay: number,
@@ -39,7 +37,6 @@ export function processBossBattle(
   let nextDungeons = [...dungeons];
   let nextBossDefeated = bossDefeated;
   let nextCurrentTier = currentTier;
-  let nextGameLimitDays = gameLimitDays;
   let nextTierStartDay = tierStartDay;
 
   if (nextActiveBoss) {
@@ -283,12 +280,11 @@ export function processBossBattle(
         let isClear = false;
         if (nextCurrentTier < 5) {
           nextCurrentTier += 1;
-          nextGameLimitDays = TIER_LIMIT_DAYS[nextCurrentTier];
           nextBossDefeated = false;
-          // 新 Tier 開始日を更新（次 Tier の脅威度進行の基準日）
+          // 新 Tier 開始日を更新（次 Tier の脅威度進行 of 基準日）
           nextTierStartDay = currentDay;
           logs.push({
-            message: `新しいエリアと施設が解放されました！ 次のボス期限は ${nextGameLimitDays} 日目まで。`,
+            message: `新しいエリアと施設が解放されました！`,
             type: "system",
           });
         } else {
@@ -307,7 +303,6 @@ export function processBossBattle(
             villagers: nextVillagers,
             bossDefeated: true,
             currentTier: nextCurrentTier,
-            gameLimitDays: nextGameLimitDays,
             tierStartDay: nextTierStartDay,
             logs,
             gameOver: true,
@@ -327,7 +322,6 @@ export function processBossBattle(
     villagers: nextVillagers,
     bossDefeated: nextBossDefeated,
     currentTier: nextCurrentTier,
-    gameLimitDays: nextGameLimitDays,
     tierStartDay: nextTierStartDay,
     logs,
     gameOver: false,

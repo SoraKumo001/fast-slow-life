@@ -104,10 +104,10 @@ describe("craftActions - startFacilityUpgrade", () => {
   beforeEach(() => {
     useGameStore.getState().resetGame(false);
     globalThis.IS_TEST_ENVIRONMENT = false;
-    useGameStore.setState((s) => ({
+    useGameStore.setState({
       gold: 10000,
       inventory: { wood: 100, stone: 100 },
-    }));
+    });
   });
 
   afterEach(() => {

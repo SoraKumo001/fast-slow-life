@@ -26,7 +26,6 @@ describe("soulActions - buySoulUpgrade", () => {
   });
 
   it("SP 十分な場合にレベルが上がり SP が消費されること", () => {
-    const state = useGameStore.getState();
     useGameStore.setState({ soulPoints: 100 });
 
     // heritage: costs[0]=8

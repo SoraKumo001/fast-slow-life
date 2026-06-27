@@ -378,7 +378,6 @@ export interface GameProgression {
   currentDay: number;
   currentHour: number;
   currentTier: number;
-  gameLimitDays: number;
   bossDefeated: boolean;
   gameOver: boolean;
   gameOverReason: string;

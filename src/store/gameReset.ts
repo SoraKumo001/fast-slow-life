@@ -3,7 +3,6 @@ import {
   STARTING_FOOD,
   HERITAGE_GOLD_PER_LEVEL,
   STORAGE_FOOD_PER_LEVEL,
-  TIER_LIMIT_DAYS,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
 import {
@@ -59,7 +58,6 @@ export interface ResetResult {
   currentTier: number;
   activeBoss: null;
   bossDefeated: boolean;
-  gameLimitDays: number;
   gameOver: boolean;
   gameOverReason: string;
   isPaused: boolean;
@@ -133,7 +131,6 @@ export function resetGameHelper(params: {
     currentTier: 1,
     activeBoss: null,
     bossDefeated: false,
-    gameLimitDays: TIER_LIMIT_DAYS[1],
     gameOver: false,
     gameOverReason: "",
     isPaused: true,

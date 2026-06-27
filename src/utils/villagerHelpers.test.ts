@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
 
 import { VILLAGER_NAMES } from "../data/masterData";
 import type { Villager, Facility, FacilityType, DungeonArea } from "../types/game";

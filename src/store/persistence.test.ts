@@ -66,7 +66,6 @@ function makeBaseState(): GameState & GameActions {
     currentTier: 1,
     activeBoss: null,
     bossDefeated: false,
-    gameLimitDays: 30,
     gameOver: false,
     gameOverReason: "",
     isPaused: true,

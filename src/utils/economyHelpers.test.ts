@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { ITEMS, RECIPES } from "../data/masterData";
+import { RECIPES } from "../data/masterData";
 import type { Town } from "../types/game";
 import {
   getEffectiveExportPrice,
