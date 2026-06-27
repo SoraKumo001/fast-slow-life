@@ -23,6 +23,7 @@ export function getResourceProductionInfo(fac: Facility): ResourceProductionInfo
     if (wheat > 0) parts.push(`小麦 +${wheat}`);
     if (vegetable > 0) parts.push(`野菜 +${vegetable}`);
     if (rawMeat > 0) parts.push(`生肉 +${rawMeat}`);
+    if (lvl >= 3) parts.push(`薬草 (確率:${Math.round((lvl - 2) * 30)}%)`);
     return { label: parts.join("、"), details: parts };
   }
 
@@ -37,6 +38,7 @@ export function getResourceProductionInfo(fac: Facility): ResourceProductionInfo
     const stone = lvl;
     const parts: string[] = [`石材 +${stone}`];
     if (lvl >= 3) parts.push(`鉄鉱石 (確率:${Math.round((lvl - 2) * 30)}%)`);
+    if (lvl >= 4) parts.push(`鉄インゴット (確率:${Math.round((lvl - 3) * 20)}%)`);
     if (lvl >= 5) parts.push(`銀鉱石 (確率:25%)`);
     return { label: `石材 +${stone}`, details: parts };
   }

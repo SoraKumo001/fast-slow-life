@@ -18,6 +18,7 @@ export const DungeonPanel: React.FC = () => {
   const activeBoss = useGameStore((s) => s.activeBoss);
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
+  const setSelectedItem = useGameStore((s) => s.setSelectedItem);
   const { isExpanded: isAreaExpanded, toggleExpand: toggleAreaExpand } = useExpandedState();
 
   const getActiveVillagersInArea = (areaId: string) => {
@@ -169,6 +170,7 @@ export const DungeonPanel: React.FC = () => {
                                 respawnTimeLeft={g.respawnTimeLeft}
                                 respawnTimeTotal={g.respawnTimeTotal}
                                 gaugeColor="emerald"
+                                onClick={() => gItem && setSelectedItem(gItem)}
                               />
                             );
                           })}

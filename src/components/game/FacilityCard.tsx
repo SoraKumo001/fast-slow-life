@@ -1,17 +1,17 @@
-import { ArrowUpCircle } from "lucide-react";
-import React, { useState } from "react";
+import { ArrowUpCircle, Pickaxe } from "lucide-react";
+import React from "react";
 
 import { BUILDING_COST_REDUCTION } from "../../constants";
-import { getCraftableItemsForFacility } from "../../data/masterData";
+import { ITEMS, getCraftableItemsForFacility } from "../../data/masterData";
 import { useInventory, usePlayerResources, useSoulUpgrades, useVillagers } from "../../hooks";
-import type { Facility, FacilityType, Item } from "../../types/game";
+import { useGameStore } from "../../store/gameStore";
+import type { Facility, FacilityType } from "../../types/game";
 import { getResourceFacilityGValue } from "../../utils/economyHelpers";
 import {
   getNextLevelResourceProduction,
   getResourceProductionInfo,
   isResourceFacility,
 } from "../../utils/facilityHelpers";
-import { ItemDetailDrawer } from "../modals/ItemDetailDrawer";
 import { ProgressBar } from "../ui/ProgressBar";
 import { CraftQueueDisplay } from "./CraftQueueDisplay";
 import { CraftRecipeGrid } from "./CraftRecipeGrid";
@@ -40,7 +40,52 @@ const FACILITY_DESCRIPTIONS: Record<string, string> = {
   farm: "毎時間自動的に食料を生産します。レベルアップで生産効率が向上します。",
   lumberyard: "毎時間自動的に原木を生産します。開拓に必要な木材を効率よく調達できます。",
   quarry:
-    "毎時間自動的に石材を生産します。施設のアップグレードやクラフトに必要な石材を調達できます。",
+    "毎時間自動的に石材を生産します。施設のアップグレードやクラフトに必要な石材の他、高レベルでは鉄鉱石や鉄インゴットなどの鉱物資源を調達できます。",
+};
+
+interface ResourceRule {
+  itemId: string;
+  requiredLevel: number;
+  getAmountText: (lvl: number) => string;
+}
+
+const RESOURCE_RULES: Record<string, ResourceRule[]> = {
+  farm: [
+    { itemId: "wheat", requiredLevel: 1, getAmountText: (lvl) => `${Math.floor((1 + lvl) / 2)}個` },
+    { itemId: "vegetable", requiredLevel: 2, getAmountText: (lvl) => `${Math.floor(lvl / 2)}個` },
+    {
+      itemId: "raw_meat",
+      requiredLevel: 2,
+      getAmountText: (lvl) => `${Math.floor((lvl - 1) / 2)}個`,
+    },
+    {
+      itemId: "herb",
+      requiredLevel: 3,
+      getAmountText: (lvl) => `確率 ${Math.round((lvl - 2) * 30)}% で 1個`,
+    },
+  ],
+  lumberyard: [
+    { itemId: "wood", requiredLevel: 1, getAmountText: (lvl) => `${lvl}個` },
+    {
+      itemId: "wood_plank",
+      requiredLevel: 3,
+      getAmountText: (lvl) => `確率 ${Math.round((lvl - 2) * 30)}% で 1個`,
+    },
+  ],
+  quarry: [
+    { itemId: "stone", requiredLevel: 1, getAmountText: (lvl) => `${lvl}個` },
+    {
+      itemId: "iron_ore",
+      requiredLevel: 3,
+      getAmountText: (lvl) => `確率 ${Math.round((lvl - 2) * 30)}% で 1個`,
+    },
+    {
+      itemId: "iron_ingot",
+      requiredLevel: 4,
+      getAmountText: (lvl) => `確率 ${Math.round((lvl - 3) * 20)}% で 1個`,
+    },
+    { itemId: "silver_ore", requiredLevel: 5, getAmountText: () => `確率 25% で 1個` },
+  ],
 };
 
 interface FacilityCardProps {
@@ -58,7 +103,7 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
   onStartUpgrade,
   onHireVillager,
 }) => {
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+  const setSelectedItem = useGameStore((s) => s.setSelectedItem);
   const { inventory, tradeRules } = useInventory();
   const { gold } = usePlayerResources();
   const villagers = useVillagers();
@@ -189,36 +234,80 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
             {fac.id === "training_ground" && isUnlocked && <TrainingGroundPanel fac={fac} />}
 
             {isResourceFacility(fac.id) && (
-              <p className="text-[10px] text-slate-400 italic leading-relaxed">
-                ※この施設は12時間ごとに自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
-                <span className="text-emerald-400 font-bold font-mono">
-                  {fac.level === 0 ? "なし" : getResourceProductionInfo(fac).label}
-                </span>
-                /12時間
-                {fac.level > 0 && (
-                  <span className="text-amber-400 font-bold font-mono ml-1">
-                    (約{getResourceFacilityGValue(fac.id, fac.level).gValue}G相当)
+              <div className="space-y-2.5">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                  <Pickaxe className="w-3 h-3 text-sky-400" />
+                  {isUnlocked ? "自動生産アイテム (12時間ごと)" : "解放される自動生産アイテム"}
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {RESOURCE_RULES[fac.id]?.map((rule) => {
+                    const item = ITEMS[rule.itemId];
+                    if (!item) return null;
+                    const isAvailable = fac.level >= rule.requiredLevel;
+                    return (
+                      <div
+                        key={rule.itemId}
+                        className={`p-2.5 rounded-lg border flex flex-col gap-1 ${
+                          isAvailable
+                            ? "bg-slate-950/80 border-slate-800"
+                            : "bg-slate-950/20 border-slate-900/60 opacity-60"
+                        }`}
+                      >
+                        <p
+                          className={`text-xs font-bold ${
+                            isAvailable
+                              ? "text-sky-300 hover:text-sky-200 cursor-pointer"
+                              : "text-slate-500"
+                          }`}
+                          onClick={(e) => {
+                            if (!isAvailable) return;
+                            e.stopPropagation();
+                            setSelectedItem(item);
+                          }}
+                        >
+                          {item.name}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-mono">
+                          生産量: {isAvailable ? rule.getAmountText(fac.level) : "未解放"}
+                        </p>
+                        <p className="text-[10px] text-slate-500 font-mono">
+                          必要施設レベル: Lv.{rule.requiredLevel}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-slate-400 italic leading-relaxed pt-1">
+                  ※この施設は12時間ごとに自動的に稼働し、倉庫に資源を追加します。現在の生産量:{" "}
+                  <span className="text-emerald-400 font-bold font-mono">
+                    {fac.level === 0 ? "なし" : getResourceProductionInfo(fac).label}
                   </span>
-                )}
-                {fac.level > 0 && fac.level < fac.maxLevel && (
-                  <>
-                    {" "}
-                    （建設・強化後:{" "}
-                    <span className="text-sky-400 font-bold font-mono">
-                      {getNextLevelResourceProduction(fac).label}
-                    </span>
+                  /12時間
+                  {fac.level > 0 && (
                     <span className="text-amber-400 font-bold font-mono ml-1">
-                      (約
-                      {
-                        getResourceFacilityGValue(fac.id, Math.min(fac.level + 1, fac.maxLevel))
-                          .gValue
-                      }
-                      G相当)
+                      (約{getResourceFacilityGValue(fac.id, fac.level).gValue}G相当)
                     </span>
-                    /12時間）
-                  </>
-                )}
-              </p>
+                  )}
+                  {fac.level > 0 && fac.level < fac.maxLevel && (
+                    <>
+                      {" "}
+                      （建設・強化後:{" "}
+                      <span className="text-sky-400 font-bold font-mono">
+                        {getNextLevelResourceProduction(fac).label}
+                      </span>
+                      <span className="text-amber-400 font-bold font-mono ml-1">
+                        (約
+                        {
+                          getResourceFacilityGValue(fac.id, Math.min(fac.level + 1, fac.maxLevel))
+                            .gValue
+                        }
+                        G相当)
+                      </span>
+                      /12時間）
+                    </>
+                  )}
+                </p>
+              </div>
             )}
 
             {fac.id === "guild" && (
@@ -229,9 +318,6 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
           </div>
         )}
       </div>
-      {selectedItem && (
-        <ItemDetailDrawer item={selectedItem} onClose={() => setSelectedItem(null)} />
-      )}
     </>
   );
 };

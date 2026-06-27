@@ -35,10 +35,16 @@ export const InventoryPanel: React.FC = () => {
   const { currentTier, dungeons } = useDungeons();
   const towns = useGameStore((s) => s.towns);
   const marketLvl = facilities.market?.level || 0;
-  const { setTargetAmount, addTradeRule, deleteTradeRule, toggleTradeRule } = useGameStore();
+  const {
+    setTargetAmount,
+    addTradeRule,
+    deleteTradeRule,
+    toggleTradeRule,
+    selectedItem,
+    setSelectedItem,
+  } = useGameStore();
 
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
-  const closeDetail = useCallback(() => setSelectedItem(null), []);
+  const closeDetail = useCallback(() => setSelectedItem(null), [setSelectedItem]);
 
   // ESCで詳細を閉じる
   useEffect(() => {
@@ -56,15 +62,21 @@ export const InventoryPanel: React.FC = () => {
   const listAreaRef = useRef<HTMLDivElement>(null);
 
   // アイテムリスト・拡張パネル以外のクリックで閉じる
+  // 他のパネルのアイテムクリック時に stopPropagation() が効くようにバブリングフェーズで監視
   useEffect(() => {
     if (!selectedItem) return;
     const handler = (e: MouseEvent) => {
-      if (listAreaRef.current && !listAreaRef.current.contains(e.target as Node)) {
+      const target = e.target as HTMLElement;
+      // cursor-pointerクラスを持つ要素（他のパネルのアイテムリンクやボタンなど）のクリックは無視する
+      if (target.closest(".cursor-pointer")) {
+        return;
+      }
+      if (listAreaRef.current && !listAreaRef.current.contains(target)) {
         closeDetail();
       }
     };
-    document.addEventListener("click", handler, true);
-    return () => document.removeEventListener("click", handler, true);
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
   }, [selectedItem, closeDetail]);
 
   type FilterTab = "all" | "material" | "food" | "consumable" | "gear";

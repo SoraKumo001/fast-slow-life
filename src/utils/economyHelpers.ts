@@ -46,11 +46,16 @@ export function getResourceFacilityGValue(
     const wheat = Math.floor((1 + lvl) / 2);
     const vegetable = Math.floor(lvl / 2);
     const rawMeat = Math.floor((lvl - 1) / 2);
-    const value = wheat * 1 + vegetable * 1 + rawMeat * 2;
+    let value = wheat * 1 + vegetable * 1 + rawMeat * 2;
     const parts: string[] = [];
     if (wheat > 0) parts.push(`小麦+${wheat}`);
     if (vegetable > 0) parts.push(`野菜+${vegetable}`);
     if (rawMeat > 0) parts.push(`生肉+${rawMeat}`);
+    if (lvl >= 3) {
+      const herbProb = Math.round((lvl - 2) * 30);
+      parts.push(`薬草(確率:${herbProb}%)`);
+      value += Math.round((lvl - 2) * 0.3 * 2);
+    }
     return { label: parts.join("、"), gValue: value };
   }
 
@@ -75,9 +80,14 @@ export function getResourceFacilityGValue(
       parts.push(`鉄鉱石(確率:${ironProb}%)`);
       value += Math.round(stone * (lvl - 2) * 0.3) * 2;
     }
+    if (lvl >= 4) {
+      const ironIngotProb = Math.round((lvl - 3) * 20);
+      parts.push(`鉄インゴット(確率:${ironIngotProb}%)`);
+      value += Math.round((lvl - 3) * 0.2 * 12);
+    }
     if (lvl >= 5) {
       parts.push("銀鉱石(確率:25%)");
-      value += Math.round(stone * 0.25) * 4;
+      value += Math.round(0.25 * 4);
     }
     return { label: parts.join("、"), gValue: value };
   }

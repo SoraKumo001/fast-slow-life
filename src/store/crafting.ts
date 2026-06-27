@@ -37,6 +37,29 @@ export function processCraftingAndUpgrades(
 
     if (fac.upgradeTimeLeft > 0) {
       fac.upgradeTimeLeft -= 1;
+
+      // 施設アップグレード中の毎時間経験値獲得
+      if (fac.upgradeAssignedVillagerId) {
+        const workerIdx = nextVillagers.findIndex((v) => v.id === fac.upgradeAssignedVillagerId);
+        if (workerIdx !== -1) {
+          const worker = { ...nextVillagers[workerIdx] };
+          const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
+          const expGained = Math.max(1, Math.floor(CRAFT_EXP_PER_HOUR * eduBonus));
+          worker.exp += expGained;
+
+          const { leveled, updated: leveledV } = tryLevelUp(worker);
+          let updatedWorker = leveled ? leveledV : worker;
+
+          if (leveled) {
+            logs.push({
+              message: `${updatedWorker.name} が レベル ${updatedWorker.level} に上がりました！`,
+              type: "info",
+            });
+          }
+          nextVillagers[workerIdx] = updatedWorker;
+        }
+      }
+
       if (fac.upgradeTimeLeft === 0) {
         fac.level += 1;
         logs.push({
@@ -68,6 +91,29 @@ export function processCraftingAndUpgrades(
     fac.craftQueue.forEach((job) => {
       const updatedJob = { ...job };
       updatedJob.timeLeft -= 1;
+
+      // クラフト進行中の毎時間経験値獲得
+      if (updatedJob.assignedVillagerId) {
+        const workerIdx = nextVillagers.findIndex((v) => v.id === updatedJob.assignedVillagerId);
+        if (workerIdx !== -1) {
+          const worker = { ...nextVillagers[workerIdx] };
+          const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
+          const expGained = Math.max(1, Math.floor(CRAFT_EXP_PER_HOUR * eduBonus));
+          worker.exp += expGained;
+
+          const { leveled, updated: leveledV } = tryLevelUp(worker);
+          let updatedWorker = leveled ? leveledV : worker;
+
+          if (leveled) {
+            logs.push({
+              message: `${updatedWorker.name} が レベル ${updatedWorker.level} に上がりました！`,
+              type: "info",
+            });
+          }
+          nextVillagers[workerIdx] = updatedWorker;
+        }
+      }
+
       if (updatedJob.timeLeft <= 0) {
         let successBonus = BASE_GREAT_SUCCESS_RATE;
         if (updatedJob.assignedVillagerId) {
@@ -95,7 +141,7 @@ export function processCraftingAndUpgrades(
         if (updatedJob.assignedVillagerId) {
           const idx = nextVillagers.findIndex((v) => v.id === updatedJob.assignedVillagerId);
           if (idx !== -1) {
-            const worker = nextVillagers[idx];
+            const worker = { ...nextVillagers[idx] };
             // 工賃計算: (基本額 + Dex補正) × 職人ボーナス
             const jobMultiplier =
               worker.currentJob === "職人" ? CRAFT_WAGE_CRAFTER_MULTIPLIER : 1.0;
@@ -110,36 +156,6 @@ export function processCraftingAndUpgrades(
               message: `${worker.name} に工賃 ${wage} G を支払いました。（Dex: ${worker.dex}${worker.currentJob === "職人" ? "、職人ボーナス×1.5" : ""}）`,
               type: "info",
             });
-
-            // クラフト経験値
-            const eduBonus = 1.0 + (soulUpgrades.education || 0) * EDUCATION_EXP_BONUS;
-            const expGained = Math.max(
-              1,
-              Math.floor((recipe?.requiredTime || 1) * CRAFT_EXP_PER_HOUR * eduBonus),
-            );
-            worker.exp += expGained;
-            logs.push({
-              message: `${worker.name} がクラフトで経験値 ${expGained} を獲得。`,
-              type: "craft",
-            });
-
-            const { leveled, updated: leveledV } = tryLevelUp(worker);
-            if (leveled) {
-              worker.level = leveledV.level;
-              worker.exp = leveledV.exp;
-              worker.str = leveledV.str;
-              worker.int = leveledV.int;
-              worker.dex = leveledV.dex;
-              worker.agi = leveledV.agi;
-              worker.vit = leveledV.vit;
-              worker.maxHp = leveledV.maxHp;
-              worker.maxStamina = leveledV.maxStamina;
-              worker.currentHp = leveledV.currentHp;
-              logs.push({
-                message: `${worker.name} が レベル ${worker.level} に上がりました！`,
-                type: "info",
-              });
-            }
 
             nextVillagers[idx] = {
               ...worker,

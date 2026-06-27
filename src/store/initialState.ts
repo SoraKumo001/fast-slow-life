@@ -164,7 +164,7 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     },
     {
       id: "quarry",
-      name: "採石場",
+      name: "鉱山",
       initialLevel: 0,
       upgradeGold: 0,
     },

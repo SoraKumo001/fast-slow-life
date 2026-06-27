@@ -336,6 +336,7 @@ export interface GameActions {
   toggleCaravanAuto: (caravanId: string) => void;
   payVillagerDebts: () => void;
   payVillagerReward: (villagerId: string, amount: number) => void;
+  setSelectedItem: (item: Item | null) => void;
 }
 
 export interface RunStats {
@@ -387,6 +388,7 @@ export interface GameProgression {
 export interface GameUI {
   isPaused: boolean;
   playSpeed: "normal" | "fast" | "super";
+  selectedItem: Item | null;
 }
 
 export interface GamePeople {

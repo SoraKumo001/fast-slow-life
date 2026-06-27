@@ -54,18 +54,18 @@ export const survivalPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator =
       message: `【経済】村人全員の食料代（計 ${totalFoodCost} G）が引き落とされ、プレイヤーに支払われました。`,
       type: "info",
     });
-  }
 
-  // ---- Food buff log ----
-  const fedVillagers = acc.villagers.filter((v) => v.activeFoodBuffId);
-  if (fedVillagers.length > 0) {
-    const foodNames = Array.from(
-      new Set(fedVillagers.map((v) => ITEMS[v.activeFoodBuffId!]?.name || v.activeFoodBuffId)),
-    ).join("、");
-    acc.logsToAppend.push({
-      message: `【配給】村人たちは食料（${foodNames}）を食べ、ステータスが強化されました！`,
-      type: "info",
-    });
+    // ---- Food buff log ----
+    const fedVillagers = acc.villagers.filter((v) => v.activeFoodBuffId);
+    if (fedVillagers.length > 0) {
+      const foodNames = Array.from(
+        new Set(fedVillagers.map((v) => ITEMS[v.activeFoodBuffId!]?.name || v.activeFoodBuffId)),
+      ).join("、");
+      acc.logsToAppend.push({
+        message: `【配給】村人たちは食料（${foodNames}）を食べ、ステータスが強化されました！`,
+        type: "info",
+      });
+    }
   }
 
   return acc;

@@ -7,6 +7,7 @@ import {
   Sword,
   Zap,
   CheckCircle,
+  Utensils,
 } from "lucide-react";
 import React, { useState } from "react";
 
@@ -286,6 +287,12 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
                 ? `${ITEMS[v.armorId].name} (DEF+${ITEMS[v.armorId]?.equipment?.bonuses?.defense || 0})`
                 : "防具なし"}
             </div>
+            {v.activeFoodBuffId && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-emerald-950/20 border border-emerald-900/40 text-[10px] text-emerald-400">
+                <Utensils className="w-3 h-3 text-emerald-400 shrink-0" />
+                食事バフ: {ITEMS[v.activeFoodBuffId]?.name || v.activeFoodBuffId} (有効)
+              </div>
+            )}
             {v.potionCount > 0 && (
               <div className="flex items-center justify-between px-2 py-1 rounded bg-indigo-950/20 border border-indigo-900/40 text-[10px] text-indigo-400">
                 <span className="flex items-center gap-1 text-[10px]">

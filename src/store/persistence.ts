@@ -99,6 +99,7 @@ export const partialize = (
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   lastSchedulerTick: state.lastSchedulerTick,
   stats: state.stats,
+  selectedItem: state.selectedItem,
   saveVersion: SAVE_VERSION,
 });
 

@@ -457,6 +457,10 @@ describe("gameStore", () => {
       expect(state.facilities.kitchen.craftQueue.length).toBe(1);
       expect(state.facilities.kitchen.craftQueue[0].itemId).toBe("food_bread");
 
+      const assignedVillagerId = state.facilities.kitchen.craftQueue[0].assignedVillagerId;
+      expect(assignedVillagerId).not.toBeNull();
+      const initialExp = state.villagers.find((v) => v.id === assignedVillagerId)?.exp || 0;
+
       // クラフトに必要な時間が経過するまで時間を進める
       const timeNeeded = state.facilities.kitchen.craftQueue[0].timeLeft;
       for (let i = 0; i < timeNeeded; i++) {
@@ -467,6 +471,60 @@ describe("gameStore", () => {
       // パンが完成していることを確認
       expect(state.inventory.food_bread).toBeGreaterThanOrEqual(1);
       expect(state.facilities.kitchen.craftQueue.length).toBe(0);
+
+      const finalExp = state.villagers.find((v) => v.id === assignedVillagerId)?.exp || 0;
+      expect(finalExp).toBeGreaterThan(initialExp);
+    });
+
+    it("クラフトおよび施設アップグレードの進行中に毎時間経験値を獲得すること", () => {
+      const store = useGameStore.getState();
+
+      // 初期化
+      useGameStore.setState((s) => ({
+        inventory: {
+          ...s.inventory,
+          wheat: 10,
+        },
+        facilities: {
+          ...s.facilities,
+          kitchen: { ...s.facilities.kitchen, level: 1 },
+          workshop: {
+            ...s.facilities.workshop,
+            level: 1,
+            upgradeTimeLeft: 5,
+            upgradeTotalTime: 5,
+            upgradeAssignedVillagerId: "v2",
+          },
+        },
+        villagers: s.villagers.map((v) => {
+          if (v.id === "v2") {
+            return { ...v, status: "active", assignedCraftJobId: "upgrade_workshop" };
+          }
+          return v;
+        }),
+      }));
+
+      // クラフト開始
+      store.startCraft("kitchen", "food_bread");
+
+      let state = useGameStore.getState();
+      const kitchenJob = state.facilities.kitchen.craftQueue[0];
+      const assignedVillagerId = kitchenJob.assignedVillagerId;
+      expect(assignedVillagerId).not.toBeNull();
+
+      const initialCraftVExp = state.villagers.find((v) => v.id === assignedVillagerId)?.exp || 0;
+      const initialUpgradeVExp = state.villagers.find((v) => v.id === "v2")?.exp || 0;
+
+      // 1時間進める
+      store.advanceHour();
+
+      state = useGameStore.getState();
+      const nextCraftVExp = state.villagers.find((v) => v.id === assignedVillagerId)?.exp || 0;
+      const nextUpgradeVExp = state.villagers.find((v) => v.id === "v2")?.exp || 0;
+
+      // 毎時間経験値が増えていること（CRAFT_EXP_PER_HOUR=2、soulUpgrade educationは0なので +2 される）
+      expect(nextCraftVExp).toBe(initialCraftVExp + 2);
+      expect(nextUpgradeVExp).toBe(initialUpgradeVExp + 2);
     });
 
     it("payVillagerDebts: ゴールド不足の場合は部分返済されること", () => {

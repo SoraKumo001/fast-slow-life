@@ -73,6 +73,9 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   consecutiveNegativeGoldDays: 0,
   lastSchedulerTick: -4,
   stats: getInitialStats(),
+  selectedItem: null,
+
+  setSelectedItem: (item) => set({ selectedItem: item }),
 
   ...createLogActions(set as StoreSet, get as StoreGet),
   ...createTimeActions(set as StoreSet, get as StoreGet),

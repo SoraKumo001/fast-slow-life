@@ -15,6 +15,7 @@ interface DungeonResourceItemProps {
   className?: string;
   extraContent?: React.ReactNode;
   tooltip?: string;
+  onClick?: () => void;
 }
 
 export const DungeonResourceItem: React.FC<DungeonResourceItemProps> = ({
@@ -30,6 +31,7 @@ export const DungeonResourceItem: React.FC<DungeonResourceItemProps> = ({
   className = "",
   extraContent,
   tooltip,
+  onClick,
 }) => {
   const gaugeBg = gaugeColor === "emerald" ? "bg-emerald-500/15" : "bg-sky-500/15";
   const labelColor = gaugeColor === "emerald" ? "text-emerald-400" : "text-sky-400";
@@ -38,9 +40,15 @@ export const DungeonResourceItem: React.FC<DungeonResourceItemProps> = ({
   return (
     <li
       key={keyId}
+      onClick={(e) => {
+        if (isUnlocked && onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
       className={`relative flex items-center justify-between p-1 px-2 rounded bg-slate-950/40 border border-slate-900/50 overflow-hidden min-w-0 h-7 ${className} ${
         isUnlocked ? "" : "text-slate-600 font-normal"
-      }`}
+      } ${isUnlocked && onClick ? "cursor-pointer hover:border-slate-700/80 hover:text-sky-300 transition duration-150" : ""}`}
       title={tooltip}
     >
       {isUnlocked && !isRespawning && (

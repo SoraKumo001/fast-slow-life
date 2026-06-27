@@ -2,6 +2,7 @@ import { Sword, Users, X } from "lucide-react";
 import React from "react";
 
 import { useBossActions, useDungeons, useVillagers } from "../../hooks";
+import type { ActiveBossState, DungeonMonster, Villager } from "../../types/game";
 
 /**
  * Fixed bar shown when an active boss battle is in progress.
@@ -16,21 +17,59 @@ export const ActiveBossBar: React.FC = () => {
   const villagers = useVillagers();
   const { withdrawFromBossBattle } = useBossActions();
 
-  if (!activeBoss) return null;
+  // 表示用の状態と、残存表示のためのタイマー制御
+  const [cachedBoss, setCachedBoss] = React.useState<ActiveBossState | null>(null);
+  const [cachedBossData, setCachedBossData] = React.useState<DungeonMonster | null>(null);
+  const [cachedAttackers, setCachedAttackers] = React.useState<Villager[]>([]);
+  const [shouldShow, setShouldShow] = React.useState(false);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  const bossArea = dungeons.find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId));
-  const boss = bossArea?.monsters.find((m) => m.id === activeBoss.monsterId);
+  React.useEffect(() => {
+    if (activeBoss) {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      setCachedBoss(activeBoss);
+      setShouldShow(true);
 
-  const bossHpPct = (activeBoss.currentHp / activeBoss.maxHp) * 100;
+      const bossArea = dungeons.find((d) => d.monsters.some((m) => m.id === activeBoss.monsterId));
+      const boss = bossArea?.monsters.find((m) => m.id === activeBoss.monsterId);
+      if (boss) {
+        setCachedBossData(boss);
+      }
+      const attackers = activeBoss.attackerIds
+        .map((id) => villagers.find((v) => v.id === id))
+        .filter((v): v is NonNullable<typeof v> => Boolean(v));
+      setCachedAttackers(attackers);
+    } else {
+      if (cachedBoss) {
+        // HPを0にした状態にして、2秒待つ
+        setCachedBoss((prev: ActiveBossState | null) => (prev ? { ...prev, currentHp: 0 } : null));
+
+        timerRef.current = setTimeout(() => {
+          setShouldShow(false);
+          setCachedBoss(null);
+        }, 2000);
+      } else {
+        setShouldShow(false);
+      }
+    }
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [activeBoss, dungeons, villagers]);
+
+  if (!shouldShow || !cachedBoss) return null;
+
+  const bossHpPct = (cachedBoss.currentHp / cachedBoss.maxHp) * 100;
 
   // アタッカー集計
-  const attackers = activeBoss.attackerIds
-    .map((id) => villagers.find((v) => v.id === id))
-    .filter((v): v is NonNullable<typeof v> => Boolean(v));
-  const totalCurrentHp = attackers.reduce((sum, v) => sum + Math.max(0, v.currentHp), 0);
-  const totalMaxHp = attackers.reduce((sum, v) => sum + v.maxHp, 0);
+  const totalCurrentHp = cachedAttackers.reduce((sum, v) => sum + Math.max(0, v.currentHp), 0);
+  const totalMaxHp = cachedAttackers.reduce((sum, v) => sum + v.maxHp, 0);
   const attackerHpPct = totalMaxHp > 0 ? (totalCurrentHp / totalMaxHp) * 100 : 0;
-  const deadCount = attackers.filter((v) => v.currentHp <= 0).length;
+  const deadCount = cachedAttackers.filter((v) => v.currentHp <= 0).length;
 
   return (
     <div className="bg-red-950/30 border-b border-red-900/50 shrink-0 animate-pulse-slow">
@@ -42,7 +81,7 @@ export const ActiveBossBar: React.FC = () => {
               BOSS BATTLE
             </span>
             <span className="text-sm font-black text-white italic truncate">
-              VS {boss?.name || "Boss"}
+              VS {cachedBossData?.name || "Boss"}
             </span>
             <span className="text-[9px] font-bold text-sky-400 uppercase tracking-wider ml-auto shrink-0">
               ATK HP
@@ -58,7 +97,7 @@ export const ActiveBossBar: React.FC = () => {
               />
             </div>
             <span className="text-[11px] font-black text-red-400 font-mono shrink-0 w-24 text-right">
-              {Math.ceil(activeBoss.currentHp)} / {activeBoss.maxHp}
+              {Math.ceil(cachedBoss.currentHp)} / {cachedBoss.maxHp}
             </span>
           </div>
 
@@ -80,7 +119,7 @@ export const ActiveBossBar: React.FC = () => {
         <div className="flex items-center gap-1.5 shrink-0">
           <Users className="w-3.5 h-3.5 text-sky-400" />
           <div className="flex -space-x-2">
-            {attackers.map((v) => {
+            {cachedAttackers.map((v) => {
               const isDead = v.currentHp <= 0;
               const isLow = !isDead && v.currentHp / v.maxHp < 0.3;
               return (
@@ -109,7 +148,8 @@ export const ActiveBossBar: React.FC = () => {
         <button
           type="button"
           onClick={withdrawFromBossBattle}
-          className="px-3 py-1.5 bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white rounded text-[10px] font-bold transition flex items-center gap-1 shrink-0"
+          disabled={!activeBoss}
+          className="px-3 py-1.5 bg-slate-800 hover:bg-red-900 text-slate-300 hover:text-white rounded text-[10px] font-bold transition flex items-center gap-1 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <X className="w-3 h-3" />
           撤退
