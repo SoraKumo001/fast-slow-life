@@ -138,20 +138,17 @@ export const DungeonPanel: React.FC = () => {
                   )}
                 </div>
 
-                {/* 探索度プログレスバー */}
+                {/* 探索度プログレスバー (1行: ラベル + ゲージ) */}
                 {isUnlocked && (
-                  <div className="mt-2 mb-1">
-                    <div className="flex justify-between text-[10px] mb-1">
-                      <span className="text-slate-400 font-medium">探索度</span>
-                      <span className="text-sky-400 font-bold font-mono">
-                        {Math.floor(area.explorationProgress)}%
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2 mt-2 mb-1">
+                    <span className="text-[10px] font-bold font-mono text-sky-400 shrink-0">
+                      探索度 {Math.floor(area.explorationProgress)}%
+                    </span>
                     <ProgressBar
                       value={area.explorationProgress}
                       height={1.5}
                       color="sky"
-                      className="border border-slate-900"
+                      className="border border-slate-900 flex-1"
                     />
                   </div>
                 )}

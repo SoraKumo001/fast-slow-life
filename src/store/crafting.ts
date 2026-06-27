@@ -210,6 +210,9 @@ export function processAutoCraft(
     const fac = { ...nextFacilities[facKey as FacilityType] };
     if (fac.level > 0 && fac.craftQueue.length < CRAFT_QUEUE_MAX_LENGTH) {
       getRecipesForFacility(fac.id, fac.level).forEach((recipe) => {
+        // キュー満杯ならレシピループを抜ける (上限超過防止)
+        if (fac.craftQueue.length >= CRAFT_QUEUE_MAX_LENGTH) return;
+
         const itemId = recipe.resultItemId;
         const item = ITEMS[itemId];
         if (item) {
