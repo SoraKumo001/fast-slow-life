@@ -1,4 +1,4 @@
-import "./setupMockStorage";
+import "../src/store/setupMockStorage";
 import * as fs from "node:fs";
 import os from "node:os";
 import * as path from "node:path";
@@ -6,7 +6,7 @@ import { Worker } from "node:worker_threads";
 
 import { describe, it, expect } from "vitest";
 
-import type { SimulationResult } from "./balanceSimulator.worker";
+import type { SimulationResult } from "../src/store/balanceSimulator.worker";
 
 describe("Balance Simulator", () => {
   it("Run game balance simulation (30 times) in parallel", async () => {
@@ -30,10 +30,13 @@ describe("Balance Simulator", () => {
 
       const promise = new Promise<SimulationResult[]>((resolve, reject) => {
         // tsx ローダーを使用して balanceSimulator.worker.ts を Node.js ワーカースレッド上で起動
-        const worker = new Worker(new URL("./balanceSimulator.worker.ts", import.meta.url), {
-          execArgv: ["--import", "tsx"],
-          workerData: { runs: workerRuns, runStartIdx },
-        });
+        const worker = new Worker(
+          new URL("../src/store/balanceSimulator.worker.ts", import.meta.url),
+          {
+            execArgv: ["--import", "tsx"],
+            workerData: { runs: workerRuns, runStartIdx },
+          },
+        );
 
         worker.on("message", (msg) => resolve(msg));
         worker.on("error", (err) => reject(err));
@@ -78,6 +81,7 @@ describe("Balance Simulator", () => {
     const deathsByRuns = results.map((r) => r.deathsCount);
     const totalDeaths = deathsByRuns.reduce((a, b) => a + b, 0);
     const avgDeaths = (totalDeaths / totalRuns).toFixed(1);
+    const avgDeathsNum = totalDeaths / totalRuns;
     const maxDeaths = Math.max(...deathsByRuns);
 
     const prestigeCounts = results.map((r) => r.prestigeCount);
@@ -399,7 +403,7 @@ ${results
         `⚠️ 警告: クリア率が ${clearRate.toFixed(1)}% と非常に低いです。ゲームバランスに問題がある可能性があります。`,
       );
     }
-    if (avgDeaths > 5) {
+    if (avgDeathsNum > 5) {
       console.warn(
         `⚠️ 警告: 平均村人死亡回数が ${avgDeaths} 回と高いです。難易度が高すぎる可能性があります。`,
       );
@@ -438,10 +442,13 @@ ${results
       const runStartIdx = i * runsPerWorker + 1;
 
       const promise = new Promise<SimulationResult[]>((resolve, reject) => {
-        const worker = new Worker(new URL("./balanceSimulator.worker.ts", import.meta.url), {
-          execArgv: ["--import", "tsx"],
-          workerData: { runs: workerRuns, runStartIdx, initialSoulUpgrades: maxBuffs },
-        });
+        const worker = new Worker(
+          new URL("../src/store/balanceSimulator.worker.ts", import.meta.url),
+          {
+            execArgv: ["--import", "tsx"],
+            workerData: { runs: workerRuns, runStartIdx, initialSoulUpgrades: maxBuffs },
+          },
+        );
 
         worker.on("message", (msg) => resolve(msg));
         worker.on("error", (err) => reject(err));

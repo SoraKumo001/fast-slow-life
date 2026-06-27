@@ -7,18 +7,6 @@ export function isBankrupt(consecutiveNegativeGoldDays: number): boolean {
 }
 
 /**
- * 旧: 日数制限によるゲームオーバー判定。脅威度システムへの移行により常に false。
- * 後方互換性のためにシグネチャは維持する。
- */
-export function isTimeOver(
-  _currentDay: number,
-  _gameLimitDays: number,
-  _bossDefeated: boolean,
-): boolean {
-  return false;
-}
-
-/**
  * ゲームオーバーログを構築する。
  * reason: "破産" | "期限切れ" | "クリア" | "脅威度"
  */

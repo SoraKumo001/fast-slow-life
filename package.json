@@ -15,7 +15,7 @@
     "tailwind:upgrade": "npx @tailwindcss/upgrade --force",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:balance": "vitest run src/store/balanceSimulator.test.ts"
+    "test:balance": "vitest run scripts/balance-sim.test.ts"
   },
   "dependencies": {
     "lucide-react": "^1.21.0",

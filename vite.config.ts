@@ -1,7 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 /// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -10,5 +10,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    // scripts/ 配下のテストは nightly で個別実行 (npm run test:balance)
+    exclude: ["node_modules", "dist", "scripts"],
   },
 });

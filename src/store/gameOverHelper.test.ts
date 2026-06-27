@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { isBankrupt, isTimeOver, buildGameOverLog } from "./gameOverHelper";
+import { isBankrupt, buildGameOverLog } from "./gameOverHelper";
 
 describe("gameOverHelper", () => {
   describe("isBankrupt", () => {
@@ -18,14 +18,6 @@ describe("gameOverHelper", () => {
 
     it("連続マイナス日数が0の場合は破産ではないこと", () => {
       expect(isBankrupt(0)).toBe(false);
-    });
-  });
-
-  describe("isTimeOver", () => {
-    it("脅威度システム移行後は常にfalseを返すこと", () => {
-      expect(isTimeOver(31, 30, false)).toBe(false);
-      expect(isTimeOver(30, 30, false)).toBe(false);
-      expect(isTimeOver(31, 30, true)).toBe(false);
     });
   });
 
