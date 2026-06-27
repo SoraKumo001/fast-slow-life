@@ -250,4 +250,33 @@ describe("autoEquipAllHelper - 現在装備との比較", () => {
     // 僧侶には wooden_staff の方がスコアが高いので交換される
     expect(result.villagers[0].weaponId).toBe("wooden_staff");
   });
+
+  // ============================================================
+  // B9: アイテムID がマスタに存在しない場合の防御
+  // ============================================================
+  it("B9: weaponId が ITEMS に存在しないID でもクラッシュしない", () => {
+    // 破損セーブシミュレーション: マスタから削除された武器IDを保持している
+    const v = makeVillager({
+      id: "v_corrupt",
+      name: "破損データ村人",
+      currentJob: "戦士",
+      gold: 1000,
+      weaponId: "deleted_master_item",
+      armorId: "deleted_master_armor",
+    });
+
+    const state = {
+      ...useGameStore.getState(),
+      gold: 5000,
+      villagers: [v],
+      inventory: { iron_sword: 1 },
+    } as GameState;
+
+    // クラッシュせず、結果が返ることを確認
+    expect(() => autoEquipAllHelper(state)).not.toThrow();
+
+    const result = autoEquipAllHelper(state);
+    // pool にある iron_sword に交換される
+    expect(result.villagers[0].weaponId).toBe("iron_sword");
+  });
 });

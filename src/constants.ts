@@ -125,7 +125,6 @@ export const POTION_PRIORITY = ["elixir", "high_potion", "mid_potion", "potion"]
 // ── ダンジョン脅威度システム ──
 export const THREAT_BASE_RATE_PER_HOUR = 0.1;
 export const THREAT_ACCELERATION_EXPONENT = 1.1;
-export const THREAT_RAMPAGE_THRESHOLD = 100;
 export const THREAT_MAX = 100;
 
 /** お布施: Tierごとの基本コスト (G/%)。インデックスがTierに対応 */

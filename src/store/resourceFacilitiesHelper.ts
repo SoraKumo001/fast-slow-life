@@ -30,6 +30,16 @@ export function processResourceFacilities(
 
   if (facilities.farm && facilities.farm.level > 0) {
     const lvl = facilities.farm.level;
+    // B10: 農場は他施設（伐採所・採石場）と異なり、線形ではなく階段状の生産式を採用。
+    // 設計意図: 農産物は貯蔵可能で腐らないため、Lv2→Lv3 で倍にする必要がない。
+    // 伐採所/採石場は Lv1=1, Lv2=2, ..., Lv5=5 と線形（資源消費の経済設計）。
+    //
+    // 農場の生産テーブル (12h ごと):
+    //   Lv1: 小麦1, 野菜0, 生肉0
+    //   Lv2: 小麦1, 野菜1, 生肉0
+    //   Lv3: 小麦2, 野菜1, 生肉1 (+ 薬草 30% 確率)
+    //   Lv4: 小麦2, 野菜2, 生肉1 (+ 薬草 60% 確率)
+    //   Lv5: 小麦3, 野菜2, 生肉2 (+ 薬草 90% 確率)
     producedWheat = Math.floor((1 + lvl) / 2);
     producedVegetable = Math.floor(lvl / 2);
     producedRawMeat = Math.floor((lvl - 1) / 2);

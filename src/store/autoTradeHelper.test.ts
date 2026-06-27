@@ -350,5 +350,32 @@ describe("autoTradeHelper", () => {
       expect(result.logs[0].message).toContain("コモレビ村");
       expect(result.logs[0].message).toContain("自動交易");
     });
+
+    // ============================================================
+    // B11: autoTradeHelper の inventory 減算が負数にならないこと
+    // ============================================================
+    it("B11: 同一アイテムに複数の tradeRule があり、cargo 合計が在庫を超える場合も在庫が負数にならないこと", () => {
+      // 同一アイテム (potion) に2つの tradeRule を設定。
+      // threshold=1, 在庫=5 → 各ルールの excess=4。
+      // cargoLimit=15 で両方のルールが tempCargo に積まれる（countToLoad=4 × 2）。
+      // 派遣時に inventory.potion から 4 を2回引く → 5 - 4 - 4 = -3 になるはずだが、
+      // B11 の clamp で 0 に丸められる。
+      // 旧実装では -3 になり、その後の集計で NaN 連鎖の恐れがあった。
+      const result = processAutoTrade({
+        facilities: makeMarketFacility(1),
+        tradeRules: [
+          { id: "r1", itemId: "potion", type: "sell", threshold: 1, isEnabled: true },
+          { id: "r2", itemId: "potion", type: "sell", threshold: 1, isEnabled: true },
+        ],
+        inventory: { potion: 5 },
+        gold: 100,
+        caravans: [makeCaravan()],
+        towns: [makeTown()],
+      });
+
+      // 在庫が負数にならないこと（B11 の clamp が機能している）
+      expect(result.inventory.potion).toBe(0);
+      expect(result.inventory.potion).toBeGreaterThanOrEqual(0);
+    });
   });
 });

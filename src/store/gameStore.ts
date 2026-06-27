@@ -101,7 +101,9 @@ export const useGameStore = (globalThis.IS_TEST_ENVIRONMENT
   : create<FullStore>()(
       persist<FullStore, [], [], GameState>(createStore, {
         name: "fast-slow-life-save-state",
-        partialize,
+        // B4: partialize は selectedItem を除外する（Omit<GameState, "selectedItem">）。
+        // persist の型シグネチャは GameState を期待するためキャスト。
+        partialize: partialize as unknown as (state: FullStore) => GameState,
         merge,
         storage: customStorage,
       }),

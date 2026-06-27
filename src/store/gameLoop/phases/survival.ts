@@ -42,9 +42,13 @@ export const survivalPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator =
         foodCost = 2;
       }
 
+      // B2 修正: 実際に支払える額だけ徴収する。
+      // 旧実装では無一文の村人からも foodCost 全額が徴収され、
+      // プレイヤー側に金が凭空生成されていたバグを修正。
+      const paid = Math.min(foodCost, Math.max(0, v.gold));
       const nextV = { ...v };
-      nextV.gold -= foodCost;
-      totalFoodCost += foodCost;
+      nextV.gold -= paid;
+      totalFoodCost += paid;
       return nextV;
     });
 

@@ -107,9 +107,16 @@ function selectHuntTarget(
     monsterRatio *= advantageMultiplier;
 
     // 他村人と標的が重複する場合はペナルティ
+    // B5 修正: traveling_to の村人も「同じ敵に向かっている」として検出する。
+    // 旧実装では status === "active" のみを見ており、移動中の村人による
+    // 競合を見落とし、誤って2人が同じ敵に到達する可能性があった。
+    // gatherLogic.ts:106-110 と同じ条件に揃える。
     const isTargetedByOthers = nextVillagers.some((otherV, idx) => {
       if (idx === i) return false;
-      if (otherV.status !== "active" || otherV.destinationAreaId !== v.destinationAreaId)
+      if (
+        (otherV.status !== "active" && otherV.status !== "traveling_to") ||
+        otherV.destinationAreaId !== v.destinationAreaId
+      )
         return false;
       const otherTarget = otherV.targetMonsterId || otherV.autoTargetName;
       return otherTarget === monster.id || otherTarget === monster.name;
@@ -367,6 +374,10 @@ export function processPartyHunt(
       }
 
       // ドロップ判定（猟師ボーナスは各メンバー個別）
+      // B13: 意図的なパーティボーナス設計。
+      // 生存者ごとに個別判定することで、パーティ人数 N × ドロップ種類 M の分だけ
+      // ドロップ抽選が走る（最大 N*M 個のドロップ入手の可能性）。
+      // これによりパーティを組むことへの報酬が増える設計になっている。
       enemy.drops.forEach((drop) => {
         const hunterBonus = member.currentJob === "猟師" ? 1.5 : 1.0;
         if (Math.random() < drop.chance * hunterBonus) {

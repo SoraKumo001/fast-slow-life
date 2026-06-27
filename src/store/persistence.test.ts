@@ -124,6 +124,22 @@ describe("persistence.partialize", () => {
     expect(persistedAny.setSelectedItem).toBeUndefined();
     expect(persistedAny.advanceHour).toBeUndefined();
   });
+
+  it("B4: selectedItem (UI 状態) は永続化対象外であること", () => {
+    // selectedItem は UI の一時状態。次回起動時に復元されると
+    // 古い item がマスタから消えた場合にクラッシュする可能性もある。
+    const state = makeBaseState();
+    state.selectedItem = {
+      id: "potion",
+      name: "回復薬",
+      category: "consumable",
+      basePrice: 10,
+      difficulty: 1,
+    };
+    const persisted = partialize(state);
+    const persistedAny = persisted as unknown as Record<string, unknown>;
+    expect(persistedAny.selectedItem).toBeUndefined();
+  });
 });
 
 describe("persistence.merge - 入力検証", () => {
@@ -200,6 +216,28 @@ describe("persistence.merge - 重要フィールドの null 保護", () => {
 });
 
 describe("persistence.merge - inventory / targetAmounts の shallow merge", () => {
+  it("B8: inventory に undefined 値が含まれていても NaN にならないこと", () => {
+    const state = makeBaseState();
+    state.inventory = { wheat: 10, vegetable: 5 };
+    // 破損セーブシミュレーション: undefined 値 / NaN が混入
+    const persisted = {
+      inventory: { potion: 100, foo: undefined, bar: NaN },
+      saveVersion: SAVE_VERSION,
+    };
+    const merged = merge(persisted, state);
+    // wheat と vegetable は currentState から保持
+    expect(merged.inventory.wheat).toBe(10);
+    expect(merged.inventory.vegetable).toBe(5);
+    // persisted からは有効値（potion=100）のみ採用
+    expect(merged.inventory.potion).toBe(100);
+    // undefined / NaN は採用しない（マージ結果に存在しない or currentState の値で補完）
+    expect(merged.inventory.foo).toBeUndefined();
+    expect(merged.inventory.bar).toBeUndefined();
+    // 既存フィールドの値は有限数
+    expect(Number.isFinite(merged.inventory.wheat)).toBe(true);
+    expect(Number.isFinite(merged.inventory.potion)).toBe(true);
+  });
+
   it("inventory は currentState に persisted を shallow merge すること", () => {
     const state = makeBaseState();
     state.inventory = { wheat: 10, vegetable: 5 };

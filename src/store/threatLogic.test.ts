@@ -133,6 +133,16 @@ describe("threatLogic", () => {
       expect(canOffer(d, 101, 10000, 1).ok).toBe(false);
     });
 
+    it("軽減率 100 は適用可能（全額リセット）だがコストが膨大", () => {
+      // percentToReduce=100 は境界値。実装上 OK だが、
+      // Tier1 で 54,970 G 必要（テスト環境では 100,000 G 用意）。
+      // 脅威度がちょうど 100% の時に全額お布施で 0% にできるケースを確認。
+      const d = makeDungeon({ threatLevel: 100 });
+      const check = canOffer(d, 100, 100000, 1);
+      expect(check.ok).toBe(true);
+      expect(check.cost).toBeGreaterThan(50000); // 実装値 54,970 G
+    });
+
     it("ゴールド不足は適用不可", () => {
       const d = makeDungeon({ threatLevel: 50 });
       const check = canOffer(d, 50, 1, 1);

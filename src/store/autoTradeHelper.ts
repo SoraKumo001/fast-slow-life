@@ -124,9 +124,10 @@ export function processAutoTrade(state: {
 
     if (bestTown && bestTownEstimates) {
       // 4. 馬車を派遣
-      // インベントリから引く
+      // インベントリから引く（B11: 競合状態などで負数になるのを防ぐため clamp）
       for (const entry of bestTownEstimates.cargo) {
-        inventory[entry.itemId] -= entry.count;
+        const current = inventory[entry.itemId] || 0;
+        inventory[entry.itemId] = Math.max(0, current - entry.count);
       }
 
       caravans[i] = {

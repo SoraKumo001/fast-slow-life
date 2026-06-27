@@ -10,7 +10,6 @@ function makeTown(overrides: Partial<Town> = {}): Town {
     distance: 12,
     description: "",
     specialties: [],
-    demands: [],
     investCost: 500,
     investLevel: 1,
     isUnlocked: true,
@@ -100,8 +99,31 @@ describe("caravanProgressHelper", () => {
 
       expect(result.inventory.potion).toBe(7);
       expect(result.caravans[0].status).toBe("returned");
-      expect(stats.totalGoldSpentOnImports).toBe(30);
+      // B1 修正: 輸入コストの集計は tradeActions.sendImportCaravan（派遣時）の責務。
+      // processCaravanProgress は caravan 進行のみを担当し、stats を変更しない。
+      expect(stats.totalGoldSpentOnImports).toBe(0);
       expect(result.gold).toBe(100);
+    });
+
+    it("輸入馬車の帰還時に stats が増減しないこと（B1 回帰テスト）", () => {
+      // B1 修正後の contract: helper は stats を mutate しない。
+      // 集計は tradeActions.sendImportCaravan 側の責務。
+      const caravan = makeCaravan({
+        status: "trading",
+        type: "import",
+        destinationTownId: "komorebi",
+        timeLeft: 1,
+        cargo: [{ itemId: "potion", count: 2 }],
+        goldCost: 30,
+      });
+      const town = makeTown({ id: "komorebi" });
+      const stats = makeStats();
+      const before = { ...stats };
+
+      processCaravanProgress([caravan], [town], 100, { potion: 5 }, stats);
+
+      expect(stats.totalGoldSpentOnImports).toBe(before.totalGoldSpentOnImports);
+      expect(stats.totalGoldFromExports).toBe(before.totalGoldFromExports);
     });
 
     it("目的地の街が見つからない場合はreturnedにリセットされること", () => {

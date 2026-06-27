@@ -1,6 +1,13 @@
-import { EXPLORATION_UNLOCK_1, EXPLORATION_UNLOCK_2, EXPLORATION_UNLOCK_3 } from "../constants";
+import {
+  EXPLORATION_UNLOCK_1,
+  EXPLORATION_UNLOCK_2,
+  EXPLORATION_UNLOCK_3,
+  STARVATION_EFFICIENCY_PENALTY,
+  ZERO_STAMINA_PENALTY,
+} from "../constants";
 import { ITEMS } from "../data/masterData";
 import { DungeonArea, Villager } from "../types/game";
+import { applySalaryDebuff, getFoodBuffBonus } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 
 export function processExploration(
@@ -20,8 +27,17 @@ export function processExploration(
 
     let totalProgressGained = 0;
     activeVillagers.forEach((v) => {
-      const hourlyGain = (v.dex * 0.2 + v.agi * 0.2) / d.difficulty / 24.0;
-      totalProgressGained += hourlyGain;
+      // B3 修正: gatherLogic と同じく、料理バフ・負債デバフ・飢餓/スタミナペナルティを反映する。
+      // v.gold ?? 0 で undefined 安全に。
+      const buffDex = getFoodBuffBonus(v.activeFoodBuffId || null, "dex");
+      const buffAgi = getFoodBuffBonus(v.activeFoodBuffId || null, "agi");
+      const effectiveDex = applySalaryDebuff(v.dex + buffDex, (v.gold ?? 0) < 0);
+      const effectiveAgi = applySalaryDebuff(v.agi + buffAgi, (v.gold ?? 0) < 0);
+      const efficiency =
+        (v.isStarving ? STARVATION_EFFICIENCY_PENALTY : 1.0) *
+        (v.stamina === 0 ? ZERO_STAMINA_PENALTY : 1.0);
+      const baseProgress = (effectiveDex * 0.2 + effectiveAgi * 0.2) / d.difficulty / 24.0;
+      totalProgressGained += baseProgress * efficiency;
     });
 
     const prevProgress = d.explorationProgress;

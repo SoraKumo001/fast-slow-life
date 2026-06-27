@@ -56,7 +56,8 @@ export function processCaravanProgress(
         for (const entry of caravan.cargo) {
           nextInventory[entry.itemId] = (nextInventory[entry.itemId] || 0) + entry.count;
         }
-        stats.totalGoldSpentOnImports += caravan.goldCost;
+        // B1 修正: 輸入コストの集計は sendImportCaravan（派遣時）の責務。
+        // ここでは stats を mutate しない（二重カウント防止）。
 
         const itemsStr = caravan.cargo
           .map((entry) => `${ITEMS[entry.itemId]?.name || entry.itemId} x${entry.count}`)

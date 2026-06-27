@@ -177,3 +177,91 @@ describe("huntLogic - processVillagerHunt", () => {
     expect(result).toBeDefined();
   });
 });
+
+/**
+ * B5: isTargetedByOthers が traveling_to を見落とすバグの回帰テスト
+ *
+ * バグ: 旧実装では status === "active" のみを見ており、移動中 (traveling_to) の
+ *      村人が同じ敵に向かっているケースを検出できなかった。
+ *      gatherLogic.ts:106-110 では traveling_to も除外しているが、
+ *      huntLogic.ts:112 では active のみだったため、誤って同時到達が可能だった。
+ *
+ * 修正: status !== "active" && status !== "traveling_to" で両方を除外する。
+ *
+ * selectHuntTarget は未 export なので、processVillagerHunt の結果として
+ * autoTargetName がどう設定されるかを間接的に検証する。
+ */
+describe("huntLogic - B5 traveling_to の競合検出", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("B5: traveling_to の他村人が同じ敵に向かっていれば、autoTargetName が競合を避けた選択になる", () => {
+    // 同じ敵 (goblin) を2人の村人が狙う。
+    // 一方は active、もう一方は traveling_to で同じ targetMonsterId を持つ。
+    // B5 修正前: 移動中側は検出されず、penalty が適用されない。
+    // B5 修正後: 移動中側も検出され、penalty で別モンスターを選ぶ。
+    const v1 = makeVillager({
+      id: "v1",
+      targetMonsterId: null,
+      autoTargetName: null,
+    });
+    const v2 = makeVillager({
+      id: "v2",
+      status: "traveling_to",
+      targetMonsterId: "goblin",
+      autoTargetName: null,
+    });
+    // 同じエリアで2体のモンスター
+    const area = makeArea({
+      monsters: [
+        {
+          id: "goblin",
+          name: "ゴブリン",
+          level: 1,
+          hp: 30,
+          maxHp: 30,
+          atk: 5,
+          def: 2,
+          mdef: 1,
+          str: 5,
+          int: 5,
+          dex: 10,
+          agi: 5,
+          vit: 5,
+          expReward: 10,
+          drops: [{ itemId: "raw_meat", chance: 1.0 }],
+          currentProgress: 0,
+          respawnTimeLeft: 0,
+          respawnTimeTotal: 3,
+        },
+        {
+          id: "wolf",
+          name: "狼",
+          level: 2,
+          hp: 50,
+          maxHp: 50,
+          atk: 8,
+          def: 3,
+          mdef: 1,
+          str: 8,
+          int: 3,
+          dex: 12,
+          agi: 8,
+          vit: 5,
+          expReward: 15,
+          drops: [{ itemId: "raw_meat", chance: 0.5 }],
+          currentProgress: 0,
+          respawnTimeLeft: 0,
+          respawnTimeTotal: 3,
+        },
+      ],
+    });
+    // v1 で selectHuntTarget を呼び出し → v1.autoTargetName がセットされる
+    // v2 は traveling_to で同じ destinationAreaId
+    processVillagerHunt(v1, 0, area, [v1, v2], { wheat: 100 }, {}, 1.0, {}, 1000, false);
+    // B5 修正後: v2 が traveling_to で goblin を狙っているので、
+    // v1 は goblin を避ける (penalty 適用)。wolf を選ぶはず。
+    expect(v1.autoTargetName).toBe("狼");
+  });
+});

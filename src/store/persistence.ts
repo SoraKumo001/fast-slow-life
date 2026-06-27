@@ -105,7 +105,7 @@ const migrations: Record<number, SaveMigration> = {
 // ==========================================
 export const partialize = (
   state: GameState & GameActions,
-): GameState & { saveVersion: number } => ({
+): Omit<GameState, "selectedItem"> & { saveVersion: number } => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,
@@ -133,7 +133,8 @@ export const partialize = (
   maxThreatLevelReached: state.maxThreatLevelReached,
   tierStartDay: state.tierStartDay,
   stats: state.stats,
-  selectedItem: state.selectedItem,
+  // B4 修正: selectedItem は UI の一時状態であり、永続化対象外。
+  // 古い item id がマスタから消えた場合に復元時にクラッシュする可能性があるため。
   saveVersion: SAVE_VERSION,
 });
 
@@ -171,13 +172,15 @@ export const merge = <S extends GameState & GameActions>(
     (persisted.lastSchedulerTick as number) ?? currentState.lastSchedulerTick;
 
   // フラットな Record は shallow merge
+  // B8 修正: 破損セーブで undefined / NaN / Infinity が混入しても
+  // 算術演算で NaN 連鎖しないよう、有効な数値のみを採用する。
   merged.inventory = {
     ...currentState.inventory,
-    ...(persisted.inventory as Record<string, number>),
+    ...filterFiniteNumbers(persisted.inventory as Record<string, unknown>),
   };
   merged.targetAmounts = {
     ...currentState.targetAmounts,
-    ...(persisted.targetAmounts as Record<string, number>),
+    ...filterFiniteNumbers(persisted.targetAmounts as Record<string, unknown>),
   };
 
   // Lv0 施設の建設コストを常に最新の初期値で上書き
@@ -199,6 +202,21 @@ export const merge = <S extends GameState & GameActions>(
 // ==========================================
 // デバウンス付き永続化ストレージの実装
 // ==========================================
+/**
+ * B8: persisted データに含まれる undefined / NaN / Infinity を除去する。
+ * 破損セーブや手動編集で混入した無効値が、その後の算術演算で NaN 連鎖するのを防ぐ。
+ */
+function filterFiniteNumbers(source: Record<string, unknown> | undefined): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!source) return out;
+  for (const [key, value] of Object.entries(source)) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
 const createDebouncedLocalStorage = (delayMs: number): StateStorage => {
@@ -225,6 +243,13 @@ const createDebouncedLocalStorage = (delayMs: number): StateStorage => {
     Array.from(pendingWrites.keys()).forEach(flush);
   };
 
+  // B15: debounce storage は module singleton として1度だけ初期化される。
+  // 下記 addEventListener は同一インスタンスで1度だけバインドする意図的設計。
+  // createDebouncedLocalStorage 自体は呼ばれない限り副作用がないが、
+  // storageImpl の初期化（行300）で初めて実体化されるため、
+  // window イベントリスナーも初回 import 時に1度だけ登録される。
+  // テスト環境では isBrowser=false → createDummyStorage パスを通るため、
+  // window.addEventListener は呼ばれない（window undefined でも安全）。
   if (typeof window !== "undefined") {
     window.addEventListener("beforeunload", flushAll);
     window.addEventListener("visibilitychange", () => {

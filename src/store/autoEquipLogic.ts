@@ -222,15 +222,19 @@ export const autoEquipAllHelper = (state: GameState): AutoEquipResult => {
     };
 
     if (originalWeapon !== bestWeaponId) {
-      const oldName = originalWeapon !== "none" ? ITEMS[originalWeapon].name : "素手";
-      const newName = bestWeaponId !== "none" ? ITEMS[bestWeaponId].name : "素手";
+      // B9 修正: アイテムIDがマスタから消えている場合にクラッシュしないよう ?. ガード。
+      const oldName = originalWeapon !== "none" ? (ITEMS[originalWeapon]?.name ?? "素手") : "素手";
+      const newName = bestWeaponId !== "none" ? (ITEMS[bestWeaponId]?.name ?? "素手") : "素手";
       logs.push(
         `${v.name} が ${newName} を購入して装備しました（${oldName} → ${newName}、購入額: ${weaponCost}G）。`,
       );
     }
     if (originalArmor !== bestArmorId) {
-      const oldName = originalArmor !== "none" ? ITEMS[originalArmor].name : "防具なし";
-      const newName = bestArmorId !== "none" ? ITEMS[bestArmorId].name : "防具なし";
+      // B9 修正: 同上
+      const oldName =
+        originalArmor !== "none" ? (ITEMS[originalArmor]?.name ?? "防具なし") : "防具なし";
+      const newName =
+        bestArmorId !== "none" ? (ITEMS[bestArmorId]?.name ?? "防具なし") : "防具なし";
       logs.push(
         `${v.name} が ${newName} を購入して装備しました（${oldName} → ${newName}、購入額: ${armorCost}G）。`,
       );
