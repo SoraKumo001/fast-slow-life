@@ -117,25 +117,25 @@ describe("threatLogic", () => {
   describe("canOffer (お布施可能判定)", () => {
     it("ゴールドが足りていれば ok", () => {
       const d = makeDungeon({ threatLevel: 50 });
-      const check = canOffer(d, 30, 10000);
+      const check = canOffer(d, 30, 10000, 1);
       expect(check.ok).toBe(true);
     });
 
     it("脅威度が 0 のダンジョンには適用不可", () => {
       const d = makeDungeon({ threatLevel: 0 });
-      const check = canOffer(d, 30, 10000);
+      const check = canOffer(d, 30, 10000, 1);
       expect(check.ok).toBe(false);
     });
 
     it("軽減率 0 や 100 超は適用不可", () => {
       const d = makeDungeon({ threatLevel: 50 });
-      expect(canOffer(d, 0, 10000).ok).toBe(false);
-      expect(canOffer(d, 101, 10000).ok).toBe(false);
+      expect(canOffer(d, 0, 10000, 1).ok).toBe(false);
+      expect(canOffer(d, 101, 10000, 1).ok).toBe(false);
     });
 
     it("ゴールド不足は適用不可", () => {
       const d = makeDungeon({ threatLevel: 50 });
-      const check = canOffer(d, 50, 1);
+      const check = canOffer(d, 50, 1, 1);
       expect(check.ok).toBe(false);
     });
   });

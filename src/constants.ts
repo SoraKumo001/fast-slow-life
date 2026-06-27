@@ -128,10 +128,10 @@ export const THREAT_ACCELERATION_EXPONENT = 1.1;
 export const THREAT_RAMPAGE_THRESHOLD = 100;
 export const THREAT_MAX = 100;
 
-/** お布施: 基本コスト (G/%) */
-export const OFFERING_BASE_GOLD_PER_PERCENT = 10;
+/** お布施: Tierごとの基本コスト (G/%)。インデックスがTierに対応 */
+export const OFFERING_BASE_GOLD_BY_TIER = [0, 2, 10, 50, 250, 1000];
 /** お布施: 逓増係数 */
-export const OFFERING_ESCALATION_FACTOR = 1.15;
+export const OFFERING_ESCALATION_FACTOR = 1.08;
 
 export const STAT_LABEL_MAP: Record<string, string> = {
   attack: "攻撃",

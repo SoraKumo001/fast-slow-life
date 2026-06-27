@@ -2,7 +2,7 @@ import {
   THREAT_BASE_RATE_PER_HOUR,
   THREAT_ACCELERATION_EXPONENT,
   THREAT_MAX,
-  OFFERING_BASE_GOLD_PER_PERCENT,
+  OFFERING_BASE_GOLD_BY_TIER,
   OFFERING_ESCALATION_FACTOR,
   HOURS_PER_DAY,
 } from "../constants";
@@ -146,12 +146,12 @@ function getTierStartDay(tier: number, fallbackTierStartDay: number): number {
  * お布施コストを計算する。
  * cost(X%) = BASE × (ESC^X − 1) / (ESC − 1)
  */
-export function calculateOfferingCost(percentToReduce: number): number {
+export function calculateOfferingCost(percentToReduce: number, currentTier: number): number {
   if (percentToReduce <= 0) return 0;
   const x = Math.min(percentToReduce, 100);
+  const baseGold = OFFERING_BASE_GOLD_BY_TIER[currentTier] ?? 10;
   const cost =
-    (OFFERING_BASE_GOLD_PER_PERCENT * (Math.pow(OFFERING_ESCALATION_FACTOR, x) - 1)) /
-    (OFFERING_ESCALATION_FACTOR - 1);
+    (baseGold * (Math.pow(OFFERING_ESCALATION_FACTOR, x) - 1)) / (OFFERING_ESCALATION_FACTOR - 1);
   return Math.ceil(cost);
 }
 
@@ -162,6 +162,7 @@ export function canOffer(
   dungeon: DungeonArea,
   percentToReduce: number,
   gold: number,
+  currentTier: number,
 ): { ok: boolean; cost: number; reason?: string } {
   if (percentToReduce <= 0 || percentToReduce > 100) {
     return {
@@ -173,7 +174,7 @@ export function canOffer(
   if (dungeon.threatLevel <= 0) {
     return { ok: false, cost: 0, reason: "脅威度は既に 0% です。" };
   }
-  const cost = calculateOfferingCost(percentToReduce);
+  const cost = calculateOfferingCost(percentToReduce, currentTier);
   if (gold < cost) {
     return {
       ok: false,

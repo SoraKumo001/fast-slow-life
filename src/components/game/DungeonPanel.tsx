@@ -176,25 +176,27 @@ export const DungeonPanel: React.FC = () => {
                           <button
                             onClick={() => handleOffer(area, 30)}
                             disabled={
-                              area.threatLevel < 1 || playerGold < calculateOfferingCost(30)
+                              area.threatLevel < 1 ||
+                              playerGold < calculateOfferingCost(30, currentTier)
                             }
                             className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-700 hover:bg-yellow-600 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-bold text-white rounded border border-yellow-600 disabled:border-slate-700 transition disabled:cursor-not-allowed"
                           >
                             <span>30% 軽減</span>
                             <span className="font-mono opacity-90">
-                              ({calculateOfferingCost(30).toLocaleString()} G)
+                              ({calculateOfferingCost(30, currentTier).toLocaleString()} G)
                             </span>
                           </button>
                           <button
                             onClick={() => handleOffer(area, 50)}
                             disabled={
-                              area.threatLevel < 1 || playerGold < calculateOfferingCost(50)
+                              area.threatLevel < 1 ||
+                              playerGold < calculateOfferingCost(50, currentTier)
                             }
                             className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-700 hover:bg-yellow-600 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-bold text-white rounded border border-yellow-600 disabled:border-slate-700 transition disabled:cursor-not-allowed"
                           >
                             <span>50% 軽減</span>
                             <span className="font-mono opacity-90">
-                              ({calculateOfferingCost(50).toLocaleString()} G)
+                              ({calculateOfferingCost(50, currentTier).toLocaleString()} G)
                             </span>
                           </button>
                         </div>

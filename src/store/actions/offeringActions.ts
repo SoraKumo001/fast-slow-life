@@ -12,7 +12,7 @@ export const createOfferingActions = (set: StoreSet, get: StoreGet) => ({
     const dungeon = state.dungeons.find((d) => d.id === dungeonId);
     if (!dungeon) return "ダンジョンが見つかりません。";
 
-    const check = canOffer(dungeon, percentToReduce, state.gold);
+    const check = canOffer(dungeon, percentToReduce, state.gold, state.currentTier);
     if (!check.ok) return check.reason ?? "お布施できません。";
 
     const { dungeon: updatedDungeon, actualReduction } = executeOffering(dungeon, percentToReduce);
