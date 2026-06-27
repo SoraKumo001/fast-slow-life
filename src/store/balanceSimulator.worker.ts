@@ -210,12 +210,6 @@ function runSimulationChunk(
           return sum + Math.floor(totalStat * 0.1);
         }, 0);
 
-        if (state.isSalaryUnpaid) {
-          if (state.gold >= dailySalaryTotal) {
-            store.payVillagerDebts();
-          }
-        }
-
         const isMarketBuilt = state.facilities.market.level > 0;
         const goldReserve = isMarketBuilt ? Math.max(150, dailySalaryTotal * 3) : 500;
 

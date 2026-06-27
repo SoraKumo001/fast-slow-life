@@ -73,7 +73,7 @@ export const MissionBadge: React.FC<MissionBadgeProps> = ({
   if (solo) {
     return (
       <span
-        className={`text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${status.bg} ${status.border} ${status.text} ${className}`}
+        className={`inline-flex items-center text-[9px] uppercase tracking-wider px-2 py-0.5 rounded font-bold ${status.bg} ${status.border} ${status.text} ${className}`}
         title={`${status.label} (${timeLabel})`}
       >
         {status.label} {timeLabel}
@@ -104,7 +104,7 @@ export const MissionBadge: React.FC<MissionBadgeProps> = ({
       <span className="w-px bg-white/10" />
       {/* 状態セグメント */}
       <span
-        className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-bold ${status.bg} ${status.text}`}
+        className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 font-bold inline-flex items-center ${status.bg} ${status.text}`}
       >
         {status.label} {timeLabel}
       </span>

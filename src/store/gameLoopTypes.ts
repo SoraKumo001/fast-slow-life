@@ -37,4 +37,6 @@ export interface AdvanceHourResult {
   consecutiveNegativeGoldDays: number;
   lastSchedulerTick: number;
   stats: RunStats;
+  maxThreatLevelReached: number;
+  tierStartDay: number;
 }

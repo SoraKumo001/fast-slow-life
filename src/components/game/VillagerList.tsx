@@ -3,7 +3,6 @@ import React, { useMemo, useState, useRef, useEffect } from "react";
 
 import { useVillagers, useDungeons, useVillagerActions, useFacilities } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
-import { useGameStore } from "../../store/gameStore";
 import { JobType, Villager } from "../../types/game";
 import { getAllPartyKeys } from "../../utils/partyHelpers";
 import { JobChangeModal } from "../modals/JobChangeModal";
@@ -55,16 +54,8 @@ export const VillagerList: React.FC = () => {
     };
   }, [collapseAll]);
 
-  const payVillagerDebts = useGameStore((state) => state.payVillagerDebts);
-  const gold = useGameStore((state) => state.gold);
-
   const [jobGroup, setJobGroup] = useState<JobGroup>("all");
   const [sortBy, setSortBy] = useState<SortOption>("added");
-
-  const totalDebts = useMemo(
-    () => villagers.reduce((sum, v) => sum + (v.gold < 0 ? -v.gold : 0), 0),
-    [villagers],
-  );
 
   const allPartyKeys = useMemo(() => getAllPartyKeys(villagers), [villagers]);
   const partySizeMap = useMemo(() => {
@@ -150,30 +141,6 @@ export const VillagerList: React.FC = () => {
         />
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-1">
-          {totalDebts > 0 && (
-            <div className="bg-red-950/40 border border-red-900/50 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="space-y-0.5">
-                <p className="text-xs font-bold text-red-400 flex items-center gap-1.5">
-                  <span className="inline-block w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                  ツケ（未払い）のある村人がいます！
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  ツケを抱える村人は全能力値が 30% 低下しています。
-                </p>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  payVillagerDebts();
-                }}
-                disabled={gold <= 0}
-                className="px-3 py-2 rounded-lg bg-red-600 hover:bg-red-500 disabled:bg-slate-800 disabled:text-slate-500 text-white text-[11px] font-semibold transition cursor-pointer disabled:cursor-not-allowed text-center whitespace-nowrap"
-              >
-                ツケを肩代わりする (計 {totalDebts} G)
-              </button>
-            </div>
-          )}
-
           {filteredVillagers.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-8">条件に一致する村人がいません</p>
           ) : (

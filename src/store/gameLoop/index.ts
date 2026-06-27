@@ -6,7 +6,7 @@
  */
 import type { GameState } from "../../types/game";
 import type { AdvanceHourResult, LogPayload } from "../gameLoopTypes";
-import { isBankrupt, isTimeOver, buildGameOverLog } from "../gameOverHelper";
+import { isBankrupt, buildGameOverLog } from "../gameOverHelper";
 import { getInitialStats } from "../initialState";
 import { autoSystemsPhase } from "./phases/autoSystems";
 import { bossBattlePhase } from "./phases/bossBattle";
@@ -14,6 +14,7 @@ import { economyPhase } from "./phases/economy";
 import { explorationPhase } from "./phases/exploration";
 import { productionPhase } from "./phases/production";
 import { survivalPhase } from "./phases/survival";
+import { threatPhase } from "./phases/threatPhase";
 import { villagersPhase } from "./phases/villagers";
 import { runPipeline } from "./pipeline";
 import { createAccumulator, type GamePhaseAccumulator } from "./types";
@@ -31,6 +32,7 @@ export { processVillagerActivities } from "../villagerAI";
 /** The ordered pipeline of game phases executed each hour. */
 const PHASES = [
   survivalPhase,
+  threatPhase,
   explorationPhase,
   productionPhase,
   bossBattlePhase,
@@ -97,6 +99,10 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
     }
   }
 
+  // ---- Extract threat state from GameState ----
+  const { maxThreatLevelReached: initialMaxThreat = 0, tierStartDay: initialTierStartDay = 1 } =
+    state;
+
   // ---- Immediate game-over checks (must run BEFORE the pipeline) ----
 
   if (isBankrupt(consecutiveNegativeGoldDaysNext)) {
@@ -122,33 +128,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,
-      stats: nextStats,
-    };
-  }
-
-  if (isTimeOver(currentDay, gameLimitDays, bossDefeated)) {
-    logsToAppend.push(buildGameOverLog("期限切れ", gameLimitDays));
-    return {
-      currentDay,
-      currentHour,
-      gold,
-      villagers,
-      facilities,
-      dungeons,
-      inventory,
-      currentTier,
-      activeBoss,
-      bossDefeated,
-      gameLimitDays,
-      gameOver: true,
-      gameOverReason: "期限切れ",
-      isPaused: true,
-      logsToAppend,
-      towns,
-      caravans,
-      isSalaryUnpaid: isSalaryUnpaidNext,
-      consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
-      lastSchedulerTick,
+      maxThreatLevelReached: initialMaxThreat,
+      tierStartDay: initialTierStartDay,
       stats: nextStats,
     };
   }
@@ -176,6 +157,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,
+      maxThreatLevelReached: initialMaxThreat,
+      tierStartDay: initialTierStartDay,
       stats: nextStats,
     },
     isNewDay,

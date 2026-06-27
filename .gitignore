@@ -46,3 +46,4 @@ out/
 debug/
 .omo/
 .playwright-mcp
+.slim/deepwork/

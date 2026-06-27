@@ -1,21 +1,25 @@
-import { Compass, ShieldAlert, Users, Sword, ChevronDown, ChevronUp } from "lucide-react";
+import { Compass, ShieldAlert, Users, Sword, ChevronDown, ChevronUp, Coins } from "lucide-react";
 import React, { useState } from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { useDungeons, useVillagers } from "../../hooks";
+import { useBossActions, useDungeons, useVillagers } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { useGameStore } from "../../store/gameStore";
+import { calculateOfferingCost } from "../../store/threatLogic";
 import { DungeonArea } from "../../types/game";
 import { getPartyColor, getPartyLabel } from "../../utils/partyHelpers";
 import { BossBattleModal } from "../modals/BossBattleModal";
 import { Panel } from "../ui/Panel";
 import { ProgressBar } from "../ui/ProgressBar";
 import { DungeonResourceItem } from "./DungeonResourceItem";
+import { ThreatGauge } from "./ThreatGauge";
 
 export const DungeonPanel: React.FC = () => {
   const { dungeons, currentTier, bossDefeated } = useDungeons();
   const villagers = useVillagers();
   const activeBoss = useGameStore((s) => s.activeBoss);
+  const playerGold = useGameStore((s) => s.gold);
+  const { offerToDungeon } = useBossActions();
   const [selectedArea, setSelectedArea] = useState<DungeonArea | null>(null);
   const [showBossModal, setShowBossModal] = useState(false);
   const setSelectedItem = useGameStore((s) => s.setSelectedItem);
@@ -28,6 +32,11 @@ export const DungeonPanel: React.FC = () => {
   const handleOpenBossBattle = (area: DungeonArea) => {
     setSelectedArea(area);
     setShowBossModal(true);
+  };
+
+  const handleOffer = (area: DungeonArea, percent: number) => {
+    const err = offerToDungeon(area.id, percent);
+    if (err) console.warn("[お布施]", err);
   };
 
   // P2-2: 解放済みエリア集計
@@ -131,7 +140,7 @@ export const DungeonPanel: React.FC = () => {
 
                 {/* 探索度プログレスバー */}
                 {isUnlocked && (
-                  <div className="mt-2 mb-3">
+                  <div className="mt-2 mb-1">
                     <div className="flex justify-between text-[10px] mb-1">
                       <span className="text-slate-400 font-medium">探索度</span>
                       <span className="text-sky-400 font-bold font-mono">
@@ -147,8 +156,54 @@ export const DungeonPanel: React.FC = () => {
                   </div>
                 )}
 
+                {/* 脅威度ゲージ (攻略済みエリアは非表示) */}
+                {isUnlocked && !isBossDefeatedInThisArea && (
+                  <div className="mb-3">
+                    <ThreatGauge threatLevel={area.threatLevel} />
+                  </div>
+                )}
+
                 {isUnlocked && isAreaExpanded(area.id) && (
                   <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
+                    {/* お布施セクション: 拡張表示の中でのみ表示 */}
+                    {area.threatLevel > 0 && (
+                      <div className="bg-yellow-950/20 border border-yellow-900/40 rounded p-2.5 space-y-2">
+                        <p className="text-[10px] font-bold text-yellow-400 flex items-center gap-1.5">
+                          <Coins className="w-3 h-3" />
+                          お布施で脅威度を下げる
+                          <span className="text-slate-500 font-mono font-normal ml-auto">
+                            所持金: {Math.floor(playerGold).toLocaleString()} G
+                          </span>
+                        </p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            onClick={() => handleOffer(area, 30)}
+                            disabled={
+                              area.threatLevel < 1 || playerGold < calculateOfferingCost(30)
+                            }
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-700 hover:bg-yellow-600 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-bold text-white rounded border border-yellow-600 disabled:border-slate-700 transition disabled:cursor-not-allowed"
+                          >
+                            <span>30% 軽減</span>
+                            <span className="font-mono opacity-90">
+                              ({calculateOfferingCost(30).toLocaleString()} G)
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleOffer(area, 50)}
+                            disabled={
+                              area.threatLevel < 1 || playerGold < calculateOfferingCost(50)
+                            }
+                            className="flex items-center gap-1.5 px-2.5 py-1 bg-yellow-700 hover:bg-yellow-600 disabled:bg-slate-800 disabled:text-slate-500 text-[10px] font-bold text-white rounded border border-yellow-600 disabled:border-slate-700 transition disabled:cursor-not-allowed"
+                          >
+                            <span>50% 軽減</span>
+                            <span className="font-mono opacity-90">
+                              ({calculateOfferingCost(50).toLocaleString()} G)
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* 採取可能アイテム & 出現モンスター */}
                     <div className="grid grid-cols-2 gap-3 text-[10px]">
                       <div>

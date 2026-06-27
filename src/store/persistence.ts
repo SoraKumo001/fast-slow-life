@@ -7,7 +7,7 @@ import { getInitialFacilities } from "./initialState";
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 5;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -65,6 +65,39 @@ const migrations: Record<number, SaveMigration> = {
 
     data.saveVersion = 1;
   },
+  // v1 → v2: (予約)
+  1: (data) => {
+    data.saveVersion = 2;
+  },
+  // v2 → v3: 脅威度システムフィールド追加
+  2: (data) => {
+    data.raidFailureCount = 0;
+    data.maxThreatLevelReached = 0;
+    if (Array.isArray(data.dungeons)) {
+      data.dungeons = data.dungeons.map((d: Record<string, unknown>) => ({
+        ...d,
+        threatLevel: d.threatLevel ?? 0,
+        raid: d.raid ?? null,
+      }));
+    }
+    data.saveVersion = 3;
+  },
+  // v3 → v4: tierStartDay 追加（Tier 開始をボス撃破時点にする）
+  3: (data) => {
+    data.tierStartDay = 1;
+    data.saveVersion = 4;
+  },
+  // v4 → v5: 襲来システム廃止。raidFailureCount / raid 削除。脅威度MAXで即ゲームオーバー
+  4: (data) => {
+    delete data.raidFailureCount;
+    if (Array.isArray(data.dungeons)) {
+      data.dungeons = data.dungeons.map((d: Record<string, unknown>) => {
+        const { raid: _raid, ...rest } = d;
+        return rest;
+      });
+    }
+    data.saveVersion = 5;
+  },
 };
 
 // ==========================================
@@ -98,6 +131,8 @@ export const partialize = (
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   lastSchedulerTick: state.lastSchedulerTick,
+  maxThreatLevelReached: state.maxThreatLevelReached,
+  tierStartDay: state.tierStartDay,
   stats: state.stats,
   selectedItem: state.selectedItem,
   saveVersion: SAVE_VERSION,

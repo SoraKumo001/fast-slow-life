@@ -128,14 +128,14 @@
 
 ### 詳細な定数・実装
 
-| 項目 | 値 / 場所 |
-|------|----------|
-| 基本上昇率 | `THREAT_BASE_RATE_PER_HOUR = 0.1` |
-| 加速係数 | `THREAT_ACCELERATION_EXPONENT = 1.1` |
-| 襲来閾値 | `THREAT_RAMPAGE_THRESHOLD = 100` |
-| 襲来猶予 | `RAID_RESPONSE_HOURS = 6` |
+| 項目             | 値 / 場所                             |
+| ---------------- | ------------------------------------- |
+| 基本上昇率       | `THREAT_BASE_RATE_PER_HOUR = 0.1`     |
+| 加速係数         | `THREAT_ACCELERATION_EXPONENT = 1.1`  |
+| 襲来閾値         | `THREAT_RAMPAGE_THRESHOLD = 100`      |
+| 襲来猶予         | `RAID_RESPONSE_HOURS = 6`             |
 | お布施基本コスト | `OFFERING_BASE_GOLD_PER_PERCENT = 10` |
-| お布施逓増係数 | `OFFERING_ESCALATION_FACTOR = 1.15` |
+| お布施逓増係数   | `OFFERING_ESCALATION_FACTOR = 1.15`   |
 
 仕様の詳細と実装計画は [`docs/system_design.md` §11](./system_design.md#11-ダンジョン脅威度システム) および [`.omo/plans/dungeon-threat-system.md`](../.omo/plans/dungeon-threat-system.md) を参照。
 

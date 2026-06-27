@@ -22,15 +22,9 @@ describe("gameOverHelper", () => {
   });
 
   describe("isTimeOver", () => {
-    it("制限日数と同じ日数の場合は期限切れではないこと", () => {
+    it("脅威度システム移行後は常にfalseを返すこと", () => {
+      expect(isTimeOver(31, 30, false)).toBe(false);
       expect(isTimeOver(30, 30, false)).toBe(false);
-    });
-
-    it("制限日数を超え、ボス未討伐の場合は期限切れであること", () => {
-      expect(isTimeOver(31, 30, false)).toBe(true);
-    });
-
-    it("制限日数を超えていても、ボス討伐済みの場合は期限切れではないこと", () => {
       expect(isTimeOver(31, 30, true)).toBe(false);
     });
   });
@@ -53,6 +47,13 @@ describe("gameOverHelper", () => {
       const log = buildGameOverLog("クリア");
       expect(log.message).toContain("Tier");
       expect(log.type).toBe("system");
+    });
+
+    it("脅威度ログのメッセージとタイプが正しいこと", () => {
+      const log = buildGameOverLog("脅威度");
+      expect(log.message).toContain("脅威度");
+      expect(log.message).toContain("ゲームオーバー");
+      expect(log.type).toBe("error");
     });
   });
 });

@@ -42,24 +42,24 @@ export const ActiveBossBar: React.FC = () => {
         .map((id) => villagers.find((v) => v.id === id))
         .filter((v): v is NonNullable<typeof v> => Boolean(v));
       setCachedAttackers(attackers);
-    } else {
-      if (cachedBoss) {
-        // HPを0にした状態にして、2秒待つ
-        setCachedBoss((prev: ActiveBossState | null) => (prev ? { ...prev, currentHp: 0 } : null));
-
-        timerRef.current = setTimeout(() => {
-          setShouldShow(false);
-          setCachedBoss(null);
-        }, 2000);
-      } else {
-        setShouldShow(false);
-      }
     }
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
   }, [activeBoss, dungeons, villagers]);
+
+  // activeBoss が null になったら 2秒後にゲージを消す
+  React.useEffect(() => {
+    if (activeBoss) return;
+    if (!cachedBoss) {
+      setShouldShow(false);
+      return;
+    }
+    // HP を 0 にして 2秒待つ
+    setCachedBoss((prev: ActiveBossState | null) => (prev ? { ...prev, currentHp: 0 } : null));
+    const timer = setTimeout(() => {
+      setShouldShow(false);
+      setCachedBoss(null);
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [activeBoss]);
 
   if (!shouldShow || !cachedBoss) return null;
 

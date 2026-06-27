@@ -31,27 +31,6 @@ describe("payVillagerReward", () => {
     expect(rewardLog?.type).toBe("system");
   });
 
-  it("借金完済: v.gold = -30, amount = 50 → v.gold = 20, success Toast", () => {
-    useGameStore.setState((s) => ({
-      gold: 1000,
-      villagers: s.villagers.map((v) =>
-        v.id === s.villagers[0].id ? { ...v, gold: -30, name: "借金持ち村人" } : v,
-      ),
-    }));
-
-    const target = useGameStore.getState().villagers[0];
-    useGameStore.getState().payVillagerReward(target.id, 50);
-
-    const after = useGameStore.getState();
-    expect(after.gold).toBe(950);
-    const afterTarget = after.villagers.find((v) => v.id === target.id);
-    expect(afterTarget?.gold).toBe(20);
-    const toasts = useToastStore.getState().toasts;
-    const debtClearToast = toasts.find((t) => t.message.includes("借金を完済"));
-    expect(debtClearToast).toBeDefined();
-    expect(debtClearToast?.type).toBe("success");
-  });
-
   it("資金不足: player gold < amount → 状態不変, error Toast", () => {
     useGameStore.setState((s) => ({
       gold: 50,

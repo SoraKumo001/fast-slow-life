@@ -40,7 +40,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { currentDay, currentHour } = useGameTime();
   const { gold, soulPoints } = usePlayerResources();
-  const { isPaused, playSpeed, gameOver, gameLimitDays } = useGameStatus();
+  const { isPaused, playSpeed, gameOver } = useGameStatus();
   const { currentTier, bossDefeated } = useDungeons();
   const soulUpgrades = useSoulUpgrades();
   const { togglePause, setPlaySpeed, advanceDay } = useGameControls();
@@ -91,10 +91,13 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          <div className="text-xs text-slate-400">
-            次の期限: <strong className="text-red-400">{gameLimitDays}日目</strong> までにボスを討伐
-            {bossDefeated && (
-              <span className="text-emerald-400 font-bold ml-2">(ボス討伐完了！現在猶予中)</span>
+          <div className="flex items-center gap-3 text-xs text-slate-400">
+            {bossDefeated ? (
+              <span className="text-emerald-400 font-bold">ボス討伐完了！脅威度リセット中</span>
+            ) : (
+              <span>
+                脅威度進行中: <strong className="text-amber-400">未攻略ダンジョン</strong>
+              </span>
             )}
           </div>
         </div>

@@ -18,6 +18,7 @@ export const ResultScreen: React.FC = () => {
     currentTier,
     bossDefeated,
     currentDay,
+    maxThreatLevelReached: store.maxThreatLevelReached,
   });
 
   const rows: { label: string; value: string }[] = [

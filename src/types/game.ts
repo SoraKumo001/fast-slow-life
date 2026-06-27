@@ -231,6 +231,7 @@ export interface DungeonArea {
   monsters: DungeonMonster[];
   explorationProgress: number; // 追加：現在の探索度 (0 - 100)
   difficulty: number; // 追加：探索難易度
+  threatLevel: number; // 脅威度 (0-100) — 100% 到達で即ゲームオーバー
 }
 
 export interface GameLog {
@@ -316,6 +317,8 @@ export interface GameActions {
   dispatchIdleVillagers: () => void;
   startBossBattle: (monsterId: string, villagerIds: string[]) => void;
   withdrawFromBossBattle: () => void;
+  offerToDungeon: (dungeonId: string, percentToReduce: number) => string | null;
+  payVillagerReward: (villagerId: string, amount: number) => void;
   addTradeRule: (itemId: string, type: "sell", threshold: number) => void;
   updateTradeRule: (ruleId: string, updates: Partial<Omit<TradeRule, "id" | "itemId">>) => void;
   deleteTradeRule: (ruleId: string) => void;
@@ -334,8 +337,6 @@ export interface GameActions {
   collectCaravan: (caravanId: string) => void;
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
-  payVillagerDebts: () => void;
-  payVillagerReward: (villagerId: string, amount: number) => void;
   setSelectedItem: (item: Item | null) => void;
 }
 
@@ -383,6 +384,10 @@ export interface GameProgression {
   gameOverReason: string;
   consecutiveNegativeGoldDays: number;
   lastSchedulerTick: number;
+  /** この周回で到達した最大脅威度 (SP計算用) */
+  maxThreatLevelReached: number;
+  /** 現在の Tier が開始されたゲーム内日数（脅威度進行の基準） */
+  tierStartDay: number;
 }
 
 export interface GameUI {

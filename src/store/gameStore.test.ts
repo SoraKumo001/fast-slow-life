@@ -420,15 +420,6 @@ describe("gameStore", () => {
       const restingVillager = stateResting.villagers[0];
       expect(restingVillager.gold).toBe(-1); // ツケ払いになりマイナス
       expect(stateResting.gold).toBe(102); // 宿代 2G がプレイヤーに入る
-
-      // 4. ツケの肩代わり（一括返済）
-      // プレイヤーゴールド 102G から村人のツケ 1G を肩代わりする
-      // プレイヤーゴールド: 102 -> 101
-      // 村人ゴールド: -1 -> 0
-      store.payVillagerDebts();
-      const statePaid = useGameStore.getState();
-      expect(statePaid.villagers[0].gold).toBe(0);
-      expect(statePaid.gold).toBe(101);
     });
 
     it("小麦を消費してパンをクラフトできること", () => {
@@ -525,43 +516,6 @@ describe("gameStore", () => {
       // 毎時間経験値が増えていること（CRAFT_EXP_PER_HOUR=2、soulUpgrade educationは0なので +2 される）
       expect(nextCraftVExp).toBe(initialCraftVExp + 2);
       expect(nextUpgradeVExp).toBe(initialUpgradeVExp + 2);
-    });
-
-    it("payVillagerDebts: ゴールド不足の場合は部分返済されること", () => {
-      useGameStore.setState((s) => ({
-        gold: 8,
-        villagers: [
-          { ...s.villagers[0], id: "v1", gold: -5, pool: {} },
-          { ...s.villagers[1], id: "v2", gold: -10, pool: {} },
-        ],
-      }));
-
-      const store = useGameStore.getState();
-      store.payVillagerDebts();
-
-      const state = useGameStore.getState();
-      // totalDebt = 5 + 10 = 15, gold = 8 < 15
-      // v1: 8 >= 5 → 5支払い, v1.gold=0, playerGold=3
-      // v2: 3 < 10 → 3支払い, v2.gold=-7, playerGold=0
-      expect(state.gold).toBe(0);
-      expect(state.villagers[0].gold).toBe(0);
-      expect(state.villagers[1].gold).toBe(-7);
-    });
-
-    it("payVillagerDebts: ツケのある村人がいない場合は何も変更されないこと", () => {
-      useGameStore.setState((s) => ({
-        gold: 100,
-        villagers: s.villagers.map((v) => ({ ...v, gold: 50 })),
-      }));
-
-      const store = useGameStore.getState();
-      store.payVillagerDebts();
-
-      const state = useGameStore.getState();
-      expect(state.gold).toBe(100);
-      state.villagers.forEach((v) => {
-        expect(v.gold).toBe(50);
-      });
     });
 
     it("sendExportCaravan: 友好度ボーナスとトレンド倍率が売却額に反映されること", () => {

@@ -31,18 +31,17 @@ import {
 
 /** ゲーム終了時の獲得SPを計算する共通ヘルパー */
 export const calculateEarnedSp = (
-  state: Pick<GameState, "gold" | "inventory" | "currentTier" | "bossDefeated" | "currentDay">,
+  state: Pick<
+    GameState,
+    "gold" | "inventory" | "currentTier" | "bossDefeated" | "currentDay" | "maxThreatLevelReached"
+  >,
 ): number => {
   const invValue = Object.entries(state.inventory).reduce((sum, [itemId, count]) => {
     return sum + (ITEMS[itemId]?.basePrice || 0) * count;
   }, 0);
   const bossCount = state.currentTier - (state.bossDefeated ? 0 : 1);
-  return (
-    Math.floor(state.gold / 1000) +
-    Math.floor(invValue / 100) +
-    bossCount * 50 +
-    state.currentDay * 2
-  );
+  const threatSp = Math.floor((state.maxThreatLevelReached ?? 0) / 20) * 5;
+  return Math.floor(state.gold / 1000) + Math.floor(invValue / 100) + bossCount * 50 + threatSp;
 };
 
 export interface ResetResult {
@@ -68,6 +67,8 @@ export interface ResetResult {
   caravans: Caravan[];
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
+  maxThreatLevelReached: number;
+  tierStartDay: number;
   stats: RunStats;
 }
 
@@ -82,6 +83,7 @@ export function resetGameHelper(params: {
     currentDay: number;
     soulPoints: number;
     soulUpgrades: Record<string, number>;
+    maxThreatLevelReached: number;
   };
 }): ResetResult {
   const { prestige, state } = params;
@@ -139,6 +141,8 @@ export function resetGameHelper(params: {
     caravans: getInitialCaravans(),
     isSalaryUnpaid: false,
     consecutiveNegativeGoldDays: 0,
+    maxThreatLevelReached: 0,
+    tierStartDay: 1,
     stats: getInitialStats(),
   };
 }

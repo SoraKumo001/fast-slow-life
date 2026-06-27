@@ -18,6 +18,7 @@ export const DUNGEONS: DungeonArea[] = [
     monsters: [MONSTERS.goblin, MONSTERS.wild_boar, MONSTERS.goblin_leader],
     explorationProgress: 0,
     difficulty: 1.0,
+    threatLevel: 0,
   },
   {
     id: "mine",
@@ -34,6 +35,7 @@ export const DUNGEONS: DungeonArea[] = [
     monsters: [MONSTERS.bat, MONSTERS.spider, MONSTERS.slime, MONSTERS.golem],
     explorationProgress: 0,
     difficulty: 2.0,
+    threatLevel: 0,
   },
   {
     id: "valley",
@@ -48,6 +50,7 @@ export const DUNGEONS: DungeonArea[] = [
     monsters: [MONSTERS.orc, MONSTERS.harpy, MONSTERS.werewolf, MONSTERS.chimera],
     explorationProgress: 0,
     difficulty: 3.5,
+    threatLevel: 0,
   },
   {
     id: "world_tree",
@@ -62,6 +65,7 @@ export const DUNGEONS: DungeonArea[] = [
     monsters: [MONSTERS.demon, MONSTERS.treant, MONSTERS.gargoyle, MONSTERS.archdemon],
     explorationProgress: 0,
     difficulty: 4.0,
+    threatLevel: 0,
   },
   {
     id: "abyss",
@@ -73,5 +77,6 @@ export const DUNGEONS: DungeonArea[] = [
     monsters: [MONSTERS.dragon_spawn, MONSTERS.shadow_knight, MONSTERS.ancient_dragon],
     explorationProgress: 0,
     difficulty: 6.0,
+    threatLevel: 0,
   },
 ];

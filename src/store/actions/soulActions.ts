@@ -63,6 +63,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
         currentDay: state.currentDay,
         soulPoints: state.soulPoints,
         soulUpgrades: state.soulUpgrades,
+        maxThreatLevelReached: state.maxThreatLevelReached,
       },
     });
 
@@ -82,6 +83,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       activeBoss: result.activeBoss,
       bossDefeated: result.bossDefeated,
       gameLimitDays: result.gameLimitDays,
+      tierStartDay: result.tierStartDay,
       gameOver: result.gameOver,
       gameOverReason: result.gameOverReason,
       isPaused: result.isPaused,

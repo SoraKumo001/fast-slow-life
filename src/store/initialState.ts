@@ -63,6 +63,7 @@ function getMonsterRespawnHours(monsterId: string): number {
 export function getInitialDungeons(): DungeonArea[] {
   return DUNGEONS.map((d) => ({
     ...d,
+    threatLevel: 0,
     gathers: d.gathers.map((g) => ({
       ...g,
       currentProgress: 0,

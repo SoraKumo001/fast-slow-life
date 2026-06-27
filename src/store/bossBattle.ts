@@ -19,23 +19,28 @@ import {
 } from "./combatEngine";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
+import { resetAllThreats } from "./threatLogic";
 
 export function processBossBattle(
   activeBoss: ActiveBossState | null,
   villagers: Villager[],
-  _dungeons: DungeonArea[],
+  dungeons: DungeonArea[],
   currentTier: number,
   bossDefeated: boolean,
   gameLimitDays: number,
   soulUpgrades: Record<string, number>,
-  stats?: RunStats,
+  stats: RunStats | undefined,
+  currentDay: number,
+  tierStartDay: number,
 ) {
   const logs: LogPayload[] = [];
   let nextActiveBoss = activeBoss ? { ...activeBoss } : null;
   let nextVillagers = [...villagers];
+  let nextDungeons = [...dungeons];
   let nextBossDefeated = bossDefeated;
   let nextCurrentTier = currentTier;
   let nextGameLimitDays = gameLimitDays;
+  let nextTierStartDay = tierStartDay;
 
   if (nextActiveBoss) {
     const monster = MONSTERS[nextActiveBoss.monsterId];
@@ -198,7 +203,7 @@ export function processBossBattle(
           v.status === "active" &&
           v.currentHp <= 0
         ) {
-          const area = _dungeons.find((d) => d.id === v.destinationAreaId);
+          const area = dungeons.find((d: DungeonArea) => d.id === v.destinationAreaId);
           const distance = area ? area.distance : 2;
           logs.push({
             message: `${v.name} がボス戦で戦闘不能になりました。村への帰還を開始します（残り時間: ${distance}h）。`,
@@ -280,6 +285,8 @@ export function processBossBattle(
           nextCurrentTier += 1;
           nextGameLimitDays = TIER_LIMIT_DAYS[nextCurrentTier];
           nextBossDefeated = false;
+          // 新 Tier 開始日を更新（次 Tier の脅威度進行の基準日）
+          nextTierStartDay = currentDay;
           logs.push({
             message: `新しいエリアと施設が解放されました！ 次のボス期限は ${nextGameLimitDays} 日目まで。`,
             type: "system",
@@ -292,6 +299,7 @@ export function processBossBattle(
           });
         }
         nextActiveBoss = null;
+        nextDungeons = resetAllThreats(nextDungeons);
 
         if (isClear) {
           return {
@@ -300,9 +308,11 @@ export function processBossBattle(
             bossDefeated: true,
             currentTier: nextCurrentTier,
             gameLimitDays: nextGameLimitDays,
+            tierStartDay: nextTierStartDay,
             logs,
             gameOver: true,
             gameOverReason: "クリア",
+            dungeons: nextDungeons,
           };
         }
       }
@@ -318,8 +328,10 @@ export function processBossBattle(
     bossDefeated: nextBossDefeated,
     currentTier: nextCurrentTier,
     gameLimitDays: nextGameLimitDays,
+    tierStartDay: nextTierStartDay,
     logs,
     gameOver: false,
     gameOverReason: undefined,
+    dungeons: nextDungeons,
   };
 }

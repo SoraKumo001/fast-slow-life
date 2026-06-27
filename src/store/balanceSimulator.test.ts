@@ -348,7 +348,7 @@ ${results
       expect(r.run).toBe(i + 1);
       expect(r.days).toBeGreaterThan(0);
       expect(typeof r.isClear).toBe("boolean");
-      expect(["Clear", "破産", "期限切れ", "VillagersDefeated", "TimeLimit"]).toContain(
+      expect(["Clear", "破産", "期限切れ", "VillagersDefeated", "TimeLimit", "脅威度"]).toContain(
         r.gameOverReason,
       );
       expect(r.prestigeCount).toBeGreaterThanOrEqual(0);

@@ -106,15 +106,6 @@ export const InventoryPanel: React.FC = () => {
     const countA = Math.floor(inventory[itemA.id] || 0);
     const countB = Math.floor(inventory[itemB.id] || 0);
 
-    // P2-4: 目標未達 (target > 0 && count < target) のアイテムを最優先
-    const targetA = targetAmounts[itemA.id] || 0;
-    const targetB = targetAmounts[itemB.id] || 0;
-    const aShortage = targetA > 0 && countA < targetA ? 1 : 0;
-    const bShortage = targetB > 0 && countB < targetB ? 1 : 0;
-    if (aShortage !== bShortage) {
-      return bShortage - aShortage; // shortage first
-    }
-
     if (sortBy === "count-desc") {
       return countB - countA;
     }

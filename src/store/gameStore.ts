@@ -8,6 +8,7 @@ import { createCraftActions } from "./actions/craftActions";
 import { createEquipActions } from "./actions/equipActions";
 import { createInventoryActions } from "./actions/inventoryActions";
 import { createLogActions } from "./actions/logActions";
+import { createOfferingActions } from "./actions/offeringActions";
 import { createSalaryActions } from "./actions/salaryActions";
 import { createSoulActions } from "./actions/soulActions";
 import { createTimeActions } from "./actions/timeActions";
@@ -72,12 +73,15 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   isSalaryUnpaid: false,
   consecutiveNegativeGoldDays: 0,
   lastSchedulerTick: -4,
+  maxThreatLevelReached: 0,
+  tierStartDay: 1,
   stats: getInitialStats(),
   selectedItem: null,
 
   setSelectedItem: (item) => set({ selectedItem: item }),
 
   ...createLogActions(set as StoreSet, get as StoreGet),
+  ...createOfferingActions(set as StoreSet, get as StoreGet),
   ...createTimeActions(set as StoreSet, get as StoreGet),
   ...createInventoryActions(set as StoreSet, get as StoreGet),
   ...createEquipActions(set as StoreSet, get as StoreGet),

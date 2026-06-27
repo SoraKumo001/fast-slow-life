@@ -17,12 +17,16 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
     acc.gameLimitDays,
     acc.soulUpgrades,
     acc.nextStats,
+    acc.currentDay,
+    acc.tierStartDay,
   );
   acc.activeBoss = bossRes.activeBoss;
   acc.villagers = bossRes.villagers;
+  acc.dungeons = bossRes.dungeons;
   acc.bossDefeated = bossRes.bossDefeated;
   acc.currentTier = bossRes.currentTier;
   acc.gameLimitDays = bossRes.gameLimitDays;
+  acc.tierStartDay = bossRes.tierStartDay;
   acc.logsToAppend.push(...bossRes.logs);
 
   // Boss clear → game over (victory)

@@ -120,9 +120,9 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
             </span>
           )}
 
-          <div className="mt-1 flex gap-1.5 items-center flex-wrap">
+          <div className="mt-1 flex gap-1.5 items-center flex-wrap min-h-[18px]">
             <MissionBadge villager={v} partyLabel={partyLabel} partySize={partySize} />
-            <span className="text-[10px] text-slate-300 font-medium mt-0.5 block">
+            <span className="text-[10px] text-slate-300 font-medium leading-[18px]">
               {getVillagerPurposeText(v, facilities, dungeons)}
             </span>
           </div>
@@ -243,11 +243,6 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
                 支給
               </Button>
             </div>
-            {v.gold < 0 && (
-              <p className="text-[10px] text-red-400 font-mono">
-                ⚠ 借金を完済するには: <span className="font-bold">{-v.gold} G</span> 必要
-              </p>
-            )}
           </div>
 
           {v.pool && Object.keys(v.pool).length > 0 && (

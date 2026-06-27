@@ -83,6 +83,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       activeBoss: result.activeBoss,
       bossDefeated: result.bossDefeated,
       gameLimitDays: result.gameLimitDays,
+      tierStartDay: result.tierStartDay,
       gameOver: result.gameOver,
       gameOverReason: result.gameOverReason,
       isPaused: result.isPaused,
@@ -101,6 +102,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
                 currentTier: result.currentTier,
                 bossDefeated: result.bossDefeated,
                 currentDay: result.currentDay,
+                maxThreatLevelReached: result.maxThreatLevelReached,
               }),
           }
         : {}),

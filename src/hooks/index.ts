@@ -91,6 +91,7 @@ export const useBossActions = () =>
     useShallow((s) => ({
       startBossBattle: s.startBossBattle,
       withdrawFromBossBattle: s.withdrawFromBossBattle,
+      offerToDungeon: s.offerToDungeon,
     })),
   );
 
@@ -110,5 +111,15 @@ export const useBankruptcyWarning = () =>
     useShallow((s) => ({
       gold: s.gold,
       consecutiveNegativeGoldDays: s.consecutiveNegativeGoldDays,
+    })),
+  );
+
+export const useThreatData = () =>
+  useGameStore(
+    useShallow((s) => ({
+      dungeons: s.dungeons,
+      maxThreatLevelReached: s.maxThreatLevelReached,
+      currentTier: s.currentTier,
+      bossDefeated: s.bossDefeated,
     })),
   );

@@ -10,6 +10,7 @@ import { Header } from "./components/layout/Header";
 import { LogHistoryWindow } from "./components/layout/LogHistoryWindow";
 import { SettingsDrawer, useSettingsDrawer } from "./components/layout/SettingsDrawer";
 import { StatusBar } from "./components/layout/StatusBar";
+import { BossBattleModal } from "./components/modals/BossBattleModal";
 import { ResultScreen } from "./components/modals/ResultScreen";
 import { SoulShop } from "./components/modals/SoulShop";
 import { BossDefeatAnnouncement } from "./components/ui/BossDefeatAnnouncement";
@@ -23,6 +24,7 @@ import { useBossDefeatDetector } from "./hooks/useBossDefeatDetector";
 import { useGameKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import { ModalStackProvider } from "./hooks/useModalStack";
 import { useToastStore } from "./hooks/useToastStore";
+import { useGameStore } from "./store/gameStore";
 
 export default function App() {
   const { isPaused, playSpeed, gameOver, gameOverReason, gameLimitDays } = useGameStatus();
@@ -32,9 +34,14 @@ export default function App() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
+  const [bossAreaId, setBossAreaId] = useState<string | null>(null);
   const [gameOverTab, setGameOverTab] = useState<"result" | "soul">("result");
   const lastLogIdRef = useRef<string | null>(null);
   const settingsDrawer = useSettingsDrawer();
+
+  const bossArea = useGameStore((s) =>
+    bossAreaId ? (s.dungeons.find((d) => d.id === bossAreaId) ?? null) : null,
+  );
 
   // Detect boss defeats and show announcement banner (was in timeActions.ts)
   useBossDefeatDetector();
@@ -159,7 +166,9 @@ export default function App() {
                     <p className="text-slate-400 text-sm">
                       {gameOverReason === "破産"
                         ? "所持金マイナス状態が3日間続いたため、破産しました。"
-                        : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
+                        : gameOverReason === "脅威度"
+                          ? "ダンジョンの脅威度が 100% に達し、村は壊滅しました。"
+                          : `制限日数（${gameLimitDays}日）に達しましたが、ボスが未討伐です。`}
                     </p>
                   </>
                 )}
@@ -318,6 +327,9 @@ export default function App() {
         >
           <ResultScreen />
         </Modal>
+
+        {/* ボス戦モーダル (DungeonPanel から open) */}
+        {bossArea && <BossBattleModal area={bossArea} onClose={() => setBossAreaId(null)} />}
 
         {/* 設定ドロワー (P2-6) */}
         <SettingsDrawer isOpen={settingsDrawer.isOpen} onClose={settingsDrawer.close} />
