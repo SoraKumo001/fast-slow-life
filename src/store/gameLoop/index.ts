@@ -129,6 +129,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       maxThreatLevelReached: initialMaxThreat,
       tierStartDay: initialTierStartDay,
       stats: nextStats,
+      dungeonEvents: [],
     };
   }
 
@@ -157,6 +158,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       maxThreatLevelReached: initialMaxThreat,
       tierStartDay: initialTierStartDay,
       stats: nextStats,
+      dungeonEvents: [],
     },
     isNewDay,
     nextStats,

@@ -26,6 +26,9 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
   acc.currentTier = bossRes.currentTier;
   acc.tierStartDay = bossRes.tierStartDay;
   acc.logsToAppend.push(...bossRes.logs);
+  if (bossRes.dungeonEvents && bossRes.dungeonEvents.length > 0) {
+    acc.dungeonEvents = [...(acc.dungeonEvents ?? []), ...bossRes.dungeonEvents];
+  }
 
   // Boss clear → game over (victory)
   if (bossRes.gameOver) {

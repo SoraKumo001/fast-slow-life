@@ -21,7 +21,9 @@ import {
   FacilityType,
   ActiveBossState,
   RunStats,
+  DungeonVisualEvent,
 } from "../types/game";
+import { createDefaultDungeonState } from "./dungeonSpatialHelper";
 import { LogPayload } from "./gameLoopTypes";
 import { processVillagerGather } from "./gatherLogic";
 import { processVillagerHunt, processPartyHunt } from "./huntLogic";
@@ -45,6 +47,7 @@ export function processVillagerActivities(
   let currentGold = gold;
 
   const logs: LogPayload[] = [];
+  const dungeonEvents: DungeonVisualEvent[] = [];
   const nextVillagers = [...villagers];
   let nextInventory = { ...inventory };
   const nextDungeons = dungeons.map((d) => ({
@@ -106,6 +109,13 @@ export function processVillagerActivities(
       v.travelTimeLeft -= 1;
       if (v.travelTimeLeft <= 0) {
         v.status = "active";
+        v.dungeonState = {
+          currentDepth: 0,
+          targetDepth: 0,
+          lane: 0,
+          phase: "moving_to_target",
+          targetNodeId: null,
+        };
         const areaName = nextDungeons.find((d) => d.id === v.destinationAreaId)?.name || "";
         logs.push({
           message: `${v.name} が ${areaName} に到着し、活動を開始しました。`,
@@ -118,8 +128,17 @@ export function processVillagerActivities(
 
     if (v.status === "traveling_back") {
       v.travelTimeLeft -= 1;
+      if (v.dungeonState) {
+        v.dungeonState = {
+          ...v.dungeonState,
+          currentDepth: Math.max(0, Math.round(v.dungeonState.currentDepth * 0.4 * 10) / 10),
+          targetDepth: 0,
+          phase: "returning",
+        };
+      }
       if (v.travelTimeLeft <= 0) {
         v.destinationAreaId = null;
+        v.dungeonState = createDefaultDungeonState();
         const unusedPotionCount = v.potionCount;
         const unusedPotionId = v.potionItemId || "potion";
         const unusedStaminaCount = v.staminaDrinkCount;
@@ -236,6 +255,9 @@ export function processVillagerActivities(
         v.travelTimeLeft = area.distance;
         v.order = "rest";
         v.autoTargetName = null;
+        if (v.dungeonState) {
+          v.dungeonState = { ...v.dungeonState, phase: "returning", targetDepth: 0 };
+        }
         logs.push({
           message: `${v.name} は消耗が激しいため、村への帰還を開始しました（残り時間: ${area.distance}h）。`,
           type: "warning",
@@ -265,6 +287,9 @@ export function processVillagerActivities(
         v.status = "traveling_back";
         v.travelTimeLeft = area.distance;
         v.autoTargetName = null;
+        if (v.dungeonState) {
+          v.dungeonState = { ...v.dungeonState, phase: "returning", targetDepth: 0 };
+        }
         logs.push({
           message: `${v.name} は ${area.name} での派遣目標を達成したため、帰還を開始しました（残り時間: ${area.distance}h）。`,
           type: "info",
@@ -290,6 +315,7 @@ export function processVillagerActivities(
         currentGold = gatherResult.gold;
         nextInventory = gatherResult.inventory;
         logs.push(...gatherResult.logs);
+        dungeonEvents.push(...gatherResult.dungeonEvents);
       } else if (v.order === "hunt") {
         const offset = v.partyEngagementOffset;
 
@@ -340,6 +366,7 @@ export function processVillagerActivities(
           currentGold = huntResult.gold;
           nextInventory = huntResult.inventory;
           logs.push(...huntResult.logs);
+          dungeonEvents.push(...huntResult.dungeonEvents);
 
           // 死亡メンバーを帰還状態に設定
           for (const member of partyMembers) {
@@ -348,6 +375,13 @@ export function processVillagerActivities(
               member.travelTimeLeft = area.distance;
               member.order = "rest" as Villager["order"];
               member.autoTargetName = null;
+              if (member.dungeonState) {
+                member.dungeonState = {
+                  ...member.dungeonState,
+                  phase: "returning",
+                  targetDepth: 0,
+                };
+              }
             }
           }
         } else {
@@ -368,11 +402,15 @@ export function processVillagerActivities(
           currentGold = huntResult.gold;
           nextInventory = huntResult.inventory;
           logs.push(...huntResult.logs);
+          dungeonEvents.push(...huntResult.dungeonEvents);
           if (v.currentHp <= 0) {
             v.status = "traveling_back" as Villager["status"];
             v.travelTimeLeft = area.distance;
             v.order = "rest" as Villager["order"];
             v.autoTargetName = null;
+            if (v.dungeonState) {
+              v.dungeonState = { ...v.dungeonState, phase: "returning", targetDepth: 0 };
+            }
           }
         }
       }
@@ -385,6 +423,7 @@ export function processVillagerActivities(
     dungeons: nextDungeons,
     gold: currentGold,
     logs,
+    dungeonEvents,
     gameOver,
     isPaused,
   };

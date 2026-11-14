@@ -82,6 +82,46 @@ export interface VillagerEquipment {
   armorId: string;
 }
 
+export type DungeonActivityPhase =
+  | "idle" // 村で待機・休息中
+  | "traveling_to" // 村 → ダンジョン入口へ移動中
+  | "moving_to_target" // ダンジョン内を目標深度へ歩行中
+  | "gathering" // 採取ノードの前で採取作業中
+  | "fighting" // モンスター（またはボス）と現地で交戦中
+  | "returning"; // ダンジョンから村へ帰還中
+
+export interface VillagerDungeonState {
+  currentDepth: number; // 現在の奥行き位置 (0 〜 maxDepth)
+  targetDepth: number; // 目標ノード/モンスターの奥行き位置
+  lane: number; // 横方向レーン (-1.5 〜 +1.5)
+  phase: DungeonActivityPhase;
+  targetNodeId: string | null; // 採取中の itemId または交戦中の monsterId
+}
+
+export type DungeonVisualEventType =
+  | "move"
+  | "gather"
+  | "attack"
+  | "crit"
+  | "miss"
+  | "enemy_attack"
+  | "heal"
+  | "defeat"
+  | "wipeout";
+
+export interface DungeonVisualEvent {
+  id: string;
+  areaId: string;
+  type: DungeonVisualEventType;
+  actorId: string;
+  targetId?: string;
+  depth: number;
+  lane: number;
+  value?: number;
+  label?: string;
+  isCrit?: boolean;
+}
+
 export interface VillagerStatusInfo {
   order: OrderType;
   status: VillagerStatus;
@@ -92,6 +132,8 @@ export interface VillagerStatusInfo {
   autoTargetName?: string | null;
   /** 自動パーティーのステッガーオフセット (0〜SCHEDULER_INTERVAL_HOURS-1) */
   partyEngagementOffset?: number;
+  /** ダンジョン内の空間位置・行動フェーズ */
+  dungeonState?: VillagerDungeonState;
 }
 
 export interface VillagerInventory {
@@ -213,18 +255,24 @@ export interface DungeonGather {
   currentProgress?: number; // 採取進捗 (0 - 100)
   respawnTimeLeft?: number; // リスポーン残り時間 (時間)
   respawnTimeTotal?: number; // リスポーン所要時間 (時間)
+  depth?: number; // ダンジョン内配置深度 (m)
+  lane?: number; // 横方向レーン (-1.5 〜 +1.5)
 }
 
 export interface DungeonMonster extends Monster {
   currentProgress?: number; // 遭遇/戦闘進捗 (0 - 100)
+  currentHp?: number; // 現地交戦中の現在HP
   respawnTimeLeft?: number; // リスポーン残り時間 (時間)
   respawnTimeTotal?: number; // リスポーン所要時間 (時間)
+  depth?: number; // ダンジョン内配置深度 (m)
+  lane?: number; // 横方向レーン (-1.5 〜 +1.5)
 }
 
 export interface DungeonArea {
   id: string;
   name: string;
   distance: number; // 往路・復路に必要な時間（時間単位）
+  maxDepth: number; // ダンジョンの奥行き (m)
   recommendedLevel: number;
   unlockedAtTier: number;
   gathers: DungeonGather[];
@@ -393,6 +441,7 @@ export interface GameUI {
   isPaused: boolean;
   playSpeed: "normal" | "fast" | "super";
   selectedItem: Item | null;
+  dungeonEvents: DungeonVisualEvent[];
 }
 
 export interface GamePeople {

@@ -45,6 +45,9 @@ export const villagersPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator 
   acc.dungeons = actRes.dungeons;
   acc.gold = actRes.gold;
   acc.logsToAppend.push(...actRes.logs);
+  if (actRes.dungeonEvents && actRes.dungeonEvents.length > 0) {
+    acc.dungeonEvents = [...(acc.dungeonEvents ?? []), ...actRes.dungeonEvents];
+  }
 
   return acc;
 };

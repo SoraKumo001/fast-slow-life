@@ -18,9 +18,11 @@
     "test:balance": "vitest run scripts/balance-sim.test.ts"
   },
   "dependencies": {
+    "@types/three": "^0.187.0",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "three": "^0.187.0",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

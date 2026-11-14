@@ -91,6 +91,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       lastSchedulerTick: result.lastSchedulerTick,
       stats: result.stats,
+      dungeonEvents: result.dungeonEvents ?? [],
       ...(result.gameOver && !state.gameOver
         ? {
             soulPoints:

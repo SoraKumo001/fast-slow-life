@@ -10,6 +10,9 @@ export const createBossActions = (set: StoreSet, get: StoreGet) => ({
       const updatedVillagers = state.villagers.map((v) => {
         if (villagerIds.includes(v.id)) {
           const area = state.dungeons.find((d) => d.monsters.some((m) => m.id === monsterId));
+          const bossIdx = villagerIds.indexOf(v.id);
+          const bossLanes = [-1.0, -0.35, 0.35, 1.0];
+          const maxDepth = area?.maxDepth ?? 100;
           return {
             ...v,
             status: "active" as VillagerStatus,
@@ -18,6 +21,13 @@ export const createBossActions = (set: StoreSet, get: StoreGet) => ({
             order: "hunt" as OrderType,
             targetMonsterId: monsterId,
             assignedCraftJobId: null,
+            dungeonState: {
+              currentDepth: Math.max(0, maxDepth - 3.5),
+              targetDepth: maxDepth,
+              lane: bossLanes[bossIdx] ?? 0,
+              phase: "fighting" as const,
+              targetNodeId: monsterId,
+            },
           };
         }
         return v;
@@ -64,6 +74,13 @@ export const createBossActions = (set: StoreSet, get: StoreGet) => ({
             order: "gather" as OrderType,
             targetMonsterId: null,
             autoTargetName: null,
+            dungeonState: {
+              currentDepth: 0,
+              targetDepth: 0,
+              lane: 0,
+              phase: "idle" as const,
+              targetNodeId: null,
+            },
           };
         }
         return v;

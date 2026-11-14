@@ -7,7 +7,14 @@ import {
   EDUCATION_EXP_BONUS,
 } from "../constants";
 import { MONSTERS } from "../data/masterData";
-import { Villager, DungeonArea, ActiveBossState, RunStats } from "../types/game";
+import {
+  Villager,
+  DungeonArea,
+  ActiveBossState,
+  RunStats,
+  DungeonVisualEvent,
+} from "../types/game";
+import { generateId } from "../utils/craftHelpers";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
   executePlayerAttack,
@@ -32,6 +39,7 @@ export function processBossBattle(
   tierStartDay: number,
 ) {
   const logs: LogPayload[] = [];
+  const dungeonEvents: DungeonVisualEvent[] = [];
   let nextActiveBoss = activeBoss ? { ...activeBoss } : null;
   let nextVillagers = [...villagers];
   let nextDungeons = [...dungeons];
@@ -41,6 +49,11 @@ export function processBossBattle(
 
   if (nextActiveBoss) {
     const monster = MONSTERS[nextActiveBoss.monsterId];
+    const bossArea = nextDungeons.find((d) =>
+      d.monsters.some((m) => m.id === nextActiveBoss?.monsterId),
+    );
+    const bossAreaId = bossArea?.id || "forest";
+    const bossDepth = bossArea?.maxDepth ?? 100;
     const attackers = nextVillagers.filter(
       (v) => nextActiveBoss?.attackerIds.includes(v.id) && v.status === "active",
     );
@@ -155,6 +168,31 @@ export function processBossBattle(
               0,
               nextActiveBoss.currentHp - playerAttackResult.damage,
             );
+            dungeonEvents.push({
+              id: generateId(),
+              areaId: bossAreaId,
+              type: playerAttackResult.isCritical ? "crit" : "attack",
+              actorId: currentV.id,
+              targetId: monster.id,
+              depth: bossDepth,
+              lane: 0,
+              value: playerAttackResult.damage,
+              isCrit: playerAttackResult.isCritical,
+              label: playerAttackResult.isCritical
+                ? `${playerAttackResult.damage}!`
+                : `${playerAttackResult.damage}`,
+            });
+          } else {
+            dungeonEvents.push({
+              id: generateId(),
+              areaId: bossAreaId,
+              type: "miss",
+              actorId: currentV.id,
+              targetId: monster.id,
+              depth: bossDepth,
+              lane: 0,
+              label: "MISS",
+            });
           }
         }
 
@@ -189,6 +227,18 @@ export function processBossBattle(
           if (enemyAttackResult.hit) {
             villager.currentHp = Math.max(0, villager.currentHp - enemyAttackResult.damage);
             nextVillagers[vIdx] = villager;
+            dungeonEvents.push({
+              id: generateId(),
+              areaId: bossAreaId,
+              type: "enemy_attack",
+              actorId: monster.id,
+              targetId: villager.id,
+              depth: villager.dungeonState?.currentDepth ?? bossDepth - 3.5,
+              lane: villager.dungeonState?.lane ?? 0,
+              value: enemyAttackResult.damage,
+              isCrit: enemyAttackResult.isCritical,
+              label: `-${enemyAttackResult.damage}`,
+            });
           }
         }
       }
@@ -305,6 +355,7 @@ export function processBossBattle(
             currentTier: nextCurrentTier,
             tierStartDay: nextTierStartDay,
             logs,
+            dungeonEvents,
             gameOver: true,
             gameOverReason: "クリア",
             dungeons: nextDungeons,
@@ -324,6 +375,7 @@ export function processBossBattle(
     currentTier: nextCurrentTier,
     tierStartDay: nextTierStartDay,
     logs,
+    dungeonEvents,
     gameOver: false,
     gameOverReason: undefined,
     dungeons: nextDungeons,

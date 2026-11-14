@@ -78,6 +78,7 @@ export function getInitialDungeons(): DungeonArea[] {
     })),
     monsters: d.monsters.map((m) => ({
       ...m,
+      currentHp: m.hp,
       currentProgress: 0,
       respawnTimeLeft: 0,
       respawnTimeTotal: getMonsterRespawnHours(m.id),

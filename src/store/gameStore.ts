@@ -76,6 +76,7 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   tierStartDay: 1,
   stats: getInitialStats(),
   selectedItem: null,
+  dungeonEvents: [],
 
   setSelectedItem: (item) => set({ selectedItem: item }),
 

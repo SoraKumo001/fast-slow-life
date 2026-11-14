@@ -303,6 +303,13 @@ export function dispatchIdleVillagersHelper(params: {
           staminaDrinkItemId: staminaDrinkId,
           staminaDrinkCount: assignedStaminaCount,
           gold: remainingGold,
+          dungeonState: {
+            currentDepth: 0,
+            targetDepth: 0,
+            lane: 0,
+            phase: "traveling_to",
+            targetNodeId: null,
+          },
         } as Villager;
       }
     }

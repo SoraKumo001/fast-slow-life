@@ -7,7 +7,7 @@ import { getInitialFacilities } from "./initialState";
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -98,6 +98,41 @@ const migrations: Record<number, SaveMigration> = {
     }
     data.saveVersion = 5;
   },
+  // v5 → v6: ダンジョン空間座標 (maxDepth, depth, lane, currentHp, dungeonState) 補完
+  5: (data) => {
+    const defaultMaxDepths: Record<string, number> = {
+      forest: 100,
+      mine: 150,
+      valley: 200,
+      world_tree: 250,
+      abyss: 300,
+    };
+    if (Array.isArray(data.dungeons)) {
+      data.dungeons = data.dungeons.map((d: Record<string, unknown>) => ({
+        ...d,
+        maxDepth: d.maxDepth ?? defaultMaxDepths[String(d.id)] ?? 100,
+        monsters: Array.isArray(d.monsters)
+          ? d.monsters.map((m: Record<string, unknown>) => ({
+              ...m,
+              currentHp: m.currentHp ?? m.hp,
+            }))
+          : d.monsters,
+      }));
+    }
+    if (Array.isArray(data.villagers)) {
+      data.villagers = data.villagers.map((v: Record<string, unknown>) => ({
+        ...v,
+        dungeonState: v.dungeonState ?? {
+          currentDepth: 0,
+          targetDepth: 0,
+          lane: 0,
+          phase: v.status === "active" ? "moving_to_target" : "idle",
+          targetNodeId: null,
+        },
+      }));
+    }
+    data.saveVersion = 6;
+  },
 };
 
 // ==========================================
@@ -105,7 +140,7 @@ const migrations: Record<number, SaveMigration> = {
 // ==========================================
 export const partialize = (
   state: GameState & GameActions,
-): Omit<GameState, "selectedItem"> & { saveVersion: number } => ({
+): Omit<GameState, "selectedItem" | "dungeonEvents"> & { saveVersion: number } => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,

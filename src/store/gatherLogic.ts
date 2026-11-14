@@ -15,9 +15,11 @@ import {
   STAT_GATHER_AMOUNT_FACTOR,
 } from "../constants";
 import { ITEMS, JOBS } from "../data/masterData";
-import { Villager, DungeonArea } from "../types/game";
+import { Villager, DungeonArea, DungeonVisualEvent } from "../types/game";
 import type { RunStats } from "../types/game";
+import { generateId } from "../utils/craftHelpers";
 import { getFoodBuffBonus, applySalaryDebuff } from "./combatEngine";
+import { createDefaultDungeonState, getGatherDepth } from "./dungeonSpatialHelper";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
 import { processItemAcquisition } from "./poolPurchase";
@@ -39,8 +41,10 @@ export function processVillagerGather(
   areaUpdated: boolean;
   gold: number;
   inventory: Record<string, number>;
+  dungeonEvents: DungeonVisualEvent[];
 } {
   const logs: LogPayload[] = [];
+  const dungeonEvents: DungeonVisualEvent[] = [];
   let nextInventory = inventory;
 
   let bestItemId = "";
@@ -136,6 +140,10 @@ export function processVillagerGather(
     const gatherIdx = area.gathers.findIndex((g) => g.itemId === bestItemId);
     if (gatherIdx !== -1) {
       const gather = { ...area.gathers[gatherIdx] };
+      const targetDepth = getGatherDepth(area, gather);
+      const targetLane = gather.lane ?? (gatherIdx % 2 === 0 ? -1.2 : 1.2);
+      const ds = v.dungeonState ? { ...v.dungeonState } : createDefaultDungeonState();
+
       const progressSpeed =
         (effectiveDex * GATHER_PROGRESS_DEX_FACTOR + GATHER_PROGRESS_BASE) / gather.difficulty;
       gather.currentProgress = Math.min(
@@ -143,6 +151,26 @@ export function processVillagerGather(
         (gather.currentProgress || 0) + progressSpeed * efficiency,
       );
       area.gathers[gatherIdx] = gather;
+
+      // 空間位置の更新: 進捗 0〜35% で現地へ歩行移動、35%〜100% で現地採取作業
+      if (gather.currentProgress < 35 && Math.abs(ds.currentDepth - targetDepth) > 0.5) {
+        const moveRatio = Math.min(1, gather.currentProgress / 35);
+        ds.currentDepth =
+          Math.round(
+            (ds.currentDepth + (targetDepth - ds.currentDepth) * Math.max(0.35, moveRatio)) * 10,
+          ) / 10;
+        ds.targetDepth = targetDepth;
+        ds.lane = targetLane * 0.5;
+        ds.phase = "moving_to_target";
+        ds.targetNodeId = gather.itemId;
+      } else {
+        ds.currentDepth = targetDepth;
+        ds.targetDepth = targetDepth;
+        ds.lane = targetLane > 0 ? targetLane - 0.35 : targetLane + 0.35;
+        ds.phase = "gathering";
+        ds.targetNodeId = gather.itemId;
+      }
+      v.dungeonState = ds;
 
       if (gather.currentProgress >= 100) {
         const item = ITEMS[bestItemId];
@@ -187,6 +215,18 @@ export function processVillagerGather(
           type: "gather",
         });
 
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: "gather",
+          actorId: v.id,
+          targetId: bestItemId,
+          depth: targetDepth,
+          lane: ds.lane,
+          value: amount,
+          label: `+${amount} ${item.name}`,
+        });
+
         const { leveled, updated: leveledV } = tryLevelUp(v);
         if (leveled) {
           v.level = leveledV.level;
@@ -212,5 +252,5 @@ export function processVillagerGather(
     }
   }
 
-  return { logs, areaUpdated: true, gold, inventory: nextInventory };
+  return { logs, areaUpdated: true, gold, inventory: nextInventory, dungeonEvents };
 }

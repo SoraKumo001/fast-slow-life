@@ -8,6 +8,7 @@ import {
   Town,
   Caravan,
   RunStats,
+  DungeonVisualEvent,
 } from "../types/game";
 
 export interface LogPayload {
@@ -38,4 +39,5 @@ export interface AdvanceHourResult {
   stats: RunStats;
   maxThreatLevelReached: number;
   tierStartDay: number;
+  dungeonEvents?: DungeonVisualEvent[];
 }

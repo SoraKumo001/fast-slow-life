@@ -51,6 +51,13 @@ export function createVillager(options: {
     assignedCraftJobId: null,
     targetMonsterId: null,
     autoTargetName: null,
+    dungeonState: {
+      currentDepth: 0,
+      targetDepth: 0,
+      lane: 0,
+      phase: "idle",
+      targetNodeId: null,
+    },
     potionItemId: "potion",
     potionCount: 0,
     staminaDrinkItemId: "stamina_drink",

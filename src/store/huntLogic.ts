@@ -8,8 +8,9 @@ import {
   MONSTER_PROGRESS_BASE,
 } from "../constants";
 import { ITEMS } from "../data/masterData";
-import { Villager, DungeonArea, DungeonMonster } from "../types/game";
+import { Villager, DungeonArea, DungeonMonster, DungeonVisualEvent } from "../types/game";
 import type { RunStats } from "../types/game";
+import { generateId } from "../utils/craftHelpers";
 import { isMagicJob } from "../utils/villagerHelpers";
 import {
   executePlayerAttack,
@@ -18,6 +19,7 @@ import {
   getFoodBuffBonus,
   applySalaryDebuff,
 } from "./combatEngine";
+import { createDefaultDungeonState, getMonsterDepth } from "./dungeonSpatialHelper";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
 import { processItemAcquisition } from "./poolPurchase";
@@ -159,8 +161,10 @@ export function processPartyHunt(
   areaUpdated: boolean;
   gold: number;
   inventory: Record<string, number>;
+  dungeonEvents: DungeonVisualEvent[];
 } {
   const logs: LogPayload[] = [];
+  const dungeonEvents: DungeonVisualEvent[] = [];
   let currentGold = gold;
   let nextInventory = inventory;
 
@@ -170,6 +174,7 @@ export function processPartyHunt(
       areaUpdated: false,
       gold: currentGold,
       inventory: nextInventory,
+      dungeonEvents,
     };
 
   const leader = party[0];
@@ -189,11 +194,14 @@ export function processPartyHunt(
       areaUpdated: false,
       gold: currentGold,
       inventory: nextInventory,
+      dungeonEvents,
     };
   }
 
   const monsterState = { ...area.monsters[enemyIdx] };
   const enemy = monsterState;
+  const targetDepth = getMonsterDepth(area, enemy);
+  const baseLane = enemy.lane ?? 0;
 
   // パーティ全体の平均 AGI で進行速度を計算
   const avgAgi =
@@ -213,6 +221,29 @@ export function processPartyHunt(
   );
   area.monsters[enemyIdx] = monsterState;
 
+  // パーティメンバーの空間位置更新（隊列レーンをずらして配置）
+  const partyLaneOffsets = [0, -0.65, 0.65];
+  party.forEach((member, idx) => {
+    const ds = member.dungeonState ? { ...member.dungeonState } : createDefaultDungeonState();
+    const memberLane = Math.max(-1.5, Math.min(1.5, baseLane + (partyLaneOffsets[idx] ?? 0)));
+    if (monsterState.currentProgress! < 100) {
+      const ratio = Math.max(0.25, (monsterState.currentProgress || 0) / 100);
+      ds.currentDepth =
+        Math.round((ds.currentDepth + (targetDepth - 1.5 - ds.currentDepth) * ratio) * 10) / 10;
+      ds.targetDepth = targetDepth;
+      ds.lane = memberLane;
+      ds.phase = "moving_to_target";
+      ds.targetNodeId = enemy.id;
+    } else {
+      ds.currentDepth = Math.max(0, targetDepth - 1.8);
+      ds.targetDepth = targetDepth;
+      ds.lane = memberLane;
+      ds.phase = "fighting";
+      ds.targetNodeId = enemy.id;
+    }
+    member.dungeonState = ds;
+  });
+
   if (monsterState.currentProgress < 100) {
     // まだ遭遇していない
     return {
@@ -220,6 +251,7 @@ export function processPartyHunt(
       areaUpdated: true,
       gold: currentGold,
       inventory: nextInventory,
+      dungeonEvents,
     };
   }
 
@@ -271,6 +303,17 @@ export function processPartyHunt(
           message: `[Turn ${turn}] 僧侶 ${member.name} はヒールを唱え、自身のHPを ${actualHeal} 回復した。`,
           type: "combat",
         });
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: "heal",
+          actorId: member.id,
+          targetId: member.id,
+          depth: member.dungeonState?.currentDepth ?? targetDepth,
+          lane: member.dungeonState?.lane ?? baseLane,
+          value: actualHeal,
+          label: `+${actualHeal}`,
+        });
       }
     }
 
@@ -294,6 +337,31 @@ export function processPartyHunt(
       logs.push(playerAttackResult.log);
       if (playerAttackResult.hit) {
         enemyHp -= playerAttackResult.damage;
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: playerAttackResult.isCritical ? "crit" : "attack",
+          actorId: member.id,
+          targetId: enemy.id,
+          depth: targetDepth,
+          lane: baseLane,
+          value: playerAttackResult.damage,
+          isCrit: playerAttackResult.isCritical,
+          label: playerAttackResult.isCritical
+            ? `${playerAttackResult.damage}!`
+            : `${playerAttackResult.damage}`,
+        });
+      } else {
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: "miss",
+          actorId: member.id,
+          targetId: enemy.id,
+          depth: targetDepth,
+          lane: baseLane,
+          label: "MISS",
+        });
       }
 
       if (enemyHp <= 0) {
@@ -324,6 +392,18 @@ export function processPartyHunt(
       logs.push(enemyAttackResult.log);
       if (enemyAttackResult.hit) {
         target.currentHp = Math.max(0, target.currentHp - enemyAttackResult.damage);
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: "enemy_attack",
+          actorId: enemy.id,
+          targetId: target.id,
+          depth: target.dungeonState?.currentDepth ?? targetDepth - 1.5,
+          lane: target.dungeonState?.lane ?? baseLane,
+          value: enemyAttackResult.damage,
+          isCrit: enemyAttackResult.isCritical,
+          label: `-${enemyAttackResult.damage}`,
+        });
       }
     }
 
@@ -392,7 +472,18 @@ export function processPartyHunt(
     // 敵のリスポーン設定
     monsterState.respawnTimeLeft = monsterState.respawnTimeTotal || DEFAULT_GATHER_RESPAWN_HOURS;
     monsterState.currentProgress = 0;
+    monsterState.currentHp = monsterState.hp;
     area.monsters[enemyIdx] = monsterState;
+    dungeonEvents.push({
+      id: generateId(),
+      areaId: area.id,
+      type: "defeat",
+      actorId: party[0].id,
+      targetId: enemy.id,
+      depth: targetDepth,
+      lane: baseLane,
+      label: `${enemy.name} 撃破!`,
+    });
   } else if (survivors.length === 0) {
     // 全滅
     logs.push({
@@ -430,6 +521,7 @@ export function processPartyHunt(
     areaUpdated: true,
     gold: currentGold,
     inventory: nextInventory,
+    dungeonEvents,
   };
 }
 
@@ -450,8 +542,10 @@ export function processVillagerHunt(
   areaUpdated: boolean;
   gold: number;
   inventory: Record<string, number>;
+  dungeonEvents: DungeonVisualEvent[];
 } {
   const logs: LogPayload[] = [];
+  const dungeonEvents: DungeonVisualEvent[] = [];
   let currentGold = gold;
   let nextInventory = inventory;
 
@@ -474,6 +568,10 @@ export function processVillagerHunt(
 
   if (enemy && enemyIdx !== -1) {
     const monsterState = { ...area.monsters[enemyIdx] };
+    const targetDepth = getMonsterDepth(area, enemy);
+    const targetLane = enemy.lane ?? 0;
+    const ds = v.dungeonState ? { ...v.dungeonState } : createDefaultDungeonState();
+
     const progressSpeed = Math.max(
       5.0,
       (effectiveAgi * MONSTER_PROGRESS_AGI_FACTOR + GATHER_PROGRESS_BASE) /
@@ -485,7 +583,23 @@ export function processVillagerHunt(
     );
     area.monsters[enemyIdx] = monsterState;
 
-    if (monsterState.currentProgress >= 100) {
+    if (monsterState.currentProgress < 100) {
+      const ratio = Math.max(0.25, (monsterState.currentProgress || 0) / 100);
+      ds.currentDepth =
+        Math.round((ds.currentDepth + (targetDepth - 1.5 - ds.currentDepth) * ratio) * 10) / 10;
+      ds.targetDepth = targetDepth;
+      ds.lane = targetLane;
+      ds.phase = "moving_to_target";
+      ds.targetNodeId = enemy.id;
+      v.dungeonState = ds;
+    } else {
+      ds.currentDepth = Math.max(0, targetDepth - 1.5);
+      ds.targetDepth = targetDepth;
+      ds.lane = targetLane;
+      ds.phase = "fighting";
+      ds.targetNodeId = enemy.id;
+      v.dungeonState = ds;
+
       logs.push({
         message: `${v.name} が ${enemy.name} (Lv.${enemy.level}) と遭遇し、戦闘を開始！`,
         type: "combat",
@@ -540,6 +654,31 @@ export function processVillagerHunt(
           logs.push(playerAttackResult.log);
           if (playerAttackResult.hit) {
             enemyHp -= playerAttackResult.damage;
+            dungeonEvents.push({
+              id: generateId(),
+              areaId: area.id,
+              type: playerAttackResult.isCritical ? "crit" : "attack",
+              actorId: v.id,
+              targetId: enemy.id,
+              depth: targetDepth,
+              lane: targetLane,
+              value: playerAttackResult.damage,
+              isCrit: playerAttackResult.isCritical,
+              label: playerAttackResult.isCritical
+                ? `${playerAttackResult.damage}!`
+                : `${playerAttackResult.damage}`,
+            });
+          } else {
+            dungeonEvents.push({
+              id: generateId(),
+              areaId: area.id,
+              type: "miss",
+              actorId: v.id,
+              targetId: enemy.id,
+              depth: targetDepth,
+              lane: targetLane,
+              label: "MISS",
+            });
           }
 
           if (enemyHp <= 0) {
@@ -562,6 +701,18 @@ export function processVillagerHunt(
         logs.push(enemyAttackResult.log);
         if (enemyAttackResult.hit) {
           v.currentHp = Math.max(0, v.currentHp - enemyAttackResult.damage);
+          dungeonEvents.push({
+            id: generateId(),
+            areaId: area.id,
+            type: "enemy_attack",
+            actorId: enemy.id,
+            targetId: v.id,
+            depth: ds.currentDepth,
+            lane: ds.lane,
+            value: enemyAttackResult.damage,
+            isCrit: enemyAttackResult.isCritical,
+            label: `-${enemyAttackResult.damage}`,
+          });
         }
 
         if (v.currentHp <= 0) {
@@ -612,7 +763,18 @@ export function processVillagerHunt(
         monsterState.respawnTimeLeft =
           monsterState.respawnTimeTotal || DEFAULT_GATHER_RESPAWN_HOURS;
         monsterState.currentProgress = 0;
+        monsterState.currentHp = monsterState.hp;
         area.monsters[enemyIdx] = monsterState;
+        dungeonEvents.push({
+          id: generateId(),
+          areaId: area.id,
+          type: "defeat",
+          actorId: v.id,
+          targetId: enemy.id,
+          depth: targetDepth,
+          lane: targetLane,
+          label: `${enemy.name} 撃破!`,
+        });
       } else if (villagerDefeated) {
         logs.push({
           message: `${v.name} が戦闘不能になりました。村への帰還を開始します（残り時間: ${area.distance}h）。`,
@@ -634,5 +796,6 @@ export function processVillagerHunt(
     areaUpdated: true,
     gold: currentGold,
     inventory: nextInventory,
+    dungeonEvents,
   };
 }

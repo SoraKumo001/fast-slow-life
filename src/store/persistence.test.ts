@@ -93,8 +93,8 @@ function makeBaseState(): GameState & GameActions {
 }
 
 describe("persistence.SAVE_VERSION", () => {
-  it("現在のセーブデータバージョンは 5 であること", () => {
-    expect(SAVE_VERSION).toBe(5);
+  it("現在のセーブデータバージョンは 6 であること", () => {
+    expect(SAVE_VERSION).toBe(6);
   });
 });
 
