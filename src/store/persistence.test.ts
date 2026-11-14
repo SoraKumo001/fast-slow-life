@@ -93,8 +93,8 @@ function makeBaseState(): GameState & GameActions {
 }
 
 describe("persistence.SAVE_VERSION", () => {
-  it("現在のセーブデータバージョンは 6 であること", () => {
-    expect(SAVE_VERSION).toBe(6);
+  it("現在のセーブデータバージョンは 7 であること", () => {
+    expect(SAVE_VERSION).toBe(7);
   });
 });
 
@@ -366,6 +366,41 @@ describe("persistence.merge - マイグレーション", () => {
     expect(merged.dungeons[0].threatLevel).toBe(50);
     // raid が削除されている
     expect((merged.dungeons[0] as unknown as { raid?: unknown }).raid).toBeUndefined();
+  });
+
+  it("v6 → v7 マイグレーションで廃止アイテムが統合先アイテムに変換されること", () => {
+    const state = makeBaseState();
+    const persisted = {
+      saveVersion: 6,
+      inventory: {
+        wheat: 10,
+        vegetable: 5,
+        mid_potion: 2,
+        wooden_bow: 1,
+      },
+      villagers: [
+        {
+          id: "v1",
+          name: "テスト村人",
+          equipment: { weapon: "wooden_bow", armor: "leather_cloak" },
+          potionItemId: "mid_potion",
+          activeFoodBuffId: "food_sandwich",
+        },
+      ],
+      tradeRules: [{ itemId: "copper_ore", type: "sell", threshold: 10 }],
+    };
+    const merged = merge(persisted, state);
+    const mergedAny = merged as unknown as { saveVersion: number };
+    expect(mergedAny.saveVersion).toBe(SAVE_VERSION);
+    expect(merged.inventory.wheat).toBe(15);
+    expect(merged.inventory.vegetable).toBeUndefined();
+    expect(merged.inventory.high_potion).toBe(2);
+    expect(merged.inventory.wooden_club).toBe(1);
+    expect(merged.villagers[0].equipment.weapon).toBe("wooden_club");
+    expect(merged.villagers[0].equipment.armor).toBe("wooden_shield");
+    expect(merged.villagers[0].potionItemId).toBe("high_potion");
+    expect(merged.villagers[0].activeFoodBuffId).toBe("food_bread");
+    expect(merged.tradeRules[0].itemId).toBe("iron_ore");
   });
 
   it("saveVersion がすでに最新の場合は何もしないこと", () => {

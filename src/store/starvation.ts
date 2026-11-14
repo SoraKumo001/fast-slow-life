@@ -9,7 +9,7 @@ export function processStarvation(
   const nextInventory = { ...inventory };
   const logs: string[] = [];
 
-  const rawIngredients = ["raw_meat", "vegetable", "wheat"];
+  const rawIngredients = ["raw_meat", "wheat"];
 
   if (typeof villagers === "number") {
     // 従来の簡易的な一律処理（シミュレータ等のため）
@@ -21,13 +21,10 @@ export function processStarvation(
     const foodPriority = [
       "food_dragon_hotpot",
       "food_beast_roast",
-      "food_stamina_stew",
-      "food_sandwich",
       "food_dried_meat",
       "food_herb_salad",
       "food_bread",
       "raw_meat",
-      "vegetable",
       "wheat",
     ];
 
@@ -83,26 +80,20 @@ export function processStarvation(
     const foodPriority = isPoor
       ? [
           "wheat",
-          "vegetable",
           "raw_meat",
           "food_bread",
           "food_dried_meat",
           "food_herb_salad",
-          "food_sandwich",
-          "food_stamina_stew",
           "food_beast_roast",
           "food_dragon_hotpot",
         ]
       : [
           "food_dragon_hotpot",
           "food_beast_roast",
-          "food_stamina_stew",
-          "food_sandwich",
           "food_dried_meat",
           "food_herb_salad",
           "food_bread",
           "raw_meat",
-          "vegetable",
           "wheat",
         ];
 

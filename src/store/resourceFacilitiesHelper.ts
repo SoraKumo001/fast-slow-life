@@ -18,7 +18,6 @@ export function processResourceFacilities(
   const logs: LogPayload[] = [];
 
   let producedWheat = 0;
-  let producedVegetable = 0;
   let producedRawMeat = 0;
   let producedHerb = 0;
   let producedWood = 0;
@@ -35,18 +34,15 @@ export function processResourceFacilities(
     // 伐採所/採石場は Lv1=1, Lv2=2, ..., Lv5=5 と線形（資源消費の経済設計）。
     //
     // 農場の生産テーブル (12h ごと):
-    //   Lv1: 小麦1, 野菜0, 生肉0
-    //   Lv2: 小麦1, 野菜1, 生肉0
-    //   Lv3: 小麦2, 野菜1, 生肉1 (+ 薬草 30% 確率)
-    //   Lv4: 小麦2, 野菜2, 生肉1 (+ 薬草 60% 確率)
-    //   Lv5: 小麦3, 野菜2, 生肉2 (+ 薬草 90% 確率)
-    producedWheat = Math.floor((1 + lvl) / 2);
-    producedVegetable = Math.floor(lvl / 2);
+    //   Lv1: 小麦1, 生肉0
+    //   Lv2: 小麦2, 生肉0
+    //   Lv3: 小麦2, 生肉1 (+ 薬草 30% 確率)
+    //   Lv4: 小麦3, 生肉1 (+ 薬草 60% 確率)
+    //   Lv5: 小麦4, 生肉2 (+ 薬草 90% 確率)
+    producedWheat = Math.floor((2 + lvl) / 1.5);
     producedRawMeat = Math.floor((lvl - 1) / 2);
 
     if (producedWheat > 0) nextInventory.wheat = (nextInventory.wheat || 0) + producedWheat;
-    if (producedVegetable > 0)
-      nextInventory.vegetable = (nextInventory.vegetable || 0) + producedVegetable;
     if (producedRawMeat > 0)
       nextInventory.raw_meat = (nextInventory.raw_meat || 0) + producedRawMeat;
 
@@ -89,8 +85,7 @@ export function processResourceFacilities(
     }
   }
 
-  const hasFarmProd =
-    producedWheat > 0 || producedVegetable > 0 || producedRawMeat > 0 || producedHerb > 0;
+  const hasFarmProd = producedWheat > 0 || producedRawMeat > 0 || producedHerb > 0;
   if (
     hasFarmProd ||
     producedWood > 0 ||
@@ -104,7 +99,6 @@ export function processResourceFacilities(
     if (hasFarmProd) {
       const farmLogs: string[] = [];
       if (producedWheat > 0) farmLogs.push(`小麦+${producedWheat}`);
-      if (producedVegetable > 0) farmLogs.push(`野菜+${producedVegetable}`);
       if (producedRawMeat > 0) farmLogs.push(`生肉+${producedRawMeat}`);
       if (producedHerb > 0) farmLogs.push(`薬草+${producedHerb}`);
       prodLogs.push(farmLogs.join("、"));

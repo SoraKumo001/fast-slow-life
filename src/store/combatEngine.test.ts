@@ -66,7 +66,7 @@ describe("combatEngine", () => {
     it("存在する料理buffの該当ステータスを返すこと", () => {
       expect(getFoodBuffBonus("food_dried_meat", "str")).toBe(3);
       expect(getFoodBuffBonus("food_herb_salad", "int")).toBe(3);
-      expect(getFoodBuffBonus("food_sandwich", "dex")).toBe(3);
+      expect(getFoodBuffBonus("food_bread", "vit")).toBe(2);
     });
 
     it("存在する料理buffだが未設定のステータスは0を返すこと", () => {
@@ -460,15 +460,15 @@ describe("combatEngine", () => {
       expect(result.updated.currentHp).toBe(100);
     });
 
-    it("mid_potionを所持している場合はその回復量を使うこと", () => {
+    it("high_potionを所持している場合はその回復量を使うこと", () => {
       const v = makeVillager({
         currentHp: 1,
         potionCount: 1,
-        potionItemId: "mid_potion",
+        potionItemId: "high_potion",
       });
       const result = useBattlePotion(v, false);
       expect(result.used).toBe(true);
-      expect(result.healed).toBe(150);
+      expect(result.healed).toBe(400);
       expect(result.updated.currentHp).toBe(100);
     });
 

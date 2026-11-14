@@ -57,11 +57,6 @@ const RESOURCE_RULES: Record<string, ResourceRule[]> = {
       getAmountText: (lvl) => `${Math.floor((1 + lvl) / 2)}個`,
     },
     {
-      itemId: "vegetable",
-      requiredLevel: 2,
-      getAmountText: (lvl) => `${Math.floor(lvl / 2)}個`,
-    },
-    {
       itemId: "raw_meat",
       requiredLevel: 2,
       getAmountText: (lvl) => `${Math.floor((lvl - 1) / 2)}個`,

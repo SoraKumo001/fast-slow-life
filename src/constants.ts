@@ -120,7 +120,7 @@ export const CATEGORY_MATERIAL = "material";
 export const CATEGORY_GEAR_WEAPON = "gear_weapon";
 export const CATEGORY_GEAR_ARMOR = "gear_armor";
 
-export const POTION_PRIORITY = ["elixir", "high_potion", "mid_potion", "potion"];
+export const POTION_PRIORITY = ["elixir", "high_potion", "potion"];
 
 // ── ダンジョン脅威度システム ──
 export const THREAT_BASE_RATE_PER_HOUR = 0.1;

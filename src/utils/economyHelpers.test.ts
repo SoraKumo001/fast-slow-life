@@ -132,13 +132,12 @@ describe("economyHelpers - getTotalFoodStock", () => {
   it("生食材と調理済み食材の両方を集計すること", () => {
     const inventory = {
       wheat: 10,
-      vegetable: 5,
       raw_meat: 3,
       food_bread: 7,
       food_dried_meat: 2,
     };
-    // 10 + 5 + 3 + 7 + 2 = 27
-    expect(getTotalFoodStock(inventory)).toBe(27);
+    // 10 + 3 + 7 + 2 = 22
+    expect(getTotalFoodStock(inventory)).toBe(22);
   });
 
   it("空の在庫は 0", () => {

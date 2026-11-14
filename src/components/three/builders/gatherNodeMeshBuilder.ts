@@ -9,11 +9,10 @@ export function buildGatherNodeMesh(itemId: string): THREE.Group {
   content.name = "gatherContent";
   group.add(content);
 
-  if (itemId === "wood" || itemId === "ancient_bark") {
-    const isAncient = itemId === "ancient_bark";
+  if (itemId === "wood") {
     const trunk = new THREE.Mesh(
       new THREE.CylinderGeometry(0.16, 0.24, 1.1, 7),
-      new THREE.MeshStandardMaterial({ color: isAncient ? 0x475569 : 0x5c4033, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ color: 0x5c4033, roughness: 0.9 }),
     );
     trunk.position.y = 0.55;
     content.add(trunk);
@@ -21,15 +20,13 @@ export function buildGatherNodeMesh(itemId: string): THREE.Group {
     const crown = new THREE.Mesh(
       new THREE.ConeGeometry(0.75, 1.4, 7),
       new THREE.MeshStandardMaterial({
-        color: isAncient ? 0x0ea5e9 : 0x22c55e,
-        emissive: isAncient ? 0x0369a1 : 0x000000,
-        emissiveIntensity: isAncient ? 0.35 : 0,
+        color: 0x22c55e,
         roughness: 0.8,
       }),
     );
     crown.position.y = 1.45;
     content.add(crown);
-  } else if (["stone", "copper_ore", "iron_ore", "silver_ore"].includes(itemId)) {
+  } else if (["stone", "iron_ore", "silver_ore"].includes(itemId)) {
     const rock = new THREE.Mesh(
       new THREE.DodecahedronGeometry(0.58, 0),
       new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 }),
@@ -40,7 +37,6 @@ export function buildGatherNodeMesh(itemId: string): THREE.Group {
 
     if (itemId !== "stone") {
       const oreColors: Record<string, number> = {
-        copper_ore: 0xd97706,
         iron_ore: 0x94a3b8,
         silver_ore: 0xe2e8f0,
       };
@@ -84,19 +80,6 @@ export function buildGatherNodeMesh(itemId: string): THREE.Group {
     sub.position.set(0.28, 0.38, 0.15);
     sub.rotation.z = -0.4;
     content.add(sub);
-  } else if (itemId === "mushroom") {
-    const stem = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.12, 0.16, 0.38, 8),
-      new THREE.MeshStandardMaterial({ color: 0xfef3c7 }),
-    );
-    stem.position.y = 0.19;
-    content.add(stem);
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.38, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.6 }),
-    );
-    cap.position.y = 0.35;
-    content.add(cap);
   } else if (itemId === "wheat") {
     const wheatMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.8 });
     for (let i = -1; i <= 1; i++) {
@@ -106,8 +89,8 @@ export function buildGatherNodeMesh(itemId: string): THREE.Group {
       content.add(stalk);
     }
   } else {
-    // herb, vegetable, feather 等
-    const color = itemId === "feather" ? 0xf8fafc : itemId === "herb" ? 0x10b981 : 0x84cc16;
+    // herb 等
+    const color = itemId === "herb" ? 0x10b981 : 0x84cc16;
     const mat = new THREE.MeshStandardMaterial({
       color,
       emissive: itemId === "herb" ? 0x059669 : 0x000000,

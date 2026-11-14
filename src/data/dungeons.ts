@@ -12,9 +12,7 @@ export const DUNGEONS: DungeonArea[] = [
     gathers: [
       { itemId: "wheat", difficulty: 1.0, unlockedAtProgress: 0, depth: 12, lane: -1.3 },
       { itemId: "wood", difficulty: 1.0, unlockedAtProgress: 0, depth: 24, lane: 1.3 },
-      { itemId: "vegetable", difficulty: 1.0, unlockedAtProgress: 10, depth: 34, lane: -1.1 },
-      { itemId: "mushroom", difficulty: 1.2, unlockedAtProgress: 20, depth: 52, lane: 1.2 },
-      { itemId: "herb", difficulty: 1.5, unlockedAtProgress: 40, depth: 72, lane: -1.2 },
+      { itemId: "herb", difficulty: 1.5, unlockedAtProgress: 30, depth: 72, lane: -1.2 },
     ],
     monsters: [
       { ...MONSTERS.goblin, depth: 28, lane: 0.2 },
@@ -34,8 +32,7 @@ export const DUNGEONS: DungeonArea[] = [
     unlockedAtTier: 2,
     gathers: [
       { itemId: "stone", difficulty: 1.2, unlockedAtProgress: 0, depth: 18, lane: -1.3 },
-      { itemId: "copper_ore", difficulty: 1.3, unlockedAtProgress: 15, depth: 46, lane: 1.2 },
-      { itemId: "iron_ore", difficulty: 1.8, unlockedAtProgress: 40, depth: 82, lane: -1.2 },
+      { itemId: "iron_ore", difficulty: 1.8, unlockedAtProgress: 30, depth: 82, lane: -1.2 },
       { itemId: "silver_ore", difficulty: 2.0, unlockedAtProgress: 70, depth: 122, lane: 1.3 },
     ],
     monsters: [
@@ -57,7 +54,6 @@ export const DUNGEONS: DungeonArea[] = [
     unlockedAtTier: 3,
     gathers: [
       { itemId: "crystal_fragment", difficulty: 2.0, unlockedAtProgress: 0, depth: 30, lane: -1.3 },
-      { itemId: "feather", difficulty: 2.0, unlockedAtProgress: 25, depth: 85, lane: 1.3 },
     ],
     monsters: [
       { ...MONSTERS.orc, depth: 45, lane: -0.3 },
@@ -78,7 +74,6 @@ export const DUNGEONS: DungeonArea[] = [
     unlockedAtTier: 4,
     gathers: [
       { itemId: "mana_stone", difficulty: 3.0, unlockedAtProgress: 0, depth: 40, lane: -1.3 },
-      { itemId: "ancient_bark", difficulty: 2.0, unlockedAtProgress: 20, depth: 110, lane: 1.3 },
     ],
     monsters: [
       { ...MONSTERS.demon, depth: 60, lane: 0.3 },

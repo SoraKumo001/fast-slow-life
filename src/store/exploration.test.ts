@@ -97,10 +97,10 @@ describe("processExploration - B3 バフ/デバフ反映 (回帰テスト)", () 
   });
 
   it("ケース2: 料理バフ適用時は基準より探索が速い", () => {
-    // food_sandwich の foodBuff: { dex: 3 } を確認
-    const sandwich = ITEMS["food_sandwich"];
-    expect(sandwich?.foodBuff).toBeDefined();
-    expect(sandwich?.foodBuff?.dex ?? 0).toBeGreaterThan(0);
+    // food_dragon_hotpot の foodBuff: { dex: 15, ... } を確認
+    const hotpot = ITEMS["food_dragon_hotpot"];
+    expect(hotpot?.foodBuff).toBeDefined();
+    expect(hotpot?.foodBuff?.dex ?? 0).toBeGreaterThan(0);
 
     const baseProgress = simulateExploration(
       makeDungeon({ id: "d1" }),
@@ -111,7 +111,7 @@ describe("processExploration - B3 バフ/デバフ反映 (回帰テスト)", () 
       makeDungeon({ id: "d2" }),
       makeVillager({
         destinationAreaId: "d2",
-        activeFoodBuffId: "food_sandwich",
+        activeFoodBuffId: "food_dragon_hotpot",
       }),
       240,
     );

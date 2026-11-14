@@ -92,7 +92,6 @@ export const createInitialInventory = (foodOverride?: number): Record<string, nu
   );
   if (foodOverride !== undefined) {
     base.wheat = foodOverride;
-    base.vegetable = 0;
     base.raw_meat = 0;
   }
   return base;

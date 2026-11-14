@@ -18,7 +18,7 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "iron_ingot", count: 3 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "silver_ingot", count: 2 },
     ],
   },
@@ -38,10 +38,10 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
     4: [
       { itemId: "wood_plank", count: 12 },
       { itemId: "iron_ingot", count: 6 },
-      { itemId: "crystal_powder", count: 2 },
+      { itemId: "crystal_fragment", count: 4 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "dark_ingot", count: 2 },
     ],
   },
@@ -60,7 +60,7 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "iron_ingot", count: 4 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 3 },
+      { itemId: "wood_plank", count: 6 },
       { itemId: "silver_ingot", count: 2 },
     ],
   },
@@ -78,12 +78,12 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "iron_ingot", count: 3 },
     ],
     4: [
-      { itemId: "reinforced_plank", count: 3 },
+      { itemId: "wood_plank", count: 6 },
       { itemId: "silver_ingot", count: 2 },
-      { itemId: "crystal_powder", count: 2 },
+      { itemId: "crystal_fragment", count: 4 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "dark_ingot", count: 1 },
       { itemId: "mana_stone", count: 3 },
     ],
@@ -99,13 +99,13 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "mana_stone", count: 2 },
     ],
     3: [
-      { itemId: "crystal_powder", count: 3 },
+      { itemId: "crystal_fragment", count: 6 },
       { itemId: "mana_stone", count: 4 },
     ],
     4: [
       { itemId: "mana_stone", count: 6 },
       { itemId: "dark_crystal", count: 2 },
-      { itemId: "crystal_powder", count: 5 },
+      { itemId: "crystal_fragment", count: 10 },
     ],
     5: [
       { itemId: "mana_stone", count: 8 },
@@ -128,7 +128,7 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "silver_ingot", count: 2 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 4 },
+      { itemId: "wood_plank", count: 8 },
       { itemId: "dark_ingot", count: 1 },
     ],
   },
@@ -151,7 +151,7 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "mana_stone", count: 2 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "dark_ingot", count: 1 },
       { itemId: "mana_stone", count: 4 },
     ],
@@ -168,16 +168,16 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
     3: [
       { itemId: "iron_ingot", count: 8 },
       { itemId: "leather", count: 5 },
-      { itemId: "reinforced_plank", count: 2 },
+      { itemId: "wood_plank", count: 4 },
     ],
     4: [
       { itemId: "silver_ingot", count: 4 },
-      { itemId: "reinforced_plank", count: 4 },
+      { itemId: "wood_plank", count: 8 },
       { itemId: "leather", count: 8 },
     ],
     5: [
       { itemId: "dark_ingot", count: 3 },
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "mana_stone", count: 5 },
     ],
   },
@@ -193,10 +193,10 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
     ],
     4: [
       { itemId: "iron_ingot", count: 5 },
-      { itemId: "reinforced_plank", count: 2 },
+      { itemId: "wood_plank", count: 4 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 4 },
+      { itemId: "wood_plank", count: 8 },
       { itemId: "dark_ingot", count: 1 },
     ],
   },
@@ -216,7 +216,7 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
     ],
     5: [
       { itemId: "dark_ingot", count: 1 },
-      { itemId: "reinforced_plank", count: 3 },
+      { itemId: "wood_plank", count: 6 },
     ],
   },
   training_ground: {
@@ -233,12 +233,12 @@ export const FACILITY_UPGRADE_MATERIALS: Record<
       { itemId: "iron_ingot", count: 5 },
     ],
     4: [
-      { itemId: "reinforced_plank", count: 3 },
+      { itemId: "wood_plank", count: 6 },
       { itemId: "silver_ingot", count: 2 },
       { itemId: "iron_ingot", count: 5 },
     ],
     5: [
-      { itemId: "reinforced_plank", count: 5 },
+      { itemId: "wood_plank", count: 10 },
       { itemId: "dark_ingot", count: 2 },
       { itemId: "mana_stone", count: 3 },
     ],

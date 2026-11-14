@@ -16,12 +16,10 @@ export function getResourceProductionInfo(fac: Facility): ResourceProductionInfo
   if (lvl <= 0) return { label: "なし", details: [] };
 
   if (fac.id === "farm") {
-    const wheat = Math.floor((1 + lvl) / 2);
-    const vegetable = Math.floor(lvl / 2);
+    const wheat = Math.floor((2 + lvl) / 1.5);
     const rawMeat = Math.floor((lvl - 1) / 2);
     const parts: string[] = [];
     if (wheat > 0) parts.push(`小麦 +${wheat}`);
-    if (vegetable > 0) parts.push(`野菜 +${vegetable}`);
     if (rawMeat > 0) parts.push(`生肉 +${rawMeat}`);
     if (lvl >= 3) parts.push(`薬草 (確率:${Math.round((lvl - 2) * 30)}%)`);
     return { label: parts.join("、"), details: parts };

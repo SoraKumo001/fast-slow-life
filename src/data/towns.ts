@@ -14,17 +14,7 @@ export const TOWNS_DATA: TownMaster[] = [
     distance: 12, // 往復12時間
     description:
       "自然に囲まれたのどかな集落。木材や薬草の需要が高く、特産果物や木工品を仕入れることができる。",
-    specialties: [
-      "wheat",
-      "vegetable",
-      "raw_meat",
-      "wood",
-      "herb",
-      "wood_plank",
-      "leather_cloak",
-      "ancient_bark",
-      "elixir",
-    ],
+    specialties: ["wheat", "raw_meat", "wood", "herb", "wood_plank", "wooden_shield", "elixir"],
     unlockedAtTier: 1,
   },
   {
@@ -34,7 +24,7 @@ export const TOWNS_DATA: TownMaster[] = [
     description:
       "海運と重工業で栄える海沿いの都市。武具や加工用木材を求めており、金属素材を仕入れることができる。",
     specialties: [
-      "copper_ore",
+      "stone",
       "iron_ore",
       "iron_ingot",
       "iron_sword",
@@ -57,7 +47,7 @@ export const TOWNS_DATA: TownMaster[] = [
       "mana_stone",
       "stamina_drink",
       "potion",
-      "mid_potion",
+      "high_potion",
       "dark_crystal",
       "wooden_staff",
       "mythril_staff",
@@ -69,21 +59,11 @@ export const TOWNS_DATA: TownMaster[] = [
 
 export function getTownShopItems(townId: string): string[] {
   if (townId === "komorebi") {
-    return [
-      "wheat",
-      "vegetable",
-      "raw_meat",
-      "wood",
-      "herb",
-      "wood_plank",
-      "leather_cloak",
-      "ancient_bark",
-      "elixir",
-    ];
+    return ["wheat", "raw_meat", "wood", "herb", "wood_plank", "wooden_shield", "elixir"];
   }
   if (townId === "ironport") {
     return [
-      "copper_ore",
+      "stone",
       "iron_ore",
       "iron_ingot",
       "iron_sword",
@@ -100,7 +80,7 @@ export function getTownShopItems(townId: string): string[] {
       "mana_stone",
       "stamina_drink",
       "potion",
-      "mid_potion",
+      "high_potion",
       "dark_crystal",
       "wooden_staff",
       "mythril_staff",

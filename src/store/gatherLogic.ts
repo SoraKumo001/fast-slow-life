@@ -174,7 +174,7 @@ export function processVillagerGather(
 
       if (gather.currentProgress >= 100) {
         const item = ITEMS[bestItemId];
-        const baseAmount = ["wheat", "vegetable", "raw_meat"].includes(item.id)
+        const baseAmount = ["wheat", "raw_meat"].includes(item.id)
           ? FOOD_GATHER_AMOUNT
           : BASE_GATHER_AMOUNT;
 

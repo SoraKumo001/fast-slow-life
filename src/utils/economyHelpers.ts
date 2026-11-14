@@ -43,13 +43,11 @@ export function getResourceFacilityGValue(
   if (lvl <= 0) return { label: "なし", gValue: 0 };
 
   if (facilityId === "farm") {
-    const wheat = Math.floor((1 + lvl) / 2);
-    const vegetable = Math.floor(lvl / 2);
+    const wheat = Math.floor((2 + lvl) / 1.5);
     const rawMeat = Math.floor((lvl - 1) / 2);
-    let value = wheat * 1 + vegetable * 1 + rawMeat * 2;
+    let value = wheat * 1 + rawMeat * 2;
     const parts: string[] = [];
     if (wheat > 0) parts.push(`小麦+${wheat}`);
-    if (vegetable > 0) parts.push(`野菜+${vegetable}`);
     if (rawMeat > 0) parts.push(`生肉+${rawMeat}`);
     if (lvl >= 3) {
       const herbProb = Math.round((lvl - 2) * 30);
@@ -98,14 +96,12 @@ export function getResourceFacilityGValue(
 const FOOD_IDS = new Set([
   "food_dragon_hotpot",
   "food_beast_roast",
-  "food_stamina_stew",
-  "food_sandwich",
   "food_dried_meat",
   "food_herb_salad",
   "food_bread",
 ]);
 
-const RAW_FOOD_IDS = new Set(["wheat", "vegetable", "raw_meat"]);
+const RAW_FOOD_IDS = new Set(["wheat", "raw_meat"]);
 
 export function getDailyFoodConsumption(villagerCount: number): number {
   return villagerCount;

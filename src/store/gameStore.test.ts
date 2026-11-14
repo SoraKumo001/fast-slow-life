@@ -15,7 +15,6 @@ describe("gameStore", () => {
     const state = useGameStore.getState();
     expect(state.gold).toBe(STARTING_GOLD);
     expect(state.inventory.wheat).toBe(80);
-    expect(state.inventory.vegetable).toBe(0);
     expect(state.inventory.raw_meat).toBe(0);
     expect(state.currentDay).toBe(1);
     expect(state.currentHour).toBe(0);

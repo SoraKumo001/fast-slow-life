@@ -7,7 +7,7 @@ import { getInitialFacilities } from "./initialState";
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -132,6 +132,80 @@ const migrations: Record<number, SaveMigration> = {
       }));
     }
     data.saveVersion = 6;
+  },
+  // v6 → v7: アイテムスリム化に伴う廃止アイテムIDの統合・変換
+  6: (data) => {
+    const ITEM_REMAP: Record<string, string> = {
+      vegetable: "wheat",
+      mushroom: "herb",
+      copper_ore: "iron_ore",
+      feather: "crystal_fragment",
+      ancient_bark: "mana_stone",
+      bone: "leather",
+      reinforced_plank: "wood_plank",
+      crystal_powder: "crystal_fragment",
+      mid_potion: "high_potion",
+      ultimate_potion: "elixir",
+      phoenix_tear: "elixir",
+      food_sandwich: "food_bread",
+      food_stamina_stew: "food_beast_roast",
+      food_herb_banquet: "food_beast_roast",
+      food_dragon_feast: "food_dragon_hotpot",
+      wooden_bow: "wooden_club",
+      leather_cloak: "wooden_shield",
+    };
+
+    const remapRecord = (rec: unknown) => {
+      if (!rec || typeof rec !== "object") return;
+      const obj = rec as Record<string, unknown>;
+      for (const [oldId, newId] of Object.entries(ITEM_REMAP)) {
+        const val = obj[oldId];
+        if (typeof val === "number" && Number.isFinite(val) && val > 0) {
+          const prev =
+            typeof obj[newId] === "number" && Number.isFinite(obj[newId] as number)
+              ? (obj[newId] as number)
+              : 0;
+          obj[newId] = prev + val;
+        }
+        delete obj[oldId];
+      }
+    };
+
+    remapRecord(data.inventory);
+    remapRecord(data.targetAmounts);
+
+    if (Array.isArray(data.villagers)) {
+      data.villagers = data.villagers.map((v: Record<string, unknown>) => {
+        const next = { ...v };
+        if (next.equipment && typeof next.equipment === "object") {
+          const eq = { ...(next.equipment as Record<string, unknown>) };
+          if (typeof eq.weapon === "string" && ITEM_REMAP[eq.weapon]) {
+            eq.weapon = ITEM_REMAP[eq.weapon];
+          }
+          if (typeof eq.armor === "string" && ITEM_REMAP[eq.armor]) {
+            eq.armor = ITEM_REMAP[eq.armor];
+          }
+          next.equipment = eq;
+        }
+        if (typeof next.potionItemId === "string" && ITEM_REMAP[next.potionItemId]) {
+          next.potionItemId = ITEM_REMAP[next.potionItemId];
+        }
+        if (typeof next.activeFoodBuffId === "string" && ITEM_REMAP[next.activeFoodBuffId]) {
+          next.activeFoodBuffId = ITEM_REMAP[next.activeFoodBuffId];
+        }
+        return next;
+      });
+    }
+
+    if (Array.isArray(data.tradeRules)) {
+      data.tradeRules = data.tradeRules.map((r: Record<string, unknown>) => ({
+        ...r,
+        itemId:
+          typeof r.itemId === "string" && ITEM_REMAP[r.itemId] ? ITEM_REMAP[r.itemId] : r.itemId,
+      }));
+    }
+
+    data.saveVersion = 7;
   },
 };
 

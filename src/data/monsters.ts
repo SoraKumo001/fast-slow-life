@@ -38,8 +38,8 @@ export const MONSTERS: Record<string, Monster> = {
     vit: 5,
     expReward: 150,
     drops: [
-      { itemId: "bone", chance: 1.0 },
-      { itemId: "leather", chance: 0.5 },
+      { itemId: "leather", chance: 1.0 },
+      { itemId: "raw_meat", chance: 0.5 },
     ],
     isBoss: true,
     unlockedAtProgress: 100,
@@ -121,7 +121,6 @@ export const MONSTERS: Record<string, Monster> = {
     expReward: 65,
     drops: [
       { itemId: "raw_meat", chance: 0.6 },
-      { itemId: "bone", chance: 0.4 },
       { itemId: "beast_meat", chance: 0.6 },
     ],
     unlockedAtProgress: 0,
@@ -333,9 +332,8 @@ export const MONSTERS: Record<string, Monster> = {
     vit: 7,
     expReward: 70,
     drops: [
-      { itemId: "feather", chance: 0.8 },
       { itemId: "raw_meat", chance: 0.3 },
-      { itemId: "beast_meat", chance: 0.4 },
+      { itemId: "beast_meat", chance: 0.5 },
     ],
     unlockedAtProgress: 30,
   },
@@ -356,7 +354,7 @@ export const MONSTERS: Record<string, Monster> = {
     expReward: 220,
     drops: [
       { itemId: "wood", chance: 1.0 },
-      { itemId: "ancient_bark", chance: 0.4 },
+      { itemId: "mana_stone", chance: 0.4 },
     ],
     unlockedAtProgress: 20,
   },

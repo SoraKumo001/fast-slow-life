@@ -170,7 +170,7 @@ function runSimulationChunk(
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
           traceLog += `[${formatGameTime(state.currentDay, state.currentHour)}] `;
-          traceLog += `Gold: ${state.gold}, Wheat: ${state.inventory.wheat || 0}, Veg: ${state.inventory.vegetable || 0}, Meat: ${state.inventory.raw_meat || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, TrainingLvl: ${state.facilities.training_ground?.level || 0}, TrainingQueue: ${state.facilities.training_ground?.trainingQueue?.length || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
+          traceLog += `Gold: ${state.gold}, Wheat: ${state.inventory.wheat || 0}, Meat: ${state.inventory.raw_meat || 0}, Wood: ${state.inventory.wood || 0}, MarketLvl: ${state.facilities.market?.level || 0}, TrainingLvl: ${state.facilities.training_ground?.level || 0}, TrainingQueue: ${state.facilities.training_ground?.trainingQueue?.length || 0}, Unpaid: ${state.isSalaryUnpaid}, `;
           traceLog += `Villagers: ${state.villagers.map((v) => `${v.name}(Lv.${v.level}, ${v.status}, HP:${v.currentHp}/${v.maxHp}, ST:${v.stamina}, Job:${v.currentJob}, Gold:${v.gold}, Bonus:${(v.bonusStr || 0) + (v.bonusInt || 0) + (v.bonusDex || 0) + (v.bonusAgi || 0) + (v.bonusVit || 0)})`).join(" | ")}\n`;
         }
 
@@ -217,62 +217,52 @@ function runSimulationChunk(
 
         // 1. 目標アイテム設定 of update
         const newTargets: Record<string, number> = {
-          wheat: 20,
-          vegetable: 20,
+          wheat: 30,
           raw_meat: 10,
         }; // 食材は常にキープ
         if (currentTier >= 1) {
           newTargets.wood = 30;
           newTargets.wood_plank = isMarketBuilt ? 15 : 0; // 交易所やアップグレードに必要な中間素材（交易所が建つまではクラフトしない）
-          newTargets.herb = 15;
-          newTargets.mushroom = 10;
+          newTargets.herb = 20;
           newTargets.potion = 5;
           newTargets.wooden_club = 2;
           newTargets.wooden_shield = 2;
         }
         if (currentTier >= 2) {
           newTargets.stone = 25;
-          newTargets.copper_ore = 15;
-          newTargets.iron_ore = 20;
+          newTargets.iron_ore = 25;
           newTargets.silver_ore = 20;
           newTargets.iron_ingot = 10;
           newTargets.iron_sword = 3;
           newTargets.iron_armor = 3;
-          newTargets.wooden_bow = 2;
           newTargets.leather_armor = 2;
         }
         if (currentTier >= 3) {
           newTargets.silver_ingot = 10;
           newTargets.silver_rapier = 3;
           newTargets.silver_chainmail = 3;
-          newTargets.crystal_fragment = 10;
-          newTargets.feather = 5;
-          newTargets.reinforced_plank = 6;
-          newTargets.ultimate_potion = 3;
-          newTargets.food_herb_banquet = 3;
+          newTargets.crystal_fragment = 15;
+          newTargets.high_potion = 3;
+          newTargets.food_beast_roast = 3;
         }
         if (currentTier >= 4) {
           newTargets.mana_stone = 20;
-          newTargets.ancient_bark = 5;
           newTargets.elixir = 5;
           newTargets.mythril_robe = 2;
           newTargets.mythril_staff = 2;
-          newTargets.crystal_powder = 8;
         }
         if (currentTier >= 5) {
           newTargets.dragon_slayer = 3;
           newTargets.dragon_scale_mail = 3;
           newTargets.dark_crystal = 10;
           newTargets.dark_ingot = 6;
-          newTargets.food_dragon_feast = 2;
-          newTargets.phoenix_tear = 2;
+          newTargets.food_dragon_hotpot = 2;
         }
 
         // ボスが未撃破の間は、レベリングと探索のために主要採取アイテムの目標を適度に大きくする
         if (!state.bossDefeated) {
           if (currentTier === 1) {
-            newTargets.wheat = 50;
-            newTargets.vegetable = 50;
+            newTargets.wheat = 80;
             newTargets.raw_meat = 30;
             newTargets.wood = 100;
             newTargets.herb = 100;

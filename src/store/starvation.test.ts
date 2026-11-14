@@ -103,9 +103,9 @@ describe("starvation", () => {
 
     it("複数の生食材を組み合わせて消費できること", () => {
       // 単一の生食材では足りないが、組み合わせれば足りる場合
-      // raw_meat(0.02) + vegetable(0.02) + wheat(0.02) = 0.06 >= 1/24 ≈ 0.0417
+      // raw_meat(0.025) + wheat(0.025) = 0.05 >= 1/24 ≈ 0.0417
       const v = makeVillager({ gold: 0 });
-      const result = processStarvation({ raw_meat: 0.02, vegetable: 0.02, wheat: 0.02 }, [v]);
+      const result = processStarvation({ raw_meat: 0.025, wheat: 0.025 }, [v]);
 
       expect(result.hasStarvation).toBe(false);
       expect((result.villagers as Villager[])[0].isStarving).toBe(false);
