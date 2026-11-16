@@ -18,6 +18,7 @@ import { BossWipeoutAnnouncement } from "./components/ui/BossWipeoutAnnouncement
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ShortcutKey } from "./components/ui/ShortcutKey";
+import { TownPrototypePage } from "./components/three/town/TownPrototypePage";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
 import { useBossDefeatDetector } from "./hooks/useBossDefeatDetector";
@@ -27,6 +28,11 @@ import { useToastStore } from "./hooks/useToastStore";
 import { useGameStore } from "./store/gameStore";
 
 export default function App() {
+  // v2 Phase 0: ?prototype=town でポリゴンの町プロトタイプを単独表示
+  if (new URLSearchParams(location.search).get("prototype") === "town") {
+    return <TownPrototypePage />;
+  }
+
   const { isPaused, playSpeed, gameOver, gameOverReason } = useGameStatus();
   const { advanceHour } = useGameControls();
   const logs = useLogs();
