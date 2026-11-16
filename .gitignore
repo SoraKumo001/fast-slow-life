@@ -44,6 +44,7 @@ out/
 *.tsbuildinfo
 
 debug/
+sim-results/
 .omo/
 .playwright-mcp
 .slim/deepwork/

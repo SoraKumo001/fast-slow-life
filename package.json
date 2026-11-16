@@ -15,7 +15,8 @@
     "tailwind:upgrade": "npx @tailwindcss/upgrade --force",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:balance": "vitest run --config vitest.balance.config.ts scripts/balance-sim.test.ts"
+    "test:balance": "vitest run --config vitest.balance.config.ts scripts/balance-sim.test.ts",
+    "sim": "tsx scripts/sim-run.ts"
   },
   "dependencies": {
     "@types/three": "^0.187.0",

@@ -1,6 +1,5 @@
 import "../src/store/setupMockStorage";
 import * as fs from "node:fs";
-import os from "node:os";
 import * as path from "node:path";
 import { Worker } from "node:worker_threads";
 
@@ -11,7 +10,12 @@ import type { SimulationResult } from "../src/store/balanceSimulator.worker";
 describe("Balance Simulator", () => {
   it("Run game balance simulation (30 times) in parallel", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
-    const numCPUs = Math.min(os.cpus().length || 4, 16);
+    // Sim改善・柱4: ワーカー数は実CPUクォータに合わせる (このVMでは 2 が実測最速)。
+    // SIM_WORKERS で上書き可能。ランはシード固定 (ラン番号 = シード) で再現可能。
+    const numCPUs = Math.max(
+      1,
+      Math.min(parseInt(process.env.SIM_WORKERS || "2", 10) || 2, TOTAL_RUNS),
+    );
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
 
@@ -425,7 +429,11 @@ ${results
 
   it("Run with all soul upgrades maxed out (30 times)", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
-    const numCPUs = Math.min(os.cpus().length || 4, 16);
+    // Sim改善・柱4: ワーカー数は実CPUクォータに合わせる (SIM_WORKERS で上書き可能)
+    const numCPUs = Math.max(
+      1,
+      Math.min(parseInt(process.env.SIM_WORKERS || "2", 10) || 2, TOTAL_RUNS),
+    );
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
 
