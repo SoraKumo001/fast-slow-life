@@ -8,6 +8,8 @@ import { listDemandShortages } from "../../store/market";
 import type { Item } from "../../types/game";
 import { getBestExportPrice } from "../../utils/economyHelpers";
 import {
+  DETAIL_PANEL_WIDTH_PX,
+  detailPanelOpensLeft,
   getCategoryBadgeColor,
   getCategoryLabel,
   getEquipmentBonusString,
@@ -62,6 +64,26 @@ export const InventoryPanel: React.FC = () => {
   }, [selectedItem, closeDetail]);
 
   const listAreaRef = useRef<HTMLDivElement>(null);
+
+  // デスクトップ詳細パネル（幅 24rem = 384px）の開く向き。
+  // リスト右端の右に収まらない場合は左に開く。v2 レイアウトでは在庫パネルが
+  // 画面右端のサイドバー内にあるため、常に右に開くとパネルが画面外へ出てしまう。
+  const [detailOpensLeft, setDetailOpensLeft] = useState(false);
+
+  useEffect(() => {
+    if (!selectedItem) return;
+    const update = () => {
+      const el = listAreaRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      setDetailOpensLeft(
+        detailPanelOpensLeft(rect.left, rect.right, window.innerWidth, DETAIL_PANEL_WIDTH_PX),
+      );
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [selectedItem]);
 
   // アイテムリスト・拡張パネル以外のクリックで閉じる
   // 他のパネルのアイテムクリック時に stopPropagation() が効くようにバブリングフェーズで監視
@@ -298,9 +320,15 @@ export const InventoryPanel: React.FC = () => {
             })}
         </div>
 
-        {/* Desktop: 右側インライン詳細パネル (リストの右端からはみ出す) */}
+        {/* Desktop: インライン詳細パネル (リストの横にはみ出す。収まる側に開く) */}
         {selectedItem && (
-          <div className="hidden lg:flex absolute top-0 left-full w-[24rem] max-h-[75vh] flex-col bg-slate-900 border-l border-slate-800 shadow-2xl z-10 overflow-y-auto rounded-r-xl">
+          <div
+            className={`hidden lg:flex absolute top-0 w-[24rem] max-h-[75vh] flex-col bg-slate-900 border-slate-800 shadow-2xl z-10 overflow-y-auto ${
+              detailOpensLeft
+                ? "right-full border-r rounded-l-xl"
+                : "left-full border-l rounded-r-xl"
+            }`}
+          >
             {/* ヘッダー */}
             <div className="px-4 py-3 border-b border-slate-800 flex items-start justify-between gap-3 shrink-0">
               <div className="flex-1 min-w-0">
