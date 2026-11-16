@@ -12,6 +12,7 @@ import { Villager, DungeonArea, DungeonMonster, DungeonVisualEvent } from "../ty
 import type { RunStats } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
 import { isMagicJob } from "../utils/villagerHelpers";
+import { random } from "./random";
 import {
   executePlayerAttack,
   executeEnemyAttack,
@@ -460,7 +461,7 @@ export function processPartyHunt(
       // これによりパーティを組むことへの報酬が増える設計になっている。
       enemy.drops.forEach((drop) => {
         const hunterBonus = member.currentJob === "猟師" ? 1.5 : 1.0;
-        if (Math.random() < drop.chance * hunterBonus) {
+        if (random() < drop.chance * hunterBonus) {
           const acqRes = processItemAcquisition(member, drop.itemId, 1, currentGold, nextInventory);
           currentGold = acqRes.playerGold;
           nextInventory = { ...acqRes.inventory };
@@ -752,7 +753,7 @@ export function processVillagerHunt(
 
         enemy.drops.forEach((drop) => {
           const hunterBonus = v.currentJob === "猟師" ? 1.5 : 1.0;
-          if (Math.random() < drop.chance * hunterBonus) {
+          if (random() < drop.chance * hunterBonus) {
             const acqRes = processItemAcquisition(v, drop.itemId, 1, currentGold, nextInventory);
             currentGold = acqRes.playerGold;
             nextInventory = { ...acqRes.inventory };

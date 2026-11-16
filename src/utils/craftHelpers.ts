@@ -1,8 +1,9 @@
 import { CRAFTER_TIME_REDUCTION, CRAFT_DEX_FACTOR } from "../constants";
+import { random } from "../store/random";
 import { Villager } from "../types/game";
 
 export function generateId(): string {
-  return Math.random().toString(36).substring(2);
+  return random().toString(36).substring(2);
 }
 
 export function calculateCraftTime(

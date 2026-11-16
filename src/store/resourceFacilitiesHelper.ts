@@ -1,5 +1,6 @@
 import { Facility, FacilityType } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
+import { random } from "./random";
 
 export interface ResourceProductionResult {
   inventory: Record<string, number>;
@@ -47,7 +48,7 @@ export function processResourceFacilities(
       nextInventory.raw_meat = (nextInventory.raw_meat || 0) + producedRawMeat;
 
     // Lv3+: 薬草を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
-    if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
+    if (lvl >= 3 && random() < (lvl - 2) * 0.3) {
       producedHerb = 1;
       nextInventory.herb = (nextInventory.herb || 0) + 1;
     }
@@ -58,7 +59,7 @@ export function processResourceFacilities(
     nextInventory.wood = (nextInventory.wood || 0) + producedWood;
 
     // Lv3+: 木板を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
-    if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
+    if (lvl >= 3 && random() < (lvl - 2) * 0.3) {
       producedWoodPlank = 1;
       nextInventory.wood_plank = (nextInventory.wood_plank || 0) + 1;
     }
@@ -69,17 +70,17 @@ export function processResourceFacilities(
     nextInventory.stone = (nextInventory.stone || 0) + producedStone;
 
     // Lv3+: 鉄鉱石を確率生産 (Lv3:30%, Lv4:60%, Lv5:90%)
-    if (lvl >= 3 && Math.random() < (lvl - 2) * 0.3) {
+    if (lvl >= 3 && random() < (lvl - 2) * 0.3) {
       producedIronOre = 1;
       nextInventory.iron_ore = (nextInventory.iron_ore || 0) + 1;
     }
     // Lv4+: 鉄インゴットを確率生産 (Lv4:20%, Lv5:40%)
-    if (lvl >= 4 && Math.random() < (lvl - 3) * 0.2) {
+    if (lvl >= 4 && random() < (lvl - 3) * 0.2) {
       producedIronIngot = 1;
       nextInventory.iron_ingot = (nextInventory.iron_ingot || 0) + 1;
     }
     // Lv5+: 銀鉱石を確率生産 (25%)
-    if (lvl >= 5 && Math.random() < 0.25) {
+    if (lvl >= 5 && random() < 0.25) {
       producedSilverOre = 1;
       nextInventory.silver_ore = (nextInventory.silver_ore || 0) + 1;
     }

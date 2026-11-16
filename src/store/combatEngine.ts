@@ -17,6 +17,7 @@ import {
   RunStats,
 } from "../types/game";
 import { LogPayload } from "./gameLoopTypes";
+import { random } from "./random";
 
 export function getFoodBuffBonus(
   buffId: string | null,
@@ -213,7 +214,7 @@ export function executePlayerAttack(params: ExecutePlayerAttackParams): {
   const buffDex = getFoodBuffBonus(attacker.activeFoodBuffId || null, "dex");
   const effectiveDex = applySalaryDebuff(attacker.dex + buffDex, isSalaryUnpaid);
   const hitRate = calculateHitRate(effectiveDex, defender.agi);
-  const isHit = Math.random() * 100 < hitRate;
+  const isHit = random() * 100 < hitRate;
 
   if (stats) stats.totalAttacksAttempted += 1;
 
@@ -231,7 +232,7 @@ export function executePlayerAttack(params: ExecutePlayerAttackParams): {
 
   if (stats) stats.totalAttacksLanded += 1;
   const critRate = calculateCritRate(effectiveDex);
-  const isCritical = Math.random() * 100 < critRate;
+  const isCritical = random() * 100 < critRate;
 
   const damage = calculatePlayerDamage({
     attacker,
@@ -295,7 +296,7 @@ export function executeEnemyAttack(params: ExecuteEnemyAttackParams): {
   const buffAgi = getFoodBuffBonus(defender.activeFoodBuffId || null, "agi");
   const effectiveAgi = applySalaryDebuff(defender.agi + buffAgi, isSalaryUnpaid);
   const hitRate = calculateHitRate(attacker.dex, effectiveAgi);
-  const isHit = Math.random() * 100 < hitRate;
+  const isHit = random() * 100 < hitRate;
 
   if (!isHit) {
     return {
@@ -310,7 +311,7 @@ export function executeEnemyAttack(params: ExecuteEnemyAttackParams): {
   }
 
   const critRate = calculateCritRate(attacker.dex);
-  const isCritical = Math.random() * 100 < critRate;
+  const isCritical = random() * 100 < critRate;
 
   const damage = calculateEnemyDamage({
     attacker,

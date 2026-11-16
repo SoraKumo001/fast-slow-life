@@ -12,6 +12,7 @@ import { Villager, Facility, FacilityType, RunStats } from "../types/game";
 import { calculateCraftTime, generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
 import { tryLevelUp } from "./levelUpHelper";
+import { random } from "./random";
 import { processTrainingQueue } from "./trainingLogic";
 
 export function processCraftingAndUpgrades(
@@ -124,7 +125,7 @@ export function processCraftingAndUpgrades(
             }
           }
         }
-        const isGreatSuccess = Math.random() < successBonus;
+        const isGreatSuccess = random() < successBonus;
         const recipe = getRecipeForItem(updatedJob.itemId);
         const craftCount = (recipe?.outputCount || 1) * (isGreatSuccess ? 2 : 1);
 

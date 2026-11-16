@@ -17,6 +17,7 @@ import {
 } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
 import { isMagicJob } from "../utils/villagerHelpers";
+import { random } from "./random";
 import {
   executePlayerAttack,
   executeEnemyAttack,
@@ -262,7 +263,7 @@ export function processBossBattle(
           );
           if (nextActiveBoss.currentHp <= 0 || activeAttackers.length === 0) break;
 
-          const target = activeAttackers[Math.floor(Math.random() * activeAttackers.length)];
+          const target = activeAttackers[Math.floor(random() * activeAttackers.length)];
           const vIdx = nextVillagers.findIndex((v) => v.id === target.id);
           if (vIdx === -1) continue;
 
