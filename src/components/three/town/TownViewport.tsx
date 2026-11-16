@@ -51,8 +51,8 @@ interface SkyKey {
 
 const SKY_KEYS: SkyKey[] = [
   { hour: 0, sky: 0x0b1026, ambientIntensity: 0.34, ambientColor: 0x8fa3cc, sunIntensity: 0.1, sunColor: 0xafc4ff, sunElevation: 0.35, windowGlow: 1, lampGlow: 1 },
-  { hour: 5, sky: 0x0e1430, ambientIntensity: 0.36, ambientColor: 0x8fa3cc, sunIntensity: 0.12, sunColor: 0xafc4ff, sunElevation: 0.3, windowGlow: 1, lampGlow: 1 },
-  { hour: 6.5, sky: 0xdf9a6a, ambientIntensity: 0.58, ambientColor: 0xffd9b0, sunIntensity: 0.65, sunColor: 0xffb37a, sunElevation: 0.14, windowGlow: 0.35, lampGlow: 0.35 },
+  { hour: 5, sky: 0x0e1430, ambientIntensity: 0.52, ambientColor: 0x9db1d9, sunIntensity: 0.2, sunColor: 0xafc4ff, sunElevation: 0.3, windowGlow: 1, lampGlow: 1 },
+  { hour: 6.5, sky: 0xdf9a6a, ambientIntensity: 0.68, ambientColor: 0xffd9b0, sunIntensity: 0.72, sunColor: 0xffb37a, sunElevation: 0.14, windowGlow: 0.35, lampGlow: 0.35 },
   { hour: 9, sky: 0x87bfe8, ambientIntensity: 0.88, ambientColor: 0xffffff, sunIntensity: 1.2, sunColor: 0xfff2d8, sunElevation: 0.75, windowGlow: 0, lampGlow: 0 },
   { hour: 16, sky: 0x84b6e2, ambientIntensity: 0.85, ambientColor: 0xffffff, sunIntensity: 1.1, sunColor: 0xffeec9, sunElevation: 0.55, windowGlow: 0, lampGlow: 0 },
   { hour: 18.5, sky: 0xe88a52, ambientIntensity: 0.6, ambientColor: 0xffc9a0, sunIntensity: 0.7, sunColor: 0xff9a5a, sunElevation: 0.12, windowGlow: 0.55, lampGlow: 0.55 },
@@ -101,8 +101,9 @@ export const TownViewport: React.FC<TownViewportProps> = ({
 
   const camRef = useRef({
     azimuth: 0, // 現在の方位角 (ラジアン、連続値)
-    distance: 34,
-    targetDistance: 34,
+    // 初期距離は町全体が入る最大寄り (Phase 0 所見の修正)
+    distance: 46,
+    targetDistance: 46,
     centerX: 0,
     centerZ: 0,
     targetCenterX: 0,

@@ -18,6 +18,10 @@ import { BossWipeoutAnnouncement } from "./components/ui/BossWipeoutAnnouncement
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ShortcutKey } from "./components/ui/ShortcutKey";
+import {
+  GameTownViewport,
+  type TownSideTab,
+} from "./components/three/town/GameTownViewport";
 import { TownPrototypePage } from "./components/three/town/TownPrototypePage";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
@@ -33,6 +37,9 @@ export default function App() {
     return <TownPrototypePage />;
   }
 
+  // v2 Phase 1: ?classic=1 で従来の4カラム画面に戻す
+  const isClassic = new URLSearchParams(location.search).get("classic") === "1";
+
   const { isPaused, playSpeed, gameOver, gameOverReason } = useGameStatus();
   const { advanceHour } = useGameControls();
   const logs = useLogs();
@@ -42,6 +49,7 @@ export default function App() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [bossAreaId, setBossAreaId] = useState<string | null>(null);
   const [gameOverTab, setGameOverTab] = useState<"result" | "soul">("result");
+  const [sideTab, setSideTab] = useState<TownSideTab>("villagers");
   const lastLogIdRef = useRef<string | null>(null);
   const settingsDrawer = useSettingsDrawer();
 
@@ -123,8 +131,9 @@ export default function App() {
         {/* Toast通知 */}
         <ToastContainer />
 
-        {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
-        <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
+        {isClassic ? (
+          /* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */
+          <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
           {/* 1. 素材・アイテム */}
           <div className="h-125 lg:h-full min-w-0">
             <InventoryPanel />
@@ -140,11 +149,67 @@ export default function App() {
             <FacilityList />
           </div>
 
-          {/* 4. ダンジョン派遣 */}
-          <div className="h-125 lg:h-full overflow-hidden">
-            <DungeonPanel />
-          </div>
-        </main>
+            {/* 4. ダンジョン派遣 */}
+            <div className="h-125 lg:h-full overflow-hidden">
+              <DungeonPanel />
+            </div>
+          </main>
+        ) : (
+          /* v2 Phase 1: 町ビューポート (主) + タブ式サイドパネル */
+          <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
+            <div className="flex-1 min-w-0 h-[440px] shrink-0 lg:h-auto lg:shrink">
+              <GameTownViewport onSelectTab={setSideTab} heightClass="h-full" />
+            </div>
+
+            <aside className="w-full lg:w-[420px] shrink-0 flex flex-col min-h-0 h-[580px] lg:h-auto">
+              <div className="flex gap-1 mb-2 bg-slate-950/60 p-1 rounded-lg border border-slate-800 shrink-0">
+                {(
+                  [
+                    { id: "inventory", label: "在庫" },
+                    { id: "villagers", label: "村人" },
+                    { id: "facilities", label: "施設" },
+                    { id: "dungeons", label: "ダンジョン" },
+                  ] as { id: TownSideTab; label: string }[]
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSideTab(tab.id)}
+                    className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition ${
+                      sideTab === tab.id
+                        ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1 min-h-0">
+                {sideTab === "inventory" && (
+                  <div className="h-full min-h-0">
+                    <InventoryPanel />
+                  </div>
+                )}
+                {sideTab === "villagers" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <VillagerList />
+                  </div>
+                )}
+                {sideTab === "facilities" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <FacilityList />
+                  </div>
+                )}
+                {sideTab === "dungeons" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <DungeonPanel />
+                  </div>
+                )}
+              </div>
+            </aside>
+          </main>
+        )}
 
         {/* ボス撃破 / 全滅アナウンス */}
         <BossDefeatAnnouncement />
