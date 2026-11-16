@@ -25,7 +25,8 @@ export type TownActivity =
   | "sleep"
   | "dungeon"
   | "meal"
-  | "stroll";
+  | "stroll"
+  | "defence";
 
 export interface VillagerDestination {
   buildingId: string;
@@ -117,6 +118,7 @@ export function resolveVillagerDestination(
   hour: number,
   villagerIndex?: number,
   villagers?: readonly Villager[],
+  defenceActive?: boolean,
 ): VillagerDestination {
   const idx = villagerIndex ?? indexFromId(villager.id);
   const dest = (
@@ -148,6 +150,12 @@ export function resolveVillagerDestination(
     (villager.status === "active" && villager.destinationAreaId != null)
   ) {
     return dest(GATE_DEF, "dungeon");
+  }
+
+  // 2.5 防衛戦中 (Phase 4b): 町にいる村人は通常の生活・作業を止めて門に集結する。
+  // ボス戦分岐 (行1) と同種の扱い。町外の村人は行1・行2で既に処理されている。
+  if (defenceActive) {
+    return dest(GATE_DEF, "defence");
   }
 
   // 3/4/5. 施設作業の割り当て (assignedCraftJobId が指すキューの種類で判別)

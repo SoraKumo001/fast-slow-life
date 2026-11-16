@@ -29,6 +29,8 @@ export function dispatchIdleVillagersHelper(params: {
   bossDefeated: boolean;
   gold: number;
   facilities: Record<FacilityType, Facility>;
+  /** Phase 4b: 襲撃発生中はこのダンジョンへの新規派遣を止める */
+  blockedAreaId?: string | null;
 }): DispatchResult {
   const {
     villagers,
@@ -40,6 +42,11 @@ export function dispatchIdleVillagersHelper(params: {
     gold,
     facilities,
   } = params;
+
+  // 襲撃元ダンジョンは派遣先候補から除外する
+  const selectableDungeons = params.blockedAreaId
+    ? dungeons.filter((d) => d.id !== params.blockedAreaId)
+    : dungeons;
 
   const hasIdleVillagers = villagers.some((v) => v.status === "idle" && v.order !== "rest");
   if (!hasIdleVillagers) {
@@ -141,7 +148,7 @@ export function dispatchIdleVillagersHelper(params: {
         });
 
         for (const missingId of sortedMissingItemIds) {
-          const area = dungeons.find(
+          const area = selectableDungeons.find(
             (d) =>
               d.unlockedAtTier <= currentTier &&
               d.gathers.some(
@@ -167,7 +174,7 @@ export function dispatchIdleVillagersHelper(params: {
             break;
           }
 
-          const dropArea = dungeons.find(
+          const dropArea = selectableDungeons.find(
             (d) =>
               d.unlockedAtTier <= currentTier &&
               d.monsters.some(
@@ -196,7 +203,7 @@ export function dispatchIdleVillagersHelper(params: {
 
       if (!targetAreaId) {
         // 目標アイテムが不足していない場合の自動稼ぎ派遣
-        const maxUnlockedDungeon = [...dungeons]
+        const maxUnlockedDungeon = [...selectableDungeons]
           .filter((d) => d.unlockedAtTier <= currentTier)
           .sort((a, b) => b.unlockedAtTier - a.unlockedAtTier)[0];
 

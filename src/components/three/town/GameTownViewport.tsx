@@ -15,6 +15,7 @@ import type { Villager } from "../../../types/game";
 import { describeTransition, useFootprintStore } from "../../../store/life/footprint";
 import { deriveNeeds } from "../../../store/life/needs";
 import { findPath } from "../../../store/life/pathfinding";
+import { getTotalElapsedHours, isRaidFighting } from "../../../store/raidLogic";
 import {
   resolveVillagerDestination,
   weatherForDay,
@@ -162,7 +163,14 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
   const activeBoss = useGameStore((s) => s.activeBoss);
   const gameOver = useGameStore((s) => s.gameOver);
   const dungeons = useGameStore((s) => s.dungeons);
+  const raid = useGameStore((s) => s.raid);
   const footprintEntries = useFootprintStore((s) => s.entries);
+
+  // Phase 4b: 防衛戦中（襲撃が到着済み）は町の村人を門に集結させる
+  const defenceActive = isRaidFighting(
+    raid,
+    getTotalElapsedHours(currentDay, currentHour),
+  );
 
   const propsRef = useRef({
     villagers,
@@ -174,6 +182,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     activeBoss,
     gameOver,
     dungeons,
+    defenceActive,
     azimuthDeg,
   });
   propsRef.current = {
@@ -186,6 +195,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     activeBoss,
     gameOver,
     dungeons,
+    defenceActive,
     azimuthDeg,
   };
 
@@ -393,6 +403,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
           p.currentHour,
           i,
           p.villagers,
+          p.defenceActive,
         );
         const destKey = `${dest.buildingId}:${dest.activity}:${dest.lifeAction ?? ""}`;
         let rt = agents.get(v.id);
@@ -952,13 +963,23 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     const v = villagers.find((x) => x.id === selection.id);
     if (v) {
       const idx = villagers.indexOf(v);
-      const dest = resolveVillagerDestination(v, facilities, activeBoss, currentHour, idx, villagers);
+      const dest = resolveVillagerDestination(
+        v,
+        facilities,
+        activeBoss,
+        currentHour,
+        idx,
+        villagers,
+        defenceActive,
+      );
       const destDef = getBuildingById(dest.buildingId);
       const statusText =
         dest.activity === "work"
           ? `${destDef?.name ?? "施設"}で作業中`
-          : dest.activity === "dungeon"
-            ? "ダンジョン遠征中"
+          : dest.activity === "defence"
+            ? "防衛戦で門を守っている"
+            : dest.activity === "dungeon"
+              ? "ダンジョン遠征中"
             : dest.activity === "rest"
               ? "休息中"
               : dest.activity === "sleep"

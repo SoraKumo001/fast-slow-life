@@ -6,6 +6,7 @@ import { FacilityList } from "./components/game/FacilityList";
 import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
 import { ActiveBossBar } from "./components/layout/ActiveBossBar";
+import { RaidBanner } from "./components/layout/RaidBanner";
 import { Header } from "./components/layout/Header";
 import { LogHistoryWindow } from "./components/layout/LogHistoryWindow";
 import { SettingsDrawer, useSettingsDrawer } from "./components/layout/SettingsDrawer";
@@ -127,6 +128,9 @@ export default function App() {
 
         {/* アクティブボスバー (P2-3) */}
         <ActiveBossBar />
+
+        {/* 襲撃バナー (Phase 4b) */}
+        <RaidBanner />
 
         {/* Toast通知 */}
         <ToastContainer />

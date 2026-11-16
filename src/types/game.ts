@@ -279,7 +279,7 @@ export interface DungeonArea {
   monsters: DungeonMonster[];
   explorationProgress: number; // 追加：現在の探索度 (0 - 100)
   difficulty: number; // 追加：探索難易度
-  threatLevel: number; // 脅威度 (0-100) — 100% 到達で即ゲームオーバー
+  threatLevel: number; // 脅威度 (0-100) — 100% 到達で襲撃イベント発生（Phase 4b）
 }
 
 export interface GameLog {
@@ -465,8 +465,16 @@ export interface RaidState {
   dungeonId: string;
   /** 到着時刻（累計時間 = (day-1)*24 + hour） */
   arrivesAtElapsedHour: number;
-  /** 襲撃してくる魔物のID一覧 */
+  /**
+   * 襲撃してくる魔物のインスタンスID一覧。
+   * インスタンスID は `${モンスターID}@${連番}` 形式（同種が複数来る場合に区別する）。
+   */
   monsterIds: string[];
+  /**
+   * インスタンスID → 現在HP（防衛戦のラウンドをまたいで保持される）。
+   * Phase 4b で追加。4a 時点のセーブに無い場合は raidLogic 側で満タンとして扱う。
+   */
+  monsterHps: Record<string, number>;
 }
 
 export interface GameWorld {

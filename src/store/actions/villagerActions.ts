@@ -12,6 +12,15 @@ export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
     targetMonsterId?: string | null;
   }) => {
     const state = get();
+    // Phase 4b: 襲撃発生中のダンジョンへは新規派遣できない
+    if (params.areaId && state.raid?.dungeonId === params.areaId) {
+      const area = state.dungeons.find((d) => d.id === params.areaId);
+      state.addLog(
+        `【襲撃】${area?.name ?? "ダンジョン"} は魔物の群れが接近中のため派遣できません。`,
+        "warning",
+      );
+      return;
+    }
     const result = setVillagerOrderHelper({
       villagerId: params.id,
       order: params.order,
@@ -93,6 +102,16 @@ export const createVillagerActions = (set: StoreSet, get: StoreGet) => ({
     const state = get();
     const ids = params.villagerIds.slice(0, 4);
     if (ids.length === 0) return;
+
+    // Phase 4b: 襲撃発生中のダンジョンへは新規派遣できない
+    if (state.raid?.dungeonId === params.areaId) {
+      const area = state.dungeons.find((d) => d.id === params.areaId);
+      state.addLog(
+        `【襲撃】${area?.name ?? "ダンジョン"} は魔物の群れが接近中のため派遣できません。`,
+        "warning",
+      );
+      return;
+    }
 
     let villagers = state.villagers;
     let inventory = state.inventory;

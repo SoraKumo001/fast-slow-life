@@ -64,7 +64,10 @@ export function isThreatActive(
 
 /**
  * すべての未攻略ダンジョンの脅威度を更新する。
- * 100% 到達時は gameOver フラグと理由を返す。
+ * Phase 4b: 100% 到達してもゲームオーバーにはならない。
+ * 代わりに、最初に 100% に達した（または既に達している）ダンジョンのIDを
+ * raidDungeonId として返し、呼び出し側（threatPhase）が襲撃イベントを生成する。
+ * gameOver / gameOverReason は互換のため残すが、常に false / null。
  */
 export function updateAllThreatLevels(
   dungeons: DungeonArea[],
@@ -79,14 +82,26 @@ export function updateAllThreatLevels(
   maxThreatReached: number;
   gameOver: boolean;
   gameOverReason: string | null;
+  raidDungeonId: string | null;
 } {
   const totalHours = getTotalElapsedHours(currentDay, currentHour);
   const logs: LogPayload[] = [];
   let maxThreat = 0;
-  let gameOver = false;
-  let gameOverReason: string | null = null;
+  let raidDungeonId: string | null = null;
 
   const nextDungeons = dungeons.map((d) => {
+    // 既に 100% に達しているダンジョンも襲撃対象として検出する
+    // （襲撃解決後に別のダンジョンが 100% のまま残っているケース）。
+    // isThreatActive は 100% で false を返すため、適格判定はここで個別に行う。
+    if (
+      raidDungeonId === null &&
+      d.threatLevel >= THREAT_MAX &&
+      d.unlockedAtTier === currentTier &&
+      !bossDefeated
+    ) {
+      raidDungeonId = d.id;
+    }
+
     if (!isThreatActive(d, currentTier, bossDefeated)) {
       if (d.threatLevel > maxThreat) maxThreat = d.threatLevel;
       return d;
@@ -106,13 +121,12 @@ export function updateAllThreatLevels(
 
     if (capped > maxThreat) maxThreat = capped;
 
-    // 100% 到達でゲームオーバー
-    if (capped >= THREAT_MAX && !gameOver) {
-      gameOver = true;
-      gameOverReason = "脅威度";
+    // 100% 到達 → 襲撃イベントの対象として記録（ゲームオーバーにはしない）
+    if (capped >= THREAT_MAX && raidDungeonId === null) {
+      raidDungeonId = d.id;
       logs.push({
-        message: `【ゲームオーバー】${d.name} の脅威度が限界 (100%) に達しました。村は壊滅しました…`,
-        type: "error",
+        message: `【警告】${d.name} の脅威度が限界 (100%) に達しました！魔物の群れが町へ進軍を始めます…`,
+        type: "warning",
       });
     }
 
@@ -123,8 +137,9 @@ export function updateAllThreatLevels(
     dungeons: nextDungeons,
     logs,
     maxThreatReached: maxThreat,
-    gameOver,
-    gameOverReason,
+    gameOver: false,
+    gameOverReason: null,
+    raidDungeonId,
   };
 }
 

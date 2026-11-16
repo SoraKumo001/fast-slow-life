@@ -14,6 +14,7 @@ import { bossBattlePhase } from "./phases/bossBattle";
 import { economyPhase } from "./phases/economy";
 import { explorationPhase } from "./phases/exploration";
 import { productionPhase } from "./phases/production";
+import { raidPhase } from "./phases/raidPhase";
 import { survivalPhase } from "./phases/survival";
 import { threatPhase } from "./phases/threatPhase";
 import { villagersPhase } from "./phases/villagers";
@@ -34,6 +35,7 @@ export { processVillagerActivities } from "../villagerAI";
 const PHASES = [
   survivalPhase,
   threatPhase,
+  raidPhase,
   explorationPhase,
   productionPhase,
   bossBattlePhase,

@@ -46,6 +46,7 @@ export const useDungeons = () =>
       activeBoss: s.activeBoss,
       bossDefeated: s.bossDefeated,
       revealedNodes: s.revealedNodes,
+      raid: s.raid,
     })),
   );
 
