@@ -93,8 +93,8 @@ function makeBaseState(): GameState & GameActions {
 }
 
 describe("persistence.SAVE_VERSION", () => {
-  it("現在のセーブデータバージョンは 7 であること", () => {
-    expect(SAVE_VERSION).toBe(7);
+  it("現在のセーブデータバージョンは 8 であること", () => {
+    expect(SAVE_VERSION).toBe(8);
   });
 });
 
@@ -401,6 +401,22 @@ describe("persistence.merge - マイグレーション", () => {
     expect(merged.villagers[0].potionItemId).toBe("high_potion");
     expect(merged.villagers[0].activeFoodBuffId).toBe("food_bread");
     expect(merged.tradeRules[0].itemId).toBe("iron_ore");
+  });
+
+  it("v7 → v8 マイグレーションで経済v2フィールドが初期値で追加され、既存の gold は引き継がれること", () => {
+    const state = makeBaseState();
+    const persisted = {
+      saveVersion: 7,
+      gold: 1234,
+      inventory: { wheat: 10 },
+    };
+    const merged = merge(persisted, state);
+    const mergedAny = merged as unknown as { saveVersion: number };
+    expect(mergedAny.saveVersion).toBe(SAVE_VERSION);
+    expect(merged.gold).toBe(1234);
+    expect(merged.marketPrices).toEqual({});
+    expect(merged.pricePolicy).toBe("standard");
+    expect(merged.lastSettlement).toBeNull();
   });
 
   it("saveVersion がすでに最新の場合は何もしないこと", () => {

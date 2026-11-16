@@ -16,6 +16,9 @@ import {
   Town,
   Caravan,
   RunStats,
+  PricePolicy,
+  DailySettlement,
+  DailyFlows,
 } from "../types/game";
 import {
   getInitialVillagers,
@@ -26,6 +29,7 @@ import {
   getInitialTowns,
   getInitialCaravans,
   getInitialStats,
+  getInitialDailyFlows,
 } from "./initialState";
 
 /** ゲーム終了時の獲得SPを計算する共通ヘルパー */
@@ -52,6 +56,10 @@ export interface ResetResult {
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];
   inventory: Record<string, number>;
+  marketPrices: Record<string, number>;
+  pricePolicy: PricePolicy;
+  lastSettlement: DailySettlement | null;
+  dailyFlows: DailyFlows;
   targetAmounts: Record<string, number>;
   tradeRules: TradeRule[];
   logs: GameLog[];
@@ -125,6 +133,10 @@ export function resetGameHelper(params: {
     facilities: getInitialFacilities(),
     dungeons: getInitialDungeons(),
     inventory: createInitialInventory(startFood),
+    marketPrices: {},
+    pricePolicy: "standard",
+    lastSettlement: null,
+    dailyFlows: getInitialDailyFlows(),
     targetAmounts: getDefaultTargetAmounts(),
     tradeRules: [],
     logs,

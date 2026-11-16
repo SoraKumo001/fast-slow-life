@@ -7,11 +7,16 @@ export function processItemPoolPurchase(
   inventory: Record<string, number>,
   villagers: Villager[],
   stats?: RunStats,
+  marketPrices?: Record<string, number>,
 ): {
   gold: number;
   inventory: Record<string, number>;
   villagers: Villager[];
   logs: LogPayload[];
+  /** この呼び出しで買取に使った合計額（日次精算用） */
+  totalSpent: number;
+  /** 金庫不足で買い残しが発生したか（価格0で対象外のものは含まない） */
+  hasFundShortageLeftover: boolean;
 } {
   let nextGold = gold;
   const nextInventory = { ...inventory };
@@ -20,6 +25,8 @@ export function processItemPoolPurchase(
     pool: { ...(v.pool || {}) },
   }));
   const logs: LogPayload[] = [];
+  let totalSpent = 0;
+  let hasFundShortageLeftover = false;
 
   for (const v of nextVillagers) {
     if (!v.pool) continue;
@@ -30,10 +37,16 @@ export function processItemPoolPurchase(
       const item = ITEMS[itemId];
       if (!item) continue;
 
-      const price = item.basePrice;
+      // 経済v2: 単価は市場価格（なければ basePrice にフォールバック）
+      const price = marketPrices?.[itemId] ?? item.basePrice;
       if (price <= 0) continue;
 
-      const buyCount = count;
+      // 予算制限: 金庫が払える個数だけ買う。買えなかった分は pool に残る
+      const affordable = nextGold > 0 ? Math.floor(nextGold / price) : 0;
+      const buyCount = Math.min(count, affordable);
+      if (buyCount < count) {
+        hasFundShortageLeftover = true;
+      }
 
       if (buyCount > 0) {
         const cost = buyCount * price;
@@ -42,6 +55,7 @@ export function processItemPoolPurchase(
           stats.totalGoldFromPurchases += cost;
         }
         nextGold -= cost;
+        totalSpent += cost;
         v.gold = (v.gold || 0) + cost;
         v.pool[itemId] -= buyCount;
         nextInventory[itemId] = (nextInventory[itemId] || 0) + buyCount;
@@ -51,7 +65,7 @@ export function processItemPoolPurchase(
         }
 
         logs.push({
-          message: `【自動買取】仮置き場から ${v.name} の ${item.name} x${buyCount} を計 ${cost} G で購入しました。`,
+          message: `【自動買取】仮置き場から ${v.name} の ${item.name} x${buyCount} を単価 ${price} G、計 ${cost} G で購入しました。`,
           type: "info",
         });
       }
@@ -63,6 +77,8 @@ export function processItemPoolPurchase(
     inventory: nextInventory,
     villagers: nextVillagers,
     logs,
+    totalSpent,
+    hasFundShortageLeftover,
   };
 }
 

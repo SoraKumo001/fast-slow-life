@@ -24,6 +24,7 @@ export const productionPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
   acc.inventory = { ...acc.inventory, ...craftRes.inventory };
   acc.gold = craftRes.gold;
   acc.logsToAppend.push(...craftRes.logs);
+  if (acc.dailyFlows) acc.dailyFlows.craftWages += craftRes.craftWagesPaid;
 
   // ---- Resource Facilities (every 12 hours) ----
   if (acc.currentHour % 12 === 0) {

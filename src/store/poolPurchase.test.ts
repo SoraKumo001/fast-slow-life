@@ -105,6 +105,52 @@ describe("poolPurchase", () => {
       expect(result.logs[0].message).toContain("アルフ");
       expect(result.logs[0].message).toContain("自動買取");
     });
+
+    it("市場価格が渡された場合は市場価格で買い取ること", () => {
+      // wheat basePrice=1 だが市場価格 5G → 3個で 15G
+      const v = makeVillager({ pool: { wheat: 3 } });
+      const result = processItemPoolPurchase(100, {}, [v], undefined, { wheat: 5 });
+
+      expect(result.gold).toBe(85);
+      expect(result.villagers[0].gold).toBe(15);
+      expect(result.totalSpent).toBe(15);
+      expect(result.hasFundShortageLeftover).toBe(false);
+      expect(result.logs[0].message).toContain("単価 5 G");
+    });
+
+    it("予算制限: 金庫が払える分だけ買い、残りは pool に残ること", () => {
+      // potion 単価 10G (basePrice), pool 4個, gold 25 → 2個だけ買える
+      const v = makeVillager({ pool: { potion: 4 } });
+      const result = processItemPoolPurchase(25, {}, [v]);
+
+      expect(result.gold).toBe(5);
+      expect(result.inventory.potion).toBe(2);
+      expect(result.villagers[0].gold).toBe(20);
+      expect(result.villagers[0].pool.potion).toBe(2);
+      expect(result.totalSpent).toBe(20);
+      expect(result.hasFundShortageLeftover).toBe(true);
+    });
+
+    it("予算制限: 金庫が 0 の場合は何も買わず、不足フラグが立つこと", () => {
+      const v = makeVillager({ pool: { wheat: 3 } });
+      const result = processItemPoolPurchase(0, {}, [v]);
+
+      expect(result.gold).toBe(0);
+      expect(result.inventory.wheat).toBeUndefined();
+      expect(result.villagers[0].pool.wheat).toBe(3);
+      expect(result.totalSpent).toBe(0);
+      expect(result.hasFundShortageLeftover).toBe(true);
+      expect(result.logs).toHaveLength(0);
+    });
+
+    it("予算制限時も stats は実際に買った分だけ集計されること", () => {
+      const v = makeVillager({ pool: { potion: 4 } });
+      const stats = makeStats();
+      processItemPoolPurchase(25, {}, [v], stats);
+
+      expect(stats.totalItemsPurchased).toBe(2);
+      expect(stats.totalGoldFromPurchases).toBe(20);
+    });
   });
 
   describe("processItemAcquisition", () => {

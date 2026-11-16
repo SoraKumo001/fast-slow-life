@@ -385,6 +385,7 @@ export interface GameActions {
   collectCaravan: (caravanId: string) => void;
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
+  setPricePolicy: (policy: PricePolicy) => void;
   setSelectedItem: (item: Item | null) => void;
 }
 
@@ -406,6 +407,32 @@ export interface RunStats {
   totalPotionHealing: number;
 }
 
+/** 価格方針（条例）: 市場価格の水準を決める */
+export type PricePolicy = "cheap" | "standard" | "premium";
+
+/** 夕方の精算: 1日分の内部フロー集計（最新分のみ保持する） */
+export interface DailySettlement {
+  day: number;
+  /** プール買取で金庫から出た額 */
+  poolPurchase: number;
+  /** 食料代として金庫に入った額 */
+  foodIncome: number;
+  /** クラフト賃金で金庫から出た額 */
+  craftWages: number;
+  /** キャラバンの日次ネット（economy フェーズのキャラバン関連処理の gold 差分で近似） */
+  caravanNet: number;
+}
+
+/** 日次フローの進行中アキュムレータ（日境界で精算されリセットされる。永続化しない） */
+export interface DailyFlows {
+  poolPurchase: number;
+  foodIncome: number;
+  craftWages: number;
+  caravanNet: number;
+  /** 買取不足の要約ログをその日に既に出したか（1日1回まで） */
+  poolShortageLogged: boolean;
+}
+
 export interface GameEconomy {
   gold: number;
   soulPoints: number;
@@ -413,6 +440,14 @@ export interface GameEconomy {
   inventory: Record<string, number>;
   targetAmounts: Record<string, number>;
   facilities: Record<FacilityType, Facility>;
+  /** アイテムID → 現在の市場価格（日境界で再計算される） */
+  marketPrices: Record<string, number>;
+  /** 価格方針（翌日の価格再計算から反映される） */
+  pricePolicy: PricePolicy;
+  /** 直近の夕方精算（最新分のみ） */
+  lastSettlement: DailySettlement | null;
+  /** 当日分の内部フロー集計（進行中） */
+  dailyFlows: DailyFlows;
 }
 
 export interface GameWorld {

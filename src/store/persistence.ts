@@ -7,7 +7,7 @@ import { getInitialFacilities } from "./initialState";
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -207,6 +207,14 @@ const migrations: Record<number, SaveMigration> = {
 
     data.saveVersion = 7;
   },
+  // v7 → v8: 経済v2（市場価格・価格方針・夕方精算）フィールド追加。
+  // 既存の gold / pool / 村人 gold はそのまま引き継ぐ（リセットしない）。
+  7: (data) => {
+    data.marketPrices = {};
+    data.pricePolicy = "standard";
+    data.lastSettlement = null;
+    data.saveVersion = 8;
+  },
 };
 
 // ==========================================
@@ -214,7 +222,7 @@ const migrations: Record<number, SaveMigration> = {
 // ==========================================
 export const partialize = (
   state: GameState & GameActions,
-): Omit<GameState, "selectedItem" | "dungeonEvents"> & { saveVersion: number } => ({
+): Omit<GameState, "selectedItem" | "dungeonEvents" | "dailyFlows"> & { saveVersion: number } => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,
@@ -223,6 +231,9 @@ export const partialize = (
   facilities: state.facilities,
   dungeons: state.dungeons,
   inventory: state.inventory,
+  marketPrices: state.marketPrices,
+  pricePolicy: state.pricePolicy,
+  lastSettlement: state.lastSettlement,
   targetAmounts: state.targetAmounts,
   logs: state.logs,
   currentTier: state.currentTier,
@@ -279,6 +290,10 @@ export const merge = <S extends GameState & GameActions>(
     (persisted.soulUpgrades as Record<string, number>) ?? currentState.soulUpgrades;
   merged.lastSchedulerTick =
     (persisted.lastSchedulerTick as number) ?? currentState.lastSchedulerTick;
+  merged.marketPrices =
+    (persisted.marketPrices as Record<string, number>) ?? currentState.marketPrices;
+  merged.pricePolicy =
+    (persisted.pricePolicy as GameState["pricePolicy"]) ?? currentState.pricePolicy;
 
   // フラットな Record は shallow merge
   // B8 修正: 破損セーブで undefined / NaN / Infinity が混入しても

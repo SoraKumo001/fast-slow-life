@@ -24,6 +24,7 @@ import {
   getInitialTowns,
   getInitialCaravans,
   getInitialStats,
+  getInitialDailyFlows,
 } from "./initialState";
 import { partialize, merge, customStorage } from "./persistence";
 
@@ -42,6 +43,10 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   facilities: getInitialFacilities(),
   dungeons: getInitialDungeons(),
   inventory: { ...DEFAULT_INVENTORY },
+  marketPrices: {},
+  pricePolicy: "standard",
+  lastSettlement: null,
+  dailyFlows: getInitialDailyFlows(),
   targetAmounts: getDefaultTargetAmounts(),
   tradeRules: [],
   logs: [

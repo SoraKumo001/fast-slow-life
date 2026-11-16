@@ -9,7 +9,7 @@ import {
 import { FACILITY_UPGRADE_MATERIALS } from "../data/facilityUpgradeMaterials";
 import { DUNGEONS, ITEMS } from "../data/masterData";
 import { TOWNS_DATA } from "../data/towns";
-import type { RunStats } from "../types/game";
+import type { DailyFlows, RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager, generateRandomName } from "../utils/villagerHelpers";
 
@@ -203,6 +203,16 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     };
   }
   return facilities;
+}
+
+export function getInitialDailyFlows(): DailyFlows {
+  return {
+    poolPurchase: 0,
+    foodIncome: 0,
+    craftWages: 0,
+    caravanNet: 0,
+    poolShortageLogged: false,
+  };
 }
 
 export function getInitialStats(): RunStats {

@@ -9,6 +9,9 @@ import {
   Caravan,
   RunStats,
   DungeonVisualEvent,
+  PricePolicy,
+  DailySettlement,
+  DailyFlows,
 } from "../types/game";
 
 export interface LogPayload {
@@ -25,6 +28,10 @@ export interface AdvanceHourResult {
   dungeons: DungeonArea[];
   inventory: Record<string, number>;
   currentTier: number;
+  marketPrices: Record<string, number>;
+  pricePolicy: PricePolicy;
+  lastSettlement: DailySettlement | null;
+  dailyFlows: DailyFlows;
   activeBoss: ActiveBossState | null;
   bossDefeated: boolean;
   gameOver: boolean;

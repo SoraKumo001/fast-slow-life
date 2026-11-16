@@ -3,9 +3,6 @@ import {
   CRAFT_QUEUE_MAX_LENGTH,
   UPGRADE_COST_GOLD_MULTIPLIER,
   CRAFT_DEX_FACTOR,
-  CRAFT_WAGE_BASE,
-  CRAFT_WAGE_DEX_FACTOR,
-  CRAFT_WAGE_CRAFTER_MULTIPLIER,
   CRAFT_EXP_PER_HOUR,
   EDUCATION_EXP_BONUS,
 } from "../constants";
@@ -31,6 +28,7 @@ export function processCraftingAndUpgrades(
   const nextVillagers = [...villagers];
   const nextInventory = { ...inventory };
   let currentGold = gold;
+  let craftWagesPaid = 0;
 
   Object.keys(nextFacilities).forEach((facKey) => {
     const fac = { ...nextFacilities[facKey as FacilityType] };
@@ -142,20 +140,32 @@ export function processCraftingAndUpgrades(
           const idx = nextVillagers.findIndex((v) => v.id === updatedJob.assignedVillagerId);
           if (idx !== -1) {
             const worker = { ...nextVillagers[idx] };
-            // 工賃計算: (基本額 + Dex補正) × 職人ボーナス
-            const jobMultiplier =
-              worker.currentJob === "職人" ? CRAFT_WAGE_CRAFTER_MULTIPLIER : 1.0;
-            const wage = Math.floor(
-              (CRAFT_WAGE_BASE + worker.dex * CRAFT_WAGE_DEX_FACTOR) * jobMultiplier,
-            );
+            // 経済v2 クラフト賃金: 完成品 basePrice の 20%（最低 1G）。
+            // 金庫が不足する場合は払える分だけ払い、金庫・村人ともマイナスにしない。
+            const productPrice = ITEMS[updatedJob.itemId]?.basePrice ?? 0;
+            const wageDue = Math.max(1, Math.round(productPrice * 0.2));
+            const wage = Math.min(wageDue, Math.max(0, currentGold));
             currentGold -= wage;
             worker.gold += wage;
+            craftWagesPaid += wage;
             if (stats) stats.totalGoldFromPurchases += wage;
 
-            logs.push({
-              message: `${worker.name} に工賃 ${wage} G を支払いました。（Dex: ${worker.dex}${worker.currentJob === "職人" ? "、職人ボーナス×1.5" : ""}）`,
-              type: "info",
-            });
+            if (wage >= wageDue) {
+              logs.push({
+                message: `${worker.name} にクラフト賃金 ${wage} G を支払いました。`,
+                type: "info",
+              });
+            } else if (wage > 0) {
+              logs.push({
+                message: `${worker.name} にクラフト賃金 ${wage} G を支払いました（金庫不足のため ${wageDue - wage} G 未払い）。`,
+                type: "warning",
+              });
+            } else {
+              logs.push({
+                message: `金庫不足のため ${worker.name} のクラフト賃金 ${wageDue} G を支払えませんでした。`,
+                type: "warning",
+              });
+            }
 
             nextVillagers[idx] = {
               ...worker,
@@ -192,6 +202,8 @@ export function processCraftingAndUpgrades(
     inventory: nextInventory,
     gold: currentGold,
     logs,
+    /** この呼び出しで支払ったクラフト賃金の合計（日次精算用） */
+    craftWagesPaid,
   };
 }
 
