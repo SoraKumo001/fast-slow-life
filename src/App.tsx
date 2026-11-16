@@ -23,7 +23,6 @@ import {
   GameTownViewport,
   type TownSideTab,
 } from "./components/three/town/GameTownViewport";
-import { TownPrototypePage } from "./components/three/town/TownPrototypePage";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
 import { useBossDefeatDetector } from "./hooks/useBossDefeatDetector";
@@ -33,12 +32,8 @@ import { useToastStore } from "./hooks/useToastStore";
 import { useGameStore } from "./store/gameStore";
 
 export default function App() {
-  // v2 Phase 0: ?prototype=town でポリゴンの町プロトタイプを単独表示
-  if (new URLSearchParams(location.search).get("prototype") === "town") {
-    return <TownPrototypePage />;
-  }
-
-  // v2 Phase 1: ?classic=1 で従来の4カラム画面に戻す
+  // v2 Phase 1: ?classic=1 で従来の4カラム画面に戻す (非推奨の逃げ道として存続)
+  // ※ ?prototype=town は Phase 5 で撤去した
   const isClassic = new URLSearchParams(location.search).get("classic") === "1";
 
   const { isPaused, playSpeed, gameOver, gameOverReason } = useGameStatus();
@@ -307,6 +302,40 @@ export default function App() {
                 <ShortcutKey keys="?" label="この遊び方を表示" />
                 <ShortcutKey keys="Esc" label="モーダルを閉じる" />
               </div>
+            </div>
+
+            {/* v2 ガイド (Phase 5) */}
+            <div className="bg-sky-950/40 border border-sky-900/50 rounded-lg p-3 space-y-2">
+              <p className="text-slate-200 font-bold">🌆 v2 ガイド</p>
+              <p>
+                <strong>町の見方:</strong>
+                <br />
+                町はポリゴンで描かれ、村人は仕事・食事・休息・就寝をしながら暮らしています。建物や村人をクリックするとミニカードが開き、施設の状態や村人の欲求（空腹・疲労など）、その日の行動記録「今日のあしあと」が見られます。ドラッグでパン、ホイールでズーム、Q / E キーで90度回転できます。
+              </p>
+              <p>
+                <strong>価格方針と毎日の精算:</strong>
+                <br />
+                交易所の買取価格は在庫の希少性で毎朝変動します。交易所のカードから価格方針（安売り ×0.8 / 標準 ×1.0 / 高級 ×1.25）を選べ、前日の買取・食料代・賃金・キャラバンの収支は「昨日の精算」で確認できます。採取物は村人の仮置き場に溜まり、帰町したときにまとめて買い取られます。
+              </p>
+              <p>
+                <strong>需要ボード:</strong>
+                <br />
+                アイテムに目標個数を設定すると、目標まで不足している間は価格が最大 +30%
+                上がります（翌日の価格に反映）。在庫タブ上部の「需要ボード」と、広場の掲示板（広場をクリック）で不足品目を確認できます。
+              </p>
+              <p>
+                <strong>ノードマップと霧:</strong>
+                <br />
+                ダンジョンは採取・討伐ノードの分岐マップです。未踏のノードは霧に隠れて「？」と表示され、村人が近づくと解放されます。村人の所持容量（10 +
+                筋力/2）が満杯になると自動で帰還します。最大4人のパーティ派遣や、探索中の帰還指示もできます。
+              </p>
+              <p>
+                <strong>襲撃と防衛:</strong>
+                <br />
+                脅威度が 100% になると、そのダンジョンの魔物の群れが6時間かけて町へ進軍します（進軍中はそのダンジョンへ派遣できません）。到着すると町にいる村人全員で門を守る防衛戦が始まります。勝利すると脅威度
+                30% と戦利品、敗北すると金庫の 20%
+                と在庫の略奪・施設ダメージを受けますが、ゲームオーバーにはなりません。
+              </p>
             </div>
 
             <p>
