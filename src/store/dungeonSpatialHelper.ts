@@ -5,6 +5,12 @@ import type {
   Villager,
   VillagerDungeonState,
 } from "../types/game";
+import {
+  gatherNodeDepth,
+  getGatherDataDepth,
+  getMonsterDataDepth,
+  monsterNodeDepth,
+} from "./dungeonMap";
 
 /** デフォルトのダンジョン内状態 */
 export function createDefaultDungeonState(): VillagerDungeonState {
@@ -23,21 +29,23 @@ export function getExploredDepth(area: DungeonArea): number {
   return Math.round((maxDepth * Math.min(100, Math.max(0, area.explorationProgress))) / 100);
 }
 
-/** 採取スポットのダンジョン内配置深度 (m) */
+/**
+ * 採取スポットのダンジョン内配置深度 (m)。
+ * Phase 7: 迷路マップ上の所属ノードの「経路距離」を返す
+ * （マスタデータの depth は配置順序の決定にのみ使われる）。
+ */
 export function getGatherDepth(area: DungeonArea, gather: DungeonGather): number {
-  if (typeof gather.depth === "number") return gather.depth;
-  const maxDepth = area.maxDepth || 100;
-  const pct = (gather.unlockedAtProgress ?? 0) / 100;
-  return Math.max(8, Math.min(maxDepth - 10, Math.round(maxDepth * (pct + 0.12))));
+  return gatherNodeDepth(area, gather) ?? getGatherDataDepth(area, gather);
 }
 
-/** モンスターのダンジョン内配置深度 (m) */
+/**
+ * モンスターのダンジョン内配置深度 (m)。
+ * Phase 7: 迷路マップ上の所属ノードの「経路距離」を返す。
+ * ボス門（最深部）は maxDepth に一致するが、ボス個体はその手前の
+ * コンテンツセルに配置されるため、ボス個体の深度は maxDepth 以下になる。
+ */
 export function getMonsterDepth(area: DungeonArea, monster: DungeonMonster): number {
-  const maxDepth = area.maxDepth || 100;
-  if (monster.isBoss) return maxDepth;
-  if (typeof monster.depth === "number") return monster.depth;
-  const pct = (monster.unlockedAtProgress ?? 0) / 100;
-  return Math.max(12, Math.min(maxDepth - 12, Math.round(maxDepth * (pct + 0.15))));
+  return monsterNodeDepth(area, monster) ?? getMonsterDataDepth(area, monster);
 }
 
 /**

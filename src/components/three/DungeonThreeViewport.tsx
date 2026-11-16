@@ -1,17 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
-import { buildDungeonMap, initialRevealedNodes } from "../../store/dungeonMap";
 import {
-  getExploredDepth,
-  getGatherDepth,
-  getMonsterDepth,
-} from "../../store/dungeonSpatialHelper";
+  BOSS_GATE_NODE_ID,
+  buildDungeonMap,
+  initialRevealedNodes,
+  interpolateGridPosition,
+  type DungeonMap,
+} from "../../store/dungeonMap";
+import { getExploredDepth } from "../../store/dungeonSpatialHelper";
 import type { ActiveBossState, DungeonArea, DungeonVisualEvent, Villager } from "../../types/game";
 import {
   buildDungeonEnvironment,
-  depthToZ,
-  laneToX,
+  gridToWorld,
   type BuiltEnvironment,
 } from "./builders/environmentBuilder";
 import { buildGatherNodeMesh } from "./builders/gatherNodeMeshBuilder";
@@ -62,6 +63,30 @@ interface DungeonThreeViewportProps {
   revealedNodeIds?: string[];
 }
 
+/** 経路距離に対応するワールド座標（入口→ボス門パス上の補間） */
+function worldAtDepth(map: DungeonMap, depth: number): { x: number; z: number } {
+  const g = interpolateGridPosition(map, BOSS_GATE_NODE_ID, depth);
+  return gridToWorld(g.gx, g.gy, map.cols, map.rows);
+}
+
+/** 村人の表示ワールド座標（ターゲットノードへのパス上で currentDepth を補間） */
+function villagerWorldPos(
+  map: DungeonMap,
+  v: Villager,
+): { x: number; z: number } {
+  const ds = v.dungeonState;
+  const depth =
+    v.status === "traveling_to"
+      ? 0
+      : v.status === "traveling_back"
+        ? (ds?.currentDepth ?? 0) * 0.3
+        : (ds?.currentDepth ?? 0);
+  const targetId =
+    ds?.targetNodeId ?? (depth > 0 ? BOSS_GATE_NODE_ID : null);
+  const g = interpolateGridPosition(map, targetId, depth);
+  return gridToWorld(g.gx, g.gy, map.cols, map.rows);
+}
+
 export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
   area,
   villagers,
@@ -89,26 +114,27 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
   });
   propsRef.current = { area, villagers, activeBoss, cameraMode, cameraView, revealedNodeIds };
 
-  // アニメーション・イベント状態
+  // アニメーション・イベント状態（Phase 7: カメラ焦点は2Dワールド座標）
   const animStateRef = useRef({
-    targetCamZ: 0,
-    currentCamZ: 0,
-    manualOffsetZ: 0,
+    targetFocus: { x: 0, z: 0 },
+    currentFocus: { x: 0, z: 0 },
+    manualFocus: { x: 0, z: 0 },
     isDragging: false,
     lastMouseY: 0,
     lastMouseX: 0,
-    panX: 0,
     attackPulses: new Map<string, number>(),
     hurtPulses: new Map<string, number>(),
     popups: [] as FloatingPopup[],
     lastEventIds: new Set<string>(),
   });
 
-  // focusDepth が外部から指定されたらカメラを移動
+  // focusDepth（経路距離）が外部から指定されたら、その経路上の点へカメラを移動
   useEffect(() => {
     if (focusDepth !== null) {
-      animStateRef.current.manualOffsetZ = depthToZ(focusDepth);
-      animStateRef.current.targetCamZ = depthToZ(focusDepth);
+      const map = buildDungeonMap(propsRef.current.area);
+      const p = worldAtDepth(map, focusDepth);
+      animStateRef.current.manualFocus = { ...p };
+      animStateRef.current.targetFocus = { ...p };
     }
   }, [focusDepth]);
 
@@ -117,6 +143,7 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
     if (!dungeonEvents || dungeonEvents.length === 0) return;
     const state = animStateRef.current;
     const now = performance.now();
+    const map = buildDungeonMap(propsRef.current.area);
 
     dungeonEvents.forEach((ev, idx) => {
       if (ev.areaId !== area.id || state.lastEventIds.has(ev.id)) return;
@@ -148,12 +175,13 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
       else if (ev.type === "defeat") colorClass = "text-amber-400 font-black";
 
       if (ev.label) {
+        const p = worldAtDepth(map, ev.depth);
         state.popups.push({
           id: ev.id,
           worldPos: new THREE.Vector3(
-            laneToX(ev.lane) + ((idx % 3) - 1) * 0.25,
+            p.x + ((idx % 3) - 1) * 0.25,
             1.9 + (idx % 3) * 0.22,
-            depthToZ(ev.depth),
+            p.z,
           ),
           text: ev.label,
           colorClass,
@@ -183,7 +211,7 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 220);
+    const camera = new THREE.PerspectiveCamera(48, width / height, 0.1, 600);
 
     // ライティング
     const ambient = new THREE.AmbientLight(0xffffff, 0.85);
@@ -212,42 +240,41 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
       monsterMeshes.forEach((m) => scene.remove(m));
       monsterMeshes.clear();
 
-      envObj = buildDungeonEnvironment(
-        targetArea.id,
-        targetArea.maxDepth || 100,
-        buildDungeonMap(targetArea),
-      );
+      const map = buildDungeonMap(targetArea);
+      envObj = buildDungeonEnvironment(targetArea.id, targetArea.maxDepth || 100, map);
       scene.background = new THREE.Color(envObj.theme.skyColor);
-      scene.fog = new THREE.FogExp2(envObj.theme.fogColor, 0.018);
+      scene.fog = new THREE.FogExp2(envObj.theme.fogColor, 0.011);
       ambient.intensity = envObj.theme.ambientIntensity;
       dirLight.color.setHex(envObj.theme.lightColor);
       scene.add(envObj.group);
 
-      // 採取ノード配置
-      targetArea.gathers.forEach((g, idx) => {
+      // 採取ノード配置（所属セルの位置）
+      targetArea.gathers.forEach((g) => {
+        const node = map.byId.get(g.itemId);
+        if (!node) return;
         const mesh = buildGatherNodeMesh(g.itemId);
-        const d = getGatherDepth(targetArea, g);
-        const lane = g.lane ?? (idx % 2 === 0 ? -1.2 : 1.2);
-        mesh.position.set(laneToX(lane), 0, depthToZ(d));
+        const p = gridToWorld(node.gx, node.gy, map.cols, map.rows);
+        mesh.position.set(p.x, 0, p.z);
         scene.add(mesh);
         gatherMeshes.set(g.itemId, mesh);
       });
 
-      // モンスター配置
+      // モンスター配置（所属セルの位置）
       targetArea.monsters.forEach((m) => {
+        const node = map.byId.get(m.id);
+        if (!node) return;
         const mesh = buildMonsterMesh(m.id, Boolean(m.isBoss));
-        const d = getMonsterDepth(targetArea, m);
-        const lane = m.lane ?? 0;
-        mesh.position.set(laneToX(lane), 0, depthToZ(d));
+        const p = gridToWorld(node.gx, node.gy, map.cols, map.rows);
+        mesh.position.set(p.x, 0, p.z);
         scene.add(mesh);
         monsterMeshes.set(m.id, mesh);
       });
 
       builtAreaId = targetArea.id;
-      const startZ = depthToZ(Math.min(18, getExploredDepth(targetArea) * 0.5));
-      animStateRef.current.currentCamZ = startZ;
-      animStateRef.current.targetCamZ = startZ;
-      animStateRef.current.manualOffsetZ = startZ;
+      const start = worldAtDepth(map, Math.min(18, getExploredDepth(targetArea) * 0.5));
+      animStateRef.current.currentFocus = { ...start };
+      animStateRef.current.targetFocus = { ...start };
+      animStateRef.current.manualFocus = { ...start };
     };
 
     rebuildAreaScene(propsRef.current.area);
@@ -276,15 +303,16 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
       const dy = e.clientY - animStateRef.current.lastMouseY;
       animStateRef.current.lastMouseX = e.clientX;
       animStateRef.current.lastMouseY = e.clientY;
-      animStateRef.current.manualOffsetZ += dy * 0.12;
-      animStateRef.current.panX = Math.max(-4, Math.min(4, animStateRef.current.panX - dx * 0.025));
+      const st = animStateRef.current;
+      st.manualFocus.x = st.manualFocus.x - dx * 0.07;
+      st.manualFocus.z = st.manualFocus.z + dy * 0.07;
     };
     const onPointerUp = () => {
       animStateRef.current.isDragging = false;
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      animStateRef.current.manualOffsetZ -= e.deltaY * 0.03;
+      animStateRef.current.manualFocus.z -= e.deltaY * 0.045;
     };
 
     dom.addEventListener("pointerdown", onPointerDown);
@@ -315,25 +343,43 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         rebuildAreaScene(curArea);
       }
 
-      // Phase 4a: 霧。解放済みノード集合（未指定時は探索度から導出）
+      // Phase 4a/7: 霧。解放済みノード集合（未指定時は探索度から導出）
       const revealedSet = new Set(curRevealed ?? initialRevealedNodes(curArea));
       const curMap = buildDungeonMap(curArea);
 
-      // ノードプラットフォームの色: 未解放は暗く沈ませる
       if (envObj) {
+        // コンテンツプラットフォーム: 未解放は暗く沈ませる
         envObj.nodePlatforms.forEach((mat, nodeId) => {
           mat.color.setHex(revealedSet.has(nodeId) ? envObj!.theme.pathColor : 0x14161c);
         });
+        // セルタイル / 通路 / 壁: 解放状態で共有マテリアルを差し替える
+        // （通路と壁は端点のどちらかが解放済みなら明るくする近似）
+        const mats = envObj.fogMats;
+        for (const t of envObj.fogTiles) {
+          const lit = revealedSet.has(t.nodeId!);
+          const m = lit ? mats.tileLit : mats.tileDark;
+          if (t.mesh.material !== m) t.mesh.material = m;
+        }
+        for (const e of envObj.fogEdges) {
+          const lit = revealedSet.has(e.aId!) || revealedSet.has(e.bId!);
+          const m = lit ? mats.edgeLit : mats.edgeDark;
+          if (e.mesh.material !== m) e.mesh.material = m;
+        }
+        for (const w of envObj.fogWalls) {
+          const lit = revealedSet.has(w.aId!) || revealedSet.has(w.bId!);
+          const m = lit ? mats.wallLit : mats.wallDark;
+          if (w.mesh.material !== m) w.mesh.material = m;
+        }
       }
 
-      const maxDepth = curArea.maxDepth || 100;
-      const minZ = depthToZ(maxDepth) - 4;
-      const maxZ = 4;
+      const halfW = (curMap.cols * 6) / 2;
+      const halfD = (curMap.rows * 6) / 2;
 
-      // 開拓前線の位置更新
+      // 開拓前線の位置更新（入口→ボス門パス上の前線経路距離の点）
       if (envObj) {
-        const exploredZ = depthToZ(getExploredDepth(curArea));
-        envObj.frontierMesh.position.z += (exploredZ - envObj.frontierMesh.position.z) * 0.12;
+        const fp = worldAtDepth(curMap, getExploredDepth(curArea));
+        envObj.frontierMesh.position.x += (fp.x - envObj.frontierMesh.position.x) * 0.12;
+        envObj.frontierMesh.position.z += (fp.z - envObj.frontierMesh.position.z) * 0.12;
         envObj.frontierMesh.visible = curArea.explorationProgress < 100;
       }
 
@@ -392,7 +438,7 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         }
       });
 
-      let focusVillagerZ: number | null = null;
+      let focusVillagerPos: { x: number; z: number } | null = null;
       let hasFightingVillager = false;
 
       curVillagers.forEach((v, idx) => {
@@ -400,8 +446,8 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         if (!entry || entry.job !== v.currentJob) {
           if (entry) scene.remove(entry.mesh);
           const mesh = buildVillagerMesh(v.currentJob);
-          const initDepth = v.dungeonState?.currentDepth ?? 0;
-          mesh.position.set(laneToX(v.dungeonState?.lane ?? (idx % 3) - 1), 0, depthToZ(initDepth));
+          const init = villagerWorldPos(curMap, v);
+          mesh.position.set(init.x, 0, init.z);
           scene.add(mesh);
           entry = { mesh, job: v.currentJob };
           villagerMeshes.set(v.id, entry);
@@ -415,29 +461,12 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
               ? "returning"
               : ds?.phase || "moving_to_target";
 
-        let targetDepth =
-          v.status === "traveling_to"
-            ? 0
-            : v.status === "traveling_back"
-              ? Math.max(0, (ds?.currentDepth ?? 0) * 0.3)
-              : (ds?.currentDepth ?? 0);
-        let targetLane = ds?.lane ?? ((idx % 3) - 1) * 0.7;
-
-        // Phase 4a: ターゲットノードに近づいたら、そのプラットフォーム位置にスナップする
-        if (v.status === "active" && ds?.targetNodeId) {
-          const node = curMap.byId.get(ds.targetNodeId);
-          if (node && Math.abs((ds.currentDepth ?? 0) - node.depth) <= 10) {
-            targetDepth = node.depth;
-            targetLane = node.lane;
-          }
-        }
-
-        const targetX = laneToX(targetLane);
-        const targetZ = depthToZ(targetDepth);
+        // Phase 7: ターゲットノードへの経路上で currentDepth を補間した位置へ
+        const target = villagerWorldPos(curMap, v);
         const prevX = entry.mesh.position.x;
         const prevZ = entry.mesh.position.z;
-        const stepX = (targetX - prevX) * 0.12;
-        const stepZ = (targetZ - prevZ) * 0.12;
+        const stepX = (target.x - prevX) * 0.12;
+        const stepZ = (target.z - prevZ) * 0.12;
         entry.mesh.position.x += stepX;
         entry.mesh.position.z += stepZ;
 
@@ -447,45 +476,58 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
           timeSec + idx * 0.7,
           state.attackPulses.get(v.id) || 0,
           state.hurtPulses.get(v.id) || 0,
-          targetX - prevX,
-          targetZ - prevZ,
+          target.x - prevX,
+          target.z - prevZ,
         );
 
         if (phase === "fighting") {
-          focusVillagerZ = entry.mesh.position.z;
+          focusVillagerPos = { x: entry.mesh.position.x, z: entry.mesh.position.z };
           hasFightingVillager = true;
-        } else if (!hasFightingVillager && focusVillagerZ === null) {
-          focusVillagerZ = entry.mesh.position.z;
+        } else if (!hasFightingVillager && focusVillagerPos === null) {
+          focusVillagerPos = { x: entry.mesh.position.x, z: entry.mesh.position.z };
         }
       });
 
-      // カメラ位置計算
+      // カメラ焦点の決定（クロージャ内で代入されるため、読み出しは関数経由にして
+      // TS のフロー解析による null への絞り込みを避ける）
+      const readFocusPos = (): { x: number; z: number } | null => focusVillagerPos;
+      const focusPos = readFocusPos();
       if (curCamMode === "auto") {
         if (curBoss && curArea.monsters.some((m) => m.id === curBoss.monsterId)) {
-          state.targetCamZ = depthToZ(maxDepth);
-        } else if (focusVillagerZ !== null) {
-          state.targetCamZ = focusVillagerZ;
+          const bossNode = curMap.byId.get(curBoss.monsterId) ?? curMap.byId.get(BOSS_GATE_NODE_ID);
+          if (bossNode) {
+            const p = gridToWorld(bossNode.gx, bossNode.gy, curMap.cols, curMap.rows);
+            state.targetFocus = { x: p.x, z: p.z };
+          }
+        } else if (focusPos !== null) {
+          state.targetFocus = { x: focusPos.x, z: focusPos.z };
         } else {
-          state.targetCamZ = depthToZ(Math.max(10, getExploredDepth(curArea) * 0.6));
+          state.targetFocus = worldAtDepth(
+            curMap,
+            Math.max(10, getExploredDepth(curArea) * 0.6),
+          );
         }
-        state.panX += (0 - state.panX) * 0.1;
       } else {
-        state.manualOffsetZ = Math.max(minZ, Math.min(maxZ, state.manualOffsetZ));
-        state.targetCamZ = state.manualOffsetZ;
+        state.manualFocus.x = Math.max(-halfW - 10, Math.min(halfW + 10, state.manualFocus.x));
+        state.manualFocus.z = Math.max(-halfD - 10, Math.min(halfD + 10, state.manualFocus.z));
+        state.targetFocus = { ...state.manualFocus };
       }
 
-      state.currentCamZ += (state.targetCamZ - state.currentCamZ) * 0.08;
+      state.currentFocus.x += (state.targetFocus.x - state.currentFocus.x) * 0.08;
+      state.currentFocus.z += (state.targetFocus.z - state.currentFocus.z) * 0.08;
+      const fx = state.currentFocus.x;
+      const fz = state.currentFocus.z;
 
       if (curCamView === "side") {
-        camera.position.set(11 + state.panX, 5.2, state.currentCamZ + 2);
-        camera.lookAt(0, 1.0, state.currentCamZ - 2);
+        camera.position.set(fx + 14, 6, fz + 2);
+        camera.lookAt(fx, 1.0, fz - 2);
       } else if (curCamView === "follow") {
-        camera.position.set(state.panX, 3.8, state.currentCamZ + 7.5);
-        camera.lookAt(state.panX * 0.5, 1.2, state.currentCamZ - 6);
+        camera.position.set(fx, 4.5, fz + 9);
+        camera.lookAt(fx, 1.2, fz - 5);
       } else {
         // quarter (斜め俯瞰)
-        camera.position.set(4.5 + state.panX, 7.2, state.currentCamZ + 10.5);
-        camera.lookAt(state.panX * 0.4, 0.8, state.currentCamZ - 4.5);
+        camera.position.set(fx + 6.5, 9.5, fz + 13);
+        camera.lookAt(fx, 0.8, fz - 3);
       }
 
       renderer.render(scene, camera);

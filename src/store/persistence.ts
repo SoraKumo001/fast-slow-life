@@ -9,7 +9,7 @@ import {
   Caravan,
   DungeonArea,
 } from "../types/game";
-import { initialRevealedNodes } from "./dungeonMap";
+import { initialRevealedNodes, sanitizeRevealedNodes } from "./dungeonMap";
 import { getInitialFacilities } from "./initialState";
 
 // ==========================================
@@ -331,8 +331,29 @@ export const merge = <S extends GameState & GameActions>(
     (persisted.marketPrices as Record<string, number>) ?? currentState.marketPrices;
   merged.pricePolicy =
     (persisted.pricePolicy as GameState["pricePolicy"]) ?? currentState.pricePolicy;
-  merged.revealedNodes =
-    (persisted.revealedNodes as Record<string, string[]>) ?? currentState.revealedNodes;
+  // Phase 7: 迷路化に伴い、旧セーブの revealedNodes を新マップへ移行する
+  // （存在しないIDを落とし、探索度からの初期解放と union。SAVE_VERSION は上げない）
+  const persistedRevealed = persisted.revealedNodes as
+    | Record<string, string[]>
+    | undefined;
+  if (persistedRevealed) {
+    const savedDungeons = Array.isArray(merged.dungeons) ? merged.dungeons : [];
+    const sanitized: Record<string, string[]> = {};
+    for (const def of DUNGEONS) {
+      const saved = savedDungeons.find((d) => d.id === def.id);
+      const source =
+        saved && Array.isArray(saved.gathers) && Array.isArray(saved.monsters)
+          ? saved
+          : {
+              ...def,
+              explorationProgress: saved?.explorationProgress ?? def.explorationProgress,
+            };
+      sanitized[def.id] = sanitizeRevealedNodes(source, persistedRevealed[def.id] ?? []);
+    }
+    merged.revealedNodes = sanitized;
+  } else {
+    merged.revealedNodes = currentState.revealedNodes;
+  }
   merged.raid = (persisted.raid as GameState["raid"]) ?? null;
   // Phase 6: 旧セーブには無いので 0 にフォールバック
   merged.raidDefeatStreak =

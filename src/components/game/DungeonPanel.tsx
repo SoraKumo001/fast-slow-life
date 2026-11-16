@@ -17,7 +17,7 @@ import { ITEMS } from "../../data/masterData";
 import { useBossActions, useDungeons, useVillagerActions, useVillagers } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
 import { carryCapacity, carriedCount } from "../../store/carryCapacity";
-import { buildDungeonMap } from "../../store/dungeonMap";
+import { buildDungeonMap, countContentRevealed } from "../../store/dungeonMap";
 import { getVillagerPhaseLabel } from "../../store/dungeonSpatialHelper";
 import { useGameStore } from "../../store/gameStore";
 import { calculateOfferingCost } from "../../store/threatLogic";
@@ -261,8 +261,13 @@ export const DungeonPanel: React.FC = () => {
                       className="border border-slate-900 flex-1"
                     />
                     <span className="text-[10px] font-mono text-slate-500 shrink-0">
-                      解放 {(revealedNodes[area.id] ?? []).length}/
-                      {buildDungeonMap(area).nodes.length}
+                      {(() => {
+                        const c = countContentRevealed(
+                          buildDungeonMap(area),
+                          revealedNodes[area.id] ?? [],
+                        );
+                        return `解放 ${c.revealed}/${c.total}`;
+                      })()}
                     </span>
                   </div>
                 )}

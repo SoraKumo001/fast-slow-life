@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import { DUNGEONS } from "../data/dungeons";
 import { createVillager } from "../utils/villagerHelpers";
+import { BOSS_GATE_NODE_ID, buildDungeonMap, contentNodes } from "./dungeonMap";
 import {
   createDefaultDungeonState,
   getExploredDepth,
@@ -20,13 +21,28 @@ describe("dungeonSpatialHelper", () => {
     expect(getExploredDepth(mine)).toBe(60);
   });
 
-  it("採取ノードとモンスターの配置深度を取得し、ボスはmaxDepthになること", () => {
+  it("採取・モンスターの深度は迷路マップの経路距離と一致し、ボス門が maxDepth になること", () => {
     const forest = DUNGEONS[0];
-    expect(getGatherDepth(forest, forest.gathers[0])).toBe(12);
+    const map = buildDungeonMap(forest);
+    // Phase 7: 深度 = 所属ノードの経路距離（マスタデータの depth ではない）
+    expect(getGatherDepth(forest, forest.gathers[0])).toBe(
+      map.byId.get(forest.gathers[0].itemId)?.depth,
+    );
     const goblin = forest.monsters.find((m) => m.id === "goblin")!;
+    expect(getMonsterDepth(forest, goblin)).toBe(map.byId.get("goblin")?.depth);
+    // ボス門はちょうど maxDepth。ボス個体はコンテンツ中最大の経路距離で maxDepth 以下
+    expect(map.byId.get(BOSS_GATE_NODE_ID)?.depth).toBe(forest.maxDepth);
     const boss = forest.monsters.find((m) => m.isBoss)!;
-    expect(getMonsterDepth(forest, goblin)).toBe(28);
-    expect(getMonsterDepth(forest, boss)).toBe(forest.maxDepth);
+    const bossDepth = getMonsterDepth(forest, boss);
+    expect(bossDepth).toBeLessThanOrEqual(forest.maxDepth);
+    expect(bossDepth).toBe(
+      Math.max(...contentNodes(map).filter((n) => n.kind === "monster").map((n) => n.depth)),
+    );
+    // 全コンテンツの経路距離は (0, maxDepth] に収まる
+    for (const node of contentNodes(map)) {
+      expect(node.depth).toBeGreaterThan(0);
+      expect(node.depth).toBeLessThanOrEqual(forest.maxDepth);
+    }
   });
 
   it("moveTowardDepth で目標深度へステップ移動し到達判定できること", () => {
