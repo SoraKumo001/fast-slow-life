@@ -421,7 +421,7 @@ ${results
         `⚠️ 警告: 破産によるGame Overが ${bankruptRate}% と高いです。経済バランスに問題がある可能性があります。`,
       );
     }
-  }, 1500000); // Phase 5: バランス再調整でランが長期化するため延長
+  }, 3600000); // Phase 6: ボス離脱リセット＋追加レバーでランがさらに長期化するため延長（Phase 5 の 1500s から）
 
   it("Run with all soul upgrades maxed out (30 times)", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
@@ -595,5 +595,5 @@ ${Object.entries(reasonCounts)
         `⚠️ 警告: 全バフMAXでもクリア率が ${clearRate.toFixed(1)}% です。ゲームバランスに問題がある可能性があります。`,
       );
     }
-  }, 1500000); // Phase 5: バランス再調整でランが長期化するため延長
+  }, 3600000); // Phase 6: ボス離脱リセット＋追加レバーでランがさらに長期化するため延長（Phase 5 の 1500s から）
 });

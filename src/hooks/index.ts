@@ -11,7 +11,13 @@ export const useGameTime = () =>
   );
 
 export const usePlayerResources = () =>
-  useGameStore(useShallow((s) => ({ gold: s.gold, soulPoints: s.soulPoints })));
+  useGameStore(
+    useShallow((s) => ({
+      gold: s.gold,
+      soulPoints: s.soulPoints,
+      prestigeCount: s.prestigeCount,
+    })),
+  );
 
 export const useInventory = () =>
   useGameStore(

@@ -40,10 +40,12 @@ gold: acc.gold,
 facilities: acc.facilities,
 soulUpgrades: acc.soulUpgrades,
 stats: acc.nextStats,
+defeatStreak: acc.raidDefeatStreak ?? 0,
 });
 
 acc.villagers = result.villagers;
 acc.raid = result.raid;
+acc.raidDefeatStreak = result.nextDefeatStreak;
 acc.inventory = result.inventory;
 acc.gold = result.gold;
 acc.facilities = result.facilities;

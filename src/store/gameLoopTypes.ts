@@ -45,6 +45,8 @@ export interface AdvanceHourResult {
   revealedNodes: Record<string, string[]>;
   /** Phase 4b: 襲撃イベント（4a では常に null） */
   raid: RaidState | null;
+  /** Phase 6: 防衛戦の連敗数 */
+  raidDefeatStreak?: number;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   lastSchedulerTick: number;

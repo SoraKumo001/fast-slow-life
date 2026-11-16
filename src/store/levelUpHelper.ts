@@ -3,6 +3,7 @@ import {
   HP_GROWTH_PER_LEVEL,
   STAMINA_GROWTH_PER_LEVEL,
   EXP_NEEDED_PER_LEVEL,
+  EXP_NEEDED_QUADRATIC_PER_LEVEL,
 } from "../constants";
 import { Villager } from "../types/game";
 
@@ -10,7 +11,10 @@ export function tryLevelUp(villager: Villager): {
   leveled: boolean;
   updated: Villager;
 } {
-  const expNeeded = villager.level * EXP_NEEDED_PER_LEVEL;
+  // Phase 6: 高レベルほど必要XPが2次式に伸びる（低レベル帯は従来通り）
+  const expNeeded =
+    villager.level * EXP_NEEDED_PER_LEVEL +
+    Math.pow(villager.level - 1, 2) * EXP_NEEDED_QUADRATIC_PER_LEVEL;
   if (villager.exp < expNeeded) {
     return { leveled: false, updated: villager };
   }

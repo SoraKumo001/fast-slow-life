@@ -1,6 +1,7 @@
 import {
   BOSS_BATTLE_ROUNDS,
   BOSS_REGEN_PERCENT,
+  BOSS_DISENGAGE_GRACE_HOURS,
   STARVATION_EFFICIENCY_PENALTY,
   ZERO_STAMINA_PENALTY,
   MIN_BOSS_DAMAGE,
@@ -37,6 +38,7 @@ export function processBossBattle(
   stats: RunStats | undefined,
   currentDay: number,
   tierStartDay: number,
+  currentHour: number = 0,
 ) {
   const logs: LogPayload[] = [];
   const dungeonEvents: DungeonVisualEvent[] = [];
@@ -58,7 +60,61 @@ export function processBossBattle(
       (v) => nextActiveBoss?.attackerIds.includes(v.id) && v.status === "active",
     );
 
-    if (attackers.length > 0) {
+    // ---- Phase 6: ボス戦の離脱リセット ----
+    // 勝利なくボス戦が終わったら、ボスは全回復して次回挑戦は満タンから始まる。
+    // (a) 全アタッカーが戦闘不能 (HP 0) → 即時離脱
+    // (b) 交戦可能なアタッカーが1人もいない状態が24時間継続 → 離脱
+    // 「交戦可能なアタッカー」は戦闘側の抽出 (attackerIds ∩ status "active") に揃え、
+    // それに加えてボスへ移動中 (traveling_to で対象がこのボス) の者も復帰途中として数える。
+    // 治療のための一時的な離脱では即リセットせず、24時間の猶予を与えるための計測。
+    let disengaged = false;
+    const elapsedHour = (currentDay - 1) * 24 + currentHour;
+    if (Number.isFinite(elapsedHour)) {
+      const bossState = nextActiveBoss;
+      const engagedCapable = nextVillagers.filter((v) => {
+        if (!bossState.attackerIds.includes(v.id) || v.currentHp <= 0) return false;
+        if (v.status === "active") return true;
+        return (
+          v.status === "traveling_to" &&
+          v.destinationAreaId === bossAreaId &&
+          (v.targetMonsterId === bossState.monsterId ||
+            v.dungeonState?.targetNodeId === bossState.monsterId)
+        );
+      });
+      const allAttackersDowned =
+        bossState.attackerIds.length > 0 &&
+        bossState.attackerIds.every((id) => {
+          const v = nextVillagers.find((villager) => villager.id === id);
+          return !v || v.currentHp <= 0;
+        });
+
+      if (allAttackersDowned) {
+        disengaged = true;
+      } else if (engagedCapable.length > 0) {
+        // 交戦中・復帰中・追加参戦のいずれか → 離脱タイマーをリセット
+        nextActiveBoss.lastEngagedAtElapsedHour = elapsedHour;
+      } else if (bossState.lastEngagedAtElapsedHour === undefined) {
+        // 旧セーブ等で未記録の場合は現在時刻を起点にする (即離脱させない)
+        nextActiveBoss.lastEngagedAtElapsedHour = elapsedHour;
+      } else if (
+        elapsedHour - bossState.lastEngagedAtElapsedHour >=
+        BOSS_DISENGAGE_GRACE_HOURS
+      ) {
+        disengaged = true;
+      }
+
+      if (disengaged) {
+        logs.push({
+          message: `【ボス戦】${monster.name}は巣へ戻り、傷を癒した。次に挑むときは万全の状態だ。`,
+          type: "system",
+        });
+      }
+    }
+
+    if (disengaged) {
+      // 離脱確定: activeBoss を破棄し、この時間は戦闘も自然回復も行わない
+      nextActiveBoss = null;
+    } else if (attackers.length > 0) {
       const regen = Math.floor(nextActiveBoss.maxHp * BOSS_REGEN_PERCENT);
       nextActiveBoss.currentHp = Math.min(nextActiveBoss.maxHp, nextActiveBoss.currentHp + regen);
 
@@ -275,9 +331,14 @@ export function processBossBattle(
         });
 
         // 生存しているアタッカーが0人になった場合、ボス戦を自動終了
+        // Phase 6: 全滅による離脱 → ボスは全回復し、次回挑戦は満タンから始まる
         if (nextActiveBoss.attackerIds.length === 0) {
           logs.push({
             message: `【ボス戦】戦闘に参加した村人が全員戦闘不能になったため、ボスとの対決は終了しました。`,
+            type: "system",
+          });
+          logs.push({
+            message: `【ボス戦】${monster.name}は巣へ戻り、傷を癒した。次に挑むときは万全の状態だ。`,
             type: "system",
           });
           nextActiveBoss = null;
@@ -362,7 +423,8 @@ export function processBossBattle(
           };
         }
       }
-    } else {
+    } else if (nextActiveBoss) {
+      // 交戦可能なアタッカー不在 (離脱猶予中) は自然回復のみ
       const regen = Math.floor(nextActiveBoss.maxHp * BOSS_REGEN_PERCENT);
       nextActiveBoss.currentHp = Math.min(nextActiveBoss.maxHp, nextActiveBoss.currentHp + regen);
     }

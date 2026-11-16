@@ -8,7 +8,7 @@ export { ITEMS } from "./items";
 export { RECIPES } from "./recipes";
 export { MONSTERS } from "./monsters";
 export { DUNGEONS } from "./dungeons";
-export { SOUL_UPGRADES } from "./soulUpgrades";
+export { SOUL_UPGRADES, getSoulUpgradeCost } from "./soulUpgrades";
 export { JOBS } from "./jobs";
 export { VILLAGER_NAMES } from "./villagerNames";
 export { TRAINING_PROGRAMS, getTrainingProgram, getTrainingProgramsForFacility } from "./trainings";

@@ -354,6 +354,59 @@ describe("resolveRaidRound", () => {
     expect(result.logs.some((l) => l.message.includes("敗北"))).toBe(true);
   });
 
+  it("Phase 6: 連敗数に応じて略奪率が上がる（2連敗目=30%、上限50%）", () => {
+    const dungeon = makeDungeon();
+    const raid = buildRaidState(dungeon, 0)!;
+    const facilities = makeFacilities();
+    // 防衛者ゼロ → 即敗北。金庫1000で率だけを見る
+    const r1 = resolveRaidRound({
+      raid,
+      dungeon,
+      villagers: [],
+      inventory: {},
+      gold: 1000,
+      facilities,
+      defeatStreak: 1,
+    });
+    expect(r1.outcome).toBe("defeat");
+    expect(r1.gold).toBe(700); // 30% 略奪
+    expect(r1.nextDefeatStreak).toBe(2);
+
+    const r2 = resolveRaidRound({
+      raid,
+      dungeon,
+      villagers: [],
+      inventory: {},
+      gold: 1000,
+      facilities,
+      defeatStreak: 10,
+    });
+    expect(r2.gold).toBe(500); // 上限50%
+    expect(r2.nextDefeatStreak).toBe(11);
+  });
+
+  it("Phase 6: 勝利で連敗数がリセットされ、継続中は据え置き", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0); // 全攻撃命中
+    const dungeon = makeDungeon(); // スライム hp10 が3体
+    const raid = buildRaidState(dungeon, 0)!;
+    const defenders = [
+      makeVillager({ id: "a", name: "A", str: 50, agi: 30 }),
+      makeVillager({ id: "b", name: "B", str: 50, agi: 20 }),
+      makeVillager({ id: "c", name: "C", str: 50, agi: 10 }),
+    ];
+    const win = resolveRaidRound({
+      raid,
+      dungeon,
+      villagers: defenders,
+      inventory: {},
+      gold: 0,
+      facilities: makeFacilities(),
+      defeatStreak: 3,
+    });
+    expect(win.outcome).toBe("victory");
+    expect(win.nextDefeatStreak).toBe(0);
+  });
+
   it("敗北時、Lv2以上の施設がなければ施設は下がらない（Lv1未満にはならない）", () => {
     vi.spyOn(Math, "random").mockReturnValue(0);
     const dungeon = makeDungeon();

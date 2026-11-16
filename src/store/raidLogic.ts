@@ -43,6 +43,19 @@ export const RAID_VICTORY_THREAT = 30;
 export const RAID_DEFEAT_THREAT = 50;
 /** 敗北時に略奪される金庫の割合 */
 export const RAID_PILLAGE_GOLD_RATE = 0.2;
+/** Phase 6: 防衛連敗ごとに略奪率へ加算される割合 */
+export const RAID_PILLAGE_RATE_PER_DEFEAT = 0.1;
+/** Phase 6: 略奪率の上限 */
+export const RAID_PILLAGE_GOLD_RATE_MAX = 0.5;
+
+/** Phase 6: 連敗数に応じた実効略奪率（20% + 連敗×10%、上限50%） */
+export function getRaidPillageRate(defeatStreak: number): number {
+  const streak = Math.max(0, Math.floor(defeatStreak) || 0);
+  return Math.min(
+    RAID_PILLAGE_GOLD_RATE_MAX,
+    RAID_PILLAGE_GOLD_RATE + streak * RAID_PILLAGE_RATE_PER_DEFEAT,
+  );
+}
 
 // ==========================================
 // 襲撃グループの編成
@@ -153,6 +166,8 @@ gold: number;
 facilities: Record<FacilityType, Facility>;
 soulUpgrades?: Record<string, number>;
 stats?: RunStats;
+/** Phase 6: 現在の防衛連敗数（略奪率の逓増に使う。未指定は 0） */
+defeatStreak?: number;
 }
 
 export interface RaidRoundResult {
@@ -164,6 +179,8 @@ gold: number;
 facilities: Record<FacilityType, Facility>;
 logs: LogPayload[];
 outcome: "ongoing" | "victory" | "defeat";
+/** Phase 6: このラウンド後の連敗数（勝利で 0、敗北で +1、継続中は据え置き） */
+nextDefeatStreak: number;
 }
 
 interface RaidCombatant {
@@ -378,12 +395,16 @@ gold: nextGold,
 facilities: nextFacilities,
 logs,
 outcome: "victory",
+nextDefeatStreak: 0,
 };
 }
 
 if (aliveDefenders().length === 0) {
-// 敗北: 略奪（金庫20%・在庫の一部・施設Lv-1）+ 脅威度 50%。ゲームオーバーにはしない。
-const goldLoss = nextGold > 0? Math.floor(nextGold * RAID_PILLAGE_GOLD_RATE): 0;
+// 敗北: 略奪（金庫・在庫の一部・施設Lv-1）+ 脅威度 50%。ゲームオーバーにはしない。
+// Phase 6: 連敗が続くほど金庫の略奪率が上がる（20% + 連敗×10%、上限50%）。
+const defeatStreak = Math.max(0, Math.floor(params.defeatStreak ?? 0) || 0);
+const pillageRate = getRaidPillageRate(defeatStreak);
+const goldLoss = nextGold > 0? Math.floor(nextGold * pillageRate): 0;
 nextGold -= goldLoss;
 
 const pillaged: string[] = [];
@@ -424,6 +445,7 @@ gold: nextGold,
 facilities: nextFacilities,
 logs,
 outcome: "defeat",
+nextDefeatStreak: defeatStreak + 1,
 };
 }
 
@@ -437,5 +459,6 @@ gold: nextGold,
 facilities: nextFacilities,
 logs,
 outcome: "ongoing",
+nextDefeatStreak: Math.max(0, Math.floor(params.defeatStreak ?? 0) || 0),
 };
 }

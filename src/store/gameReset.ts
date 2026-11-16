@@ -53,6 +53,8 @@ export interface ResetResult {
   currentHour: number;
   gold: number;
   soulPoints: number;
+  prestigeCount: number;
+  raidDefeatStreak: number;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];
@@ -93,10 +95,13 @@ export function resetGameHelper(params: {
     soulPoints: number;
     soulUpgrades: Record<string, number>;
     maxThreatLevelReached: number;
+    prestigeCount?: number;
   };
 }): ResetResult {
   const { prestige, state } = params;
   let earnedSp = 0;
+  // Phase 6: 転生のたびに周回数が増える（通常リセットでは 0 に戻る）
+  const nextPrestigeCount = prestige ? (state.prestigeCount ?? 0) + 1 : 0;
 
   if (prestige) {
     if (state.gameOver) {
@@ -132,6 +137,8 @@ export function resetGameHelper(params: {
     currentHour: 0,
     gold: startGold,
     soulPoints: state.soulPoints + earnedSp,
+    prestigeCount: nextPrestigeCount,
+    raidDefeatStreak: 0,
     villagers: getInitialVillagers(bodyLvl),
     facilities: getInitialFacilities(),
     dungeons: getInitialDungeons(),

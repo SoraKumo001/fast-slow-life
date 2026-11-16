@@ -11,6 +11,10 @@ export const STAT_GROWTH_PER_LEVEL = 5;
 export const HP_GROWTH_PER_LEVEL = 20;
 export const STAMINA_GROWTH_PER_LEVEL = 15;
 export const EXP_NEEDED_PER_LEVEL = 40;
+/** Phase 6: 高レベル帯の必要XP逓増（2次項）。必要XP = Lv×40 + (Lv-1)² × この値 */
+export const EXP_NEEDED_QUADRATIC_PER_LEVEL = 8;
+/** Phase 6: ソウルアップグレード価格の周回逓増率（転生するたびに価格がこの倍率で上がる） */
+export const SOUL_UPGRADE_COST_GROWTH_PER_CYCLE = 2;
 export const STAMINA_COST_PER_HOUR = 5;
 
 export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
@@ -40,6 +44,8 @@ export const INN_COST_PER_HOUR = 2;
 export const HUNT_MAX_TURNS = 10;
 export const BOSS_BATTLE_ROUNDS = 5;
 export const BOSS_REGEN_PERCENT = 0.002;
+/** Phase 6: 交戦可能なアタッカーが不在のまま経過したらボスが離脱（全回復）するまでの猶予時間 */
+export const BOSS_DISENGAGE_GRACE_HOURS = 24;
 export const STARVATION_HP_LOSS_PERCENT = 0.004;
 export const STARVATION_EFFICIENCY_PENALTY = 0.5;
 export const ZERO_STAMINA_PENALTY = 0.3;

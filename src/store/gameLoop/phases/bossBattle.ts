@@ -18,6 +18,7 @@ export const bossBattlePhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator
     acc.nextStats,
     acc.currentDay,
     acc.tierStartDay,
+    acc.currentHour,
   );
   acc.activeBoss = bossRes.activeBoss;
   acc.villagers = bossRes.villagers;

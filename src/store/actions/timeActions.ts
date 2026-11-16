@@ -102,6 +102,7 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       caravans: result.caravans,
       revealedNodes: result.revealedNodes,
       raid: result.raid,
+      raidDefeatStreak: result.raidDefeatStreak ?? 0,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       lastSchedulerTick: result.lastSchedulerTick,
       stats: result.stats,

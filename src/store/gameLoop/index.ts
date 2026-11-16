@@ -87,6 +87,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       (state.dungeons ?? []).map((d) => [d.id, initialRevealedNodes(d)]),
     );
   const raid = state.raid ?? null;
+  const raidDefeatStreak = state.raidDefeatStreak ?? 0;
   const dailyFlows = state.dailyFlows ? { ...state.dailyFlows } : getInitialDailyFlows();
 
   // ---- Time advancement ----
@@ -146,6 +147,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       revealedNodes,
       raid,
+      raidDefeatStreak,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,
@@ -181,6 +183,7 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       caravans,
       revealedNodes,
       raid,
+      raidDefeatStreak,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,

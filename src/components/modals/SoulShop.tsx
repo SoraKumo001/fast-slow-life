@@ -1,11 +1,11 @@
 import { Sparkles, RefreshCw, AlertTriangle } from "lucide-react";
 import React, { useState } from "react";
 
-import { SOUL_UPGRADES } from "../../data/masterData";
+import { SOUL_UPGRADES, getSoulUpgradeCost } from "../../data/masterData";
 import { usePlayerResources, useSoulUpgrades, useSoulActions } from "../../hooks";
 
 export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-  const { soulPoints } = usePlayerResources();
+  const { soulPoints, prestigeCount } = usePlayerResources();
   const soulUpgrades = useSoulUpgrades();
   const { buySoulUpgrade, downgradeSoulUpgrade, resetGame } = useSoulActions();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -34,6 +34,8 @@ export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
 
       <p className="text-xs text-slate-400 leading-relaxed">
         獲得したソウルポイント (SP) を消費して、次回以降のプレイで永続適用されるバフを購入できます。
+        {(prestigeCount ?? 0) > 0 &&
+          ` 転生を重ねるごとにバフの価格は上昇します（現在 ${prestigeCount} 周目）。`}
       </p>
 
       {/* バフカードリスト */}
@@ -42,7 +44,8 @@ export const SoulShop: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           const currentLvl = soulUpgrades[u.id] || 0;
           const isMax = currentLvl >= u.maxLevel;
           const isMin = currentLvl <= 0;
-          const cost = u.costs[currentLvl];
+          // Phase 6: 表示価格も周回逓増後の実効コストに合わせる
+          const cost = getSoulUpgradeCost(u.costs[currentLvl], prestigeCount ?? 0);
           const refund = isMin ? 0 : u.costs[currentLvl - 1];
           const canAfford = soulPoints >= cost && !isMax;
 

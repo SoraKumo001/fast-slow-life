@@ -1,4 +1,4 @@
-import { SOUL_UPGRADES } from "../../data/masterData";
+import { SOUL_UPGRADES, getSoulUpgradeCost } from "../../data/masterData";
 import { StoreSet, StoreGet } from "../../types/game";
 import { resetGameHelper } from "../gameReset";
 
@@ -9,7 +9,8 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
     const uDef = SOUL_UPGRADES.find((u) => u.id === upgradeId);
     if (!uDef || currentLvl >= uDef.maxLevel) return;
 
-    const cost = uDef.costs[currentLvl];
+    // Phase 6: 周回を重ねるほど価格が逓増する
+    const cost = getSoulUpgradeCost(uDef.costs[currentLvl], state.prestigeCount ?? 0);
     if (state.soulPoints < cost) {
       state.addLog("ソウルポイントが不足しています。", "warning");
       return;
@@ -64,6 +65,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
         soulPoints: state.soulPoints,
         soulUpgrades: state.soulUpgrades,
         maxThreatLevelReached: state.maxThreatLevelReached,
+        prestigeCount: state.prestigeCount,
       },
     });
 
@@ -72,6 +74,8 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       currentHour: result.currentHour,
       gold: result.gold,
       soulPoints: result.soulPoints,
+      prestigeCount: result.prestigeCount,
+      raidDefeatStreak: result.raidDefeatStreak,
       villagers: result.villagers,
       facilities: result.facilities,
       dungeons: result.dungeons,

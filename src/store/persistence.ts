@@ -274,11 +274,13 @@ export const partialize = (
   isPaused: state.isPaused,
   playSpeed: state.playSpeed,
   soulUpgrades: state.soulUpgrades,
+  prestigeCount: state.prestigeCount,
   tradeRules: state.tradeRules,
   towns: state.towns,
   caravans: state.caravans,
   revealedNodes: state.revealedNodes,
   raid: state.raid,
+  raidDefeatStreak: state.raidDefeatStreak ?? 0,
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   lastSchedulerTick: state.lastSchedulerTick,
@@ -320,6 +322,9 @@ export const merge = <S extends GameState & GameActions>(
   merged.caravans = (persisted.caravans as Caravan[]) ?? currentState.caravans;
   merged.soulUpgrades =
     (persisted.soulUpgrades as Record<string, number>) ?? currentState.soulUpgrades;
+  // Phase 6: 旧セーブには無いので初期値 0 にフォールバック
+  merged.prestigeCount =
+    (persisted.prestigeCount as number) ?? currentState.prestigeCount ?? 0;
   merged.lastSchedulerTick =
     (persisted.lastSchedulerTick as number) ?? currentState.lastSchedulerTick;
   merged.marketPrices =
@@ -329,6 +334,9 @@ export const merge = <S extends GameState & GameActions>(
   merged.revealedNodes =
     (persisted.revealedNodes as Record<string, string[]>) ?? currentState.revealedNodes;
   merged.raid = (persisted.raid as GameState["raid"]) ?? null;
+  // Phase 6: 旧セーブには無いので 0 にフォールバック
+  merged.raidDefeatStreak =
+    (persisted.raidDefeatStreak as number) ?? currentState.raidDefeatStreak ?? 0;
 
   // フラットな Record は shallow merge
   // B8 修正: 破損セーブで undefined / NaN / Infinity が混入しても

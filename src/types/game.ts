@@ -330,6 +330,11 @@ export interface ActiveBossState {
   currentHp: number;
   maxHp: number;
   attackerIds: string[]; // 参加中の村人IDリスト
+  /**
+   * Phase 6: 最後に「交戦可能なアタッカー」が存在した累計時間 ((day-1)*24 + hour)。
+   * 離脱リセット (b) の24時間猶予の計測に使う。旧セーブでは未設定 → 現在時刻として扱う。
+   */
+  lastEngagedAtElapsedHour?: number;
 }
 
 export interface TradeRule {
@@ -446,6 +451,8 @@ export interface GameEconomy {
   gold: number;
   soulPoints: number;
   soulUpgrades: Record<string, number>;
+  /** Phase 6: 転生した回数（周回数）。ソウルアップグレード価格の周回逓増に使う */
+  prestigeCount: number;
   inventory: Record<string, number>;
   targetAmounts: Record<string, number>;
   facilities: Record<FacilityType, Facility>;
@@ -486,6 +493,8 @@ export interface GameWorld {
   revealedNodes: Record<string, string[]>;
   /** Phase 4b: 襲撃イベント（4a では常に null） */
   raid: RaidState | null;
+  /** Phase 6: 防衛戦の連敗数（略奪率の逓増に使う。旧セーブでは未定義=0） */
+  raidDefeatStreak?: number;
 }
 
 export interface GameProgression {

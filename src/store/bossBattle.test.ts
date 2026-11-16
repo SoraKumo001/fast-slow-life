@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 
+import { MONSTERS } from "../data/masterData";
 import type { Villager, RunStats } from "../types/game";
 import { processBossBattle } from "./bossBattle";
+import { useGameStore } from "./gameStore";
 
 function makeVillager(overrides: Partial<Villager> = {}): Villager {
   return {
@@ -289,6 +291,261 @@ describe("bossBattle", () => {
 
       expect(result.activeBoss?.currentHp).toBe(601);
       expect(result.logs).toHaveLength(0);
+    });
+  });
+
+  describe("Phase 6: ボス戦の離脱リセット", () => {
+    // 累計時間の基準: 6日目 4時 = (6-1)*24 + 4 = 124
+    const DAY = 6;
+    const HOUR = 4;
+    const ELAPSED = 124;
+
+    it("全滅で activeBoss が破棄され、離脱ログが出ること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin",
+        currentHp: 30,
+        maxHp: 30,
+        attackerIds: ["v1"],
+        lastEngagedAtElapsedHour: ELAPSED,
+      };
+      const villagers = [
+        makeVillager({ id: "v1", str: 1, dex: 0, vit: 1, currentHp: 1, maxHp: 100 }),
+      ];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).toBeNull();
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り、傷を癒した"))).toBe(true);
+    });
+
+    it("離脱後の再挑戦 (startBossBattle) は満タンHPから始まること", () => {
+      useGameStore.getState().resetGame(false);
+      const state = useGameStore.getState();
+      const villagerId = state.villagers[0].id;
+
+      state.startBossBattle("goblin_leader", [villagerId]);
+
+      const boss = useGameStore.getState().activeBoss;
+      expect(boss).not.toBeNull();
+      expect(boss?.currentHp).toBe(MONSTERS.goblin_leader.hp);
+      expect(boss?.currentHp).toBe(boss?.maxHp);
+      expect(boss?.lastEngagedAtElapsedHour).toBe(
+        (state.currentDay - 1) * 24 + state.currentHour,
+      );
+    });
+
+    it("全アタッカーが戦闘不能なら、猶予時間内でも即時離脱すること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 500,
+        maxHp: 1600,
+        attackerIds: ["v1"],
+        // 猶予はたっぷり残っている (最終交戦 = 現在時刻)
+        lastEngagedAtElapsedHour: ELAPSED,
+      };
+      // 戦闘不能のまま帰還中 (戦闘中ではない経路で倒れたケース)
+      const villagers = [
+        makeVillager({ id: "v1", status: "traveling_back", currentHp: 0, maxHp: 100 }),
+      ];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).toBeNull();
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り、傷を癒した"))).toBe(true);
+    });
+
+    it("交戦可能なアタッカーが24時間いないと離脱すること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 500,
+        maxHp: 1600,
+        attackerIds: ["v1"],
+        lastEngagedAtElapsedHour: ELAPSED - 24,
+      };
+      // 休息中 = 交戦可能ではない
+      const villagers = [makeVillager({ id: "v1", status: "resting" })];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).toBeNull();
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り、傷を癒した"))).toBe(true);
+    });
+
+    it("交戦可能なアタッカーの不在が24時間未満なら離脱しないこと", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 500,
+        maxHp: 1600,
+        attackerIds: ["v1"],
+        lastEngagedAtElapsedHour: ELAPSED - 23,
+      };
+      const villagers = [makeVillager({ id: "v1", status: "resting" })];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).not.toBeNull();
+      // 戦闘は発生せず自然回復のみ: 500 + floor(1600 * 0.002) = 503
+      expect(result.activeBoss?.currentHp).toBe(503);
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り"))).toBe(false);
+    });
+
+    it("交戦が継続している間はリセットされず、最終交戦時刻が更新されること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 1600,
+        maxHp: 1600,
+        attackerIds: ["v1"],
+        // 100時間前の交戦でも、現在交戦中なら離脱しない
+        lastEngagedAtElapsedHour: ELAPSED - 100,
+      };
+      const villagers = [
+        makeVillager({
+          id: "v1",
+          str: 1,
+          dex: 0,
+          vit: 1000,
+          maxHp: 10000,
+          currentHp: 10000,
+          armorId: "dragon_scale_mail",
+        }),
+      ];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).not.toBeNull();
+      expect(result.activeBoss?.lastEngagedAtElapsedHour).toBe(ELAPSED);
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り"))).toBe(false);
+    });
+
+    it("ボスへ移動中の追加参戦で離脱タイマーがリセットされること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 500,
+        maxHp: 1600,
+        attackerIds: ["v1", "v2"],
+        lastEngagedAtElapsedHour: ELAPSED - 100,
+      };
+      const villagers = [
+        makeVillager({ id: "v1", status: "resting" }),
+        makeVillager({
+          id: "v2",
+          status: "traveling_to",
+          destinationAreaId: "forest",
+          targetMonsterId: "goblin_leader",
+          dungeonState: {
+            currentDepth: 0,
+            targetDepth: 100,
+            lane: 0,
+            phase: "traveling_to",
+            targetNodeId: "goblin_leader",
+          },
+        }),
+      ];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).not.toBeNull();
+      expect(result.activeBoss?.lastEngagedAtElapsedHour).toBe(ELAPSED);
+      expect(result.logs.some((log) => log.message.includes("巣へ戻り"))).toBe(false);
+    });
+
+    it("lastEngagedAtElapsedHour が未記録 (旧セーブ) では即離脱せず現在時刻を起点にすること", () => {
+      vi.spyOn(Math, "random").mockReturnValue(0);
+      const activeBoss = {
+        monsterId: "goblin_leader",
+        currentHp: 500,
+        maxHp: 1600,
+        attackerIds: ["v1"],
+      };
+      const villagers = [makeVillager({ id: "v1", status: "resting" })];
+
+      const result = processBossBattle(
+        activeBoss,
+        villagers,
+        [],
+        1,
+        false,
+        {},
+        makeStats(),
+        DAY,
+        1,
+        HOUR,
+      );
+
+      expect(result.activeBoss).not.toBeNull();
+      expect(result.activeBoss?.lastEngagedAtElapsedHour).toBe(ELAPSED);
     });
   });
 });
