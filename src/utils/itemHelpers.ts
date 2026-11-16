@@ -153,3 +153,19 @@ export const isItemAvailable = (
 
   return false;
 };
+
+// 在庫のデスクトップ詳細パネルの幅（w-[24rem]）
+export const DETAIL_PANEL_WIDTH_PX = 384;
+
+// 詳細パネルを左に開くべきか。右に収まる場合は右（従来どおり）、
+// 右に収まらず左に収まる場合のみ左に開く。どちらにも収まらない場合は右。
+export function detailPanelOpensLeft(
+  listLeft: number,
+  listRight: number,
+  viewportWidth: number,
+  panelWidth: number = DETAIL_PANEL_WIDTH_PX,
+): boolean {
+  const fitsRight = listRight + panelWidth <= viewportWidth;
+  const fitsLeft = listLeft - panelWidth >= 0;
+  return !fitsRight && fitsLeft;
+}

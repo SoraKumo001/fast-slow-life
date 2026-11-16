@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { ITEMS, RECIPES } from "../data/masterData";
 import type { DungeonArea, Facility, FacilityType, ItemCategory } from "../types/game";
 import {
+  detailPanelOpensLeft,
   getCategoryBadgeColor,
   getCategoryLabel,
   getBonusDiff,
@@ -337,5 +338,26 @@ describe("itemHelpers - isItemAvailable", () => {
     const elapsed = Date.now() - start;
     expect(elapsed).toBeLessThan(100); // 100ms 以内
     expect(result).toBe(false);
+  });
+});
+
+describe("itemHelpers - detailPanelOpensLeft", () => {
+  // パネル幅 384px 前提
+  it("右に収まる場合は右に開く（従来どおり）", () => {
+    // クラシックレイアウト: 在庫は左端の列。右に十分な余白がある
+    expect(detailPanelOpensLeft(16, 436, 1600)).toBe(false);
+  });
+
+  it("右に収まらず左に収まる場合は左に開く", () => {
+    // v2 レイアウト: 在庫は右サイドバー内。右端 1584 + 384 > 1600、左には余白あり
+    expect(detailPanelOpensLeft(1164, 1584, 1600)).toBe(true);
+  });
+
+  it("ちょうど収まる場合は右に開く", () => {
+    expect(detailPanelOpensLeft(0, 1216, 1600)).toBe(false);
+  });
+
+  it("どちらにも収まらない場合は右に開く（フォールバック）", () => {
+    expect(detailPanelOpensLeft(100, 900, 1000)).toBe(false);
   });
 });
