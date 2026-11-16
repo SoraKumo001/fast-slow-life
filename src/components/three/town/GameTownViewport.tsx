@@ -11,6 +11,9 @@ import {
   type GridPoint,
 } from "../../../data/townLayout";
 import { useGameStore } from "../../../store/gameStore";
+import type { Villager } from "../../../types/game";
+import { describeTransition, useFootprintStore } from "../../../store/life/footprint";
+import { deriveNeeds } from "../../../store/life/needs";
 import { findPath } from "../../../store/life/pathfinding";
 import {
   resolveVillagerDestination,
@@ -35,6 +38,8 @@ interface LabelItem {
   id: string;
   name: string;
   subText: string;
+  /** 活動に応じた吹き出しアイコン (Phase 2) */
+  icon?: string;
   x: number;
   y: number;
   visible: boolean;
@@ -101,7 +106,9 @@ interface AgentRuntime {
   path: GridPoint[];
   pathIndex: number;
   destKey: string;
+  buildingId: string;
   activity: TownActivity;
+  lifeAction?: string;
   anchor: GridPoint;
   arrived: boolean;
   hidden: boolean;
@@ -154,6 +161,8 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
   const playSpeed = useGameStore((s) => s.playSpeed);
   const activeBoss = useGameStore((s) => s.activeBoss);
   const gameOver = useGameStore((s) => s.gameOver);
+  const dungeons = useGameStore((s) => s.dungeons);
+  const footprintEntries = useFootprintStore((s) => s.entries);
 
   const propsRef = useRef({
     villagers,
@@ -164,6 +173,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     playSpeed,
     activeBoss,
     gameOver,
+    dungeons,
     azimuthDeg,
   });
   propsRef.current = {
@@ -175,6 +185,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     playSpeed,
     activeBoss,
     gameOver,
+    dungeons,
     azimuthDeg,
   };
 
@@ -348,12 +359,42 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
       }
     };
 
+    // 行き先の変化を「今日のあしあと」に記録する (Phase 2)。
+    // 初回生成時は prev=null で「現在の行き先」を初期エントリとして1件記録する。
+    const recordFootprint = (
+      v: Villager,
+      prev: { buildingId: string; activity: TownActivity; lifeAction?: string } | null,
+      dest: ReturnType<typeof resolveVillagerDestination>,
+      p: typeof propsRef.current,
+    ) => {
+      const described = describeTransition(prev, dest, v, {
+        buildingName: getBuildingById(dest.buildingId)?.name ?? dest.buildingId,
+        dungeonName:
+          p.dungeons.find((d) => d.id === v.destinationAreaId)?.name ?? null,
+      });
+      if (!described) return;
+      useFootprintStore.getState().addEntry({
+        villagerId: v.id,
+        day: p.currentDay,
+        hour: p.currentHour,
+        text: described.text,
+        kind: described.kind,
+      });
+    };
+
     const syncAgents = (p: typeof propsRef.current) => {
       const seen = new Set<string>();
       p.villagers.forEach((v, i) => {
         seen.add(v.id);
-        const dest = resolveVillagerDestination(v, p.facilities, p.activeBoss, p.currentHour, i);
-        const destKey = `${dest.buildingId}:${dest.activity}`;
+        const dest = resolveVillagerDestination(
+          v,
+          p.facilities,
+          p.activeBoss,
+          p.currentHour,
+          i,
+          p.villagers,
+        );
+        const destKey = `${dest.buildingId}:${dest.activity}:${dest.lifeAction ?? ""}`;
         let rt = agents.get(v.id);
 
         if (!rt) {
@@ -369,7 +410,9 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
             path: [],
             pathIndex: 0,
             destKey,
+            buildingId: dest.buildingId,
             activity: dest.activity,
+            lifeAction: dest.lifeAction,
             anchor: dest.anchor,
             arrived: true,
             hidden: false,
@@ -383,6 +426,8 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
           if (dest.activity === "sleep" || dest.activity === "dungeon") {
             applyArrivalVisibility(rt);
           }
+          // 初回記録: 現在の行き先をあしあとの初期エントリにする
+          recordFootprint(v, null, dest, p);
           return;
         }
 
@@ -402,10 +447,18 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
 
         if (rt.destKey === destKey) return;
 
-        // 行き先が変わった
+        // 行き先が変わった: あしあとに記録してから状態を更新する
+        recordFootprint(
+          v,
+          { buildingId: rt.buildingId, activity: rt.activity, lifeAction: rt.lifeAction },
+          dest,
+          p,
+        );
         const wasHiddenReason = rt.hiddenReason;
         rt.destKey = destKey;
+        rt.buildingId = dest.buildingId;
         rt.activity = dest.activity;
+        rt.lifeAction = dest.lifeAction;
         rt.anchor = dest.anchor;
         rt.arrived = false;
 
@@ -772,6 +825,12 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
         const w = container.clientWidth || 640;
         const h = container.clientHeight || 480;
         const nextLabels: LabelItem[] = [];
+        // 💬 判定用: 建物ごとに何人いるか (非表示の村人は除く)
+        const buildingCounts = new Map<string, number>();
+        agents.forEach((rt) => {
+          if (rt.hidden) return;
+          buildingCounts.set(rt.buildingId, (buildingCounts.get(rt.buildingId) ?? 0) + 1);
+        });
         for (const v of p.villagers) {
           const rt = agents.get(v.id);
           if (!rt || rt.hidden) continue;
@@ -780,10 +839,21 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
           const visible =
             proj.z < 1 && proj.x >= -1.1 && proj.x <= 1.1 && proj.y >= -1.1 && proj.y <= 1.1;
           if (!visible) continue;
+          let icon: string | undefined;
+          if (rt.activity === "meal") icon = "🍞";
+          else if (rt.activity === "work") icon = "🔨";
+          else if (rt.activity === "rest") icon = "☕";
+          else if (
+            (rt.activity === "stroll" || rt.activity === "idle") &&
+            (buildingCounts.get(rt.buildingId) ?? 0) >= 2
+          ) {
+            icon = "💬";
+          }
           nextLabels.push({
             id: v.id,
             name: v.name,
             subText: v.currentJob,
+            icon,
             x: (proj.x * 0.5 + 0.5) * w,
             y: (-proj.y * 0.5 + 0.5) * h,
             visible,
@@ -882,7 +952,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
     const v = villagers.find((x) => x.id === selection.id);
     if (v) {
       const idx = villagers.indexOf(v);
-      const dest = resolveVillagerDestination(v, facilities, activeBoss, currentHour, idx);
+      const dest = resolveVillagerDestination(v, facilities, activeBoss, currentHour, idx, villagers);
       const destDef = getBuildingById(dest.buildingId);
       const statusText =
         dest.activity === "work"
@@ -893,9 +963,29 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
               ? "休息中"
               : dest.activity === "sleep"
                 ? "就寝中"
-                : dest.activity === "idle"
-                  ? "広場で待機中"
-                  : "自宅で待機中";
+                : dest.activity === "meal"
+                  ? `${destDef?.name ?? "調理場"}で食事中`
+                  : dest.activity === "stroll"
+                    ? dest.lifeAction === "shopping"
+                      ? "買い物中"
+                      : dest.buildingId === "plaza"
+                        ? "広場で過ごしている"
+                        : "町を散策中"
+                    : dest.activity === "idle"
+                      ? "広場で待機中"
+                      : "自宅で待機中";
+      const needs = deriveNeeds(v, currentHour);
+      const needBars: { label: string; value: number }[] = [
+        { label: "空腹", value: needs.hunger },
+        { label: "疲労", value: needs.fatigue },
+        { label: "健康", value: needs.illHealth },
+        { label: "社交", value: needs.social },
+        { label: "満足", value: needs.wealthLack },
+      ];
+      const todayFootprints = footprintEntries
+        .filter((e) => e.villagerId === v.id && e.day === currentDay)
+        .slice(-12)
+        .reverse();
       card = (
         <>
           <div className="text-sm font-bold text-slate-100">{v.name}</div>
@@ -905,6 +995,47 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
           <div className="text-[11px] text-slate-500">
             HP {Math.floor(v.currentHp)}/{v.maxHp} ・ スタミナ {Math.floor(v.stamina)}/
             {v.maxStamina}
+          </div>
+          {/* 欲求バー (欠乏度: 高いほど困っている) */}
+          <div className="mt-2 space-y-1 w-56">
+            {needBars.map((bar) => (
+              <div key={bar.label} className="flex items-center gap-1.5">
+                <span className="w-7 text-[10px] text-slate-400">{bar.label}</span>
+                <div className="flex-1 h-1.5 rounded bg-slate-800 overflow-hidden">
+                  <div
+                    className={`h-full rounded ${
+                      bar.value >= 70
+                        ? "bg-red-400"
+                        : bar.value >= 40
+                          ? "bg-amber-400"
+                          : "bg-emerald-400"
+                    }`}
+                    style={{ width: `${Math.round(bar.value)}%` }}
+                  />
+                </div>
+                <span className="w-6 text-right text-[10px] text-slate-500">
+                  {Math.round(bar.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+          {/* 今日のあしあと */}
+          <div className="mt-2 w-56">
+            <div className="text-[10px] font-bold text-slate-400">今日のあしあと</div>
+            {todayFootprints.length === 0 ? (
+              <div className="text-[10px] text-slate-500 mt-0.5">まだ記録がありません</div>
+            ) : (
+              <ul className="mt-0.5 max-h-40 overflow-y-auto space-y-0.5 pr-1">
+                {todayFootprints.map((e, i) => (
+                  <li key={`${e.day}-${e.hour}-${e.text}-${i}`} className="text-[10px] text-slate-300">
+                    <span className="text-slate-500 mr-1.5">
+                      {String(e.hour).padStart(2, "0")}:00
+                    </span>
+                    {e.text}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <button
             className="mt-2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[11px] font-bold text-white transition"
@@ -934,6 +1065,7 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
             className="absolute top-0 left-0 flex flex-col items-center"
           >
             <div className="px-1.5 py-0.5 rounded text-[9px] font-bold leading-none whitespace-nowrap shadow bg-slate-900/85 text-sky-200 border border-sky-700/60">
+              {item.icon && <span className="mr-1">{item.icon}</span>}
               {item.name}
               <span className="ml-1 opacity-75 font-normal">{item.subText}</span>
             </div>

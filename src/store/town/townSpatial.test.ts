@@ -172,25 +172,35 @@ describe("resolveVillagerDestination: 優先順位", () => {
     expect(withoutInn.activity).toBe("rest");
   });
 
-  it("行7-9: idle は時刻帯で sleep / plaza / home に分かれる", () => {
+  it("行7: idle の夜間帯 (22〜6時) は就寝を維持する", () => {
     const facilities = makeFacilities();
     const v = makeVillager("v2", { status: "idle" });
-    const at = (hour: number) => resolveVillagerDestination(v, facilities, null, hour, 1);
-
     for (const h of [22, 23, 0, 3, 5]) {
-      const d = at(h);
+      const d = resolveVillagerDestination(v, facilities, null, h, 1);
       expect(d.activity, `hour=${h}`).toBe("sleep");
       expect(d.buildingId, `hour=${h}`).toBe("house_2");
     }
+  });
+
+  it("行8: idle の日中は生活AIが選ぶ (Phase 2)。食事どきは調理場で meal", () => {
+    const facilities = makeFacilities();
+    const v = makeVillager("v2", { status: "idle" });
     for (const h of [7, 12, 18]) {
-      const d = at(h);
-      expect(d.activity, `hour=${h}`).toBe("idle");
-      expect(d.buildingId, `hour=${h}`).toBe("plaza");
+      const d = resolveVillagerDestination(v, facilities, null, h, 1);
+      expect(d.activity, `hour=${h}`).toBe("meal");
+      expect(d.buildingId, `hour=${h}`).toBe("kitchen");
+      expect(d.lifeAction, `hour=${h}`).toBe("meal");
     }
-    for (const h of [6, 19, 20, 21]) {
-      const d = at(h);
-      expect(d.activity, `hour=${h}`).toBe("home");
-      expect(d.buildingId, `hour=${h}`).toBe("house_2");
+  });
+
+  it("行8: 食事バフのある idle 村人は日中に meal 以外の生活行動を選ぶ", () => {
+    const facilities = makeFacilities();
+    const v = makeVillager("v2", { status: "idle", activeFoodBuffId: "food_bread" });
+    for (let h = 6; h < 22; h++) {
+      const d = resolveVillagerDestination(v, facilities, null, h, 1);
+      expect(d.activity, `hour=${h}`).not.toBe("meal");
+      expect(d.activity, `hour=${h}`).not.toBe("sleep");
+      expect(d.lifeAction, `hour=${h}`).toBeTruthy();
     }
   });
 });
@@ -252,6 +262,83 @@ describe("行き先の妥当性 (全状態 × 全時刻)", () => {
         expect(isWalkable(a.x, a.z), `${def.id} idx=${i}`).toBe(true);
       }
     }
+  });
+});
+
+describe("生活シミュレーション検証 (Phase 2 仕様 §7-4)", () => {
+  const facilities = makeFacilities();
+  const fixtures: { label: string; villager: Villager; index: number }[] = [
+    {
+      label: "idle の農民",
+      villager: makeVillager("sim_farmer", { status: "idle", currentJob: "農民" }),
+      index: 0,
+    },
+    {
+      label: "飢餓の戦士",
+      villager: makeVillager("sim_warrior", {
+        status: "idle",
+        currentJob: "戦士",
+        isStarving: true,
+      }),
+      index: 1,
+    },
+    {
+      label: "疲労した職人",
+      villager: makeVillager("sim_crafter", {
+        status: "idle",
+        currentJob: "職人",
+        stamina: 10,
+      }),
+      index: 2,
+    },
+  ];
+
+  it("① 全時刻で行き先が歩行可能マスに解決する", () => {
+    for (const { label, villager, index } of fixtures) {
+      for (let h = 0; h < 24; h++) {
+        const d = resolveVillagerDestination(villager, facilities, null, h, index);
+        expect(
+          isWalkable(d.anchor.x, d.anchor.z),
+          `${label}@${h} -> ${d.buildingId} (${d.anchor.x},${d.anchor.z})`,
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("② 飢餓の村人は食事どきに meal を選ぶ", () => {
+    const starving = fixtures[1].villager;
+    for (const h of [7, 12, 18]) {
+      const d = resolveVillagerDestination(starving, facilities, null, h, 1);
+      expect(d.activity, `hour=${h}`).toBe("meal");
+      expect(d.lifeAction, `hour=${h}`).toBe("meal");
+    }
+  });
+
+  it("③ 夜間は全員 sleep", () => {
+    for (const { label, villager, index } of fixtures) {
+      for (const h of [22, 23, 0, 2, 5]) {
+        const d = resolveVillagerDestination(villager, facilities, null, h, index);
+        expect(d.activity, `${label}@${h}`).toBe("sleep");
+      }
+    }
+  });
+
+  it("④ 同じ入力で同じ選択 (決定性)", () => {
+    for (const { villager, index } of fixtures) {
+      for (let h = 0; h < 24; h++) {
+        expect(resolveVillagerDestination(villager, facilities, null, h, index)).toEqual(
+          resolveVillagerDestination(villager, facilities, null, h, index),
+        );
+      }
+    }
+  });
+
+  it("疲労した職人は日中に静養 (rest / recuperate) を選ぶ", () => {
+    const crafter = fixtures[2].villager;
+    const d = resolveVillagerDestination(crafter, facilities, null, 10, 2);
+    expect(d.activity).toBe("rest");
+    expect(d.buildingId).toBe("inn");
+    expect(d.lifeAction).toBe("recuperate");
   });
 });
 
