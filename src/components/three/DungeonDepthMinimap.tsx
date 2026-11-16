@@ -61,11 +61,11 @@ export const DungeonDepthMinimap: React.FC<DungeonDepthMinimapProps> = ({
 
   const viewW = map.cols * CELL;
   const viewH = map.rows * CELL;
-  // グリッド座標 → SVG 座標（入口行が下になるよう gy を反転）
+  // グリッド座標 → SVG 座標（3Dビューの地面と同じ向き: gy が大きい入口行が下）
   const sx = (gx: number) => gx * CELL;
-  const sy = (gy: number) => (map.rows - 1 - gy) * CELL;
+  const sy = (gy: number) => gy * CELL;
   const cx = (gx: number) => (gx + 0.5) * CELL;
-  const cy = (gy: number) => (map.rows - 0.5 - gy) * CELL;
+  const cy = (gy: number) => (gy + 0.5) * CELL;
 
   const handleClick = (e: React.MouseEvent<SVGSVGElement>) => {
     const rect = svgRef.current?.getBoundingClientRect();
@@ -77,7 +77,7 @@ export const DungeonDepthMinimap: React.FC<DungeonDepthMinimapProps> = ({
     const px = (e.clientX - rect.left - offsetX) / scale;
     const py = (e.clientY - rect.top - offsetY) / scale;
     const gx = Math.floor(px / CELL);
-    const gy = map.rows - 1 - Math.floor(py / CELL);
+    const gy = Math.floor(py / CELL);
     if (gx < 0 || gx >= map.cols || gy < 0 || gy >= map.rows) return;
     const node = map.byCell.get(cellKey(gx, gy));
     if (node) onSelectDepth(node.depth);
