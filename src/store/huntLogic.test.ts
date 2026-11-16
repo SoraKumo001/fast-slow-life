@@ -113,8 +113,10 @@ describe("huntLogic - processVillagerHunt", () => {
     // 戦闘ログが出ている
     const encounterLog = result.logs.find((l) => l.message.includes("遭遇"));
     expect(encounterLog).toBeDefined();
-    // 敵が倒されてドロップ獲得 (raw_meat)
-    expect(result.inventory.raw_meat).toBeGreaterThanOrEqual(1);
+    // 敵が倒されてドロップ獲得 (raw_meat) — Phase 4a: ドロップは所持品 (pool) に入り、
+    // 町の在庫には入らない（買取は帰還後）
+    expect(v.pool.raw_meat).toBeGreaterThanOrEqual(1);
+    expect(result.inventory.raw_meat ?? 0).toBe(0);
   });
 
   it("村人が戦闘不能になった場合はダメージを受けたログが出ること", () => {

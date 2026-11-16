@@ -50,6 +50,8 @@ export const createBossActions = (set: StoreSet, get: StoreGet) => ({
           currentHp: monster.hp,
           maxHp: monster.maxHp,
           attackerIds: villagerIds,
+          // Phase 6: 離脱リセット (b) の猶予計測の起点
+          lastEngagedAtElapsedHour: (state.currentDay - 1) * 24 + state.currentHour,
         },
         villagers: updatedVillagers,
         facilities: updatedFacilities,

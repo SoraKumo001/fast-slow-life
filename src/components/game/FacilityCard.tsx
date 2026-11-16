@@ -17,6 +17,7 @@ import { CraftQueueDisplay } from "./CraftQueueDisplay";
 import { CraftRecipeGrid } from "./CraftRecipeGrid";
 import { FacilityCollapsedSummary } from "./FacilityCollapsedSummary";
 import { GuildPanel } from "./GuildPanel";
+import { MarketPolicyPanel } from "./MarketPolicyPanel";
 import { TradeRulePanel } from "./TradeRulePanel";
 import { TrainingGroundPanel } from "./TrainingGroundPanel";
 import { UpgradeCostDisplay } from "./UpgradeCostDisplay";
@@ -322,7 +323,12 @@ export const FacilityCard: React.FC<FacilityCardProps> = ({
               <GuildPanel fac={fac} isUnlocked={isUnlocked} onHireVillager={onHireVillager} />
             )}
 
-            {fac.id === "market" && isUnlocked && <TradeRulePanel tradeRules={tradeRules} />}
+            {fac.id === "market" && isUnlocked && (
+              <>
+                <MarketPolicyPanel />
+                <TradeRulePanel tradeRules={tradeRules} />
+              </>
+            )}
           </div>
         )}
       </div>

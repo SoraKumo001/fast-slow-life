@@ -4,6 +4,7 @@ import { generateId } from "../../utils/craftHelpers";
 import { formatGameTime } from "../../utils/timeHelpers";
 import { calculateAdvanceHour } from "../gameLoop";
 import { calculateEarnedSp } from "../gameReset";
+import { getTotalElapsedHours, isRaidFighting } from "../raidLogic";
 import { dispatchIdleVillagersHelper } from "../villagerDispatch";
 
 export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
@@ -28,6 +29,11 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
     const hasIdleVillagers = villagers.some((v) => v.status === "idle" && v.order !== "rest");
     if (!hasIdleVillagers) return;
 
+    // Phase 4b: 防衛戦の最中は町の村人が防衛に就いているため自動派遣を止める
+    if (isRaidFighting(state.raid ?? null, getTotalElapsedHours(state.currentDay, state.currentHour))) {
+      return;
+    }
+
     const result = dispatchIdleVillagersHelper({
       villagers: state.villagers,
       inventory: state.inventory,
@@ -37,6 +43,8 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       bossDefeated: state.bossDefeated,
       gold: state.gold,
       facilities: state.facilities,
+      // Phase 4b: 襲撃発生中のダンジョンへは新規派遣しない
+      blockedAreaId: state.raid?.dungeonId ?? null,
     });
 
     if (result.anyDispatched) {
@@ -80,6 +88,10 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       dungeons: result.dungeons,
       inventory: result.inventory,
       currentTier: result.currentTier,
+      marketPrices: result.marketPrices,
+      pricePolicy: result.pricePolicy,
+      lastSettlement: result.lastSettlement,
+      dailyFlows: result.dailyFlows,
       activeBoss: result.activeBoss,
       bossDefeated: result.bossDefeated,
       tierStartDay: result.tierStartDay,
@@ -88,6 +100,9 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       isPaused: result.isPaused,
       towns: result.towns,
       caravans: result.caravans,
+      revealedNodes: result.revealedNodes,
+      raid: result.raid,
+      raidDefeatStreak: result.raidDefeatStreak ?? 0,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       lastSchedulerTick: result.lastSchedulerTick,
       stats: result.stats,

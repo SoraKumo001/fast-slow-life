@@ -6,6 +6,7 @@ import { FacilityList } from "./components/game/FacilityList";
 import { InventoryPanel } from "./components/game/InventoryPanel";
 import { VillagerList } from "./components/game/VillagerList";
 import { ActiveBossBar } from "./components/layout/ActiveBossBar";
+import { RaidBanner } from "./components/layout/RaidBanner";
 import { Header } from "./components/layout/Header";
 import { LogHistoryWindow } from "./components/layout/LogHistoryWindow";
 import { SettingsDrawer, useSettingsDrawer } from "./components/layout/SettingsDrawer";
@@ -18,6 +19,10 @@ import { BossWipeoutAnnouncement } from "./components/ui/BossWipeoutAnnouncement
 import { Button } from "./components/ui/Button";
 import { Modal } from "./components/ui/Modal";
 import { ShortcutKey } from "./components/ui/ShortcutKey";
+import {
+  GameTownViewport,
+  type TownSideTab,
+} from "./components/three/town/GameTownViewport";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { useGameStatus, useGameControls, useLogs } from "./hooks";
 import { useBossDefeatDetector } from "./hooks/useBossDefeatDetector";
@@ -27,6 +32,10 @@ import { useToastStore } from "./hooks/useToastStore";
 import { useGameStore } from "./store/gameStore";
 
 export default function App() {
+  // v2 Phase 1: ?classic=1 で従来の4カラム画面に戻す (非推奨の逃げ道として存続)
+  // ※ ?prototype=town は Phase 5 で撤去した
+  const isClassic = new URLSearchParams(location.search).get("classic") === "1";
+
   const { isPaused, playSpeed, gameOver, gameOverReason } = useGameStatus();
   const { advanceHour } = useGameControls();
   const logs = useLogs();
@@ -36,6 +45,7 @@ export default function App() {
   const [showResultModal, setShowResultModal] = useState(false);
   const [bossAreaId, setBossAreaId] = useState<string | null>(null);
   const [gameOverTab, setGameOverTab] = useState<"result" | "soul">("result");
+  const [sideTab, setSideTab] = useState<TownSideTab>("villagers");
   const lastLogIdRef = useRef<string | null>(null);
   const settingsDrawer = useSettingsDrawer();
 
@@ -114,11 +124,15 @@ export default function App() {
         {/* アクティブボスバー (P2-3) */}
         <ActiveBossBar />
 
+        {/* 襲撃バナー (Phase 4b) */}
+        <RaidBanner />
+
         {/* Toast通知 */}
         <ToastContainer />
 
-        {/* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */}
-        <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
+        {isClassic ? (
+          /* メイン 4カラムグリッドエリア (スクロール防止、内部スクロールに依存) */
+          <main className="flex-1 p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_1.2fr_1.2fr_1.4fr] gap-6 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
           {/* 1. 素材・アイテム */}
           <div className="h-125 lg:h-full min-w-0">
             <InventoryPanel />
@@ -134,11 +148,67 @@ export default function App() {
             <FacilityList />
           </div>
 
-          {/* 4. ダンジョン派遣 */}
-          <div className="h-125 lg:h-full overflow-hidden">
-            <DungeonPanel />
-          </div>
-        </main>
+            {/* 4. ダンジョン派遣 */}
+            <div className="h-125 lg:h-full overflow-hidden">
+              <DungeonPanel />
+            </div>
+          </main>
+        ) : (
+          /* v2 Phase 1: 町ビューポート (主) + タブ式サイドパネル */
+          <main className="flex-1 flex flex-col lg:flex-row gap-4 p-4 min-h-0 overflow-y-auto lg:overflow-hidden select-none">
+            <div className="flex-1 min-w-0 h-[440px] shrink-0 lg:h-auto lg:shrink">
+              <GameTownViewport onSelectTab={setSideTab} heightClass="h-full" />
+            </div>
+
+            <aside className="w-full lg:w-[420px] shrink-0 flex flex-col min-h-0 h-[580px] lg:h-auto">
+              <div className="flex gap-1 mb-2 bg-slate-950/60 p-1 rounded-lg border border-slate-800 shrink-0">
+                {(
+                  [
+                    { id: "inventory", label: "在庫" },
+                    { id: "villagers", label: "村人" },
+                    { id: "facilities", label: "施設" },
+                    { id: "dungeons", label: "ダンジョン" },
+                  ] as { id: TownSideTab; label: string }[]
+                ).map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setSideTab(tab.id)}
+                    className={`flex-1 py-1.5 px-2 rounded text-xs font-bold transition ${
+                      sideTab === tab.id
+                        ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1 min-h-0">
+                {sideTab === "inventory" && (
+                  <div className="h-full min-h-0">
+                    <InventoryPanel />
+                  </div>
+                )}
+                {sideTab === "villagers" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <VillagerList />
+                  </div>
+                )}
+                {sideTab === "facilities" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <FacilityList />
+                  </div>
+                )}
+                {sideTab === "dungeons" && (
+                  <div className="h-full min-h-0 overflow-hidden">
+                    <DungeonPanel />
+                  </div>
+                )}
+              </div>
+            </aside>
+          </main>
+        )}
 
         {/* ボス撃破 / 全滅アナウンス */}
         <BossDefeatAnnouncement />
@@ -232,6 +302,40 @@ export default function App() {
                 <ShortcutKey keys="?" label="この遊び方を表示" />
                 <ShortcutKey keys="Esc" label="モーダルを閉じる" />
               </div>
+            </div>
+
+            {/* v2 ガイド (Phase 5) */}
+            <div className="bg-sky-950/40 border border-sky-900/50 rounded-lg p-3 space-y-2">
+              <p className="text-slate-200 font-bold">🌆 v2 ガイド</p>
+              <p>
+                <strong>町の見方:</strong>
+                <br />
+                町はポリゴンで描かれ、村人は仕事・食事・休息・就寝をしながら暮らしています。建物や村人をクリックするとミニカードが開き、施設の状態や村人の欲求（空腹・疲労など）、その日の行動記録「今日のあしあと」が見られます。ドラッグでパン、ホイールでズーム、Q / E キーで90度回転できます。
+              </p>
+              <p>
+                <strong>価格方針と毎日の精算:</strong>
+                <br />
+                交易所の買取価格は在庫の希少性で毎朝変動します。交易所のカードから価格方針（安売り ×0.8 / 標準 ×1.0 / 高級 ×1.25）を選べ、前日の買取・食料代・賃金・キャラバンの収支は「昨日の精算」で確認できます。採取物は村人の仮置き場に溜まり、帰町したときにまとめて買い取られます。
+              </p>
+              <p>
+                <strong>需要ボード:</strong>
+                <br />
+                アイテムに目標個数を設定すると、目標まで不足している間は価格が最大 +30%
+                上がります（翌日の価格に反映）。在庫タブ上部の「需要ボード」と、広場の掲示板（広場をクリック）で不足品目を確認できます。
+              </p>
+              <p>
+                <strong>ノードマップと霧:</strong>
+                <br />
+                ダンジョンは採取・討伐ノードの分岐マップです。未踏のノードは霧に隠れて「？」と表示され、村人が近づくと解放されます。村人の所持容量（10 +
+                筋力/2）が満杯になると自動で帰還します。最大4人のパーティ派遣や、探索中の帰還指示もできます。
+              </p>
+              <p>
+                <strong>襲撃と防衛:</strong>
+                <br />
+                脅威度が 100% になると、そのダンジョンの魔物の群れが6時間かけて町へ進軍します（進軍中はそのダンジョンへ派遣できません）。到着すると町にいる村人全員で門を守る防衛戦が始まります。勝利すると脅威度
+                30% と戦利品、敗北すると金庫の 20%
+                と在庫の略奪・施設ダメージを受けますが、ゲームオーバーにはなりません。
+              </p>
             </div>
 
             <p>

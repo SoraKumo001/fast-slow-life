@@ -214,6 +214,62 @@ describe("crafting - processCraftingAndUpgrades: クラフト完了", () => {
     expect(result.villagers[0].gold).toBeGreaterThan(0);
   });
 
+  it("経済v2: クラフト賃金は完成品 basePrice の 20%（iron_ingot 12G → 2G）であること", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const facilities = makeFacilities({
+      workshop: {
+        level: 1,
+        craftQueue: [
+          {
+            id: "job1",
+            itemId: "iron_ingot",
+            timeLeft: 1,
+            totalTime: 1,
+            assignedVillagerId: "v1",
+          },
+        ],
+      } as Partial<Facility>,
+    });
+    const villagers = [
+      makeVillager({ id: "v1", status: "active", assignedCraftJobId: "job1", gold: 5 }),
+    ];
+    const result = processCraftingAndUpgrades(facilities, villagers, {}, {}, 1000, 1);
+    // wage = max(1, round(12 * 0.2)) = 2
+    expect(result.gold).toBe(998);
+    expect(result.villagers[0].gold).toBe(7);
+    expect(result.craftWagesPaid).toBe(2);
+    expect(
+      result.logs.some((l) => l.message.includes("クラフト賃金 2 G を支払いました")),
+    ).toBe(true);
+  });
+
+  it("経済v2: 金庫不足の場合は払える分だけ払い、金庫も村人もマイナスにならないこと", () => {
+    vi.spyOn(Math, "random").mockReturnValue(0.99);
+    const facilities = makeFacilities({
+      workshop: {
+        level: 1,
+        craftQueue: [
+          {
+            id: "job1",
+            itemId: "iron_ingot",
+            timeLeft: 1,
+            totalTime: 1,
+            assignedVillagerId: "v1",
+          },
+        ],
+      } as Partial<Facility>,
+    });
+    const villagers = [
+      makeVillager({ id: "v1", status: "active", assignedCraftJobId: "job1", gold: 0 }),
+    ];
+    // 金庫 1G しかない → 賃金 2G のうち 1G だけ支払う
+    const result = processCraftingAndUpgrades(facilities, villagers, {}, {}, 1, 1);
+    expect(result.gold).toBe(0);
+    expect(result.villagers[0].gold).toBe(1);
+    expect(result.craftWagesPaid).toBe(1);
+    expect(result.logs.some((l) => l.message.includes("未払い"))).toBe(true);
+  });
+
   it("進行中のクラフトジョブはキューに残る", () => {
     vi.spyOn(Math, "random").mockReturnValue(0.99);
     const facilities = makeFacilities({

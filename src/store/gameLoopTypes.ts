@@ -9,6 +9,10 @@ import {
   Caravan,
   RunStats,
   DungeonVisualEvent,
+  PricePolicy,
+  DailySettlement,
+  DailyFlows,
+  RaidState,
 } from "../types/game";
 
 export interface LogPayload {
@@ -25,6 +29,10 @@ export interface AdvanceHourResult {
   dungeons: DungeonArea[];
   inventory: Record<string, number>;
   currentTier: number;
+  marketPrices: Record<string, number>;
+  pricePolicy: PricePolicy;
+  lastSettlement: DailySettlement | null;
+  dailyFlows: DailyFlows;
   activeBoss: ActiveBossState | null;
   bossDefeated: boolean;
   gameOver: boolean;
@@ -33,6 +41,12 @@ export interface AdvanceHourResult {
   logsToAppend: LogPayload[];
   towns: Town[];
   caravans: Caravan[];
+  /** Phase 4a: ダンジョンごとの解放済みノードID（霧） */
+  revealedNodes: Record<string, string[]>;
+  /** Phase 4b: 襲撃イベント（4a では常に null） */
+  raid: RaidState | null;
+  /** Phase 6: 防衛戦の連敗数 */
+  raidDefeatStreak?: number;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   lastSchedulerTick: number;

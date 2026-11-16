@@ -1,4 +1,14 @@
+import { SOUL_UPGRADE_COST_GROWTH_PER_CYCLE } from "../constants";
 import { SoulUpgrade } from "../types/game";
+
+/**
+ * Phase 6: 周回ごとの価格逓増を適用した実効コスト。
+ * 1周目 (prestigeCount=0) は定価、転生するたびに SOUL_UPGRADE_COST_GROWTH_PER_CYCLE 倍。
+ */
+export function getSoulUpgradeCost(baseCost: number, prestigeCount: number): number {
+  const cycles = Math.max(0, Math.floor(prestigeCount) || 0);
+  return Math.floor(baseCost * Math.pow(SOUL_UPGRADE_COST_GROWTH_PER_CYCLE, cycles));
+}
 
 // costs[i] = Lv i → i+1 への強化に必要SP（前半は線形ベース、後半を急騰）
 export const SOUL_UPGRADES: SoulUpgrade[] = [

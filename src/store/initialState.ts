@@ -9,9 +9,10 @@ import {
 import { FACILITY_UPGRADE_MATERIALS } from "../data/facilityUpgradeMaterials";
 import { DUNGEONS, ITEMS } from "../data/masterData";
 import { TOWNS_DATA } from "../data/towns";
-import type { RunStats } from "../types/game";
+import type { DailyFlows, RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager, generateRandomName } from "../utils/villagerHelpers";
+import { initialRevealedNodes } from "./dungeonMap";
 
 export function getInitialVillagers(bodyLvl: number = 0): ReturnType<typeof createVillager>[] {
   const statBonus = bodyLvl * 2;
@@ -86,6 +87,13 @@ export function getInitialDungeons(): DungeonArea[] {
   }));
 }
 
+/** Phase 4a: 初期の解放済みノード（探索度0 → 入口のみ） */
+export function getInitialRevealedNodes(): Record<string, string[]> {
+  return Object.fromEntries(
+    getInitialDungeons().map((d) => [d.id, initialRevealedNodes(d)]),
+  );
+}
+
 export const createInitialInventory = (foodOverride?: number): Record<string, number> => {
   const base = Object.fromEntries(
     Object.values(ITEMS).map((item) => [item.id, item.initialCount || 0]),
@@ -118,25 +126,25 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       id: "inn",
       name: "宿屋",
       initialLevel: 1,
-      upgradeGold: 200,
+      upgradeGold: 600,
     },
     {
       id: "workshop",
       name: "加工工房",
       initialLevel: 1,
-      upgradeGold: 300,
+      upgradeGold: 900,
     },
     {
       id: "farm",
       name: "農場",
       initialLevel: 1,
-      upgradeGold: 200,
+      upgradeGold: 600,
     },
     {
       id: "kitchen",
       name: "調理場",
       initialLevel: 1,
-      upgradeGold: 250,
+      upgradeGold: 750,
     },
     // 初期Lv0 (未建設)
     {
@@ -203,6 +211,16 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
     };
   }
   return facilities;
+}
+
+export function getInitialDailyFlows(): DailyFlows {
+  return {
+    poolPurchase: 0,
+    foodIncome: 0,
+    craftWages: 0,
+    caravanNet: 0,
+    poolShortageLogged: false,
+  };
 }
 
 export function getInitialStats(): RunStats {

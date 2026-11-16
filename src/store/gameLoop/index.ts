@@ -6,13 +6,15 @@
  */
 import type { GameState } from "../../types/game";
 import type { AdvanceHourResult, LogPayload } from "../gameLoopTypes";
+import { initialRevealedNodes } from "../dungeonMap";
 import { isBankrupt, buildGameOverLog } from "../gameOverHelper";
-import { getInitialStats } from "../initialState";
+import { getInitialDailyFlows, getInitialStats } from "../initialState";
 import { autoSystemsPhase } from "./phases/autoSystems";
 import { bossBattlePhase } from "./phases/bossBattle";
 import { economyPhase } from "./phases/economy";
 import { explorationPhase } from "./phases/exploration";
 import { productionPhase } from "./phases/production";
+import { raidPhase } from "./phases/raidPhase";
 import { survivalPhase } from "./phases/survival";
 import { threatPhase } from "./phases/threatPhase";
 import { villagersPhase } from "./phases/villagers";
@@ -33,6 +35,7 @@ export { processVillagerActivities } from "../villagerAI";
 const PHASES = [
   survivalPhase,
   threatPhase,
+  raidPhase,
   explorationPhase,
   productionPhase,
   bossBattlePhase,
@@ -71,6 +74,21 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
 
   const nextStats = stats ? { ...stats } : getInitialStats();
   const logsToAppend: LogPayload[] = [];
+
+  // ---- Economy v2 state (旧セーブ/テスト用の欠損フォールバック付き) ----
+  const marketPrices = state.marketPrices ?? {};
+  const pricePolicy = state.pricePolicy ?? "standard";
+  const lastSettlement = state.lastSettlement ?? null;
+
+  // ---- Phase 4a state (旧セーブ/テスト用の欠損フォールバック付き) ----
+  const revealedNodes =
+    state.revealedNodes ??
+    Object.fromEntries(
+      (state.dungeons ?? []).map((d) => [d.id, initialRevealedNodes(d)]),
+    );
+  const raid = state.raid ?? null;
+  const raidDefeatStreak = state.raidDefeatStreak ?? 0;
+  const dailyFlows = state.dailyFlows ? { ...state.dailyFlows } : getInitialDailyFlows();
 
   // ---- Time advancement ----
   currentHour += 1;
@@ -115,6 +133,10 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       dungeons,
       inventory,
       currentTier,
+      marketPrices,
+      pricePolicy,
+      lastSettlement,
+      dailyFlows,
       activeBoss,
       bossDefeated,
       gameOver: true,
@@ -123,6 +145,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
+      revealedNodes,
+      raid,
+      raidDefeatStreak,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,
@@ -144,6 +169,10 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       dungeons,
       inventory,
       currentTier,
+      marketPrices,
+      pricePolicy,
+      lastSettlement,
+      dailyFlows,
       activeBoss,
       bossDefeated,
       gameOver,
@@ -152,6 +181,9 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
+      revealedNodes,
+      raid,
+      raidDefeatStreak,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,

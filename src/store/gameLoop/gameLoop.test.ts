@@ -268,7 +268,9 @@ describe("gameLoopHelper", () => {
         0,
       );
 
-      expect(result.inventory["wheat"]).toBeGreaterThan(0);
+      // Phase 4a: 獲得物は所持品 (pool) に入る（町の在庫には入らない）
+      expect(result.villagers[0].pool["wheat"]).toBeGreaterThan(0);
+      expect(result.inventory["wheat"] ?? 0).toBe(0);
       expect(result.dungeons[0].gathers[0].respawnTimeLeft).toBe(3);
       expect(result.dungeons[0].gathers[0].currentProgress).toBe(0);
     });

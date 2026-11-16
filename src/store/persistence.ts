@@ -1,13 +1,22 @@
 import { StateStorage, createJSONStorage } from "zustand/middleware";
 
-import { GameState, GameActions, FacilityType, Town, Caravan } from "../types/game";
+import { DUNGEONS } from "../data/dungeons";
+import {
+  GameState,
+  GameActions,
+  FacilityType,
+  Town,
+  Caravan,
+  DungeonArea,
+} from "../types/game";
+import { initialRevealedNodes, sanitizeRevealedNodes } from "./dungeonMap";
 import { getInitialFacilities } from "./initialState";
 
 // ==========================================
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 9;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -207,6 +216,35 @@ const migrations: Record<number, SaveMigration> = {
 
     data.saveVersion = 7;
   },
+  // v7 → v8: 経済v2（市場価格・価格方針・夕方精算）フィールド追加。
+  // 既存の gold / pool / 村人 gold はそのまま引き継ぐ（リセットしない）。
+  7: (data) => {
+    data.marketPrices = {};
+    data.pricePolicy = "standard";
+    data.lastSettlement = null;
+    data.saveVersion = 8;
+  },
+  // v8 → v9: Phase 4a（ノードマップの霧 revealedNodes）+ Phase 4b 用 raid フィールド追加。
+  // revealedNodes は各ダンジョンの探索度から初期化する（到達済みの深さは解放済み扱い）。
+  8: (data) => {
+    const savedDungeons = Array.isArray(data.dungeons)
+      ? (data.dungeons as DungeonArea[])
+      : [];
+    const revealed: Record<string, string[]> = {};
+    for (const def of DUNGEONS) {
+      const saved = savedDungeons.find((d) => d.id === def.id);
+      // 旧セーブのダンジョンは gathers/monsters を欠く場合があるため、
+      // 揃っている場合のみ保存側を使い、それ以外はマスタ定義 + 保存側の探索度で初期化する
+      const source =
+        saved && Array.isArray(saved.gathers) && Array.isArray(saved.monsters)
+          ? saved
+          : { ...def, explorationProgress: saved?.explorationProgress ?? def.explorationProgress };
+      revealed[def.id] = initialRevealedNodes(source);
+    }
+    data.revealedNodes = revealed;
+    data.raid = null;
+    data.saveVersion = 9;
+  },
 };
 
 // ==========================================
@@ -214,7 +252,7 @@ const migrations: Record<number, SaveMigration> = {
 // ==========================================
 export const partialize = (
   state: GameState & GameActions,
-): Omit<GameState, "selectedItem" | "dungeonEvents"> & { saveVersion: number } => ({
+): Omit<GameState, "selectedItem" | "dungeonEvents" | "dailyFlows"> & { saveVersion: number } => ({
   currentDay: state.currentDay,
   currentHour: state.currentHour,
   gold: state.gold,
@@ -223,6 +261,9 @@ export const partialize = (
   facilities: state.facilities,
   dungeons: state.dungeons,
   inventory: state.inventory,
+  marketPrices: state.marketPrices,
+  pricePolicy: state.pricePolicy,
+  lastSettlement: state.lastSettlement,
   targetAmounts: state.targetAmounts,
   logs: state.logs,
   currentTier: state.currentTier,
@@ -233,9 +274,13 @@ export const partialize = (
   isPaused: state.isPaused,
   playSpeed: state.playSpeed,
   soulUpgrades: state.soulUpgrades,
+  prestigeCount: state.prestigeCount,
   tradeRules: state.tradeRules,
   towns: state.towns,
   caravans: state.caravans,
+  revealedNodes: state.revealedNodes,
+  raid: state.raid,
+  raidDefeatStreak: state.raidDefeatStreak ?? 0,
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   lastSchedulerTick: state.lastSchedulerTick,
@@ -277,8 +322,42 @@ export const merge = <S extends GameState & GameActions>(
   merged.caravans = (persisted.caravans as Caravan[]) ?? currentState.caravans;
   merged.soulUpgrades =
     (persisted.soulUpgrades as Record<string, number>) ?? currentState.soulUpgrades;
+  // Phase 6: 旧セーブには無いので初期値 0 にフォールバック
+  merged.prestigeCount =
+    (persisted.prestigeCount as number) ?? currentState.prestigeCount ?? 0;
   merged.lastSchedulerTick =
     (persisted.lastSchedulerTick as number) ?? currentState.lastSchedulerTick;
+  merged.marketPrices =
+    (persisted.marketPrices as Record<string, number>) ?? currentState.marketPrices;
+  merged.pricePolicy =
+    (persisted.pricePolicy as GameState["pricePolicy"]) ?? currentState.pricePolicy;
+  // Phase 7: 迷路化に伴い、旧セーブの revealedNodes を新マップへ移行する
+  // （存在しないIDを落とし、探索度からの初期解放と union。SAVE_VERSION は上げない）
+  const persistedRevealed = persisted.revealedNodes as
+    | Record<string, string[]>
+    | undefined;
+  if (persistedRevealed) {
+    const savedDungeons = Array.isArray(merged.dungeons) ? merged.dungeons : [];
+    const sanitized: Record<string, string[]> = {};
+    for (const def of DUNGEONS) {
+      const saved = savedDungeons.find((d) => d.id === def.id);
+      const source =
+        saved && Array.isArray(saved.gathers) && Array.isArray(saved.monsters)
+          ? saved
+          : {
+              ...def,
+              explorationProgress: saved?.explorationProgress ?? def.explorationProgress,
+            };
+      sanitized[def.id] = sanitizeRevealedNodes(source, persistedRevealed[def.id] ?? []);
+    }
+    merged.revealedNodes = sanitized;
+  } else {
+    merged.revealedNodes = currentState.revealedNodes;
+  }
+  merged.raid = (persisted.raid as GameState["raid"]) ?? null;
+  // Phase 6: 旧セーブには無いので 0 にフォールバック
+  merged.raidDefeatStreak =
+    (persisted.raidDefeatStreak as number) ?? currentState.raidDefeatStreak ?? 0;
 
   // フラットな Record は shallow merge
   // B8 修正: 破損セーブで undefined / NaN / Infinity が混入しても

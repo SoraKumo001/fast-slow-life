@@ -13,6 +13,7 @@ import React, { useState } from "react";
 
 import { EXP_NEEDED_PER_LEVEL } from "../../constants";
 import { ITEMS } from "../../data/masterData";
+import { carryCapacity, carriedCount } from "../../store/carryCapacity";
 import { useGameStore } from "../../store/gameStore";
 import { DungeonArea, Facility, FacilityType, OrderType, Villager } from "../../types/game";
 import { getPartyLabel } from "../../utils/partyHelpers";
@@ -112,11 +113,10 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
           {v.pool && Object.keys(v.pool).length > 0 && (
             <span
               className="text-[10px] text-sky-400 bg-sky-950/40 border border-sky-900/60 px-1.5 py-0.5 rounded ml-2 font-mono inline-flex items-center gap-0.5"
-              title={`プレイヤーのゴールド不足により仮置きされているアイテム（見込み買取額: ${poolTotalValue} G）`}
+              title={`探索で所持しているアイテム。帰還後に町で買い取られる（見込み買取額: ${poolTotalValue} G）`}
             >
-              <Package className="w-2.5 h-2.5 inline" />{" "}
-              {Object.values(v.pool).reduce((sum, count) => sum + count, 0)} 個 (未払:{" "}
-              {poolTotalValue} G)
+              <Package className="w-2.5 h-2.5 inline" /> 所持 {carriedCount(v)}/
+              {carryCapacity(v)} 個
             </span>
           )}
 
@@ -248,7 +248,8 @@ export const VillagerRow: React.FC<VillagerRowProps> = ({
           {v.pool && Object.keys(v.pool).length > 0 && (
             <div className="bg-slate-900/60 border border-slate-800 rounded p-2.5 space-y-1">
               <p className="text-[10px] font-bold text-sky-400 flex items-center gap-1.5">
-                <Package className="w-3 h-3" /> 仮置き場（プール中アイテム）:
+                <Package className="w-3 h-3" /> 所持品（{carriedCount(v)}/{carryCapacity(v)}、
+                帰還後に買取）:
               </p>
               <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[10px] font-mono text-slate-300">
                 {Object.entries(v.pool).map(([itemId, count]) => {

@@ -279,7 +279,7 @@ export interface DungeonArea {
   monsters: DungeonMonster[];
   explorationProgress: number; // 追加：現在の探索度 (0 - 100)
   difficulty: number; // 追加：探索難易度
-  threatLevel: number; // 脅威度 (0-100) — 100% 到達で即ゲームオーバー
+  threatLevel: number; // 脅威度 (0-100) — 100% 到達で襲撃イベント発生（Phase 4b）
 }
 
 export interface GameLog {
@@ -330,6 +330,11 @@ export interface ActiveBossState {
   currentHp: number;
   maxHp: number;
   attackerIds: string[]; // 参加中の村人IDリスト
+  /**
+   * Phase 6: 最後に「交戦可能なアタッカー」が存在した累計時間 ((day-1)*24 + hour)。
+   * 離脱リセット (b) の24時間猶予の計測に使う。旧セーブでは未設定 → 現在時刻として扱う。
+   */
+  lastEngagedAtElapsedHour?: number;
 }
 
 export interface TradeRule {
@@ -349,6 +354,15 @@ export interface GameActions {
     targetMonsterId?: string | null;
   }) => void;
   changeVillagerJob: (id: string, job: JobType) => void;
+  /** Phase 4a: 探索中の村人を帰還させる（自然帰還と同じ遷移） */
+  recallVillager: (villagerId: string) => void;
+  /** Phase 4a: 最大4人の村人を同一ターゲットへ一括派遣する */
+  dispatchParty: (params: {
+    villagerIds: string[];
+    areaId: string;
+    order: "gather" | "hunt";
+    targetId?: string | null;
+  }) => void;
   autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType, villagerId?: string) => void;
@@ -385,6 +399,7 @@ export interface GameActions {
   collectCaravan: (caravanId: string) => void;
   investInTown: (townId: string) => void;
   toggleCaravanAuto: (caravanId: string) => void;
+  setPricePolicy: (policy: PricePolicy) => void;
   setSelectedItem: (item: Item | null) => void;
 }
 
@@ -406,13 +421,67 @@ export interface RunStats {
   totalPotionHealing: number;
 }
 
+/** 価格方針（条例）: 市場価格の水準を決める */
+export type PricePolicy = "cheap" | "standard" | "premium";
+
+/** 夕方の精算: 1日分の内部フロー集計（最新分のみ保持する） */
+export interface DailySettlement {
+  day: number;
+  /** プール買取で金庫から出た額 */
+  poolPurchase: number;
+  /** 食料代として金庫に入った額 */
+  foodIncome: number;
+  /** クラフト賃金で金庫から出た額 */
+  craftWages: number;
+  /** キャラバンの日次ネット（economy フェーズのキャラバン関連処理の gold 差分で近似） */
+  caravanNet: number;
+}
+
+/** 日次フローの進行中アキュムレータ（日境界で精算されリセットされる。永続化しない） */
+export interface DailyFlows {
+  poolPurchase: number;
+  foodIncome: number;
+  craftWages: number;
+  caravanNet: number;
+  /** 買取不足の要約ログをその日に既に出したか（1日1回まで） */
+  poolShortageLogged: boolean;
+}
+
 export interface GameEconomy {
   gold: number;
   soulPoints: number;
   soulUpgrades: Record<string, number>;
+  /** Phase 6: 転生した回数（周回数）。ソウルアップグレード価格の周回逓増に使う */
+  prestigeCount: number;
   inventory: Record<string, number>;
   targetAmounts: Record<string, number>;
   facilities: Record<FacilityType, Facility>;
+  /** アイテムID → 現在の市場価格（日境界で再計算される） */
+  marketPrices: Record<string, number>;
+  /** 価格方針（翌日の価格再計算から反映される） */
+  pricePolicy: PricePolicy;
+  /** 直近の夕方精算（最新分のみ） */
+  lastSettlement: DailySettlement | null;
+  /** 当日分の内部フロー集計（進行中） */
+  dailyFlows: DailyFlows;
+}
+
+/** 襲撃イベントの状態（Phase 4b で使用。Phase 4a では型と初期値のみ用意） */
+export interface RaidState {
+  /** 襲撃元ダンジョンのID */
+  dungeonId: string;
+  /** 到着時刻（累計時間 = (day-1)*24 + hour） */
+  arrivesAtElapsedHour: number;
+  /**
+   * 襲撃してくる魔物のインスタンスID一覧。
+   * インスタンスID は `${モンスターID}@${連番}` 形式（同種が複数来る場合に区別する）。
+   */
+  monsterIds: string[];
+  /**
+   * インスタンスID → 現在HP（防衛戦のラウンドをまたいで保持される）。
+   * Phase 4b で追加。4a 時点のセーブに無い場合は raidLogic 側で満タンとして扱う。
+   */
+  monsterHps: Record<string, number>;
 }
 
 export interface GameWorld {
@@ -420,6 +489,12 @@ export interface GameWorld {
   towns: Town[];
   caravans: Caravan[];
   activeBoss: ActiveBossState | null;
+  /** Phase 4a: ダンジョンごとの解放済みノードID（霧） */
+  revealedNodes: Record<string, string[]>;
+  /** Phase 4b: 襲撃イベント（4a では常に null） */
+  raid: RaidState | null;
+  /** Phase 6: 防衛戦の連敗数（略奪率の逓増に使う。旧セーブでは未定義=0） */
+  raidDefeatStreak?: number;
 }
 
 export interface GameProgression {

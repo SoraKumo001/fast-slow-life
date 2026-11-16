@@ -5,10 +5,18 @@ import * as path from "node:path";
 import { isMainThread, parentPort, workerData } from "node:worker_threads";
 
 import { CATEGORY_GEAR_ARMOR, CATEGORY_GEAR_WEAPON } from "../constants";
-import { ITEMS, JOBS, SOUL_UPGRADES, getTrainingProgramsForFacility } from "../data/masterData";
+import {
+  ITEMS,
+  JOBS,
+  SOUL_UPGRADES,
+  getSoulUpgradeCost,
+  getTrainingProgramsForFacility,
+} from "../data/masterData";
 import { FacilityType, JobType, Villager } from "../types/game";
 import { formatGameTime } from "../utils/timeHelpers";
 import { useGameStore } from "./gameStore";
+import { seedRandom } from "./random";
+import { setSimMode } from "./simMode";
 
 /**
  * 倉庫にある武器から、現在の装備より attack が高い武器を選ぶ。
@@ -77,19 +85,45 @@ interface SimulationResult {
   caravansActiveCount: number;
   totalDamageDealt: number;
   totalDamageReceived: number;
+  /** Phase 5: そのランで襲撃イベントが1回でも発生したか (state.raid の観測) */
+  raidOccurred: boolean;
+  /** Phase 5: 転生サイクルごとの終了理由 (診断用) */
+  cycleEnds: string[];
+  /** Sim改善: このランの乱数シード (= ラン番号) */
+  seed: number;
+  /** Sim改善: 実行した総ティック数 (全サイクルの経過時間の合計) */
+  ticks: number;
+  /** Sim改善: このランの実時間 (ms) */
+  wallMs: number;
+  /** Sim改善: 1周目 (転生0回) でクリアしたか */
+  cycle1Clear: boolean;
+  /** Sim改善: 襲撃イベントの発生回数 (state.raid の立ち上がり回数) */
+  raidCount: number;
+  /** Sim改善: ボス戦を開始した回数 */
+  bossAttempts: number;
+  /**
+   * Sim改善: ボス撃破に至らず交戦が終了した回数。
+   * activeBoss が非null→null へ遷移し、かつ Tier が進まず bossDefeated でない場合に数える
+   * (全滅による破棄と Phase 6 の離脱リセットの合算)。
+   */
+  bossDisengages: number;
 }
 
-// 指定された回数分のシミュレーションを回すチャンク実行関数
-function runSimulationChunk(
-  runs: number,
-  startIdx: number,
+// 指定されたシード列のシミュレーションを実行する本体。
+// 各ランは seed = ラン番号 で乱数源を初期化するため、同一設定・同一シードでは
+// ラン結果が完全に一致する (バランスシミュレーション改善・柱1)。
+function runSimulationForSeeds(
+  seeds: number[],
   initialSoulUpgrades?: Record<string, number>,
+  onResult?: (result: SimulationResult) => void,
 ): SimulationResult[] {
   const MAX_HOURS = 900 * 24; // 最大900日間 (21600時間)
   const results: SimulationResult[] = [];
+  setSimMode(true);
 
-  for (let idx = 0; idx < runs; idx++) {
-    const run = startIdx + idx;
+  for (const run of seeds) {
+    const runStartedAt = performance.now();
+    seedRandom(run);
     const store = useGameStore.getState();
 
     // プレイごとの転生バフとソウルポイントを完全に初期化
@@ -113,6 +147,13 @@ function runSimulationChunk(
     let totalTrainingGold = 0;
     let highestTrainingLevel = 0;
     let bossDefeatDays: Record<number, number> = {};
+    let raidOccurred = false;
+    let raidCount = 0;
+    let bossAttempts = 0;
+    let bossDisengages = 0;
+    let totalTicks = 0;
+    let cycle1Clear = false;
+    const cycleEnds: string[] = [];
     let traceLog = "";
     let finalState = useGameStore.getState();
 
@@ -141,11 +182,17 @@ function runSimulationChunk(
             const currentLvl = state.soulUpgrades[upId] || 0;
             const uDef = SOUL_UPGRADES.find((u) => u.id === upId);
             if (uDef && currentLvl < uDef.maxLevel) {
-              const cost = uDef.costs[currentLvl];
+              // Phase 6 の価格逓増と同一の実価格で判定する。素の価格で判定すると
+              // buySoulUpgrade が SP 不足で無言で失敗し、無限ループになる。
+              const cost = getSoulUpgradeCost(uDef.costs[currentLvl], state.prestigeCount ?? 0);
               if (state.soulPoints >= cost) {
                 store.buySoulUpgrade(upId);
-                boughtSomething = true;
-                break;
+                // 購入が実際に行われた場合のみループを継続する (防御策)
+                const afterLvl = useGameStore.getState().soulUpgrades[upId] || 0;
+                if (afterLvl > currentLvl) {
+                  boughtSomething = true;
+                  break;
+                }
               }
             }
           }
@@ -157,6 +204,9 @@ function runSimulationChunk(
       });
 
       let hoursElapsed = 0;
+      let prevRaidPresent = false;
+      let prevHasBoss = false;
+      let tierAtBossStart = 1;
       let lastVillagersHp: Record<string, number> = {};
       let currentStoreState = useGameStore.getState();
       currentStoreState.villagers.forEach((v) => {
@@ -166,6 +216,24 @@ function runSimulationChunk(
 
       while (hoursElapsed < MAX_HOURS) {
         const state = useGameStore.getState();
+
+        // 襲撃イベントの発生観測 (Phase 5 バランス計測用)
+        if (state.raid) raidOccurred = true;
+        if (state.raid && !prevRaidPresent) raidCount++;
+        prevRaidPresent = !!state.raid;
+
+        // ボス交戦の終了 (撃破以外) の観測: Tier が進まず activeBoss が消えたら離脱/破棄
+        const hasBossNow = !!state.activeBoss;
+        if (hasBossNow && !prevHasBoss) tierAtBossStart = state.currentTier;
+        if (
+          prevHasBoss &&
+          !hasBossNow &&
+          state.currentTier === tierAtBossStart &&
+          !state.bossDefeated
+        ) {
+          bossDisengages++;
+        }
+        prevHasBoss = hasBossNow;
 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
@@ -489,6 +557,7 @@ function runSimulationChunk(
           if (avgLvl >= recLvl && readyVillagers.length >= Math.min(3, livingVillagers.length)) {
             const vIds = readyVillagers.map((v) => v.id);
             store.startBossBattle(bossId, vIds);
+            bossAttempts++;
           }
         }
 
@@ -500,8 +569,32 @@ function runSimulationChunk(
         hoursElapsed++;
       }
 
+      totalTicks += hoursElapsed;
       finalState = useGameStore.getState();
       isClear = finalState.bossDefeated && finalState.currentTier === 5;
+      if (prestigeCount === 0) cycle1Clear = isClear;
+
+      cycleEnds.push(
+        isClear
+          ? "Clear"
+          : finalState.gameOver && finalState.gameOverReason
+            ? finalState.gameOverReason
+            : "TimeLimit",
+      );
+
+      // 診断用 (SIM_DEBUG_CYCLE=1 のときだけ): サイクル終了時点のスナップショット
+      if (process.env.SIM_DEBUG_CYCLE) {
+        const avgLvl =
+          finalState.villagers.length > 0
+            ? finalState.villagers.reduce((s, v) => s + v.level, 0) / finalState.villagers.length
+            : 0;
+        console.log(
+          `[sim] run=${run} cycle=${prestigeCount} end=${cycleEnds[cycleEnds.length - 1]} ` +
+            `day=${finalState.currentDay} tier=${finalState.currentTier} gold=${Math.round(finalState.gold)} ` +
+            `avgLvl=${avgLvl.toFixed(1)} deaths=${deathsCount} soul=${JSON.stringify(finalState.soulUpgrades)} ` +
+            `expl=${finalState.dungeons.map((d) => `${d.id}:${Math.round(d.explorationProgress)}`).join(",")}`,
+        );
+      }
 
       if (isClear) {
         break;
@@ -577,7 +670,17 @@ function runSimulationChunk(
       caravansActiveCount: finalState.caravans.filter((c) => c.status === "trading").length,
       totalDamageDealt: finalState.stats?.totalDamageDealt || 0,
       totalDamageReceived: finalState.stats?.totalDamageReceived || 0,
+      raidOccurred,
+      cycleEnds,
+      seed: run,
+      ticks: totalTicks,
+      wallMs: Math.round(performance.now() - runStartedAt),
+      cycle1Clear,
+      raidCount,
+      bossAttempts,
+      bossDisengages,
     });
+    if (onResult) onResult(results[results.length - 1]);
 
     if (run === 1) {
       try {
@@ -595,17 +698,39 @@ function runSimulationChunk(
   return results;
 }
 
+// 指定された回数分のシミュレーションを回すチャンク実行関数 (従来API互換)
+function runSimulationChunk(
+  runs: number,
+  startIdx: number,
+  initialSoulUpgrades?: Record<string, number>,
+): SimulationResult[] {
+  const seeds = Array.from({ length: runs }, (_, i) => startIdx + i);
+  return runSimulationForSeeds(seeds, initialSoulUpgrades);
+}
+
 // ワーカースレッドのメイン処理
 if (!isMainThread) {
-  const { runs, runStartIdx, initialSoulUpgrades } = workerData as {
-    runs: number;
-    runStartIdx: number;
+  const data = workerData as {
+    runs?: number;
+    runStartIdx?: number;
+    seeds?: number[];
+    stream?: boolean;
     initialSoulUpgrades?: Record<string, number>;
   };
-  const results = runSimulationChunk(runs, runStartIdx, initialSoulUpgrades);
-  parentPort?.postMessage(results);
+  const seeds =
+    data.seeds ?? Array.from({ length: data.runs ?? 0 }, (_, i) => (data.runStartIdx ?? 1) + i);
+  if (data.stream) {
+    // CLI 用: ラン完了ごとに結果を逐次送信し、中断されても完了分は失われない
+    runSimulationForSeeds(seeds, data.initialSoulUpgrades, (result) => {
+      parentPort?.postMessage({ type: "result", result });
+    });
+    parentPort?.postMessage({ type: "done", count: seeds.length });
+  } else {
+    const results = runSimulationForSeeds(seeds, data.initialSoulUpgrades);
+    parentPort?.postMessage(results);
+  }
   process.exit(0);
 }
 
-export { runSimulationChunk };
+export { runSimulationChunk, runSimulationForSeeds };
 export type { SimulationResult };

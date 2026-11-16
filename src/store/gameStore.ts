@@ -24,6 +24,8 @@ import {
   getInitialTowns,
   getInitialCaravans,
   getInitialStats,
+  getInitialDailyFlows,
+  getInitialRevealedNodes,
 } from "./initialState";
 import { partialize, merge, customStorage } from "./persistence";
 
@@ -42,6 +44,10 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   facilities: getInitialFacilities(),
   dungeons: getInitialDungeons(),
   inventory: { ...DEFAULT_INVENTORY },
+  marketPrices: {},
+  pricePolicy: "standard",
+  lastSettlement: null,
+  dailyFlows: getInitialDailyFlows(),
   targetAmounts: getDefaultTargetAmounts(),
   tradeRules: [],
   logs: [
@@ -67,8 +73,12 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
     building: 0,
     discount: 0,
   },
+  prestigeCount: 0,
   towns: getInitialTowns(),
   caravans: getInitialCaravans(),
+  revealedNodes: getInitialRevealedNodes(),
+  raid: null,
+  raidDefeatStreak: 0,
   isSalaryUnpaid: false,
   consecutiveNegativeGoldDays: 0,
   lastSchedulerTick: -4,

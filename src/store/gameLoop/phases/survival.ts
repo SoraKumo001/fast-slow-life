@@ -5,6 +5,7 @@
  * Note: Game-over checks (bankruptcy, time-over) and daily bankruptcy warnings
  * are handled in the pre-pipeline phase in index.ts.
  */
+import { DAILY_RATION_COST_GOLD } from "../../../constants";
 import { ITEMS } from "../../../data/masterData";
 import type { Villager } from "../../../types/game";
 import { processRespawns } from "../../respawns";
@@ -31,15 +32,19 @@ export const survivalPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator =
 
   // ---- Daily food cost ----
   if (acc.isNewDay) {
+    const marketPrices = acc.marketPrices ?? {};
     let totalFoodCost = 0;
     acc.villagers = acc.villagers.map((v) => {
       let foodCost = 0;
       if (v.isStarving) {
         foodCost = 0;
       } else if (v.activeFoodBuffId) {
-        foodCost = ITEMS[v.activeFoodBuffId]?.basePrice || 2;
+        // 経済v2: Buff 料理の食料代は市場価格（なければ basePrice にフォールバック）
+        foodCost =
+          marketPrices[v.activeFoodBuffId] ??
+          (ITEMS[v.activeFoodBuffId]?.basePrice || DAILY_RATION_COST_GOLD);
       } else {
-        foodCost = 2;
+        foodCost = DAILY_RATION_COST_GOLD;
       }
 
       // B2 修正: 実際に支払える額だけ徴収する。
@@ -54,6 +59,7 @@ export const survivalPhase = (acc: GamePhaseAccumulator): GamePhaseAccumulator =
 
     acc.gold += totalFoodCost;
     acc.nextStats.totalGoldFromTax += totalFoodCost;
+    if (acc.dailyFlows) acc.dailyFlows.foodIncome += totalFoodCost;
     acc.logsToAppend.push({
       message: `【経済】村人全員の食料代（計 ${totalFoodCost} G）が引き落とされ、プレイヤーに支払われました。`,
       type: "info",

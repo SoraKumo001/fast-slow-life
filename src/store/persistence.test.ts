@@ -93,8 +93,8 @@ function makeBaseState(): GameState & GameActions {
 }
 
 describe("persistence.SAVE_VERSION", () => {
-  it("現在のセーブデータバージョンは 7 であること", () => {
-    expect(SAVE_VERSION).toBe(7);
+  it("現在のセーブデータバージョンは 9 であること", () => {
+    expect(SAVE_VERSION).toBe(9);
   });
 });
 
@@ -401,6 +401,59 @@ describe("persistence.merge - マイグレーション", () => {
     expect(merged.villagers[0].potionItemId).toBe("high_potion");
     expect(merged.villagers[0].activeFoodBuffId).toBe("food_bread");
     expect(merged.tradeRules[0].itemId).toBe("iron_ore");
+  });
+
+  it("v7 → v8 マイグレーションで経済v2フィールドが初期値で追加され、既存の gold は引き継がれること", () => {
+    const state = makeBaseState();
+    const persisted = {
+      saveVersion: 7,
+      gold: 1234,
+      inventory: { wheat: 10 },
+    };
+    const merged = merge(persisted, state);
+    const mergedAny = merged as unknown as { saveVersion: number };
+    expect(mergedAny.saveVersion).toBe(SAVE_VERSION);
+    expect(merged.gold).toBe(1234);
+    expect(merged.marketPrices).toEqual({});
+    expect(merged.pricePolicy).toBe("standard");
+    expect(merged.lastSettlement).toBeNull();
+  });
+
+  it("v8 → v9 マイグレーションで revealedNodes が探索度から初期化され、raid が null になること", () => {
+    const state = makeBaseState();
+    const persisted = {
+      saveVersion: 8,
+      gold: 555,
+      dungeons: [
+        {
+          id: "forest",
+          name: "始まりの森",
+          explorationProgress: 100,
+          gathers: [
+            { itemId: "wheat", difficulty: 1.0, depth: 12, lane: -1.3 },
+            { itemId: "wood", difficulty: 1.0, depth: 24, lane: 1.3 },
+            { itemId: "herb", difficulty: 1.5, depth: 72, lane: -1.2 },
+          ],
+          monsters: [
+            { id: "goblin", depth: 28, lane: 0.2 },
+            { id: "wild_boar", depth: 62, lane: -0.3 },
+            { id: "goblin_leader", depth: 100, lane: 0 },
+          ],
+          maxDepth: 100,
+        },
+      ],
+    };
+    const merged = merge(persisted, state);
+    const mergedAny = merged as unknown as { saveVersion: number };
+    expect(mergedAny.saveVersion).toBe(SAVE_VERSION);
+    expect(merged.gold).toBe(555);
+    expect(merged.raid).toBeNull();
+    // 探索度100%の森は全ノード解放済み
+    expect(merged.revealedNodes.forest).toContain("entrance");
+    expect(merged.revealedNodes.forest).toContain("wheat");
+    expect(merged.revealedNodes.forest).toContain("boss_gate");
+    // セーブに無いダンジョンも入口だけは解放済みで初期化される
+    expect(merged.revealedNodes.mine).toEqual(["entrance"]);
   });
 
   it("saveVersion がすでに最新の場合は何もしないこと", () => {

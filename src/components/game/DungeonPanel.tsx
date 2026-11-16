@@ -8,18 +8,23 @@ import {
   Coins,
   Maximize2,
   Eye,
+  Undo2,
+  UserPlus,
 } from "lucide-react";
 import React, { useState } from "react";
 
 import { ITEMS } from "../../data/masterData";
-import { useBossActions, useDungeons, useVillagers } from "../../hooks";
+import { useBossActions, useDungeons, useVillagerActions, useVillagers } from "../../hooks";
 import { useExpandedState } from "../../hooks/useExpandedState";
+import { carryCapacity, carriedCount } from "../../store/carryCapacity";
+import { buildDungeonMap, countContentRevealed } from "../../store/dungeonMap";
 import { getVillagerPhaseLabel } from "../../store/dungeonSpatialHelper";
 import { useGameStore } from "../../store/gameStore";
 import { calculateOfferingCost } from "../../store/threatLogic";
 import { DungeonArea } from "../../types/game";
 import { getPartyColor, getPartyLabel } from "../../utils/partyHelpers";
 import { BossBattleModal } from "../modals/BossBattleModal";
+import { DungeonAssignModal } from "../modals/DungeonAssignModal";
 import { DungeonFullViewModal } from "../modals/DungeonFullViewModal";
 import { DungeonDepthMinimap } from "../three/DungeonDepthMinimap";
 import { DungeonThreeViewport } from "../three/DungeonThreeViewport";
@@ -29,8 +34,10 @@ import { DungeonResourceItem } from "./DungeonResourceItem";
 import { ThreatGauge } from "./ThreatGauge";
 
 export const DungeonPanel: React.FC = () => {
-  const { dungeons, currentTier, bossDefeated } = useDungeons();
+  const { dungeons, currentTier, bossDefeated, revealedNodes } = useDungeons();
   const villagers = useVillagers();
+  const { recallVillager } = useVillagerActions();
+  const [assignArea, setAssignArea] = useState<DungeonArea | null>(null);
   const activeBoss = useGameStore((s) => s.activeBoss);
   const dungeonEvents = useGameStore((s) => s.dungeonEvents);
   const playerGold = useGameStore((s) => s.gold);
@@ -160,11 +167,13 @@ export const DungeonPanel: React.FC = () => {
             cameraMode={cameraMode}
             focusDepth={focusDepth}
             heightClass="h-52"
+            revealedNodeIds={revealedNodes[activeViewArea.id]}
           />
 
           <DungeonDepthMinimap
             area={activeViewArea}
             villagers={activeViewVillagers}
+            revealedNodeIds={revealedNodes[activeViewArea.id]}
             onSelectDepth={(depth) => {
               setCameraMode("free");
               setFocusDepth(depth);
@@ -251,6 +260,15 @@ export const DungeonPanel: React.FC = () => {
                       color="sky"
                       className="border border-slate-900 flex-1"
                     />
+                    <span className="text-[10px] font-mono text-slate-500 shrink-0">
+                      {(() => {
+                        const c = countContentRevealed(
+                          buildDungeonMap(area),
+                          revealedNodes[area.id] ?? [],
+                        );
+                        return `解放 ${c.revealed}/${c.total}`;
+                      })()}
+                    </span>
                   </div>
                 )}
 
@@ -263,6 +281,23 @@ export const DungeonPanel: React.FC = () => {
 
                 {isUnlocked && isAreaExpanded(area.id) && (
                   <div className="space-y-2.5 mt-2 border-t border-slate-900 pt-3">
+                    {/* Phase 4a: パーティ派遣 */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-slate-400">
+                        パーティ派遣（最大4人・同一ターゲット）
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setAssignArea(area);
+                        }}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded text-[10px] font-bold bg-sky-600 hover:bg-sky-500 text-white transition"
+                      >
+                        <UserPlus className="w-3 h-3" />
+                        パーティ派遣
+                      </button>
+                    </div>
+
                     {/* お布施セクション: 拡張表示の中でのみ表示 */}
                     {area.threatLevel > 0 && (
                       <div className="bg-yellow-950/20 border border-yellow-900/40 rounded p-2.5 space-y-2">
@@ -380,9 +415,9 @@ export const DungeonPanel: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* 現在派遣中の村人 */}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2 bg-slate-900/40 p-2 rounded border border-slate-900">
-                      <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold mr-1 flex items-center gap-1">
+                    {/* 現在派遣中の村人（Phase 4a: パーティ行表示） */}
+                    <div className="mt-2 bg-slate-900/40 p-2 rounded border border-slate-900 space-y-1.5">
+                      <span className="text-[9px] text-slate-400 uppercase tracking-wider font-bold flex items-center gap-1">
                         <Users className="w-3 h-3 text-sky-400" />
                         派遣中:
                       </span>
@@ -390,97 +425,128 @@ export const DungeonPanel: React.FC = () => {
                         <span className="text-[10px] text-slate-500 italic">なし</span>
                       ) : (
                         (() => {
-                          // AUTO-PARTY: 討伐隊を autoTargetName でグルーピング
-                          const hunters = activeInArea.filter((v) => v.order === "hunt");
-                          const gatherers = activeInArea.filter((v) => v.order !== "hunt");
-
-                          const parties = new Map<string, typeof hunters>();
-                          for (const v of hunters) {
-                            const key = v.autoTargetName || `__solo_${v.id}`;
-                            const list = parties.get(key) || [];
-                            list.push(v);
-                            parties.set(key, list);
+                          // Phase 4a: (targetNodeId ?? autoTargetName ?? 単独) でグルーピング
+                          type PartyGroup = {
+                            key: string;
+                            targetName: string | null;
+                            order: string;
+                            members: typeof activeInArea;
+                          };
+                          const groups = new Map<string, PartyGroup>();
+                          for (const v of activeInArea) {
+                            const nodeId = v.dungeonState?.targetNodeId ?? null;
+                            const key = nodeId
+                              ? `node:${nodeId}`
+                              : v.autoTargetName
+                                ? `name:${v.autoTargetName}`
+                                : `solo:${v.id}`;
+                            const targetName =
+                              v.autoTargetName ??
+                              (nodeId
+                                ? (ITEMS[nodeId]?.name ??
+                                  area.monsters.find((m) => m.id === nodeId)?.name ??
+                                  null)
+                                : null);
+                            const group = groups.get(key) ?? {
+                              key,
+                              targetName,
+                              order: v.order,
+                              members: [],
+                            };
+                            group.members.push(v);
+                            groups.set(key, group);
                           }
+                          const groupList = [...groups.values()];
+                          const allPartyKeys = groupList
+                            .map((g) => g.targetName)
+                            .filter((k): k is string => Boolean(k))
+                            .sort();
 
-                          // 全パーティキーを抽出（ラベル安定ソート用）
-                          const allPartyKeys = Array.from(
-                            new Set(
-                              hunters
-                                .map((v) => v.autoTargetName)
-                                .filter((k): k is string => Boolean(k)),
-                            ),
-                          ).sort();
+                          const canRecall = (status: string) =>
+                            status === "active" || status === "traveling_to";
 
-                          return (
-                            <>
-                              {Array.from(parties.entries()).map(([target, members]) =>
-                                target.startsWith("__solo_")
-                                  ? // ターゲット未設定の単独ハンター
-                                    members.map((v) => (
-                                      <span
-                                        key={v.id}
-                                        className="text-[10px] px-2 py-0.5 rounded font-medium border bg-red-950/40 border-red-800 text-red-300"
-                                        title="待機中"
-                                      >
-                                        {v.name} (討)
-                                      </span>
-                                    ))
-                                  : // パーティ表示 (色分け適用)
-                                    (() => {
-                                      const color = getPartyColor(target);
-                                      const label = getPartyLabel(target, allPartyKeys);
-                                      return (
-                                        <div key={target} className="flex items-center gap-1">
-                                          <Sword
-                                            className={`w-3 h-3 shrink-0 ${color?.text ?? "text-red-400"}`}
-                                          />
-                                          <span className="text-[9px] text-slate-500">
-                                            PT-{label} {target}:
-                                          </span>
-                                          {members.map((v) => (
-                                            <span
-                                              key={v.id}
-                                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium border ${
-                                                v.currentHp > 0
-                                                  ? color
-                                                    ? `${color.bg} ${color.border} ${color.text}`
-                                                    : "bg-red-950/40 border-red-800 text-red-300"
-                                                  : "bg-slate-900 border-slate-700 text-slate-500 line-through"
-                                              }`}
-                                              title={`Lv.${v.level} HP:${v.currentHp}/${v.maxHp} (${v.currentJob}) • ${getVillagerPhaseLabel(v)}`}
-                                            >
-                                              {v.name}
-                                              {v.dungeonState && v.status === "active" && (
-                                                <span className="ml-1 opacity-75 text-[9px] font-mono">
-                                                  {Math.round(v.dungeonState.currentDepth)}m
-                                                </span>
-                                              )}
-                                            </span>
-                                          ))}
-                                        </div>
-                                      );
-                                    })(),
-                              )}
-                              {gatherers.map((v) => (
-                                <span
-                                  key={v.id}
-                                  className={`text-[10px] px-2 py-0.5 rounded font-medium border ${
-                                    v.status === "active"
-                                      ? "bg-sky-950/40 border-sky-800 text-sky-400"
-                                      : "bg-amber-950/20 border-amber-900 text-amber-400"
-                                  }`}
-                                  title={`現在方針: 採取 • ${getVillagerPhaseLabel(v)}`}
-                                >
-                                  {v.name} (採)
-                                  {v.dungeonState && v.status === "active" && (
-                                    <span className="ml-1 opacity-75 text-[9px] font-mono">
-                                      {Math.round(v.dungeonState.currentDepth)}m
-                                    </span>
-                                  )}
+                          return groupList.map((group) => {
+                            const leader = group.members[0];
+                            const combinedCarried = group.members.reduce(
+                              (sum, m) => sum + carriedCount(m),
+                              0,
+                            );
+                            const color =
+                              group.order === "hunt" && group.targetName
+                                ? getPartyColor(group.targetName)
+                                : null;
+                            const label =
+                              group.order === "hunt" && group.targetName
+                                ? getPartyLabel(group.targetName, allPartyKeys)
+                                : null;
+                            return (
+                              <div
+                                key={group.key}
+                                className="flex flex-wrap items-center gap-1.5 bg-slate-950/50 rounded px-1.5 py-1 border border-slate-900"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <span className="text-[10px] font-bold text-slate-300">
+                                  {group.order === "hunt" ? "⚔" : "⛏"}{" "}
+                                  {label ? `PT-${label} ` : ""}
+                                  {group.targetName ?? "おまかせ"}
                                 </span>
-                              ))}
-                            </>
-                          );
+                                <span className="text-[9px] text-slate-500 font-mono">
+                                  リーダー: {leader.name} • {group.members.length}人 •
+                                  所持合計 {combinedCarried}個
+                                </span>
+                                {group.members.some((m) => canRecall(m.status)) && (
+                                  <button
+                                    onClick={() =>
+                                      group.members
+                                        .filter((m) => canRecall(m.status))
+                                        .forEach((m) => recallVillager(m.id))
+                                    }
+                                    className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-800/60 transition"
+                                    title="パーティ全員を帰還させる"
+                                  >
+                                    <Undo2 className="w-2.5 h-2.5" />
+                                    全員帰還
+                                  </button>
+                                )}
+                                <div className="flex flex-wrap items-center gap-1 w-full">
+                                  {group.members.map((v) => (
+                                    <span
+                                      key={v.id}
+                                      className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded font-medium border ${
+                                        v.currentHp <= 0
+                                          ? "bg-slate-900 border-slate-700 text-slate-500 line-through"
+                                          : group.order === "hunt"
+                                            ? color
+                                              ? `${color.bg} ${color.border} ${color.text}`
+                                              : "bg-red-950/40 border-red-800 text-red-300"
+                                            : "bg-sky-950/40 border-sky-800 text-sky-400"
+                                      }`}
+                                      title={`Lv.${v.level} HP:${v.currentHp}/${v.maxHp} (${v.currentJob}) • ${getVillagerPhaseLabel(v)} • 所持 ${carriedCount(v)}/${carryCapacity(v)}`}
+                                    >
+                                      {v.name}
+                                      {v.dungeonState && v.status === "active" && (
+                                        <span className="opacity-75 text-[9px] font-mono">
+                                          {Math.round(v.dungeonState.currentDepth)}m
+                                        </span>
+                                      )}
+                                      <span className="opacity-90 text-[9px] font-mono">
+                                        所持{carriedCount(v)}/{carryCapacity(v)}
+                                      </span>
+                                      {canRecall(v.status) && (
+                                        <button
+                                          onClick={() => recallVillager(v.id)}
+                                          className="ml-0.5 px-1 rounded bg-amber-950/70 hover:bg-amber-900/70 text-amber-300 border border-amber-800/60 text-[9px] font-bold"
+                                          title={`${v.name} を帰還させる`}
+                                        >
+                                          帰還
+                                        </button>
+                                      )}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          });
                         })()
                       )}
                     </div>
@@ -526,6 +592,11 @@ export const DungeonPanel: React.FC = () => {
           dungeonEvents={dungeonEvents}
           onClose={() => setShowFullView(false)}
         />
+      )}
+
+      {/* Phase 4a: パーティ派遣モーダル */}
+      {assignArea && (
+        <DungeonAssignModal area={assignArea} onClose={() => setAssignArea(null)} />
       )}
     </Panel>
   );

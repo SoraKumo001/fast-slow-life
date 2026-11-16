@@ -3,6 +3,7 @@ import { getTrainingProgram, getTrainingProgramsForFacility } from "../data/mast
 import { Villager, VillagerBonuses, Facility, FacilityType } from "../types/game";
 import { generateId } from "../utils/craftHelpers";
 import { LogPayload } from "./gameLoopTypes";
+import { random } from "./random";
 
 const BONUS_MAP: Record<string, keyof VillagerBonuses> = {
   str: "bonusStr",
@@ -102,7 +103,7 @@ export function processTrainingQueue(
       const program = getTrainingProgram(updatedJob.programId);
       if (program) {
         const successRate = getGreatSuccessRate(v);
-        const isGreatSuccess = Math.random() < successRate;
+        const isGreatSuccess = random() < successRate;
         const { updated, statParts } = applyTrainingBonus(v, program.statBonus, isGreatSuccess);
 
         updated.lastTrainingDay = currentDay;

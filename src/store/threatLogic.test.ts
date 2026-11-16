@@ -216,8 +216,9 @@ describe("threatLogic", () => {
 
       // tierElapsedHours = 228 - 10*24 = -12 → max(0, ...) = 0 で最初の delta は 0
       // しかし「Tier 2 開始直後 (= 10日目) でもそれ以降進めば上昇する」を検証
-      // → 20日目に進めば tierElapsedHours = 480-240 = 240 で絶対値 = 100 に近い
-      const resultLater = updateAllThreatLevels([mine], 2, false, 20, 12, 10);
+      // → 12日目に進めば tierElapsedHours = 276-240 = 36 で delta > 0 の帯域に入る
+      // (Phase 5 の脅威度定数では約88時間で飽和するため、飽和前の時刻で検証する)
+      const resultLater = updateAllThreatLevels([mine], 2, false, 12, 12, 10);
       const after20 = resultLater.dungeons[0].threatLevel;
       expect(after20).toBeGreaterThan(0); // ← 旧バグでは 0 のまま
 
@@ -252,24 +253,34 @@ describe("threatLogic", () => {
     });
   });
 
-  describe("regression: 脅威度MAX到達で即ゲームオーバー", () => {
-    it("脅威度が 100% に到達する過程で gameOver=true, gameOverReason='脅威度'", () => {
-      // 99.86% から delta (calc(533)-calc(532)=0.21) が加算され 100% を超える
-      // tierElapsedHours=533 → day=24, hour=5
+  describe("Phase 4b: 脅威度MAX到達はゲームオーバーではなく襲撃になる", () => {
+    it("脅威度が 100% に到達しても gameOver にならず、raidDungeonId が返る", () => {
+      // 99.86% から delta (calc(88)-calc(87)≈0.43) が加算され 100% を超える
+      // tierElapsedHours=88 → day=5, hour=16 (Phase 5 の脅威度定数での飽和直前)
       const d = makeDungeon({ threatLevel: 99.86, unlockedAtTier: 1 });
-      const result = updateAllThreatLevels([d], 1, false, 24, 5, 1);
-      expect(result.gameOver).toBe(true);
-      expect(result.gameOverReason).toBe("脅威度");
-      const log = result.logs.find((l) => l.type === "error");
+      const result = updateAllThreatLevels([d], 1, false, 5, 16, 1);
+      expect(result.gameOver).toBe(false);
+      expect(result.gameOverReason).toBe(null);
+      expect(result.raidDungeonId).toBe("forest");
+      expect(result.dungeons[0].threatLevel).toBe(100);
+      const log = result.logs.find((l) => l.type === "warning");
       expect(log?.message).toContain("脅威度");
       expect(log?.message).toContain("100%");
     });
 
-    it("脅威度が 100% 未満なら gameOver は false", () => {
+    it("既に 100% のダンジョンも raidDungeonId として検出される", () => {
+      const d = makeDungeon({ threatLevel: 100, unlockedAtTier: 1 });
+      const result = updateAllThreatLevels([d], 1, false, 2, 10, 1);
+      expect(result.gameOver).toBe(false);
+      expect(result.raidDungeonId).toBe("forest");
+    });
+
+    it("脅威度が 100% 未満なら gameOver は false で raidDungeonId も null", () => {
       const d = makeDungeon({ threatLevel: 50 });
       const result = updateAllThreatLevels([d], 1, false, 2, 10, 1);
       expect(result.gameOver).toBe(false);
       expect(result.gameOverReason).toBe(null);
+      expect(result.raidDungeonId).toBe(null);
     });
   });
 });

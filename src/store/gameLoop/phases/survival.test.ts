@@ -137,7 +137,7 @@ describe("survivalPhase - B2 食料費 (回帰テスト)", () => {
     expect(after.villagers[0].gold).toBe(0);
   });
 
-  it("ケース3: gold=100 の村人からは全額 (2G) 徴収すること（既存挙動維持）", () => {
+  it("ケース3: gold=100 の村人からは全額 (配給10G) 徴収すること", () => {
     const villager = makeVillager({ gold: 100 });
     const acc = makeAcc({
       villagers: [villager],
@@ -147,12 +147,12 @@ describe("survivalPhase - B2 食料費 (回帰テスト)", () => {
 
     const after = survivalPhase(acc);
 
-    // プレイヤー gold は 2 増える（既存挙動）
-    expect(after.gold).toBe(102);
-    // totalGoldFromTax は 2 増える
-    expect(after.nextStats.totalGoldFromTax).toBe(2);
-    // 村人 gold は 98 になる（負数にならない）
-    expect(after.villagers[0].gold).toBe(98);
+    // プレイヤー gold は配給価格ぶん (10G) 増える (Phase 5 レバー3: 2G→10G)
+    expect(after.gold).toBe(110);
+    // totalGoldFromTax は 10 増える
+    expect(after.nextStats.totalGoldFromTax).toBe(10);
+    // 村人 gold は 90 になる（負数にならない）
+    expect(after.villagers[0].gold).toBe(90);
   });
 
   it("ケース4: 複数村人混在時、無一文の村人からは徴収しないこと", () => {
@@ -166,10 +166,10 @@ describe("survivalPhase - B2 食料費 (回帰テスト)", () => {
 
     const after = survivalPhase(acc);
 
-    // rich から 2G 徴収、poor からは 0G
-    expect(after.gold).toBe(1002);
-    expect(after.nextStats.totalGoldFromTax).toBe(2);
-    expect(after.villagers[0].gold).toBe(98);
+    // rich から配給10G 徴収、poor からは 0G
+    expect(after.gold).toBe(1010);
+    expect(after.nextStats.totalGoldFromTax).toBe(10);
+    expect(after.villagers[0].gold).toBe(90);
     expect(after.villagers[1].gold).toBe(0); // 変化なし・負数なし
   });
 });

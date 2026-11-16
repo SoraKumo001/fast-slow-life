@@ -91,6 +91,9 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({ area, onClose 
           <p className="text-xs text-slate-400 mt-2 font-medium">
             最大4名まで選択可能です。ボスのHPは継続し、自然回復します。
           </p>
+          <p className="text-xs text-red-400 mt-1 font-bold">
+            全滅・撤退するとボスは全回復します
+          </p>
         </div>
 
         <div className="space-y-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">

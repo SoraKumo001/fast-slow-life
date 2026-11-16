@@ -1,8 +1,14 @@
 import { ITEMS } from "../../data/masterData";
 import { getInvestCost } from "../../data/towns";
-import { StoreGet, StoreSet } from "../../types/game";
+import { PricePolicy, StoreGet, StoreSet } from "../../types/game";
 import { getMaxCaravans } from "../../utils/marketHelpers";
 import { calcExportPrice } from "../../utils/tradeHelpers";
+
+const PRICE_POLICY_LABELS: Record<PricePolicy, string> = {
+  cheap: "安売り",
+  standard: "標準",
+  premium: "高級",
+};
 
 export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
   sendExportCaravan: (
@@ -212,6 +218,17 @@ export const createTradeActions = (set: StoreSet, get: StoreGet) => ({
 
     state.addLog(
       `【交易】${town.name} に投資しました（投資Lv: ${nextInvestLevel} に上昇）。交易時間がさらに短縮されます。`,
+      "info",
+    );
+  },
+
+  /** 価格方針（条例）の切替。即時保存され、翌日の価格再計算から反映される */
+  setPricePolicy: (policy: PricePolicy) => {
+    const state = get();
+    if (state.pricePolicy === policy) return;
+    set({ pricePolicy: policy });
+    state.addLog(
+      `【条例】価格方針を「${PRICE_POLICY_LABELS[policy]}」に変更しました（翌日の価格再計算から反映されます）。`,
       "info",
     );
   },

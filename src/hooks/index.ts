@@ -11,7 +11,13 @@ export const useGameTime = () =>
   );
 
 export const usePlayerResources = () =>
-  useGameStore(useShallow((s) => ({ gold: s.gold, soulPoints: s.soulPoints })));
+  useGameStore(
+    useShallow((s) => ({
+      gold: s.gold,
+      soulPoints: s.soulPoints,
+      prestigeCount: s.prestigeCount,
+    })),
+  );
 
 export const useInventory = () =>
   useGameStore(
@@ -45,6 +51,8 @@ export const useDungeons = () =>
       currentTier: s.currentTier,
       activeBoss: s.activeBoss,
       bossDefeated: s.bossDefeated,
+      revealedNodes: s.revealedNodes,
+      raid: s.raid,
     })),
   );
 
@@ -78,6 +86,8 @@ export const useVillagerActions = () =>
       setVillagerOrder: s.setVillagerOrder,
       changeVillagerJob: s.changeVillagerJob,
       hireVillager: s.hireVillager,
+      recallVillager: s.recallVillager,
+      dispatchParty: s.dispatchParty,
     })),
   );
 

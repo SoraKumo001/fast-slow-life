@@ -23,6 +23,7 @@ import {
   RunStats,
   DungeonVisualEvent,
 } from "../types/game";
+import { isAtCapacity } from "./carryCapacity";
 import { createDefaultDungeonState } from "./dungeonSpatialHelper";
 import { LogPayload } from "./gameLoopTypes";
 import { processVillagerGather } from "./gatherLogic";
@@ -261,6 +262,23 @@ export function processVillagerActivities(
         logs.push({
           message: `${v.name} は消耗が激しいため、村への帰還を開始しました（残り時間: ${area.distance}h）。`,
           type: "warning",
+        });
+        nextVillagers[i] = v;
+        continue;
+      }
+
+      // Phase 4a: 運搬容量いっぱいなら採取・討伐を止めて帰還する。
+      // 消耗帰還と違い order は維持する（帰還後は idle になり、pool は町で買い取られる）。
+      if ((v.order === "gather" || v.order === "hunt") && isAtCapacity(v)) {
+        v.status = "traveling_back";
+        v.travelTimeLeft = area.distance;
+        v.autoTargetName = null;
+        if (v.dungeonState) {
+          v.dungeonState = { ...v.dungeonState, phase: "returning", targetDepth: 0 };
+        }
+        logs.push({
+          message: `${v.name} は荷物がいっぱいになったため、村への帰還を開始しました（残り時間: ${area.distance}h）。`,
+          type: "info",
         });
         nextVillagers[i] = v;
         continue;

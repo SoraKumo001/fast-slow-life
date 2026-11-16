@@ -105,18 +105,111 @@ describe("poolPurchase", () => {
       expect(result.logs[0].message).toContain("アルフ");
       expect(result.logs[0].message).toContain("自動買取");
     });
+
+    it("市場価格が渡された場合は市場価格で買い取ること", () => {
+      // wheat basePrice=1 だが市場価格 5G → 3個で 15G
+      const v = makeVillager({ pool: { wheat: 3 } });
+      const result = processItemPoolPurchase(100, {}, [v], undefined, { wheat: 5 });
+
+      expect(result.gold).toBe(85);
+      expect(result.villagers[0].gold).toBe(15);
+      expect(result.totalSpent).toBe(15);
+      expect(result.hasFundShortageLeftover).toBe(false);
+      expect(result.logs[0].message).toContain("単価 5 G");
+    });
+
+    it("予算制限: 金庫が払える分だけ買い、残りは pool に残ること", () => {
+      // potion 単価 10G (basePrice), pool 4個, gold 25 → 2個だけ買える
+      const v = makeVillager({ pool: { potion: 4 } });
+      const result = processItemPoolPurchase(25, {}, [v]);
+
+      expect(result.gold).toBe(5);
+      expect(result.inventory.potion).toBe(2);
+      expect(result.villagers[0].gold).toBe(20);
+      expect(result.villagers[0].pool.potion).toBe(2);
+      expect(result.totalSpent).toBe(20);
+      expect(result.hasFundShortageLeftover).toBe(true);
+    });
+
+    it("予算制限: 金庫が 0 の場合は何も買わず、不足フラグが立つこと", () => {
+      const v = makeVillager({ pool: { wheat: 3 } });
+      const result = processItemPoolPurchase(0, {}, [v]);
+
+      expect(result.gold).toBe(0);
+      expect(result.inventory.wheat).toBeUndefined();
+      expect(result.villagers[0].pool.wheat).toBe(3);
+      expect(result.totalSpent).toBe(0);
+      expect(result.hasFundShortageLeftover).toBe(true);
+      expect(result.logs).toHaveLength(0);
+    });
+
+    it("予算制限時も stats は実際に買った分だけ集計されること", () => {
+      const v = makeVillager({ pool: { potion: 4 } });
+      const stats = makeStats();
+      processItemPoolPurchase(25, {}, [v], stats);
+
+      expect(stats.totalItemsPurchased).toBe(2);
+      expect(stats.totalGoldFromPurchases).toBe(20);
+    });
+  });
+
+  describe("processItemPoolPurchase の買取対象（Phase 4a: 町にいる村人のみ）", () => {
+    it("探索中 (active + 派遣先あり) の村人は買い取られないこと", () => {
+      const v = makeVillager({
+        pool: { wheat: 5 },
+        status: "active",
+        destinationAreaId: "forest",
+      } as Partial<Villager>);
+      const result = processItemPoolPurchase(1000, {}, [v], makeStats());
+
+      expect(result.villagers[0].pool.wheat).toBe(5);
+      expect(result.totalSpent).toBe(0);
+      expect(result.inventory.wheat ?? 0).toBe(0);
+    });
+
+    it("帰還中 (traveling_back) の村人は買い取られないこと", () => {
+      const v = makeVillager({
+        pool: { wheat: 5 },
+        status: "traveling_back",
+        destinationAreaId: "forest",
+      } as Partial<Villager>);
+      const result = processItemPoolPurchase(1000, {}, [v], makeStats());
+
+      expect(result.villagers[0].pool.wheat).toBe(5);
+      expect(result.totalSpent).toBe(0);
+    });
+
+    it("町にいる村人 (resting / 施設勤務) は買い取られること", () => {
+      const resting = makeVillager({
+        id: "r1",
+        pool: { wheat: 5 },
+        status: "resting",
+        destinationAreaId: null,
+      } as Partial<Villager>);
+      const working = makeVillager({
+        id: "w1",
+        pool: { wheat: 5 },
+        status: "active",
+        destinationAreaId: null,
+      } as Partial<Villager>);
+      const result = processItemPoolPurchase(1000, {}, [resting, working], makeStats());
+
+      expect(result.villagers[0].pool.wheat ?? 0).toBe(0);
+      expect(result.villagers[1].pool.wheat ?? 0).toBe(0);
+      expect(result.inventory.wheat).toBe(10);
+    });
   });
 
   describe("processItemAcquisition", () => {
-    it("全量買取でプレイヤーゴールドが減少し、村人ゴールドが増加すること", () => {
-      // wheat basePrice=1, amount=5, playerGold=10
-      // cost = 5 * 1 = 5, nextPlayerGold = 5, v.gold = 5
+    it("獲得物は pool（所持品）に入り、金と町の在庫は変化しないこと", () => {
+      // Phase 4a: 即時買取は廃止。買取は帰還後に町で行われる
       const v = makeVillager({ gold: 0 });
       const result = processItemAcquisition(v, "wheat", 5, 10, {});
 
-      expect(result.playerGold).toBe(5);
-      expect(result.inventory.wheat).toBe(5);
-      expect(v.gold).toBe(5);
+      expect(result.playerGold).toBe(10);
+      expect(result.inventory.wheat ?? 0).toBe(0);
+      expect(v.gold).toBe(0);
+      expect(v.pool.wheat).toBe(5);
     });
 
     it("存在しないアイテムIDの場合は何も変化しないこと", () => {
@@ -128,15 +221,16 @@ describe("poolPurchase", () => {
       expect(result.playerGold).toBe(10);
       expect(result.inventory.wheat).toBe(3);
       expect(v.gold).toBe(0);
+      expect(v.pool.nonexistent_item ?? 0).toBe(0);
       expect(result.logs.length).toBe(0);
     });
 
-    it("買取ログが出力されること", () => {
+    it("所持ログが出力されること", () => {
       const v = makeVillager({ name: "アルフ", gold: 0 });
       const result = processItemAcquisition(v, "wheat", 5, 10, {});
 
       expect(result.logs.length).toBe(1);
-      expect(result.logs[0].message).toContain("買取");
+      expect(result.logs[0].message).toContain("所持");
       expect(result.logs[0].message).toContain("アルフ");
     });
   });

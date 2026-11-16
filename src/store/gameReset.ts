@@ -16,6 +16,9 @@ import {
   Town,
   Caravan,
   RunStats,
+  PricePolicy,
+  DailySettlement,
+  DailyFlows,
 } from "../types/game";
 import {
   getInitialVillagers,
@@ -25,7 +28,9 @@ import {
   createInitialInventory,
   getInitialTowns,
   getInitialCaravans,
+  getInitialRevealedNodes,
   getInitialStats,
+  getInitialDailyFlows,
 } from "./initialState";
 
 /** ゲーム終了時の獲得SPを計算する共通ヘルパー */
@@ -48,10 +53,18 @@ export interface ResetResult {
   currentHour: number;
   gold: number;
   soulPoints: number;
+  prestigeCount: number;
+  raidDefeatStreak: number;
+  /** スケジューラの最終実行ティック。初期値 -4 に戻さないと前周回の位相が次周回へ漏れる */
+  lastSchedulerTick: number;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];
   inventory: Record<string, number>;
+  marketPrices: Record<string, number>;
+  pricePolicy: PricePolicy;
+  lastSettlement: DailySettlement | null;
+  dailyFlows: DailyFlows;
   targetAmounts: Record<string, number>;
   tradeRules: TradeRule[];
   logs: GameLog[];
@@ -63,6 +76,8 @@ export interface ResetResult {
   isPaused: boolean;
   towns: Town[];
   caravans: Caravan[];
+  revealedNodes: Record<string, string[]>;
+  raid: null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   maxThreatLevelReached: number;
@@ -82,10 +97,13 @@ export function resetGameHelper(params: {
     soulPoints: number;
     soulUpgrades: Record<string, number>;
     maxThreatLevelReached: number;
+    prestigeCount?: number;
   };
 }): ResetResult {
   const { prestige, state } = params;
   let earnedSp = 0;
+  // Phase 6: 転生のたびに周回数が増える（通常リセットでは 0 に戻る）
+  const nextPrestigeCount = prestige ? (state.prestigeCount ?? 0) + 1 : 0;
 
   if (prestige) {
     if (state.gameOver) {
@@ -121,10 +139,17 @@ export function resetGameHelper(params: {
     currentHour: 0,
     gold: startGold,
     soulPoints: state.soulPoints + earnedSp,
+    prestigeCount: nextPrestigeCount,
+    raidDefeatStreak: 0,
+    lastSchedulerTick: -4,
     villagers: getInitialVillagers(bodyLvl),
     facilities: getInitialFacilities(),
     dungeons: getInitialDungeons(),
     inventory: createInitialInventory(startFood),
+    marketPrices: {},
+    pricePolicy: "standard",
+    lastSettlement: null,
+    dailyFlows: getInitialDailyFlows(),
     targetAmounts: getDefaultTargetAmounts(),
     tradeRules: [],
     logs,
@@ -136,6 +161,8 @@ export function resetGameHelper(params: {
     isPaused: true,
     towns: getInitialTowns(),
     caravans: getInitialCaravans(),
+    revealedNodes: getInitialRevealedNodes(),
+    raid: null,
     isSalaryUnpaid: false,
     consecutiveNegativeGoldDays: 0,
     maxThreatLevelReached: 0,
