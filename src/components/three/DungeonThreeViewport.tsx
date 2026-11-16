@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
+import { buildDungeonMap, initialRevealedNodes } from "../../store/dungeonMap";
 import {
   getExploredDepth,
   getGatherDepth,
@@ -57,6 +58,8 @@ interface DungeonThreeViewportProps {
   cameraView?: CameraViewAngle;
   focusDepth: number | null;
   heightClass?: string;
+  /** Phase 4a: 解放済みノードID（未指定時は探索度から初期値を導出） */
+  revealedNodeIds?: string[];
 }
 
 export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
@@ -68,6 +71,7 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
   cameraView = "quarter",
   focusDepth,
   heightClass = "h-56",
+  revealedNodeIds,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [labels, setLabels] = useState<LabelItem[]>([]);
@@ -81,8 +85,9 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
     activeBoss,
     cameraMode,
     cameraView,
+    revealedNodeIds,
   });
-  propsRef.current = { area, villagers, activeBoss, cameraMode, cameraView };
+  propsRef.current = { area, villagers, activeBoss, cameraMode, cameraView, revealedNodeIds };
 
   // アニメーション・イベント状態
   const animStateRef = useRef({
@@ -207,7 +212,11 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
       monsterMeshes.forEach((m) => scene.remove(m));
       monsterMeshes.clear();
 
-      envObj = buildDungeonEnvironment(targetArea.id, targetArea.maxDepth || 100);
+      envObj = buildDungeonEnvironment(
+        targetArea.id,
+        targetArea.maxDepth || 100,
+        buildDungeonMap(targetArea),
+      );
       scene.background = new THREE.Color(envObj.theme.skyColor);
       scene.fog = new THREE.FogExp2(envObj.theme.fogColor, 0.018);
       ambient.intensity = envObj.theme.ambientIntensity;
@@ -299,10 +308,22 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         activeBoss: curBoss,
         cameraMode: curCamMode,
         cameraView: curCamView,
+        revealedNodeIds: curRevealed,
       } = propsRef.current;
 
       if (curArea.id !== builtAreaId) {
         rebuildAreaScene(curArea);
+      }
+
+      // Phase 4a: 霧。解放済みノード集合（未指定時は探索度から導出）
+      const revealedSet = new Set(curRevealed ?? initialRevealedNodes(curArea));
+      const curMap = buildDungeonMap(curArea);
+
+      // ノードプラットフォームの色: 未解放は暗く沈ませる
+      if (envObj) {
+        envObj.nodePlatforms.forEach((mat, nodeId) => {
+          mat.color.setHex(revealedSet.has(nodeId) ? envObj!.theme.pathColor : 0x14161c);
+        });
       }
 
       const maxDepth = curArea.maxDepth || 100;
@@ -316,13 +337,13 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         envObj.frontierMesh.visible = curArea.explorationProgress < 100;
       }
 
-      // 採取ノードの表示・リスポーン状態更新
+      // 採取ノードの表示・リスポーン状態更新（未解放ノードは霧で隠す）
       curArea.gathers.forEach((g) => {
         const mesh = gatherMeshes.get(g.itemId);
         if (!mesh) return;
         const unlocked = curArea.explorationProgress >= (g.unlockedAtProgress || 0);
-        mesh.visible = unlocked;
-        if (!unlocked) return;
+        mesh.visible = unlocked && revealedSet.has(g.itemId);
+        if (!mesh.visible) return;
 
         const isRespawning = !!(g.respawnTimeLeft && g.respawnTimeLeft > 0);
         const content = mesh.getObjectByName("gatherContent");
@@ -345,13 +366,13 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
         else state.hurtPulses.set(key, next);
       });
 
-      // モンスター表示・アニメーション
+      // モンスター表示・アニメーション（未解放ノードは霧で隠す）
       curArea.monsters.forEach((m) => {
         const mesh = monsterMeshes.get(m.id);
         if (!mesh) return;
         const unlocked = curArea.explorationProgress >= (m.unlockedAtProgress || 0);
         const isRespawning = !!(m.respawnTimeLeft && m.respawnTimeLeft > 0);
-        mesh.visible = unlocked && !isRespawning;
+        mesh.visible = unlocked && !isRespawning && revealedSet.has(m.id);
         if (mesh.visible) {
           animateMonsterMesh(
             mesh,
@@ -394,13 +415,22 @@ export const DungeonThreeViewport: React.FC<DungeonThreeViewportProps> = ({
               ? "returning"
               : ds?.phase || "moving_to_target";
 
-        const targetDepth =
+        let targetDepth =
           v.status === "traveling_to"
             ? 0
             : v.status === "traveling_back"
               ? Math.max(0, (ds?.currentDepth ?? 0) * 0.3)
               : (ds?.currentDepth ?? 0);
-        const targetLane = ds?.lane ?? ((idx % 3) - 1) * 0.7;
+        let targetLane = ds?.lane ?? ((idx % 3) - 1) * 0.7;
+
+        // Phase 4a: ターゲットノードに近づいたら、そのプラットフォーム位置にスナップする
+        if (v.status === "active" && ds?.targetNodeId) {
+          const node = curMap.byId.get(ds.targetNodeId);
+          if (node && Math.abs((ds.currentDepth ?? 0) - node.depth) <= 10) {
+            targetDepth = node.depth;
+            targetLane = node.lane;
+          }
+        }
 
         const targetX = laneToX(targetLane);
         const targetZ = depthToZ(targetDepth);

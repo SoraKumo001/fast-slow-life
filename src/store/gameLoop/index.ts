@@ -6,6 +6,7 @@
  */
 import type { GameState } from "../../types/game";
 import type { AdvanceHourResult, LogPayload } from "../gameLoopTypes";
+import { initialRevealedNodes } from "../dungeonMap";
 import { isBankrupt, buildGameOverLog } from "../gameOverHelper";
 import { getInitialDailyFlows, getInitialStats } from "../initialState";
 import { autoSystemsPhase } from "./phases/autoSystems";
@@ -76,6 +77,14 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
   const marketPrices = state.marketPrices ?? {};
   const pricePolicy = state.pricePolicy ?? "standard";
   const lastSettlement = state.lastSettlement ?? null;
+
+  // ---- Phase 4a state (旧セーブ/テスト用の欠損フォールバック付き) ----
+  const revealedNodes =
+    state.revealedNodes ??
+    Object.fromEntries(
+      (state.dungeons ?? []).map((d) => [d.id, initialRevealedNodes(d)]),
+    );
+  const raid = state.raid ?? null;
   const dailyFlows = state.dailyFlows ? { ...state.dailyFlows } : getInitialDailyFlows();
 
   // ---- Time advancement ----
@@ -133,6 +142,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
+      revealedNodes,
+      raid,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,
@@ -166,6 +177,8 @@ export function calculateAdvanceHour(state: GameState): AdvanceHourResult {
       logsToAppend,
       towns,
       caravans,
+      revealedNodes,
+      raid,
       isSalaryUnpaid: isSalaryUnpaidNext,
       consecutiveNegativeGoldDays: consecutiveNegativeGoldDaysNext,
       lastSchedulerTick,

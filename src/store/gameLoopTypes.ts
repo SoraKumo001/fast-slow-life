@@ -12,6 +12,7 @@ import {
   PricePolicy,
   DailySettlement,
   DailyFlows,
+  RaidState,
 } from "../types/game";
 
 export interface LogPayload {
@@ -40,6 +41,10 @@ export interface AdvanceHourResult {
   logsToAppend: LogPayload[];
   towns: Town[];
   caravans: Caravan[];
+  /** Phase 4a: ダンジョンごとの解放済みノードID（霧） */
+  revealedNodes: Record<string, string[]>;
+  /** Phase 4b: 襲撃イベント（4a では常に null） */
+  raid: RaidState | null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   lastSchedulerTick: number;

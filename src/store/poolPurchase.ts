@@ -30,6 +30,14 @@ export function processItemPoolPurchase(
 
   for (const v of nextVillagers) {
     if (!v.pool) continue;
+    // Phase 4a: 買取は「町にいる村人」に対してのみ行う。
+    // 探索・移動中の村人の pool は所持品として保持され、帰還後に買い取られる。
+    // （status が未設定の村人は町にいるとみなす）
+    const isAwayFromTown =
+      v.status === "traveling_to" ||
+      v.status === "traveling_back" ||
+      (v.status === "active" && !!v.destinationAreaId);
+    if (isAwayFromTown) continue;
     for (const itemId of Object.keys(v.pool)) {
       const count = v.pool[itemId] || 0;
       if (count <= 0) continue;
@@ -82,6 +90,11 @@ export function processItemPoolPurchase(
   };
 }
 
+/**
+ * Phase 4a: 採取・討伐の獲得物は即時買取せず、村人の所持品 (pool) に入る。
+ * 町の在庫と金は動かず、帰還後に processItemPoolPurchase が市場価格で買い取る。
+ * （旧仕様はその場で basePrice 買取しており、pool/容量の概念が実プレイで機能しなかった）
+ */
 export function processItemAcquisition(
   v: Villager,
   itemId: string,
@@ -96,21 +109,15 @@ export function processItemAcquisition(
   const item = ITEMS[itemId];
   if (!item) return { playerGold, inventory, logs: [] };
 
-  const price = item.basePrice;
   const logs: LogPayload[] = [];
-  const nextInventory = { ...inventory };
-
-  let nextPlayerGold = playerGold;
   if (amount > 0) {
-    const cost = amount * price;
-    nextPlayerGold -= cost;
-    v.gold = (v.gold || 0) + cost;
-    nextInventory[itemId] = (nextInventory[itemId] || 0) + amount;
+    if (!v.pool) v.pool = {};
+    v.pool[itemId] = (v.pool[itemId] || 0) + amount;
     logs.push({
-      message: `【買取】${v.name} が獲得した ${item.name} x${amount} を ${cost} G で買い取りました。`,
+      message: `【所持】${v.name} が ${item.name} x${amount} を所持品に加えました（買取は帰還後）。`,
       type: "info",
     });
   }
 
-  return { playerGold: nextPlayerGold, inventory: nextInventory, logs };
+  return { playerGold, inventory, logs };
 }

@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+import type { DungeonMap } from "../../../store/dungeonMap";
+
 export const DEPTH_SCALE = 0.45;
 export const LANE_SCALE = 1.6;
 
@@ -79,12 +81,20 @@ export interface BuiltEnvironment {
   group: THREE.Group;
   frontierMesh: THREE.Group;
   theme: DungeonTheme;
+  /** Phase 4a: ノードID → プラットフォームのマテリアル（霧の解放状態で色を変える） */
+  nodePlatforms: Map<string, THREE.MeshStandardMaterial>;
 }
 
 /**
  * ダンジョンテーマに応じた3D通路環境・壁面装飾・開拓前線ゲートを構築する。
+ * map が渡された場合は Phase 4a のノードプラットフォーム + 接続パスを構築し、
+ * 中央の直線パス（と鉱山レール）は描かない。
  */
-export function buildDungeonEnvironment(areaId: string, maxDepth: number): BuiltEnvironment {
+export function buildDungeonEnvironment(
+  areaId: string,
+  maxDepth: number,
+  map?: DungeonMap,
+): BuiltEnvironment {
   const theme = DUNGEON_THEMES[areaId] || DUNGEON_THEMES.forest;
   const group = new THREE.Group();
   const totalLength = maxDepth * DEPTH_SCALE + 18;
@@ -103,21 +113,75 @@ export function buildDungeonEnvironment(areaId: string, maxDepth: number): Built
   floor.receiveShadow = true;
   group.add(floor);
 
-  // 中央の冒険道（少し色を変えたパス）
-  const pathGeo = new THREE.PlaneGeometry(6.4, totalLength);
-  const pathMat = new THREE.MeshStandardMaterial({
-    color: theme.pathColor,
-    roughness: 0.95,
-    metalness: 0.02,
-  });
-  const path = new THREE.Mesh(pathGeo, pathMat);
-  path.rotation.x = -Math.PI / 2;
-  path.position.set(0, 0, centerZ);
-  path.receiveShadow = true;
-  group.add(path);
+  const nodePlatforms = new Map<string, THREE.MeshStandardMaterial>();
 
-  // 廃鉱山の場合はトロッコのレールを描画
-  if (theme.wallStyle === "mine") {
+  if (map) {
+    // Phase 4a: ノードプラットフォーム + 接続パス
+    const platformGeo = new THREE.CylinderGeometry(1.5, 1.7, 0.12, 20);
+    const ringGeo = new THREE.RingGeometry(1.55, 1.8, 24);
+    for (const node of map.nodes) {
+      const mat = new THREE.MeshStandardMaterial({
+        color: theme.pathColor,
+        roughness: 0.9,
+        metalness: 0.05,
+      });
+      const platform = new THREE.Mesh(platformGeo, mat);
+      platform.position.set(laneToX(node.lane), 0.04, depthToZ(node.depth));
+      platform.receiveShadow = true;
+      group.add(platform);
+      nodePlatforms.set(node.id, mat);
+
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: node.kind === "boss_gate" ? 0xf59e0b : theme.accentColor,
+        transparent: true,
+        opacity: 0.55,
+        side: THREE.DoubleSide,
+      });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(laneToX(node.lane), 0.11, depthToZ(node.depth));
+      group.add(ring);
+    }
+
+    // エッジ = ノード間を結ぶパスセグメント
+    const edgeMat = new THREE.MeshStandardMaterial({
+      color: theme.pathColor,
+      roughness: 0.95,
+      metalness: 0.02,
+    });
+    for (const [aId, bId] of map.edges) {
+      const a = map.byId.get(aId);
+      const b = map.byId.get(bId);
+      if (!a || !b) continue;
+      const ax = laneToX(a.lane);
+      const az = depthToZ(a.depth);
+      const bx = laneToX(b.lane);
+      const bz = depthToZ(b.depth);
+      const len = Math.hypot(bx - ax, bz - az);
+      if (len < 0.01) continue;
+      const seg = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, len), edgeMat);
+      seg.position.set((ax + bx) / 2, 0.02, (az + bz) / 2);
+      seg.rotation.y = Math.atan2(bx - ax, bz - az);
+      seg.receiveShadow = true;
+      group.add(seg);
+    }
+  } else {
+    // 中央の冒険道（少し色を変えたパス）
+    const pathGeo = new THREE.PlaneGeometry(6.4, totalLength);
+    const pathMat = new THREE.MeshStandardMaterial({
+      color: theme.pathColor,
+      roughness: 0.95,
+      metalness: 0.02,
+    });
+    const path = new THREE.Mesh(pathGeo, pathMat);
+    path.rotation.x = -Math.PI / 2;
+    path.position.set(0, 0, centerZ);
+    path.receiveShadow = true;
+    group.add(path);
+  }
+
+  // 廃鉱山の場合はトロッコのレールを描画（ノードマップ表示時はパスと重なるため省略）
+  if (theme.wallStyle === "mine" && !map) {
     const railMat = new THREE.MeshStandardMaterial({
       color: 0x64748b,
       metalness: 0.7,
@@ -224,7 +288,7 @@ export function buildDungeonEnvironment(areaId: string, maxDepth: number): Built
   frontierMesh.add(line);
   group.add(frontierMesh);
 
-  return { group, frontierMesh, theme };
+  return { group, frontierMesh, theme, nodePlatforms };
 }
 
 function createSideProp(theme: DungeonTheme, seed: number, _side: number): THREE.Group {

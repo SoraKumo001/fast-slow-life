@@ -92,6 +92,8 @@ export const createTimeActions = (set: StoreSet, get: StoreGet) => ({
       isPaused: result.isPaused,
       towns: result.towns,
       caravans: result.caravans,
+      revealedNodes: result.revealedNodes,
+      raid: result.raid,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       lastSchedulerTick: result.lastSchedulerTick,
       stats: result.stats,

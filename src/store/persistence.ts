@@ -1,13 +1,22 @@
 import { StateStorage, createJSONStorage } from "zustand/middleware";
 
-import { GameState, GameActions, FacilityType, Town, Caravan } from "../types/game";
+import { DUNGEONS } from "../data/dungeons";
+import {
+  GameState,
+  GameActions,
+  FacilityType,
+  Town,
+  Caravan,
+  DungeonArea,
+} from "../types/game";
+import { initialRevealedNodes } from "./dungeonMap";
 import { getInitialFacilities } from "./initialState";
 
 // ==========================================
 // セーブデータバージョン管理
 // ==========================================
 /** 現在のセーブデータバージョン。互換性のない変更があったら increment する */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 type SaveMigration = (data: Record<string, unknown>) => void;
 
@@ -215,6 +224,27 @@ const migrations: Record<number, SaveMigration> = {
     data.lastSettlement = null;
     data.saveVersion = 8;
   },
+  // v8 → v9: Phase 4a（ノードマップの霧 revealedNodes）+ Phase 4b 用 raid フィールド追加。
+  // revealedNodes は各ダンジョンの探索度から初期化する（到達済みの深さは解放済み扱い）。
+  8: (data) => {
+    const savedDungeons = Array.isArray(data.dungeons)
+      ? (data.dungeons as DungeonArea[])
+      : [];
+    const revealed: Record<string, string[]> = {};
+    for (const def of DUNGEONS) {
+      const saved = savedDungeons.find((d) => d.id === def.id);
+      // 旧セーブのダンジョンは gathers/monsters を欠く場合があるため、
+      // 揃っている場合のみ保存側を使い、それ以外はマスタ定義 + 保存側の探索度で初期化する
+      const source =
+        saved && Array.isArray(saved.gathers) && Array.isArray(saved.monsters)
+          ? saved
+          : { ...def, explorationProgress: saved?.explorationProgress ?? def.explorationProgress };
+      revealed[def.id] = initialRevealedNodes(source);
+    }
+    data.revealedNodes = revealed;
+    data.raid = null;
+    data.saveVersion = 9;
+  },
 };
 
 // ==========================================
@@ -247,6 +277,8 @@ export const partialize = (
   tradeRules: state.tradeRules,
   towns: state.towns,
   caravans: state.caravans,
+  revealedNodes: state.revealedNodes,
+  raid: state.raid,
   isSalaryUnpaid: state.isSalaryUnpaid,
   consecutiveNegativeGoldDays: state.consecutiveNegativeGoldDays,
   lastSchedulerTick: state.lastSchedulerTick,
@@ -294,6 +326,9 @@ export const merge = <S extends GameState & GameActions>(
     (persisted.marketPrices as Record<string, number>) ?? currentState.marketPrices;
   merged.pricePolicy =
     (persisted.pricePolicy as GameState["pricePolicy"]) ?? currentState.pricePolicy;
+  merged.revealedNodes =
+    (persisted.revealedNodes as Record<string, string[]>) ?? currentState.revealedNodes;
+  merged.raid = (persisted.raid as GameState["raid"]) ?? null;
 
   // フラットな Record は shallow merge
   // B8 修正: 破損セーブで undefined / NaN / Infinity が混入しても

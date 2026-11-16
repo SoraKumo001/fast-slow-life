@@ -12,6 +12,7 @@ import { TOWNS_DATA } from "../data/towns";
 import type { DailyFlows, RunStats } from "../types/game";
 import { Facility, FacilityType, DungeonArea } from "../types/game";
 import { createVillager, generateRandomName } from "../utils/villagerHelpers";
+import { initialRevealedNodes } from "./dungeonMap";
 
 export function getInitialVillagers(bodyLvl: number = 0): ReturnType<typeof createVillager>[] {
   const statBonus = bodyLvl * 2;
@@ -84,6 +85,13 @@ export function getInitialDungeons(): DungeonArea[] {
       respawnTimeTotal: getMonsterRespawnHours(m.id),
     })),
   }));
+}
+
+/** Phase 4a: 初期の解放済みノード（探索度0 → 入口のみ） */
+export function getInitialRevealedNodes(): Record<string, string[]> {
+  return Object.fromEntries(
+    getInitialDungeons().map((d) => [d.id, initialRevealedNodes(d)]),
+  );
 }
 
 export const createInitialInventory = (foodOverride?: number): Record<string, number> => {

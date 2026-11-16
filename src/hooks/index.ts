@@ -45,6 +45,7 @@ export const useDungeons = () =>
       currentTier: s.currentTier,
       activeBoss: s.activeBoss,
       bossDefeated: s.bossDefeated,
+      revealedNodes: s.revealedNodes,
     })),
   );
 
@@ -78,6 +79,8 @@ export const useVillagerActions = () =>
       setVillagerOrder: s.setVillagerOrder,
       changeVillagerJob: s.changeVillagerJob,
       hireVillager: s.hireVillager,
+      recallVillager: s.recallVillager,
+      dispatchParty: s.dispatchParty,
     })),
   );
 

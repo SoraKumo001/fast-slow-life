@@ -349,6 +349,15 @@ export interface GameActions {
     targetMonsterId?: string | null;
   }) => void;
   changeVillagerJob: (id: string, job: JobType) => void;
+  /** Phase 4a: 探索中の村人を帰還させる（自然帰還と同じ遷移） */
+  recallVillager: (villagerId: string) => void;
+  /** Phase 4a: 最大4人の村人を同一ターゲットへ一括派遣する */
+  dispatchParty: (params: {
+    villagerIds: string[];
+    areaId: string;
+    order: "gather" | "hunt";
+    targetId?: string | null;
+  }) => void;
   autoEquipAll: () => void;
   startCraft: (facilityId: FacilityType, itemId: string, villagerId?: string) => void;
   startFacilityUpgrade: (facilityId: FacilityType, villagerId?: string) => void;
@@ -450,11 +459,25 @@ export interface GameEconomy {
   dailyFlows: DailyFlows;
 }
 
+/** 襲撃イベントの状態（Phase 4b で使用。Phase 4a では型と初期値のみ用意） */
+export interface RaidState {
+  /** 襲撃元ダンジョンのID */
+  dungeonId: string;
+  /** 到着時刻（累計時間 = (day-1)*24 + hour） */
+  arrivesAtElapsedHour: number;
+  /** 襲撃してくる魔物のID一覧 */
+  monsterIds: string[];
+}
+
 export interface GameWorld {
   dungeons: DungeonArea[];
   towns: Town[];
   caravans: Caravan[];
   activeBoss: ActiveBossState | null;
+  /** Phase 4a: ダンジョンごとの解放済みノードID（霧） */
+  revealedNodes: Record<string, string[]>;
+  /** Phase 4b: 襲撃イベント（4a では常に null） */
+  raid: RaidState | null;
 }
 
 export interface GameProgression {

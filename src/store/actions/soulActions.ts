@@ -92,6 +92,8 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       isPaused: result.isPaused,
       towns: result.towns,
       caravans: result.caravans,
+      revealedNodes: result.revealedNodes,
+      raid: result.raid,
       isSalaryUnpaid: result.isSalaryUnpaid,
       consecutiveNegativeGoldDays: result.consecutiveNegativeGoldDays,
       stats: result.stats,

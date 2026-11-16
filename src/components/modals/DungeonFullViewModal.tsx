@@ -2,6 +2,7 @@ import { Camera, Compass, Eye } from "lucide-react";
 import React, { useState } from "react";
 
 import { getVillagerPhaseLabel } from "../../store/dungeonSpatialHelper";
+import { useGameStore } from "../../store/gameStore";
 import type { ActiveBossState, DungeonArea, DungeonVisualEvent, Villager } from "../../types/game";
 import { DungeonDepthMinimap } from "../three/DungeonDepthMinimap";
 import { CameraViewAngle, DungeonThreeViewport } from "../three/DungeonThreeViewport";
@@ -25,6 +26,7 @@ export const DungeonFullViewModal: React.FC<DungeonFullViewModalProps> = ({
   const [cameraMode, setCameraMode] = useState<"auto" | "free">("auto");
   const [cameraView, setCameraView] = useState<CameraViewAngle>("quarter");
   const [focusDepth, setFocusDepth] = useState<number | null>(null);
+  const revealedNodeIds = useGameStore((s) => s.revealedNodes[area.id]);
 
   const handleSelectDepth = (depth: number) => {
     setCameraMode("free");
@@ -99,10 +101,16 @@ export const DungeonFullViewModal: React.FC<DungeonFullViewModalProps> = ({
           cameraView={cameraView}
           focusDepth={focusDepth}
           heightClass="h-[420px]"
+          revealedNodeIds={revealedNodeIds}
         />
 
         {/* 深度ミニマップ */}
-        <DungeonDepthMinimap area={area} villagers={villagers} onSelectDepth={handleSelectDepth} />
+        <DungeonDepthMinimap
+          area={area}
+          villagers={villagers}
+          onSelectDepth={handleSelectDepth}
+          revealedNodeIds={revealedNodeIds}
+        />
 
         {/* 派遣中キャラクターの現在位置リスト */}
         <div className="bg-slate-950/60 border border-slate-800 rounded-lg p-2.5">

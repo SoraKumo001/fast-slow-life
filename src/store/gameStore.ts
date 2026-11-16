@@ -25,6 +25,7 @@ import {
   getInitialCaravans,
   getInitialStats,
   getInitialDailyFlows,
+  getInitialRevealedNodes,
 } from "./initialState";
 import { partialize, merge, customStorage } from "./persistence";
 
@@ -74,6 +75,8 @@ const createStore = (set: StoreSet, get: StoreGet): FullStore => ({
   },
   towns: getInitialTowns(),
   caravans: getInitialCaravans(),
+  revealedNodes: getInitialRevealedNodes(),
+  raid: null,
   isSalaryUnpaid: false,
   consecutiveNegativeGoldDays: 0,
   lastSchedulerTick: -4,

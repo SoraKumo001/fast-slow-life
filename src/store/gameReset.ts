@@ -28,6 +28,7 @@ import {
   createInitialInventory,
   getInitialTowns,
   getInitialCaravans,
+  getInitialRevealedNodes,
   getInitialStats,
   getInitialDailyFlows,
 } from "./initialState";
@@ -71,6 +72,8 @@ export interface ResetResult {
   isPaused: boolean;
   towns: Town[];
   caravans: Caravan[];
+  revealedNodes: Record<string, string[]>;
+  raid: null;
   isSalaryUnpaid: boolean;
   consecutiveNegativeGoldDays: number;
   maxThreatLevelReached: number;
@@ -148,6 +151,8 @@ export function resetGameHelper(params: {
     isPaused: true,
     towns: getInitialTowns(),
     caravans: getInitialCaravans(),
+    revealedNodes: getInitialRevealedNodes(),
+    raid: null,
     isSalaryUnpaid: false,
     consecutiveNegativeGoldDays: 0,
     maxThreatLevelReached: 0,
