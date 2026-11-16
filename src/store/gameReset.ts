@@ -55,6 +55,8 @@ export interface ResetResult {
   soulPoints: number;
   prestigeCount: number;
   raidDefeatStreak: number;
+  /** スケジューラの最終実行ティック。初期値 -4 に戻さないと前周回の位相が次周回へ漏れる */
+  lastSchedulerTick: number;
   villagers: Villager[];
   facilities: Record<FacilityType, Facility>;
   dungeons: DungeonArea[];
@@ -139,6 +141,7 @@ export function resetGameHelper(params: {
     soulPoints: state.soulPoints + earnedSp,
     prestigeCount: nextPrestigeCount,
     raidDefeatStreak: 0,
+    lastSchedulerTick: -4,
     villagers: getInitialVillagers(bodyLvl),
     facilities: getInitialFacilities(),
     dungeons: getInitialDungeons(),

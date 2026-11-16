@@ -76,6 +76,7 @@ export const createSoulActions = (set: StoreSet, get: StoreGet) => ({
       soulPoints: result.soulPoints,
       prestigeCount: result.prestigeCount,
       raidDefeatStreak: result.raidDefeatStreak,
+      lastSchedulerTick: result.lastSchedulerTick,
       villagers: result.villagers,
       facilities: result.facilities,
       dungeons: result.dungeons,
