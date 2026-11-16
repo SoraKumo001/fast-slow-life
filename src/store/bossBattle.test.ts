@@ -271,8 +271,8 @@ describe("bossBattle", () => {
       );
 
       const villager = result.villagers[0];
-      // goblin expReward=15, eduBonus = 1 + 1*1.5 = 2.5
-      expect(villager.exp).toBe(37);
+      // goblin expReward=9 (Phase 5 レバー5で 15→9), eduBonus = 1 + 1*1.5 = 2.5
+      expect(villager.exp).toBe(22);
     });
 
     it("アタッカーが一人もいない場合はボスのみ回復して戦闘は発生しないこと", () => {

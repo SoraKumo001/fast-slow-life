@@ -505,8 +505,10 @@ describe("calculateAdvanceHour と襲撃", () => {
     const forest = { ...dungeons[0], threatLevel: 99.86 };
     const state = makeState({
       dungeons: [forest, ...dungeons.slice(1)],
-      currentDay: 24,
-      currentHour: 4,
+      // advanceHour で day=5, hour=16 になり tierElapsedHours=88。
+      // Phase 5 の脅威度定数では delta (calc(88)-calc(87)≈0.43) で 100% を超える
+      currentDay: 5,
+      currentHour: 15,
     });
     const result = calculateAdvanceHour(state);
     expect(result.gameOver).toBe(false);

@@ -189,20 +189,20 @@ describe("経済v2: 金の保存則", () => {
     // 内部フローが実際に発生したこと（テストが空転していないこと）
     // 買取: 小麦5×1G + 回復薬2×10G = 25G（初日は市場価格未計算のため basePrice）
     // 賃金: iron_ingot basePrice 12G の 20% = 2G
-    // 食料代: 4人 × 2G = 8G（全員 wheat を食べて Buff なし）
+    // 食料代: 4人 × 配給10G = 40G（全員 wheat を食べて Buff なし。Phase 5 レバー3で配給 2G→10G）
     expect(state.lastSettlement).not.toBeNull();
     expect(state.lastSettlement!.day).toBe(1);
     expect(state.lastSettlement!.poolPurchase).toBe(25);
     expect(state.lastSettlement!.craftWages).toBe(2);
-    expect(state.lastSettlement!.foodIncome).toBe(8);
+    expect(state.lastSettlement!.foodIncome).toBe(40);
     expect(state.lastSettlement!.caravanNet).toBe(0);
 
     // 個別の残高でも移転を確認する
     const byId = Object.fromEntries(state.villagers.map((v) => [v.id, v.gold]));
-    expect(byId.va).toBe(100 + 5 - 2);
-    expect(byId.vb).toBe(50 + 20 - 2);
-    expect(byId.vc).toBe(30 - 2);
-    expect(byId.vd).toBe(10 + 2 - 2);
-    expect(state.gold).toBe(500 - 25 - 2 + 8);
+    expect(byId.va).toBe(100 + 5 - 10);
+    expect(byId.vb).toBe(50 + 20 - 10);
+    expect(byId.vc).toBe(30 - 10);
+    expect(byId.vd).toBe(10 + 2 - 10);
+    expect(state.gold).toBe(500 - 25 - 2 + 40);
   });
 });

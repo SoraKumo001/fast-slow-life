@@ -126,25 +126,25 @@ export function getInitialFacilities(): Record<FacilityType, Facility> {
       id: "inn",
       name: "宿屋",
       initialLevel: 1,
-      upgradeGold: 200,
+      upgradeGold: 600,
     },
     {
       id: "workshop",
       name: "加工工房",
       initialLevel: 1,
-      upgradeGold: 300,
+      upgradeGold: 900,
     },
     {
       id: "farm",
       name: "農場",
       initialLevel: 1,
-      upgradeGold: 200,
+      upgradeGold: 600,
     },
     {
       id: "kitchen",
       name: "調理場",
       initialLevel: 1,
-      upgradeGold: 250,
+      upgradeGold: 750,
     },
     // 初期Lv0 (未建設)
     {

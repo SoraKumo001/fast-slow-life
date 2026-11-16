@@ -11,6 +11,7 @@ import {
   type GridPoint,
 } from "../../../data/townLayout";
 import { useGameStore } from "../../../store/gameStore";
+import { listDemandShortages } from "../../../store/market";
 import type { Villager } from "../../../types/game";
 import { describeTransition, useFootprintStore } from "../../../store/life/footprint";
 import { deriveNeeds } from "../../../store/life/needs";
@@ -164,6 +165,9 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
   const gameOver = useGameStore((s) => s.gameOver);
   const dungeons = useGameStore((s) => s.dungeons);
   const raid = useGameStore((s) => s.raid);
+  const inventory = useGameStore((s) => s.inventory);
+  const targetAmounts = useGameStore((s) => s.targetAmounts);
+  const marketPrices = useGameStore((s) => s.marketPrices);
   const footprintEntries = useFootprintStore((s) => s.entries);
 
   // Phase 4b: 防衛戦中（襲撃が到着済み）は町の村人を門に集結させる
@@ -281,6 +285,35 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
       }
     };
     syncBuildings(propsRef.current.facilities);
+
+    // 需要ボードの掲示板 (Phase 5): 広場の南端に小さな板＋屋根を設置。
+    // クリックすると広場として選択される (userData.buildingId)。
+    {
+      const plazaDef = getBuildingById("plaza");
+      if (plazaDef) {
+        const board = new THREE.Group();
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x7a5a38, roughness: 0.9 });
+        const paperMat = new THREE.MeshStandardMaterial({ color: 0xe9dfc8, roughness: 0.95 });
+        const roofMat = new THREE.MeshStandardMaterial({ color: 0x54432c, roughness: 0.9 });
+        const postGeo = new THREE.BoxGeometry(0.14, 1.5, 0.14);
+        const postL = new THREE.Mesh(postGeo, woodMat);
+        postL.position.set(-0.62, 0.75, 0);
+        const postR = new THREE.Mesh(postGeo, woodMat);
+        postR.position.set(0.62, 0.75, 0);
+        const panelMesh = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.95, 0.07), woodMat);
+        panelMesh.position.set(0, 1.12, 0);
+        const paper = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.75, 0.02), paperMat);
+        paper.position.set(0, 1.12, 0.05);
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.62), roofMat);
+        roof.position.set(0, 1.72, 0.02);
+        roof.rotation.x = 0.18;
+        board.add(postL, postR, panelMesh, paper, roof);
+        const boardPos = gridToWorldCenter(plazaDef.x + 1, plazaDef.z + plazaDef.d - 1);
+        board.position.set(boardPos.x, 0, boardPos.z);
+        board.userData.buildingId = "plaza";
+        scene.add(board);
+      }
+    }
 
     // 天気の粒 (雨・雪)
     const makePoints = (
@@ -944,18 +977,63 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
             : def.kind === "house"
               ? "村人の住まい"
               : "町の施設";
+      const isPlaza = def.kind === "plaza";
+      const topShortages = isPlaza
+        ? listDemandShortages(inventory, targetAmounts)
+            .filter((e) => e.shortage > 0)
+            .slice(0, 3)
+        : [];
       card = (
         <>
           <div className="text-sm font-bold text-slate-100">{facility?.name ?? def.name}</div>
           <div className="text-[11px] text-slate-400 mt-0.5">
             {facility ? `Lv ${facility.level}` : def.name} ・ {statusText}
           </div>
-          <button
-            className="mt-2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[11px] font-bold text-white transition"
-            onClick={() => onSelectTab?.("facilities")}
-          >
-            施設タブで開く
-          </button>
+          {isPlaza && (
+            <div className="mt-2 w-56">
+              <div className="text-[10px] font-bold text-amber-300">📋 需要不足トップ3</div>
+              {topShortages.length === 0 ? (
+                <div className="text-[10px] text-slate-500 mt-0.5">
+                  現在、不足している品目はありません
+                </div>
+              ) : (
+                <ul className="mt-0.5 space-y-0.5">
+                  {topShortages.map((e) => (
+                    <li
+                      key={e.item.id}
+                      className="text-[10px] text-slate-300 flex items-center justify-between gap-2"
+                    >
+                      <span className="truncate">{e.item.name}</span>
+                      <span className="text-slate-500 shrink-0">
+                        {e.stock}/{e.target} ・ 不足{e.shortage}
+                        <span className="text-amber-400 ml-1">
+                          {marketPrices[e.item.id] ?? e.item.basePrice}G
+                        </span>
+                        {e.demandFactor > 1 && (
+                          <span className="text-red-400 font-bold ml-1">↑</span>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+          {isPlaza ? (
+            <button
+              className="mt-2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[11px] font-bold text-white transition"
+              onClick={() => onSelectTab?.("inventory")}
+            >
+              在庫タブで需要ボードを開く
+            </button>
+          ) : (
+            <button
+              className="mt-2 px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-[11px] font-bold text-white transition"
+              onClick={() => onSelectTab?.("facilities")}
+            >
+              施設タブで開く
+            </button>
+          )}
         </>
       );
     }

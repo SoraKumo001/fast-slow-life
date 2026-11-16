@@ -216,8 +216,9 @@ describe("threatLogic", () => {
 
       // tierElapsedHours = 228 - 10*24 = -12 → max(0, ...) = 0 で最初の delta は 0
       // しかし「Tier 2 開始直後 (= 10日目) でもそれ以降進めば上昇する」を検証
-      // → 20日目に進めば tierElapsedHours = 480-240 = 240 で絶対値 = 100 に近い
-      const resultLater = updateAllThreatLevels([mine], 2, false, 20, 12, 10);
+      // → 12日目に進めば tierElapsedHours = 276-240 = 36 で delta > 0 の帯域に入る
+      // (Phase 5 の脅威度定数では約88時間で飽和するため、飽和前の時刻で検証する)
+      const resultLater = updateAllThreatLevels([mine], 2, false, 12, 12, 10);
       const after20 = resultLater.dungeons[0].threatLevel;
       expect(after20).toBeGreaterThan(0); // ← 旧バグでは 0 のまま
 
@@ -254,10 +255,10 @@ describe("threatLogic", () => {
 
   describe("Phase 4b: 脅威度MAX到達はゲームオーバーではなく襲撃になる", () => {
     it("脅威度が 100% に到達しても gameOver にならず、raidDungeonId が返る", () => {
-      // 99.86% から delta (calc(533)-calc(532)=0.21) が加算され 100% を超える
-      // tierElapsedHours=533 → day=24, hour=5
+      // 99.86% から delta (calc(88)-calc(87)≈0.43) が加算され 100% を超える
+      // tierElapsedHours=88 → day=5, hour=16 (Phase 5 の脅威度定数での飽和直前)
       const d = makeDungeon({ threatLevel: 99.86, unlockedAtTier: 1 });
-      const result = updateAllThreatLevels([d], 1, false, 24, 5, 1);
+      const result = updateAllThreatLevels([d], 1, false, 5, 16, 1);
       expect(result.gameOver).toBe(false);
       expect(result.gameOverReason).toBe(null);
       expect(result.raidDungeonId).toBe("forest");

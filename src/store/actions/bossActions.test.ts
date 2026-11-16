@@ -78,8 +78,8 @@ describe("bossActions - startBossBattle", () => {
     const after = useGameStore.getState();
     expect(after.activeBoss).not.toBeNull();
     expect(after.activeBoss?.monsterId).toBe("goblin_leader");
-    expect(after.activeBoss?.maxHp).toBe(800);
-    expect(after.activeBoss?.currentHp).toBe(800);
+    expect(after.activeBoss?.maxHp).toBe(1600); // Phase 5 レバー5で goblin_leader hp 800→1600
+    expect(after.activeBoss?.currentHp).toBe(1600);
     expect(after.activeBoss?.attackerIds).toEqual(["v1"]);
     // 攻撃対象村人が hunt 状態に
     const v1 = after.villagers.find((v) => v.id === "v1");

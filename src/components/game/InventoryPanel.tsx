@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { ITEMS, RECIPES } from "../../data/masterData";
 import { useDungeons, useFacilities, useInventory } from "../../hooks";
 import { useGameStore } from "../../store/gameStore";
+import { listDemandShortages } from "../../store/market";
 import type { Item } from "../../types/game";
 import { getBestExportPrice } from "../../utils/economyHelpers";
 import {
@@ -34,6 +35,7 @@ export const InventoryPanel: React.FC = () => {
   const facilities = useFacilities();
   const { currentTier, dungeons } = useDungeons();
   const towns = useGameStore((s) => s.towns);
+  const marketPrices = useGameStore((s) => s.marketPrices);
   const marketLvl = facilities.market?.level || 0;
   const {
     setTargetAmount,
@@ -126,11 +128,66 @@ export const InventoryPanel: React.FC = () => {
 
   const recipes = Object.values(RECIPES);
 
+  // 需要ボード (Phase 5): 目標設定済みアイテムを不足率の大きい順に並べる
+  const demandEntries = listDemandShortages(inventory, targetAmounts);
+
   return (
     <Panel
       title="素材・倉庫アイテム"
       icon={<ShoppingBag className="w-5 h-5 text-sky-400 shrink-0" />}
     >
+      {/* 需要ボード */}
+      <div className="mb-3 border border-amber-900/50 bg-amber-950/20 rounded-lg p-2.5 shrink-0">
+        <div className="flex items-center justify-between gap-2 mb-1.5">
+          <span className="text-xs font-bold text-amber-300">📋 需要ボード</span>
+          <span className="text-[9px] text-slate-500">
+            目標まで不足すると価格が最大 +30% （翌日の価格に反映）
+          </span>
+        </div>
+        {demandEntries.length === 0 ? (
+          <p className="text-[11px] text-slate-500 leading-relaxed">
+            目標個数が設定されたアイテムはありません。下のリストでアイテムを選ぶと目標を設定できます。
+          </p>
+        ) : (
+          <ul className="space-y-1 max-h-44 overflow-y-auto pr-1">
+            {demandEntries.map((entry) => {
+              const price = marketPrices[entry.item.id] ?? entry.item.basePrice;
+              return (
+                <li key={entry.item.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedItem(entry.item)}
+                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-slate-950/70 border border-slate-800 hover:border-amber-700/60 transition cursor-pointer text-left"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[11px] font-bold text-slate-200 truncate">
+                        {entry.item.name}
+                      </span>
+                      <span className="block text-[9px] text-slate-500 font-mono">
+                        在庫 {entry.stock} / 目標 {entry.target}
+                        {entry.shortage > 0 ? (
+                          <span className="text-red-300 font-bold"> ・ 不足 {entry.shortage}</span>
+                        ) : (
+                          <span className="text-emerald-400 font-bold"> ・ 充足 ✓</span>
+                        )}
+                      </span>
+                    </span>
+                    <span className="text-[11px] font-mono shrink-0">
+                      <span className="text-amber-500 font-bold">{price} G</span>
+                      {entry.demandFactor > 1 && (
+                        <span className="text-red-400 font-bold ml-1">
+                          ↑×{entry.demandFactor.toFixed(2)}
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
       <SortSelect
         value={sortBy}
         onChange={(val) => setSortBy(val as SortOption)}

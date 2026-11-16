@@ -77,6 +77,10 @@ interface SimulationResult {
   caravansActiveCount: number;
   totalDamageDealt: number;
   totalDamageReceived: number;
+  /** Phase 5: そのランで襲撃イベントが1回でも発生したか (state.raid の観測) */
+  raidOccurred: boolean;
+  /** Phase 5: 転生サイクルごとの終了理由 (診断用) */
+  cycleEnds: string[];
 }
 
 // 指定された回数分のシミュレーションを回すチャンク実行関数
@@ -113,6 +117,8 @@ function runSimulationChunk(
     let totalTrainingGold = 0;
     let highestTrainingLevel = 0;
     let bossDefeatDays: Record<number, number> = {};
+    let raidOccurred = false;
+    const cycleEnds: string[] = [];
     let traceLog = "";
     let finalState = useGameStore.getState();
 
@@ -166,6 +172,9 @@ function runSimulationChunk(
 
       while (hoursElapsed < MAX_HOURS) {
         const state = useGameStore.getState();
+
+        // 襲撃イベントの発生観測 (Phase 5 バランス計測用)
+        if (state.raid) raidOccurred = true;
 
         if (run === 1 && prestigeCount === 0 && hoursElapsed < 300) {
           // 最初の周回の最初の300時間だけトレース
@@ -503,6 +512,28 @@ function runSimulationChunk(
       finalState = useGameStore.getState();
       isClear = finalState.bossDefeated && finalState.currentTier === 5;
 
+      cycleEnds.push(
+        isClear
+          ? "Clear"
+          : finalState.gameOver && finalState.gameOverReason
+            ? finalState.gameOverReason
+            : "TimeLimit",
+      );
+
+      // 診断用 (SIM_DEBUG_CYCLE=1 のときだけ): サイクル終了時点のスナップショット
+      if (process.env.SIM_DEBUG_CYCLE) {
+        const avgLvl =
+          finalState.villagers.length > 0
+            ? finalState.villagers.reduce((s, v) => s + v.level, 0) / finalState.villagers.length
+            : 0;
+        console.log(
+          `[sim] run=${run} cycle=${prestigeCount} end=${cycleEnds[cycleEnds.length - 1]} ` +
+            `day=${finalState.currentDay} tier=${finalState.currentTier} gold=${Math.round(finalState.gold)} ` +
+            `avgLvl=${avgLvl.toFixed(1)} deaths=${deathsCount} soul=${JSON.stringify(finalState.soulUpgrades)} ` +
+            `expl=${finalState.dungeons.map((d) => `${d.id}:${Math.round(d.explorationProgress)}`).join(",")}`,
+        );
+      }
+
       if (isClear) {
         break;
       }
@@ -577,6 +608,8 @@ function runSimulationChunk(
       caravansActiveCount: finalState.caravans.filter((c) => c.status === "trading").length,
       totalDamageDealt: finalState.stats?.totalDamageDealt || 0,
       totalDamageReceived: finalState.stats?.totalDamageReceived || 0,
+      raidOccurred,
+      cycleEnds,
     });
 
     if (run === 1) {

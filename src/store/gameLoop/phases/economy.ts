@@ -26,6 +26,7 @@ acc.marketPrices = computeAllMarketPrices(
 acc.inventory,
 acc.facilities.market?.level?? 0,
 acc.pricePolicy,
+acc.targetAmounts?? {},
 );
 }
 

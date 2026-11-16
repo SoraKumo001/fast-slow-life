@@ -14,8 +14,12 @@ export const EXP_NEEDED_PER_LEVEL = 40;
 export const STAMINA_COST_PER_HOUR = 5;
 
 export const FOOD_CONSUMPTION_PER_VILLAGER = 1.0 / 24.0;
+/** 配給の価格 (G/日・人): Buff 料理を食べていない村人が払う食料代。
+ *  Phase 5 バランス再調整 (レバー3) で 2 → 10 に引き上げ (旧: survival.ts のリテラル) */
+export const DAILY_RATION_COST_GOLD = 10;
 
-export const STARTING_GOLD = 1500;
+// Phase 5 バランス再調整 (レバー4): 1500 → 500（序盤の投資判断を重くする）
+export const STARTING_GOLD = 500;
 export const STARTING_FOOD = 80;
 export const VILLAGER_STARTING_GOLD = 200;
 
@@ -103,7 +107,8 @@ export const AUTO_GATHER_EXCEED_PENALTY = 0.01;
 
 export const SPAWN_DAYS_BONUS = 2;
 
-export const UPGRADE_COST_GOLD_MULTIPLIER = 300;
+// Phase 5 バランス再調整 (レバー4): 300 → 900（施設強化の進行を緩やかにする）
+export const UPGRADE_COST_GOLD_MULTIPLIER = 900;
 export const UPGRADE_COST_MATERIAL_INCREMENT = 5;
 
 // クラフト工賃
@@ -123,8 +128,10 @@ export const CATEGORY_GEAR_ARMOR = "gear_armor";
 export const POTION_PRIORITY = ["elixir", "high_potion", "potion"];
 
 // ── ダンジョン脅威度システム ──
-export const THREAT_BASE_RATE_PER_HOUR = 0.1;
-export const THREAT_ACCELERATION_EXPONENT = 1.1;
+// Phase 5 バランス再調整: 0.1/1.1 → 0.3/1.3（脅威度100%到達が約22日→約3.6日/Tierに短縮し、
+// 襲撃の圧を常態化させる）
+export const THREAT_BASE_RATE_PER_HOUR = 0.3;
+export const THREAT_ACCELERATION_EXPONENT = 1.3;
 export const THREAT_MAX = 100;
 
 /** お布施: Tierごとの基本コスト (G/%)。インデックスがTierに対応 */

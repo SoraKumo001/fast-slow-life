@@ -11,9 +11,6 @@ import type { SimulationResult } from "../src/store/balanceSimulator.worker";
 describe("Balance Simulator", () => {
   it("Run game balance simulation (30 times) in parallel", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
-    const MIN_CLEAR_RATE = process.env.SIM_MIN_CLEAR_RATE
-      ? parseFloat(process.env.SIM_MIN_CLEAR_RATE)
-      : 0; // 閾値は環境変数で調整可能、デフォルトは無効
     const numCPUs = Math.min(os.cpus().length || 4, 16);
     const runsPerWorker = Math.ceil(TOTAL_RUNS / numCPUs);
     const promises: Promise<SimulationResult[]>[] = [];
@@ -121,6 +118,11 @@ describe("Balance Simulator", () => {
     // 破産によるGame Over
     const bankruptRuns = gameOverRuns.filter((r) => r.gameOverReason === "破産");
     const bankruptRate = ((bankruptRuns.length / totalRuns) * 100).toFixed(1);
+
+    // 襲撃イベントの発生率 (Phase 5)
+    const raidRuns = results.filter((r) => r.raidOccurred);
+    const raidRate = (raidRuns.length / totalRuns) * 100;
+    const avgClearDaysNum = clearRuns.length > 0 ? parseFloat(avgClearDays as string) : 0;
 
     // ツケ発生率
     const unpaidRuns = results.filter((r) => r.unpaidVillagersCount > 0);
@@ -247,6 +249,7 @@ ${reasonBreakdown}
   - 最終ゴールド: 平均 ${avgFinalGold} G (min: ${minFinalGold}, max: ${maxFinalGold})
   - クリアRun平均ゴールド: ${clearGoldAvg} G / 失敗Run平均ゴールド: ${failGoldAvg} G
   - 破産によるGame Over: ${bankruptRuns.length}回 (${bankruptRate}%)
+  - 襲撃イベント発生Run: ${raidRuns.length}/${totalRuns} (${raidRate.toFixed(1)}%)
   - ツケ発生Run: ${unpaidRuns.length}/${totalRuns} (${unpaidRate}%), 平均ツケ村人数: ${avgUnpaidVillagers}
 
 ■ 戦闘統計
@@ -307,6 +310,8 @@ ${results
         caravansActiveCount: r.caravansActiveCount,
         totalDamageDealt: r.totalDamageDealt,
         totalDamageReceived: r.totalDamageReceived,
+        raidOccurred: r.raidOccurred,
+        cycleEnds: r.cycleEnds,
       }));
       // 集計サマリーもJSONに含める
       const jsonSummary = {
@@ -367,10 +372,13 @@ ${results
       }
     });
 
-    // クリア率が閾値を超えているか（環境変数 SIM_MIN_CLEAR_RATE で設定）
-    if (MIN_CLEAR_RATE > 0) {
-      expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
-    }
+    // --- Phase 5 バランス目標帯 (docs/v2/phase5-spec.md §3.1) ---
+    // 通常戦略: クリア率 30〜60% / 破産率 20%以下 / 襲撃発生 30%以上 / 平均クリア日数 15日以上
+    expect(clearRate).toBeGreaterThanOrEqual(30);
+    expect(clearRate).toBeLessThanOrEqual(60);
+    expect(parseFloat(bankruptRate)).toBeLessThanOrEqual(20);
+    expect(raidRate).toBeGreaterThanOrEqual(30);
+    expect(avgClearDaysNum).toBeGreaterThanOrEqual(15);
 
     // 経済KPIのデータ整合性
     results.forEach((r) => {
@@ -413,7 +421,7 @@ ${results
         `⚠️ 警告: 破産によるGame Overが ${bankruptRate}% と高いです。経済バランスに問題がある可能性があります。`,
       );
     }
-  }, 300000);
+  }, 1500000); // Phase 5: バランス再調整でランが長期化するため延長
 
   it("Run with all soul upgrades maxed out (30 times)", async () => {
     const TOTAL_RUNS = process.env.SIM_RUNS ? parseInt(process.env.SIM_RUNS, 10) : 30;
@@ -479,6 +487,10 @@ ${results
     const allGold = results.map((r) => r.gold);
     const avgFinalGold = (allGold.reduce((a, b) => a + b, 0) / totalRuns).toFixed(1);
 
+    // 襲撃イベントの発生率 (Phase 5)
+    const raidRuns = results.filter((r) => r.raidOccurred);
+    const raidRate = (raidRuns.length / totalRuns) * 100;
+
     // ゲームオーバー理由の内訳
     const reasonCounts: Record<string, number> = {};
     gameOverRuns.forEach((r) => {
@@ -499,6 +511,7 @@ ${results
 ==================================================
 ■ クリア率: ${clearRate.toFixed(1)}% (${clearRuns.length}/${totalRuns})
 ■ 平均クリア日数: ${avgClearDays} 日
+■ 襲撃イベント発生Run: ${raidRuns.length}/${totalRuns} (${raidRate.toFixed(1)}%)
 ■ 平均最終ゴールド: ${avgFinalGold} G (min: ${Math.min(...allGold)}, max: ${Math.max(...allGold)})
 
 ■ 転生統計
@@ -560,6 +573,7 @@ ${Object.entries(reasonCounts)
         caravansActiveCount: r.caravansActiveCount,
         totalDamageDealt: r.totalDamageDealt,
         totalDamageReceived: r.totalDamageReceived,
+        raidOccurred: r.raidOccurred,
       }));
       fs.writeFileSync(
         path.join(debugDir, "simulation_fullbuff_data.json"),
@@ -571,18 +585,15 @@ ${Object.entries(reasonCounts)
     }
 
     expect(totalRuns).toBe(TOTAL_RUNS);
-    // 全バフMAX時のクリア率を検証（環境変数 SIM_MIN_FULLBUFF_CLEAR_RATE で期待値を設定、デフォルト60%）
-    const MIN_CLEAR_RATE = process.env.SIM_MIN_FULLBUFF_CLEAR_RATE
-      ? parseFloat(process.env.SIM_MIN_FULLBUFF_CLEAR_RATE)
-      : 60;
-    if (MIN_CLEAR_RATE > 0) {
-      expect(clearRate).toBeGreaterThanOrEqual(MIN_CLEAR_RATE);
-    }
+    // --- Phase 5 バランス目標帯 (docs/v2/phase5-spec.md §3.1) ---
+    // 全Buff戦略: クリア率 70〜90%
+    expect(clearRate).toBeGreaterThanOrEqual(70);
+    expect(clearRate).toBeLessThanOrEqual(90);
 
     if (clearRate < 10) {
       console.warn(
         `⚠️ 警告: 全バフMAXでもクリア率が ${clearRate.toFixed(1)}% です。ゲームバランスに問題がある可能性があります。`,
       );
     }
-  }, 300000);
+  }, 1500000); // Phase 5: バランス再調整でランが長期化するため延長
 });
