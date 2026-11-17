@@ -1,5 +1,7 @@
 import * as THREE from "three";
 
+import { addPaperEdgesToGroup } from "./paperStyle";
+
 interface MonsterVisualSpec {
   color: number;
   accentColor: number;
@@ -43,10 +45,17 @@ export function buildMonsterMesh(monsterId: string, isBoss: boolean = false): TH
   const body = new THREE.Group();
   root.add(body);
 
-  const mainMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.7 });
+  const mainMat = new THREE.MeshStandardMaterial({
+    color: spec.color,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
+  });
   const accentMat = new THREE.MeshStandardMaterial({
     color: spec.accentColor,
-    roughness: 0.4,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
     emissive: isBoss ? spec.accentColor : 0x000000,
     emissiveIntensity: isBoss ? 0.35 : 0,
   });
@@ -161,6 +170,9 @@ export function buildMonsterMesh(monsterId: string, isBoss: boolean = false): TH
       body.add(eye);
     }
   }
+
+  // ペーパークラフト風: 紙の折り目線を付ける（目・ボスオーラは対象外になる）
+  addPaperEdgesToGroup(root);
 
   body.scale.setScalar(spec.scale);
 
