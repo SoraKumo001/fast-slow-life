@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import type { DungeonActivityPhase, JobType } from "../../../types/game";
+import { addPaperEdgesToGroup } from "./paperStyle";
 
 interface JobVisualStyle {
   tunicColor: number;
@@ -41,9 +42,24 @@ export function buildVillagerMesh(job: JobType): THREE.Group {
   const bodyGroup = new THREE.Group();
   root.add(bodyGroup);
 
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde0c6, roughness: 0.75 });
-  const tunicMat = new THREE.MeshStandardMaterial({ color: style.tunicColor, roughness: 0.7 });
-  const legMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+  const skinMat = new THREE.MeshStandardMaterial({
+    color: 0xfde0c6,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
+  });
+  const tunicMat = new THREE.MeshStandardMaterial({
+    color: style.tunicColor,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
+  });
+  const legMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
+  });
 
   // 胴体
   const torso = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.56, 0.28), tunicMat);
@@ -66,8 +82,9 @@ export function buildVillagerMesh(job: JobType): THREE.Group {
   // 職業別の帽子・兜
   const accentMat = new THREE.MeshStandardMaterial({
     color: style.accentColor,
-    roughness: 0.5,
-    metalness: style.hatStyle === "helmet" ? 0.6 : 0.1,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
   });
   if (style.hatStyle === "helmet") {
     const helm = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.44), accentMat);
@@ -123,7 +140,12 @@ export function buildVillagerMesh(job: JobType): THREE.Group {
   if (job === "戦士") {
     const shield = new THREE.Mesh(
       new THREE.BoxGeometry(0.08, 0.42, 0.32),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.6, roughness: 0.35 }),
+      new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        metalness: 0,
+        roughness: 0.92,
+        flatShading: true,
+      }),
     );
     shield.position.set(-0.08, -0.22, -0.1);
     leftArm.add(shield);
@@ -158,6 +180,9 @@ export function buildVillagerMesh(job: JobType): THREE.Group {
   shadow.position.y = 0.02;
   root.add(shadow);
 
+  // ペーパークラフト風: 紙の折り目線を付ける（目・足元シャドウは対象外になる）
+  addPaperEdgesToGroup(root);
+
   const rig: VillagerRig = {
     bodyGroup,
     leftArm,
@@ -180,10 +205,16 @@ function buildWeaponMesh(
   const g = new THREE.Group();
   const metalMat = new THREE.MeshStandardMaterial({
     color: 0xe2e8f0,
-    metalness: 0.75,
-    roughness: 0.25,
+    metalness: 0,
+    roughness: 0.92,
+    flatShading: true,
   });
-  const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+  const woodMat = new THREE.MeshStandardMaterial({
+    color: 0x78350f,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
+  });
 
   if (style === "sword") {
     const blade = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.58, 0.1), metalMat);
@@ -214,6 +245,9 @@ function buildWeaponMesh(
         color: accentColor,
         emissive: accentColor,
         emissiveIntensity: 0.8,
+        roughness: 0.92,
+        metalness: 0,
+        flatShading: true,
       }),
     );
     gem.position.set(0, 0.66, -0.14);

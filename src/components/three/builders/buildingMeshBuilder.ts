@@ -1,6 +1,7 @@
 import * as THREE from "three";
 
 import { CELL_SIZE, gridToWorld, type TownBuildingDef } from "../../../data/townLayout";
+import { addPaperEdgesToGroup } from "./paperStyle";
 
 /**
  * 町の建物をプロシージャルに構築する (flatShading、テクスチャなし)。
@@ -10,8 +11,14 @@ import { CELL_SIZE, gridToWorld, type TownBuildingDef } from "../../../data/town
  * - windowMats: MeshStandardMaterial[] (夜に emissiveIntensity を上げる窓材質)
  */
 
-function mat(color: number, roughness = 0.85): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness, flatShading: true });
+function mat(color: number, roughness = 0.9): THREE.MeshStandardMaterial {
+  // ペーパークラフト風: マットな紙（粗さは最低 0.9、金属感なし）
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: Math.max(roughness, 0.9),
+    metalness: 0,
+    flatShading: true,
+  });
 }
 
 function addBox(
@@ -65,7 +72,8 @@ function makeWindowMat(): THREE.MeshStandardMaterial {
     color: 0x2b3a4a,
     emissive: 0xffca7a,
     emissiveIntensity: 0,
-    roughness: 0.4,
+    roughness: 0.9,
+    metalness: 0,
     flatShading: true,
   });
 }
@@ -108,7 +116,8 @@ function addRoofOrnament(group: THREE.Group, peakY: number, signColor: number): 
       emissive: signColor,
       emissiveIntensity: 0.9,
       flatShading: true,
-      roughness: 0.4,
+      roughness: 0.9,
+      metalness: 0,
     }),
   );
   orb.position.y = peakY + 0.85;
@@ -134,7 +143,8 @@ function addFacade(
       color: def.signColor,
       emissive: def.signColor,
       emissiveIntensity: 0.85,
-      roughness: 0.5,
+      roughness: 0.9,
+      metalness: 0,
       flatShading: true,
     });
     addBox(group, 1.7, 0.5, 0.12, def.signColor, 0, wallHeight - 0.15, frontZ + 0.05, signMat);
@@ -251,6 +261,7 @@ export function buildBuildingMesh(def: TownBuildingDef, level = 1): THREE.Group 
   // Lv0 (未建設) は建物を建てず更地を返す
   if (level <= 0) {
     buildEmptyLot(group, def, fw, fd);
+    addPaperEdgesToGroup(group);
     group.userData.buildingId = def.id;
     group.userData.level = level;
     group.userData.windowMats = windowMats;
@@ -545,6 +556,7 @@ export function buildBuildingMesh(def: TownBuildingDef, level = 1): THREE.Group 
     }
   }
 
+  addPaperEdgesToGroup(group);
   group.userData.buildingId = def.id;
   group.userData.level = level;
   group.userData.windowMats = windowMats;

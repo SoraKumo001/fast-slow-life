@@ -9,6 +9,7 @@ import {
   isRoad,
   isWalkable,
 } from "../../../data/townLayout";
+import { addPaperEdges } from "./paperStyle";
 
 /**
  * 町の地面・道・広場タイル・木・柵・街灯を構築する。
@@ -22,7 +23,13 @@ export interface BuiltTownEnvironment {
 }
 
 function mat(color: number, roughness = 0.95): THREE.MeshStandardMaterial {
-  return new THREE.MeshStandardMaterial({ color, roughness, flatShading: true });
+  // ペーパークラフト風: マットな紙（粗さは最低 0.9、金属感なし）
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: Math.max(roughness, 0.9),
+    metalness: 0,
+    flatShading: true,
+  });
 }
 
 function seededRandom(seed: number): number {
@@ -150,6 +157,7 @@ export function buildTownEnvironment(): BuiltTownEnvironment {
       const w = gridToWorldCenter(gx, gz);
       const post = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.7, 0.14), fenceMat);
       post.position.set(w.x - CELL_SIZE / 2, 0.35, w.z - CELL_SIZE / 2);
+      addPaperEdges(post);
       group.add(post);
     }
   };
@@ -187,6 +195,7 @@ export function buildTownEnvironment(): BuiltTownEnvironment {
     lamp.position.set(w.x + 0.7, 0, w.z + 0.7);
     const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 2.3, 6), poleMat);
     pole.position.y = 1.15;
+    addPaperEdges(pole);
     lamp.add(pole);
     const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), lampMat);
     bulb.position.y = 2.45;

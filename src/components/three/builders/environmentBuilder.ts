@@ -7,6 +7,7 @@ import {
   pathBetween,
   type DungeonMap,
 } from "../../../store/dungeonMap";
+import { addPaperEdges, addPaperEdgesToGroup } from "./paperStyle";
 
 export const DEPTH_SCALE = 0.45;
 export const LANE_SCALE = 1.6;
@@ -163,36 +164,43 @@ export function buildDungeonEnvironment(
   const group = new THREE.Group();
   const nodePlatforms = new Map<string, THREE.MeshStandardMaterial>();
 
+  // ペーパークラフト風: 全て flatShading + マットな紙（金属感なし）
   const fogMats: BuiltEnvironment["fogMats"] = {
     tileLit: new THREE.MeshStandardMaterial({
       color: theme.pathColor,
       roughness: 0.95,
-      metalness: 0.02,
+      metalness: 0,
+      flatShading: true,
     }),
     tileDark: new THREE.MeshStandardMaterial({
       color: FOG_DARK_COLOR,
       roughness: 1,
       metalness: 0,
+      flatShading: true,
     }),
     edgeLit: new THREE.MeshStandardMaterial({
       color: theme.pathColor,
       roughness: 0.95,
-      metalness: 0.02,
+      metalness: 0,
+      flatShading: true,
     }),
     edgeDark: new THREE.MeshStandardMaterial({
       color: FOG_DARK_COLOR,
       roughness: 1,
       metalness: 0,
+      flatShading: true,
     }),
     wallLit: new THREE.MeshStandardMaterial({
       color: WALL_COLORS[theme.wallStyle],
       roughness: 0.95,
-      metalness: 0.02,
+      metalness: 0,
+      flatShading: true,
     }),
     wallDark: new THREE.MeshStandardMaterial({
       color: FOG_DARK_COLOR,
       roughness: 1,
       metalness: 0,
+      flatShading: true,
     }),
   };
   const fogTiles: BuiltEnvironment["fogTiles"] = [];
@@ -245,7 +253,8 @@ function buildMazeEnvironment(
   const floorMat = new THREE.MeshStandardMaterial({
     color: theme.floorColor,
     roughness: 0.92,
-    metalness: 0.05,
+    metalness: 0,
+    flatShading: true,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
@@ -300,6 +309,9 @@ function buildMazeEnvironment(
       const pb = world(other.gx, other.gy);
       const wall = new THREE.Mesh(dx === 1 ? wallGeoZ : wallGeoX, fogMats.wallDark);
       wall.position.set((pa.x + pb.x) / 2, 0.675, (pa.z + pb.z) / 2);
+      // 紙の折り目線。壁の材質は霧で差し替わるため、インク色は解放時の壁色から導く
+      // （線はメッシュの子なので材質差し替えの影響を受けない）
+      addPaperEdges(wall, { baseColor: WALL_COLORS[theme.wallStyle] });
       group.add(wall);
       fogWalls.push({ mesh: wall, aId: node.id, bId: other.id });
     }
@@ -312,13 +324,15 @@ function buildMazeEnvironment(
     if (node.kind === "passage") continue;
     const mat = new THREE.MeshStandardMaterial({
       color: theme.pathColor,
-      roughness: 0.9,
-      metalness: 0.05,
+      roughness: 0.92,
+      metalness: 0,
+      flatShading: true,
     });
     const p = world(node.gx, node.gy);
     const platform = new THREE.Mesh(platformGeo, mat);
     platform.position.set(p.x, 0.04, p.z);
     platform.receiveShadow = true;
+    addPaperEdges(platform);
     group.add(platform);
     nodePlatforms.set(node.id, mat);
 
@@ -339,8 +353,11 @@ function buildMazeEnvironment(
     color: theme.accentColor,
     emissive: theme.accentColor,
     emissiveIntensity: 0.5,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
   });
-  const postMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.92, metalness: 0, flatShading: true });
   const postGeo = new THREE.BoxGeometry(0.18, 0.9, 0.18);
   const lanternGeo = new THREE.SphereGeometry(0.14, 8, 8);
   const bossPath = pathBetween(map, ENTRANCE_NODE_ID, BOSS_GATE_NODE_ID) ?? [];
@@ -396,7 +413,7 @@ function buildMazeEnvironment(
   const entrance = map.byId.get(ENTRANCE_NODE_ID)!;
   const ep = world(entrance.gx, entrance.gy);
   const gateGroup = new THREE.Group();
-  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.92, metalness: 0, flatShading: true });
   for (const side of [-1, 1]) {
     const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.45, 2.6, 0.45), pillarMat);
     pillar.position.set(side * 3.1, 1.3, 0);
@@ -405,6 +422,7 @@ function buildMazeEnvironment(
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.4, 0.5), pillarMat);
   lintel.position.set(0, 2.65, 0);
   gateGroup.add(lintel);
+  addPaperEdgesToGroup(gateGroup);
   gateGroup.position.set(ep.x, 0, ep.z + 3.1);
   group.add(gateGroup);
 
@@ -413,11 +431,13 @@ function buildMazeEnvironment(
   const bp = world(boss.gx, boss.gy);
   const altarMat = new THREE.MeshStandardMaterial({
     color: 0x334155,
-    roughness: 0.6,
-    metalness: 0.2,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
   });
   const altar = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 0.25, 16), altarMat);
   altar.position.set(bp.x, 0.1, bp.z);
+  addPaperEdges(altar);
   group.add(altar);
 
   const bossRingMat = new THREE.MeshBasicMaterial({
@@ -477,7 +497,8 @@ function buildLegacyCorridor(
   const floorMat = new THREE.MeshStandardMaterial({
     color: theme.floorColor,
     roughness: 0.92,
-    metalness: 0.05,
+    metalness: 0,
+    flatShading: true,
   });
   const floor = new THREE.Mesh(floorGeo, floorMat);
   floor.rotation.x = -Math.PI / 2;
@@ -489,7 +510,8 @@ function buildLegacyCorridor(
   const pathMat = new THREE.MeshStandardMaterial({
     color: theme.pathColor,
     roughness: 0.95,
-    metalness: 0.02,
+    metalness: 0,
+    flatShading: true,
   });
   const path = new THREE.Mesh(pathGeo, pathMat);
   path.rotation.x = -Math.PI / 2;
@@ -500,8 +522,9 @@ function buildLegacyCorridor(
   if (theme.wallStyle === "mine") {
     const railMat = new THREE.MeshStandardMaterial({
       color: 0x64748b,
-      metalness: 0.7,
-      roughness: 0.3,
+      metalness: 0,
+      roughness: 0.92,
+      flatShading: true,
     });
     for (const rx of [-0.55, 0.55]) {
       const rail = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.05, totalLength), railMat);
@@ -514,8 +537,11 @@ function buildLegacyCorridor(
     color: theme.accentColor,
     emissive: theme.accentColor,
     emissiveIntensity: 0.5,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
   });
-  const postMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+  const postMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.92, metalness: 0, flatShading: true });
 
   for (let d = 0; d <= maxDepth; d += 20) {
     const z = depthToZ(d);
@@ -544,7 +570,7 @@ function buildLegacyCorridor(
   }
 
   const gateGroup = new THREE.Group();
-  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+  const pillarMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.92, metalness: 0, flatShading: true });
   for (const side of [-1, 1]) {
     const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.45, 2.6, 0.45), pillarMat);
     pillar.position.set(side * 3.1, 1.3, 0.5);
@@ -553,16 +579,19 @@ function buildLegacyCorridor(
   const lintel = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.4, 0.5), pillarMat);
   lintel.position.set(0, 2.65, 0.5);
   gateGroup.add(lintel);
+  addPaperEdgesToGroup(gateGroup);
   group.add(gateGroup);
 
   const bossZ = depthToZ(maxDepth);
   const altarMat = new THREE.MeshStandardMaterial({
     color: 0x334155,
-    roughness: 0.6,
-    metalness: 0.2,
+    roughness: 0.92,
+    metalness: 0,
+    flatShading: true,
   });
   const altar = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 0.25, 16), altarMat);
   altar.position.set(0, 0.1, bossZ);
+  addPaperEdges(altar);
   group.add(altar);
 
   const ringMat = new THREE.MeshBasicMaterial({
@@ -609,21 +638,21 @@ function createSideProp(theme: DungeonTheme, seed: number, _side: number): THREE
   if (theme.wallStyle === "trees") {
     const trunk = new THREE.Mesh(
       new THREE.CylinderGeometry(0.18 * scale, 0.28 * scale, 1.4 * scale, 6),
-      new THREE.MeshStandardMaterial({ color: 0x4b3621, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ color: 0x4b3621, roughness: 0.92, metalness: 0, flatShading: true }),
     );
     trunk.position.y = 0.7 * scale;
     g.add(trunk);
 
     const leaves = new THREE.Mesh(
       new THREE.ConeGeometry(1.15 * scale, 2.4 * scale, 7),
-      new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.8 }),
+      new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.92, metalness: 0, flatShading: true }),
     );
     leaves.position.y = 2.1 * scale;
     g.add(leaves);
   } else if (theme.wallStyle === "mine") {
     const rock = new THREE.Mesh(
       new THREE.DodecahedronGeometry(1.2 * scale, 0),
-      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.95, metalness: 0, flatShading: true }),
     );
     rock.position.y = 0.9 * scale;
     rock.scale.set(1, 1.5, 1);
@@ -631,14 +660,14 @@ function createSideProp(theme: DungeonTheme, seed: number, _side: number): THREE
   } else if (theme.wallStyle === "canyon") {
     const spire = new THREE.Mesh(
       new THREE.ConeGeometry(1.1 * scale, 3.4 * scale, 5),
-      new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.9 }),
+      new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.92, metalness: 0, flatShading: true }),
     );
     spire.position.y = 1.7 * scale;
     g.add(spire);
   } else if (theme.wallStyle === "roots") {
     const root = new THREE.Mesh(
       new THREE.CylinderGeometry(0.25 * scale, 0.55 * scale, 3.2 * scale, 6),
-      new THREE.MeshStandardMaterial({ color: 0x3b2f2f, roughness: 0.85 }),
+      new THREE.MeshStandardMaterial({ color: 0x3b2f2f, roughness: 0.92, metalness: 0, flatShading: true }),
     );
     root.position.y = 1.5 * scale;
     root.rotation.z = (seed - 0.5) * 0.4;
@@ -650,6 +679,9 @@ function createSideProp(theme: DungeonTheme, seed: number, _side: number): THREE
         color: 0x38bdf8,
         emissive: 0x0284c7,
         emissiveIntensity: 0.8,
+        roughness: 0.92,
+        metalness: 0,
+        flatShading: true,
       }),
     );
     orb.position.y = 2.4 * scale;
@@ -661,13 +693,18 @@ function createSideProp(theme: DungeonTheme, seed: number, _side: number): THREE
         color: 0x4c1d95,
         emissive: 0x7e22ce,
         emissiveIntensity: 0.5,
-        roughness: 0.3,
+        roughness: 0.92,
+        metalness: 0,
+        flatShading: true,
       }),
     );
     crystal.position.y = 1.4 * scale;
     crystal.scale.set(0.7, 1.8, 0.7);
     g.add(crystal);
   }
+
+  // ペーパークラフト風: 紙の折り目線を付ける（発光オーブ等は対象外になる）
+  addPaperEdgesToGroup(g);
 
   return g;
 }

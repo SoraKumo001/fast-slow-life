@@ -24,6 +24,7 @@ import {
   type WeatherKind,
 } from "../../../store/town/townSpatial";
 import { buildBuildingMesh } from "../builders/buildingMeshBuilder";
+import { addPaperEdges } from "../builders/paperStyle";
 import { buildTownEnvironment } from "../builders/townEnvironmentBuilder";
 import { animateVillagerMesh, buildVillagerMesh } from "../builders/villagerMeshBuilder";
 
@@ -292,9 +293,24 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
       const plazaDef = getBuildingById("plaza");
       if (plazaDef) {
         const board = new THREE.Group();
-        const woodMat = new THREE.MeshStandardMaterial({ color: 0x7a5a38, roughness: 0.9 });
-        const paperMat = new THREE.MeshStandardMaterial({ color: 0xe9dfc8, roughness: 0.95 });
-        const roofMat = new THREE.MeshStandardMaterial({ color: 0x54432c, roughness: 0.9 });
+        const woodMat = new THREE.MeshStandardMaterial({
+          color: 0x7a5a38,
+          roughness: 0.92,
+          metalness: 0,
+          flatShading: true,
+        });
+        const paperMat = new THREE.MeshStandardMaterial({
+          color: 0xe9dfc8,
+          roughness: 0.95,
+          metalness: 0,
+          flatShading: true,
+        });
+        const roofMat = new THREE.MeshStandardMaterial({
+          color: 0x54432c,
+          roughness: 0.92,
+          metalness: 0,
+          flatShading: true,
+        });
         const postGeo = new THREE.BoxGeometry(0.14, 1.5, 0.14);
         const postL = new THREE.Mesh(postGeo, woodMat);
         postL.position.set(-0.62, 0.75, 0);
@@ -307,6 +323,10 @@ export const GameTownViewport: React.FC<GameTownViewportProps> = ({
         const roof = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.07, 0.62), roofMat);
         roof.position.set(0, 1.72, 0.02);
         roof.rotation.x = 0.18;
+        // ペーパークラフト風: 板・紙・屋根に折り目線を付ける
+        addPaperEdges(panelMesh);
+        addPaperEdges(paper);
+        addPaperEdges(roof);
         board.add(postL, postR, panelMesh, paper, roof);
         const boardPos = gridToWorldCenter(plazaDef.x + 1, plazaDef.z + plazaDef.d - 1);
         board.position.set(boardPos.x, 0, boardPos.z);
